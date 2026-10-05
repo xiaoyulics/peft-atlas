@@ -22,6 +22,10 @@ python3 theory/framework_checks.py     # numerical checks behind the [Num] claim
 ```
 Set `ATLAS_SITE_URL` to the published root so the social card (`site/assets/card.png`) is an absolute `og:image` that X can fetch.
 
+**Publishing.** Every push to `main` that touches `site/`, `research/` or `theory/` rebuilds the site with
+`.github/workflows/pages.yml` and publishes it with GitHub Pages at <https://xiaoyulics.com/peft-atlas/>. You can
+also run the workflow by hand from the Actions tab.
+
 ## QA
 `bash site/test/figtest.sh <figure>` renders one figure headless; `node site/test/qa-site.mjs index.html <outdir>`
 (run inside `site/`) checks the whole page for console errors, unmounted figures, overflow and broken anchors.

@@ -1,0 +1,67 @@
+# Build the interactive companion from this repository and publish it with GitHub Pages.
+# The account's user site carries the custom domain xiaoyulics.com, so this project site is served at
+# https://xiaoyulics.com/peft-atlas/. Every push to main that touches the site or its data republishes it.
+name: Publish the site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "research/**"
+      - "theory/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the data and the page
+        env:
+          ATLAS_SITE_URL: https://xiaoyulics.com/peft-atlas/
+        run: |
+          python3 site/build/build_data.py
+          python3 site/build/assemble.py
+
+      - name: Stage the published files
+        run: |
+          mkdir -p _site/assets
+          cp -R site/index.html site/css site/js site/data _site/
+          cp site/assets/card.png _site/assets/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

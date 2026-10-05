@@ -40,3 +40,5 @@ video/audio/**/*.wav
 video/audio/*.m4a
 video/samples/*.mp4
 
+# announcement drafts and images
+promo/
