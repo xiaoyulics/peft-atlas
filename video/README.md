@@ -39,9 +39,9 @@ A narrated, animated explainer of about 15 minutes for *A Categorical Atlas of P
   to -16 LUFS. It adds a quiet pad under cards, shore cuts and the coda; `--no-music` leaves it out. It also writes
   subtitles, chapter marks and a thumbnail to `out/`.
 - `tools/review.py <Scene>` makes a contact sheet of a rendered chapter.
-- `tools/web.py` exports the film's poster, share card, captions (WebVTT and SRT) and chapter track to `site/film/`.
-  The MP4 goes to the GitHub release (`gh release upload <tag> video/out/categorical-atlas-explainer.mp4 --clobber`);
-  then run the site workflow by hand so the site fetches it.
+- `tools/web.py` exports the film's poster, share card and captions to `site/film/` and prints the chapter times.
+  The film is published on YouTube; the MP4 is also attached to the GitHub release
+  (`gh release upload <tag> video/out/categorical-atlas-explainer.mp4 --clobber`).
 
 ## Commands
 ```bash

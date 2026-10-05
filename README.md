@@ -38,9 +38,9 @@ also run the workflow by hand from the Actions tab.
 - the narration and assembly tools (`video/tools/`).
 
 See `video/README.md`. The repository does not track renders, the Python environment or the synthesised audio. The
-film plays on the companion site at <https://xiaoyulics.com/peft-atlas/film/> and in its overview, and on YouTube at
-<https://youtu.be/vJaO44jOOUc>. The MP4 is an asset
-of the latest GitHub release, which the site build fetches; its poster, captions and chapters are in `site/film/`.
+film is on YouTube at <https://youtu.be/vJaO44jOOUc>, and the companion site plays it there, in its overview and at
+<https://xiaoyulics.com/peft-atlas/film/>. The MP4 is an asset of the GitHub release `v1`; the poster and captions
+used by the site are in `site/film/`.
 
 ## License
 This repository is dual-licensed.

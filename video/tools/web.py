@@ -2,13 +2,11 @@
 
   video/.venv/bin/python video/tools/web.py
 
-Writes the poster, a 1200x630 share card, English captions (WebVTT and SRT) and a chapter track. The MP4 itself is
-not tracked in git: it is attached to a GitHub release and fetched when the site is built (.github/workflows/pages.yml).
-For a local preview, site/film/categorical-atlas-explainer.mp4 is linked to video/out/.
+Writes the poster, a 1200x630 share card and the English captions (SRT). The film plays from YouTube; the MP4 is
+not tracked in git but attached to the GitHub release. The script prints the chapter times for the pages and YouTube.
 """
 import json
 import pathlib
-import re
 import subprocess
 import sys
 
@@ -25,12 +23,6 @@ OUT = VIDEO / "out"
 FILM = OUT / f"{assemble.NAME}.mp4"
 SITE = ROOT / "site" / "film"
 NAVY = (10, 18, 28)
-
-
-def vtt_time(t):
-    ms = int(round(t * 1000))
-    h, ms = divmod(ms, 3_600_000); m, ms = divmod(ms, 60_000); s, ms = divmod(ms, 1000)
-    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
 
 def chapters():
@@ -63,24 +55,11 @@ def main():
     card.paste(small, (40, 0))
     card.save(SITE / "card.jpg", quality=90, optimize=True)
 
-    # captions: the film's SRT as WebVTT (and the SRT itself, for download)
-    srt = (OUT / f"{assemble.NAME}.en.srt").read_text()
-    (SITE / f"{assemble.NAME}.en.srt").write_text(srt)
-    vtt = re.sub(r"(\d\d:\d\d:\d\d),(\d\d\d)", r"\1.\2", srt)
-    (SITE / f"{assemble.NAME}.en.vtt").write_text("WEBVTT\n\n" + vtt)
+    # captions, for download
+    (SITE / f"{assemble.NAME}.en.srt").write_text((OUT / f"{assemble.NAME}.en.srt").read_text())
 
-    # chapters, for the player and for the lists on the pages
-    lines = ["WEBVTT", ""]
-    for k, (t, title) in enumerate(marks):
-        end = marks[k + 1][0] if k + 1 < len(marks) else total
-        lines += [f"{k + 1}", f"{vtt_time(t)} --> {vtt_time(end)}", title, ""]
-    (SITE / "chapters.vtt").write_text("\n".join(lines))
-
-    link = SITE / FILM.name
-    if not link.exists():
-        link.symlink_to(FILM)
     mb = FILM.stat().st_size / 1e6
-    print(f"site/film: poster.jpg, card.jpg, captions, {len(marks)} chapters; film {total / 60:.2f} min, {mb:.0f} MB")
+    print(f"site/film: poster.jpg, card.jpg, captions; film {total / 60:.2f} min, {mb:.0f} MB; chapters:")
     for t, title in marks:
         print(f"  {int(t) // 60}:{int(t) % 60:02d}  {title}")
 

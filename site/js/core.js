@@ -367,24 +367,29 @@
   if (document.readyState === 'complete') widenWhenTypeset(); else window.addEventListener('load', widenWhenTypeset);
   document.addEventListener('toggle', function (ev) { if (ev.target.open) setTimeout(widenTables, 60); }, true);
 
-  /* ---------- the film: chapter links seek the player; "Watch the film" starts it ---------- */
+  /* ---------- the film: a poster until asked, then YouTube's player (nothing loads from YouTube before that) ---------- */
   function wireFilm() {
-    var v = document.querySelector('#film video');
-    if (!v) return;
+    var box = document.querySelector('#film [data-yt]');
+    if (!box) return;
     var links = Array.prototype.slice.call(document.querySelectorAll('#film [data-t]'));
-    function play() { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-    function seek(t) {
-      play();
-      if (v.readyState >= 1) v.currentTime = t; else v.addEventListener('loadedmetadata', function () { v.currentTime = t; }, { once: true });
+    function play(t) {
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + box.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1' + (t ? '&start=' + Math.floor(t) : '');
+      f.title = 'The film: A Categorical Atlas of Parameter-Efficient Fine-Tuning';
+      f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      f.setAttribute('allowfullscreen', '');
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      box.replaceChildren(f);
     }
+    box.querySelector('.yt-play').addEventListener('click', function () { play(0); });
     links.forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); seek(+a.getAttribute('data-t')); });
+      a.addEventListener('click', function (e) {
+        e.preventDefault(); play(+a.getAttribute('data-t'));
+        links.forEach(function (b) { b.classList.toggle('on', b === a); });
+      });
     });
-    document.querySelectorAll('[data-play-film]').forEach(function (a) { a.addEventListener('click', play); });
-    v.addEventListener('timeupdate', function () {
-      var cur = null;
-      links.forEach(function (a) { if (v.currentTime + 0.5 >= +a.getAttribute('data-t')) cur = a; });
-      links.forEach(function (a) { a.classList.toggle('on', a === cur); });
+    document.querySelectorAll('[data-play-film]').forEach(function (a) {
+      a.addEventListener('click', function () { if (!box.querySelector('iframe')) play(0); });
     });
   }
 

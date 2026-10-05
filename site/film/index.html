@@ -15,10 +15,6 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Title card of the film: A Categorical Atlas of Parameter-Efficient Fine-Tuning, Cones, Orbits, and Gauges, beside a double cone through the pretrained point θ₀ with an orbit and a line passing through it.">
-<meta property="og:video" content="https://xiaoyulics.com/peft-atlas/film/categorical-atlas-explainer.mp4">
-<meta property="og:video:type" content="video/mp4">
-<meta property="og:video:width" content="1920">
-<meta property="og:video:height" content="1080">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="A Categorical Atlas of PEFT: the film">
 <meta name="twitter:description" content="Seventeen narrated minutes: why two different fine-tuning methods trace exactly the same path, and what cones, orbits and gauges say about every PEFT method.">
@@ -49,11 +45,7 @@
   <h1>A Categorical Atlas of <em>Parameter-Efficient Fine-Tuning</em></h1>
   <p class="dek">Why do two different fine-tuning methods trace exactly the same path? The film follows that coincidence through the atlas: what a method can reach, how it learns, and how it travels.</p>
   <figure class="figure film" id="film">
-    <div class="stage flush"><video controls playsinline preload="metadata" poster="poster.jpg" aria-label="The film, 16 minutes 44 seconds, narrated, with English captions">
-      <source src="categorical-atlas-explainer.mp4" type="video/mp4">
-      <track kind="captions" src="categorical-atlas-explainer.en.vtt" srclang="en" label="English">
-      <track kind="chapters" src="chapters.vtt" srclang="en" label="Chapters">
-    </video></div>
+    <div class="stage flush"><div class="yt" data-yt="vJaO44jOOUc"><button class="yt-play" type="button" aria-label="Play the film, 16 minutes 44 seconds, from YouTube"><img src="poster.jpg" alt="" width="1920" height="1080" decoding="async"><span class="play" aria-hidden="true"><svg viewBox="0 0 10 10"><path d="M2.6 1.2v7.6L9 5z"/></svg></span><span class="yt-note">Plays from YouTube</span></button></div></div>
     <ol class="film-chapters" aria-label="Chapters">
       <li><a href="#t=0" data-t="0"><span class="t">0:00</span>Two runs, one path</a></li>
       <li><a href="#t=70" data-t="70"><span class="t">1:10</span>The nut and the sea</a></li>
@@ -66,7 +58,7 @@
       <li><a href="#t=966" data-t="966"><span class="t">16:06</span>Three questions</a></li>
     </ol>
   </figure>
-  <p class="film-links"><a class="btn primary" href="../">Open the interactive atlas</a><a class="btn" href="../categorical-atlas-peft.pdf">Read the paper (PDF)</a><a class="btn" href="https://youtu.be/vJaO44jOOUc">Watch on YouTube</a><a class="btn" href="categorical-atlas-explainer.mp4" download>Download the film (MP4, 76 MB)</a><a class="btn" href="categorical-atlas-explainer.en.srt" download>Captions (SRT)</a></p>
+  <p class="film-links"><a class="btn primary" href="../">Open the interactive atlas</a><a class="btn" href="../categorical-atlas-peft.pdf">Read the paper (PDF)</a><a class="btn" href="https://youtu.be/vJaO44jOOUc">Watch on YouTube</a><a class="btn" href="https://github.com/xiaoyulics/peft-atlas/releases/download/v1/categorical-atlas-explainer.mp4">Download the film (MP4, 76 MB)</a><a class="btn" href="categorical-atlas-explainer.en.srt" download>Captions (SRT)</a></p>
   <p class="film-credit">Xiaoyu Li, Zhizhou Sha, Chiwun Yang and Dai Shi, with Claude Opus 5.5 (Anthropic). Narrated with Gemini 3.8 Flash TTS and animated with Manim; every number on screen is computed by the scripts in the repository. The film is under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
 </main>
 <script>
@@ -77,22 +69,26 @@
   label();
   btn.addEventListener('click', function () { var next = dark() ? 'light' : 'dark'; root.setAttribute('data-theme', next); try { localStorage.setItem(KEY, next); } catch (e) {} label(); });
 
-  // chapters: seek the player; #t=<seconds> in the address opens the film there
-  var v = document.querySelector('#film video'), links = [].slice.call(document.querySelectorAll('.film-chapters [data-t]'));
-  function seek(t, play) {
-    if (play) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-    if (v.readyState >= 1) v.currentTime = t; else v.addEventListener('loadedmetadata', function () { v.currentTime = t; }, { once: true });
+  // the poster stands in for YouTube's player until someone presses play; chapters and #t=<seconds> pick the start
+  var box = document.querySelector('#film [data-yt]'), links = [].slice.call(document.querySelectorAll('.film-chapters [data-t]'));
+  var m = /^#t=(\d+(?:\.\d+)?)$/.exec(location.hash), start = m ? +m[1] : 0;
+  function play(t) {
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + box.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1' + (t ? '&start=' + Math.floor(t) : '');
+    f.title = 'The film: A Categorical Atlas of Parameter-Efficient Fine-Tuning';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.setAttribute('allowfullscreen', '');
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    box.replaceChildren(f);
   }
+  box.querySelector('.yt-play').addEventListener('click', function () { play(start); });
   links.forEach(function (a) {
-    a.addEventListener('click', function (e) { e.preventDefault(); seek(+a.getAttribute('data-t'), true); try { history.replaceState(null, '', '#t=' + a.getAttribute('data-t')); } catch (x) {} });
+    a.addEventListener('click', function (e) {
+      e.preventDefault(); play(+a.getAttribute('data-t'));
+      links.forEach(function (b) { b.classList.toggle('on', b === a); });
+      try { history.replaceState(null, '', '#t=' + a.getAttribute('data-t')); } catch (x) {}
+    });
   });
-  v.addEventListener('timeupdate', function () {
-    var cur = null;
-    links.forEach(function (a) { if (v.currentTime + 0.5 >= +a.getAttribute('data-t')) cur = a; });
-    links.forEach(function (a) { a.classList.toggle('on', a === cur); });
-  });
-  var m = /^#t=(\d+(?:\.\d+)?)$/.exec(location.hash);
-  if (m) seek(+m[1], false);
 })();
 </script>
 </body>

@@ -598,7 +598,16 @@ details.app-part[open] { padding-bottom: 1.5rem; }
 
 /* ---------- the film: the player keeps the film's own navy in both themes ---------- */
 .film .stage { background: #0a121c; border-color: color-mix(in srgb, var(--rule) 60%, #0a121c); }
-.film video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #0a121c; }
+.film .yt { position: relative; aspect-ratio: 16 / 9; background: #0a121c; }
+.film .yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.film .yt-play { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.film .yt-play img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.film .yt-play .play { position: absolute; left: 55%; top: 50%; width: clamp(3rem, 12%, 4.6rem); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  display: grid; place-items: center; background: rgba(10, 18, 28, 0.72); border: 1.5px solid rgba(227, 233, 238, 0.85); transition: background 0.15s, transform 0.15s; }
+.film .yt-play .play svg { width: 36%; height: 36%; margin-left: 8%; fill: #e3e9ee; }
+.film .yt-play:hover .play, .film .yt-play:focus-visible .play { background: #0e7385; transform: translate(-50%, -50%) scale(1.06); }
+.film .yt-play:focus-visible { outline: 2px solid var(--tide); outline-offset: 2px; }
+.film .yt-note { position: absolute; right: 0.8rem; bottom: 0.6rem; font-family: var(--f-ui); font-size: var(--fs-xs); letter-spacing: 0.04em; color: rgba(227, 233, 238, 0.75); }
 .film ol.film-chapters { list-style: none; margin: 0.8rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr)); gap: 0 1.6rem;
   font-family: var(--f-ui); font-size: var(--fs-xs); letter-spacing: 0.02em; line-height: 1.4; }
 .film-chapters li { margin: 0; padding: 0; }
