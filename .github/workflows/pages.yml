@@ -10,6 +10,7 @@ on:
       - "site/**"
       - "research/**"
       - "theory/**"
+      - "paper/categorical-atlas-peft.pdf"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -46,6 +47,7 @@ jobs:
           mkdir -p _site/assets
           cp -R site/index.html site/css site/js site/data _site/
           cp site/assets/card.png _site/assets/
+          cp paper/categorical-atlas-peft.pdf _site/
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
