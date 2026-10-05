@@ -5,11 +5,12 @@ This appendix records how the paper and its companion site were produced: who di
 \subsection{In brief}
 
 \begin{itemize}
-\item 1 October 2026, 17:06 AEST, to 4 October 2026, about 01:00 AEST, when this appendix was last revised: about 56 hours of wall-clock time. At least one agent was running for about 23 of those hours. The rest was a 43-minute wait for an account usage reset, two interruptions, and long pauses between requests.
+\item 1 October 2026, 17:06 AEST, to 4 October 2026, about 01:00 AEST, when the first full version of this appendix was written: about 56 hours of wall-clock time. At least one agent was running for about 23 of those hours. The rest was a 43-minute wait for an account usage reset, two interruptions, and long pauses between requests.
 \item The authors directed one orchestrating session of Claude (Anthropic's Claude Opus 5.5) running in Claude Code, in short messages and a few answers to multiple-choice questions. That session wrote and launched 20 multi-agent workflows, which did most of the research, writing and checking, and two small ones that checked and redrafted this appendix. It did the planning, integration and publishing itself.
 \item Those workflows started 422 agent runs (420 distinct agent calls, two of which were started twice). 358 completed, 29 failed when the account reached a spend limit, and 35 were stopped or cut off.
 \item The agents processed about 117 million fresh tokens: prompts written to the cache plus generated text, of which 8.6 million were generated. They also re-read 4.1 billion tokens from the prompt cache. The orchestrating session added about 10 million fresh tokens and 0.2 billion cache reads.
 \item The outputs are a website (15 sections including a version of this appendix, 20 interactive figures plus an animated hero, and a checked catalogue of 382 methods and 138 papers) and a paper of about 400 pages with the same numbering.
+\item On 5 October a later session made a narrated film of the atlas, 16 minutes 44 seconds long, and a two-minute teaser. Its five agents processed about 5.0 million fresh tokens, and the session itself about 1.4 million.
 \end{itemize}
 
 \subsection{Who did what}
@@ -174,6 +175,12 @@ The typography was changed once, at the authors' request. The session set one pa
 
 The paper uses a template designed for it: SGA-style exposés with Roman numerals, so that every result has the same number on the site and in the paper. Twenty-one writer agents converted the full 35,000-word theory into LaTeX, with complete proofs in Appendix C. Six figure engineers redrew the key figures as vector PDFs in the same typefaces. An assembler, four mathematical referees, a typesetting referee and a finalizer took it to a clean build of 393 pages, about 400 with this appendix.
 
+\subsection{The film}
+
+On the evening of 5 October, at the authors' request, a later session of Claude Code made a narrated film of the atlas, 16 minutes 44 seconds long, and then a two-minute teaser for X. The authors chose the narrating voice, Sulafat from Gemini 3.8 Flash TTS, and a quiet visual style from a short list of options.
+
+The session wrote the script and checked each claim against the propositions and the paper, and a separate agent then fact-checked it adversarially. Every number on screen comes from a short computation in \texttt{video/sim/}. The opening, for example, trains LoRA+ and plain LoRA with a scaled alpha side by side, and the largest difference between their weights stays exactly zero. The session wrote a shared Manim library, a brief and one chapter, and four agents built the other seven chapters from the brief. The session then synthesised the narration beat by beat, timed each animation cue to the pauses detected in the audio, reviewed every chapter on contact sheets of its frames, and assembled the film with captions and chapter marks. The film plays on the companion site, and the title page of the paper links to it.
+
 \subsection{Cost and interruptions}
 
 Table~\ref{tab:making-cost} breaks the agent runs and tokens down by phase.
@@ -185,9 +192,11 @@ Theory and adversarial review (rounds 1--2) & 2 & 145 & 16.3 M & 2.03 M\\
 Classification, site sections and figures & 6 & 103 & 32.1 M & 2.74 M\\
 Site review, appendix and typography & 4 & 49 & 22.1 M & 1.68 M\\
 Paper (writing, referees, sync) & 4 & 50 & 22.0 M & 1.75 M\\
-\textbf{All workflows} & \textbf{20} & \textbf{422} & \textbf{117.1 M} & \textbf{8.63 M}\\\bottomrule\end{tabular}\end{table}
+\textbf{All workflows} & \textbf{20} & \textbf{422} & \textbf{117.1 M} & \textbf{8.63 M}\\
+Film (script check and chapters) & -- & 5 & 5.0 M & 0.35 M\\
+\textbf{Total} & \textbf{20} & \textbf{427} & \textbf{122.1 M} & \textbf{8.98 M}\\\bottomrule\end{tabular}\end{table}
 
-The table counts all 422 started runs, one transcript each. Cache re-reads (4.1 billion tokens) are not counted, and neither are the orchestrating session and the two later workflows that checked and redrafted this appendix (nine agents).
+The table counts every started agent run, one transcript each: the 422 runs of the workflows and the film's five agents, a script fact-checker and four chapter builders. Cache re-reads are not counted (4.1 billion tokens for the workflows, 0.16 billion for the film's agents), and neither are the sessions that directed the work: the orchestrating session of the workflows, and the film's session, which added 1.4 million fresh tokens, 0.55 million of them generated. Also not counted are the two later workflows that checked and redrafted this appendix (nine agents), and the film's narration: about 15 minutes of speech from Gemini 3.8 Flash TTS, plus voice tests and a few retakes, which Google bills separately.
 
 The work was interrupted three times:
 
