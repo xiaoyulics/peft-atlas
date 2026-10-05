@@ -10,7 +10,8 @@ The content of this repository is licensed under the Creative Commons Attributio
 - the paper: its LaTeX sources, text, tables, figures and the built PDF (`paper/`);
 - the prose of the companion website (`site/sections/`, `site/index.html`);
 - the catalogue and the theory data (`research/`, `theory/*.json`, `theory/*.md`, `site/data/`);
-- the explainer film: its script, its narration and the rendered film (`video/script/`, `video/audio/`).
+- the explainer film: its script, its narration, the rendered film and its poster and captions (`video/script/`,
+  `video/audio/`, `site/film/`).
 
 You may share and adapt the content for any purpose, including commercially, provided you give appropriate credit.
 Please cite the atlas as described in `README.md` or `CITATION.cff`, and indicate whether you made changes.

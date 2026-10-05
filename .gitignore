@@ -42,3 +42,6 @@ video/samples/*.mp4
 
 # announcement drafts and images
 promo/
+
+# the film is fetched from its GitHub release when the site is built
+site/film/*.mp4

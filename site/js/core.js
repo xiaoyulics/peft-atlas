@@ -367,10 +367,32 @@
   if (document.readyState === 'complete') widenWhenTypeset(); else window.addEventListener('load', widenWhenTypeset);
   document.addEventListener('toggle', function (ev) { if (ev.target.open) setTimeout(widenTables, 60); }, true);
 
+  /* ---------- the film: chapter links seek the player; "Watch the film" starts it ---------- */
+  function wireFilm() {
+    var v = document.querySelector('#film video');
+    if (!v) return;
+    var links = Array.prototype.slice.call(document.querySelectorAll('#film [data-t]'));
+    function play() { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+    function seek(t) {
+      play();
+      if (v.readyState >= 1) v.currentTime = t; else v.addEventListener('loadedmetadata', function () { v.currentTime = t; }, { once: true });
+    }
+    links.forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); seek(+a.getAttribute('data-t')); });
+    });
+    document.querySelectorAll('[data-play-film]').forEach(function (a) { a.addEventListener('click', play); });
+    v.addEventListener('timeupdate', function () {
+      var cur = null;
+      links.forEach(function (a) { if (v.currentTime + 0.5 >= +a.getAttribute('data-t')) cur = a; });
+      links.forEach(function (a) { a.classList.toggle('on', a === cur); });
+    });
+  }
+
   /* ---------- boot ---------- */
   function boot() {
     Atlas._booted = true;
     wireThemeToggle();
+    wireFilm();
     mountAll();
     document.dispatchEvent(new CustomEvent('atlas:ready'));
   }

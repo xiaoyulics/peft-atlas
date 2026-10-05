@@ -39,6 +39,9 @@ A narrated, animated explainer of about 15 minutes for *A Categorical Atlas of P
   to -16 LUFS. It adds a quiet pad under cards, shore cuts and the coda; `--no-music` leaves it out. It also writes
   subtitles, chapter marks and a thumbnail to `out/`.
 - `tools/review.py <Scene>` makes a contact sheet of a rendered chapter.
+- `tools/web.py` exports the film's poster, share card, captions (WebVTT and SRT) and chapter track to `site/film/`.
+  The MP4 goes to the GitHub release (`gh release upload <tag> video/out/categorical-atlas-explainer.mp4 --clobber`);
+  then run the site workflow by hand so the site fetches it.
 
 ## Commands
 ```bash
@@ -46,6 +49,7 @@ python3 video/tools/narrate.py
 PATH=/Library/TeX/texbin:$PATH video/.venv/bin/manim -qh --fps 30 --disable_caching --media_dir video/build/Slice video/film/ch1_slice.py Slice
 python3 video/tools/assemble.py
 python3 video/tools/assemble.py --no-music
+video/.venv/bin/python video/tools/web.py
 video/.venv/bin/python video/sim/lora_plus.py
 ```
 Do not render several scenes that share LaTeX at the same time with separate `manim` processes. They share

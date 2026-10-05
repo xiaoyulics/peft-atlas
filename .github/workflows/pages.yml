@@ -1,6 +1,9 @@
 # Build the interactive companion from this repository and publish it with GitHub Pages.
 # The account's user site carries the custom domain xiaoyulics.com, so this project site is served at
 # https://xiaoyulics.com/peft-atlas/. Every push to main that touches the site or its data republishes it.
+# The film is too large for git: it is an asset of the latest GitHub release, fetched into film/ at build time.
+# After attaching a new film to a release, run this workflow by hand (gh workflow run pages.yml --ref main); the
+# github-pages environment deploys from main only, so a release event cannot publish by itself.
 name: Publish the site
 
 on:
@@ -45,9 +48,16 @@ jobs:
       - name: Stage the published files
         run: |
           mkdir -p _site/assets
-          cp -R site/index.html site/css site/js site/data _site/
+          cp -R site/index.html site/css site/js site/data site/film _site/
           cp site/assets/card.png _site/assets/
           cp paper/categorical-atlas-peft.pdf _site/
+
+      - name: Fetch the film from the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern "categorical-atlas-explainer.mp4" --dir _site/film \
+            || echo "::warning::no release carries categorical-atlas-explainer.mp4; the film page shows only its poster"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

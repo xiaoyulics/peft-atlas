@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The film · A Categorical Atlas of Parameter-Efficient Fine-Tuning</title>
+<meta name="description" content="A narrated 17-minute film of A Categorical Atlas of Parameter-Efficient Fine-Tuning: why two different fine-tuning methods trace exactly the same path, and what a method's image, fibres and base change say about it.">
+<meta name="author" content="Xiaoyu Li, Zhizhou Sha, Chiwun Yang, Dai Shi">
+<link rel="canonical" href="https://xiaoyulics.com/peft-atlas/film/">
+<meta property="og:title" content="A Categorical Atlas of PEFT: the film">
+<meta property="og:description" content="Seventeen narrated minutes: why two different fine-tuning methods trace exactly the same path, and what cones, orbits and gauges say about every PEFT method.">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="https://xiaoyulics.com/peft-atlas/film/">
+<meta property="og:image" content="https://xiaoyulics.com/peft-atlas/film/card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Title card of the film: A Categorical Atlas of Parameter-Efficient Fine-Tuning, Cones, Orbits, and Gauges, beside a double cone through the pretrained point θ₀ with an orbit and a line passing through it.">
+<meta property="og:video" content="https://xiaoyulics.com/peft-atlas/film/categorical-atlas-explainer.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="1920">
+<meta property="og:video:height" content="1080">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A Categorical Atlas of PEFT: the film">
+<meta name="twitter:description" content="Seventeen narrated minutes: why two different fine-tuning methods trace exactly the same path, and what cones, orbits and gauges say about every PEFT method.">
+<meta name="twitter:image" content="https://xiaoyulics.com/peft-atlas/film/card.jpg">
+<meta name="theme-color" content="#f2f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a121c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a121c'/%3E%3Cpath d='M9 7h14L9 25h14z' fill='none' stroke='%234cc3cf' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23e3e9ee'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../css/atlas.css">
+<script>try { var t = localStorage.getItem('peft-atlas-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+<style>
+  .film-page { max-width: 66rem; margin: 0 auto; padding: 2.6rem 16px 3.5rem; }
+  .film-page .kicker { margin: 0 0 0.7rem; font-family: var(--f-ui); font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tide); }
+  .film-page h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.01em; }
+  .film-page h1 em { display: block; font-style: normal; color: var(--tide); }
+  .film-page .dek { margin: 0.9rem 0 1.6rem; max-width: 42rem; font-size: clamp(1.05rem, 1.8vw, 1.25rem); line-height: 1.5; color: var(--ink-2); }
+  .film-page .film-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1.6rem 0 0; }
+  .film-page .film-links .btn { text-decoration: none; }
+  .film-page .film-credit { margin: 1.6rem 0 0; max-width: 42rem; font-size: var(--fs-sm); line-height: 1.5; color: var(--ink-2); }
+  .film-page .film-credit a { color: inherit; text-decoration-color: var(--tide); text-underline-offset: 0.15em; }
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="../">A Categorical Atlas of <b>PEFT</b></a><nav aria-label="Pages"><a href="../">The atlas</a><a href="../categorical-atlas-peft.pdf">Paper (PDF)</a><a class="active" aria-current="page" href="./">Film</a></nav><button class="theme-toggle" type="button" data-theme-toggle>Dark</button></header>
+<main class="film-page">
+  <p class="kicker">The film · 16 min 44 s · narrated, with captions</p>
+  <h1>A Categorical Atlas of <em>Parameter-Efficient Fine-Tuning</em></h1>
+  <p class="dek">Why do two different fine-tuning methods trace exactly the same path? The film follows that coincidence through the atlas: what a method can reach, how it learns, and how it travels.</p>
+  <figure class="figure film" id="film">
+    <div class="stage flush"><video controls playsinline preload="metadata" poster="poster.jpg" aria-label="The film, 16 minutes 44 seconds, narrated, with English captions">
+      <source src="categorical-atlas-explainer.mp4" type="video/mp4">
+      <track kind="captions" src="categorical-atlas-explainer.en.vtt" srclang="en" label="English">
+      <track kind="chapters" src="chapters.vtt" srclang="en" label="Chapters">
+    </video></div>
+    <ol class="film-chapters" aria-label="Chapters">
+      <li><a href="#t=0" data-t="0"><span class="t">0:00</span>Two runs, one path</a></li>
+      <li><a href="#t=70" data-t="70"><span class="t">1:10</span>The nut and the sea</a></li>
+      <li><a href="#t=150" data-t="150"><span class="t">2:30</span>I · Fine-tuning moves a point</a></li>
+      <li><a href="#t=264" data-t="264"><span class="t">4:24</span>II · The image: what a method can say</a></li>
+      <li><a href="#t=520" data-t="520"><span class="t">8:40</span>III · Fibres: how a method learns</a></li>
+      <li><a href="#t=696" data-t="696"><span class="t">11:36</span>IV · The lens: GaLore</a></li>
+      <li><a href="#t=757" data-t="757"><span class="t">12:37</span>V · Base change: how a method travels</a></li>
+      <li><a href="#t=875" data-t="875"><span class="t">14:35</span>The atlas: seven coordinates, 382 methods</a></li>
+      <li><a href="#t=966" data-t="966"><span class="t">16:06</span>Three questions</a></li>
+    </ol>
+  </figure>
+  <p class="film-links"><a class="btn primary" href="../">Open the interactive atlas</a><a class="btn" href="../categorical-atlas-peft.pdf">Read the paper (PDF)</a><a class="btn" href="categorical-atlas-explainer.mp4" download>Download the film (MP4, 76 MB)</a><a class="btn" href="categorical-atlas-explainer.en.srt" download>Captions (SRT)</a></p>
+  <p class="film-credit">Xiaoyu Li, Zhizhou Sha, Chiwun Yang and Dai Shi, with Claude Opus 5.5 (Anthropic). Narrated with Gemini 3.8 Flash TTS and animated with Manim; every number on screen is computed by the scripts in the repository. The film is under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
+</main>
+<script>
+(function () {
+  var KEY = 'peft-atlas-theme', root = document.documentElement, btn = document.querySelector('[data-theme-toggle]');
+  function dark() { var t = root.getAttribute('data-theme'); return t ? t === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
+  function label() { btn.textContent = dark() ? 'Light' : 'Dark'; btn.setAttribute('aria-label', 'Switch to ' + (dark() ? 'light' : 'dark') + ' theme'); }
+  label();
+  btn.addEventListener('click', function () { var next = dark() ? 'light' : 'dark'; root.setAttribute('data-theme', next); try { localStorage.setItem(KEY, next); } catch (e) {} label(); });
+
+  // chapters: seek the player; #t=<seconds> in the address opens the film there
+  var v = document.querySelector('#film video'), links = [].slice.call(document.querySelectorAll('.film-chapters [data-t]'));
+  function seek(t, play) {
+    if (play) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+    if (v.readyState >= 1) v.currentTime = t; else v.addEventListener('loadedmetadata', function () { v.currentTime = t; }, { once: true });
+  }
+  links.forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); seek(+a.getAttribute('data-t'), true); try { history.replaceState(null, '', '#t=' + a.getAttribute('data-t')); } catch (x) {} });
+  });
+  v.addEventListener('timeupdate', function () {
+    var cur = null;
+    links.forEach(function (a) { if (v.currentTime + 0.5 >= +a.getAttribute('data-t')) cur = a; });
+    links.forEach(function (a) { a.classList.toggle('on', a === cur); });
+  });
+  var m = /^#t=(\d+(?:\.\d+)?)$/.exec(location.hash);
+  if (m) seek(+m[1], false);
+})();
+</script>
+</body>
+</html>

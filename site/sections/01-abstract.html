@@ -3,6 +3,26 @@
   <blockquote class="epigraph"><p>The right generality turns a hard theorem into a remark, and the remark into a design rule.</p><footer>after Grothendieck</footer></blockquote>
   <div class="prose">
 
+    <figure class="figure wide film" id="film">
+      <div class="stage flush"><video controls playsinline preload="none" poster="film/poster.jpg" aria-label="The film of this atlas, 16 minutes 44 seconds, narrated, with English captions">
+        <source src="film/categorical-atlas-explainer.mp4" type="video/mp4">
+        <track kind="captions" src="film/categorical-atlas-explainer.en.vtt" srclang="en" label="English">
+        <track kind="chapters" src="film/chapters.vtt" srclang="en" label="Chapters">
+      </video></div>
+      <figcaption><span class="fig-n">Film</span>Prefer to watch first? The atlas in seventeen narrated minutes, with English captions: why two different fine-tuning methods trace exactly the same path, and what a method’s image, fibres and base change say about it. <a href="film/">Open it on its own page</a> or <a href="film/categorical-atlas-explainer.mp4" download>download it</a> (MP4, 76 MB).</figcaption>
+      <ol class="film-chapters" aria-label="Chapters of the film">
+        <li><a href="film/#t=0" data-t="0"><span class="t">0:00</span>Two runs, one path</a></li>
+        <li><a href="film/#t=70" data-t="70"><span class="t">1:10</span>The nut and the sea</a></li>
+        <li><a href="film/#t=150" data-t="150"><span class="t">2:30</span>I · Fine-tuning moves a point</a></li>
+        <li><a href="film/#t=264" data-t="264"><span class="t">4:24</span>II · The image: what a method can say</a></li>
+        <li><a href="film/#t=520" data-t="520"><span class="t">8:40</span>III · Fibres: how a method learns</a></li>
+        <li><a href="film/#t=696" data-t="696"><span class="t">11:36</span>IV · The lens: GaLore</a></li>
+        <li><a href="film/#t=757" data-t="757"><span class="t">12:37</span>V · Base change: how a method travels</a></li>
+        <li><a href="film/#t=875" data-t="875"><span class="t">14:35</span>The atlas: seven coordinates, 382 methods</a></li>
+        <li><a href="film/#t=966" data-t="966"><span class="t">16:06</span>Three questions</a></li>
+      </ol>
+    </figure>
+
     <h3 id="abstract-text">Abstract</h3>
 
     <p>Parameter-efficient fine-tuning has hundreds of methods, usually compared by parameter count and benchmark score. This site compares them as maps. A pretrained checkpoint \(\theta_0\) is a base point in weight space \(\Theta\), and a weight-space PEFT method is a pointed smooth map \(\rho:(Q,q_0)\to(\Theta,\theta_0)\) from a small parameter space. These maps form the <a href="#app-a-meth" class="gloss">pointed slice category</a> \(\mathsf{Meth}(\Theta,\theta_0)\), where the frozen model is <a href="#app-a-initial" class="gloss">initial</a> and full fine-tuning terminal, so every method pointed at \(\theta_0\) sits in the interval between them.</p>
