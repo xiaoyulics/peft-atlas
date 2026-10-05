@@ -1,0 +1,48 @@
+{
+ "m": 64,
+ "n": 64,
+ "cases": {
+  "3": {
+   "r": 3,
+   "budget_loha": 768,
+   "budget_lora": 768,
+   "loha": {
+    "rank": 9,
+    "dim": 623
+   },
+   "lora": {
+    "rank": 6,
+    "dim": 732
+   },
+   "paper": {
+    "loha_rank": 9,
+    "lora_rank": 6,
+    "lora_dim": 732,
+    "loha_dim_bound": 623
+   },
+   "separates": true,
+   "min_singular_gap": 30579657964007.668
+  },
+  "2": {
+   "r": 2,
+   "budget_loha": 512,
+   "budget_lora": 512,
+   "loha": {
+    "rank": 4,
+    "dim": 377
+   },
+   "lora": {
+    "rank": 4,
+    "dim": 496
+   },
+   "paper": {
+    "loha_rank": 4,
+    "lora_rank": 4,
+    "lora_dim": 496,
+    "loha_dim_bound": 377
+   },
+   "separates": true,
+   "min_singular_gap": 7549937275362.205
+  }
+ }
+}

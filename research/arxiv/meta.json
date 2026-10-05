@@ -1,0 +1,7252 @@
+{
+ "1903.05895": {
+  "title": "Learning Fast Algorithms for Linear Transforms Using Butterfly Factorizations",
+  "authors": [
+   "Tri Dao",
+   "Albert Gu",
+   "Matthew Eichhorn",
+   "Atri Rudra",
+   "Christopher Ré"
+  ],
+  "published": "2019-03-14",
+  "journal_ref": "",
+  "comment": "International Conference on Machine Learning (ICML) 2019",
+  "primary": "cs.LG"
+ },
+ "1901.08428": {
+  "title": "Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group",
+  "authors": [
+   "Mario Lezcano-Casado",
+   "David Martínez-Rubio"
+  ],
+  "published": "2019-01-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1812.04754": {
+  "title": "Gradient Descent Happens in a Tiny Subspace",
+  "authors": [
+   "Guy Gur-Ari",
+   "Daniel A. Roberts",
+   "Ethan Dyer"
+  ],
+  "published": "2018-12-12",
+  "journal_ref": "",
+  "comment": "9 pages + appendices, 12 figures",
+  "primary": "cs.LG"
+ },
+ "2104.08691": {
+  "title": "The Power of Scale for Parameter-Efficient Prompt Tuning",
+  "authors": [
+   "Brian Lester",
+   "Rami Al-Rfou",
+   "Noah Constant"
+  ],
+  "published": "2021-04-18",
+  "journal_ref": "",
+  "comment": "Accepted to EMNLP 2021",
+  "primary": "cs.CL"
+ },
+ "2106.04647": {
+  "title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+  "authors": [
+   "Rabeeh Karimi Mahabadi",
+   "James Henderson",
+   "Sebastian Ruder"
+  ],
+  "published": "2021-06-08",
+  "journal_ref": "",
+  "comment": "accepted in NeurIPS, 2021",
+  "primary": "cs.CL"
+ },
+ "2007.07779": {
+  "title": "AdapterHub: A Framework for Adapting Transformers",
+  "authors": [
+   "Jonas Pfeiffer",
+   "Andreas Rücklé",
+   "Clifton Poth",
+   "Aishwarya Kamath",
+   "Ivan Vulić",
+   "Sebastian Ruder",
+   "Kyunghyun Cho",
+   "Iryna Gurevych"
+  ],
+  "published": "2020-07-15",
+  "journal_ref": "",
+  "comment": "EMNLP 2020: Systems Demonstrations",
+  "primary": "cs.CL"
+ },
+ "1505.05424": {
+  "title": "Weight Uncertainty in Neural Networks",
+  "authors": [
+   "Charles Blundell",
+   "Julien Cornebise",
+   "Koray Kavukcuoglu",
+   "Daan Wierstra"
+  ],
+  "published": "2015-05-20",
+  "journal_ref": "",
+  "comment": "In Proceedings of the 32nd International Conference on Machine Learning (ICML 2015)",
+  "primary": "stat.ML"
+ },
+ "1610.01644": {
+  "title": "Understanding intermediate layers using linear classifier probes",
+  "authors": [
+   "Guillaume Alain",
+   "Yoshua Bengio"
+  ],
+  "published": "2016-10-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "stat.ML"
+ },
+ "1609.09106": {
+  "title": "HyperNetworks",
+  "authors": [
+   "David Ha",
+   "Andrew Dai",
+   "Quoc V. Le"
+  ],
+  "published": "2016-09-27",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1711.10455": {
+  "title": "Backprop as Functor: A compositional perspective on supervised learning",
+  "authors": [
+   "Brendan Fong",
+   "David I. Spivak",
+   "Rémy Tuyéras"
+  ],
+  "published": "2017-11-28",
+  "journal_ref": "LICS 2019",
+  "comment": "13 pages + 4 page appendix",
+  "primary": "math.CT"
+ },
+ "1612.00188": {
+  "title": "Efficient Orthogonal Parametrisation of Recurrent Neural Networks Using Householder Reflections",
+  "authors": [
+   "Zakaria Mhammedi",
+   "Andrew Hellicar",
+   "Ashfaqur Rahman",
+   "James Bailey"
+  ],
+  "published": "2016-12-01",
+  "journal_ref": "",
+  "comment": "12 pages, 5 figures",
+  "primary": "cs.LG"
+ },
+ "2111.06719": {
+  "title": "On Transferability of Prompt Tuning for Natural Language Processing",
+  "authors": [
+   "Yusheng Su",
+   "Xiaozhi Wang",
+   "Yujia Qin",
+   "Chi-Min Chan",
+   "Yankai Lin",
+   "Huadong Wang",
+   "Kaiyue Wen",
+   "Zhiyuan Liu",
+   "Peng Li",
+   "Juanzi Li",
+   "Lei Hou",
+   "Maosong Sun",
+   "Jie Zhou"
+  ],
+  "published": "2021-11-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2105.03023": {
+  "title": "DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts",
+  "authors": [
+   "Alisa Liu",
+   "Maarten Sap",
+   "Ximing Lu",
+   "Swabha Swayamdipta",
+   "Chandra Bhagavatula",
+   "Noah A. Smith",
+   "Yejin Choi"
+  ],
+  "published": "2021-05-07",
+  "journal_ref": "",
+  "comment": "ACL 2021 camera-ready",
+  "primary": "cs.CL"
+ },
+ "1912.05671": {
+  "title": "Linear Mode Connectivity and the Lottery Ticket Hypothesis",
+  "authors": [
+   "Jonathan Frankle",
+   "Gintare Karolina Dziugaite",
+   "Daniel M. Roy",
+   "Michael Carbin"
+  ],
+  "published": "2019-12-11",
+  "journal_ref": "",
+  "comment": "Published in ICML 2020. This submission subsumes arXiv:1903.01611 (\"Stabilizing the Lottery Ticket Hypothesis\" and \"The Lottery Ticket Hypothesis at Scale\")",
+  "primary": "cs.LG"
+ },
+ "2012.13255": {
+  "title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning",
+  "authors": [
+   "Armen Aghajanyan",
+   "Luke Zettlemoyer",
+   "Sonal Gupta"
+  ],
+  "published": "2020-12-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2002.01808": {
+  "title": "K-Adapter: Infusing Knowledge into Pre-Trained Models with Adapters",
+  "authors": [
+   "Ruize Wang",
+   "Duyu Tang",
+   "Nan Duan",
+   "Zhongyu Wei",
+   "Xuanjing Huang",
+   "Jianshu ji",
+   "Guihong Cao",
+   "Daxin Jiang",
+   "Ming Zhou"
+  ],
+  "published": "2020-02-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2005.00052": {
+  "title": "MAD-X: An Adapter-Based Framework for Multi-Task Cross-Lingual Transfer",
+  "authors": [
+   "Jonas Pfeiffer",
+   "Ivan Vulić",
+   "Iryna Gurevych",
+   "Sebastian Ruder"
+  ],
+  "published": "2020-04-30",
+  "journal_ref": "",
+  "comment": "EMNLP 2020",
+  "primary": "cs.CL"
+ },
+ "2010.15980": {
+  "title": "AutoPrompt: Eliciting Knowledge from Language Models with Automatically Generated Prompts",
+  "authors": [
+   "Taylor Shin",
+   "Yasaman Razeghi",
+   "Robert L. Logan",
+   "Eric Wallace",
+   "Sameer Singh"
+  ],
+  "published": "2020-10-29",
+  "journal_ref": "",
+  "comment": "v2: Fixed error in Figure 2",
+  "primary": "cs.CL"
+ },
+ "1910.07104": {
+  "title": "Orthogonal Gradient Descent for Continual Learning",
+  "authors": [
+   "Mehrdad Farajtabar",
+   "Navid Azizan",
+   "Alex Mott",
+   "Ang Li"
+  ],
+  "published": "2019-10-15",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2109.04332": {
+  "title": "PPT: Pre-trained Prompt Tuning for Few-shot Learning",
+  "authors": [
+   "Yuxian Gu",
+   "Xu Han",
+   "Zhiyuan Liu",
+   "Minlie Huang"
+  ],
+  "published": "2021-09-09",
+  "journal_ref": "",
+  "comment": "Accepted by ACL2022 (main conference)",
+  "primary": "cs.CL"
+ },
+ "2109.05687": {
+  "title": "Raise a Child in Large Language Model: Towards Effective and Generalizable Fine-tuning",
+  "authors": [
+   "Runxin Xu",
+   "Fuli Luo",
+   "Zhiyuan Zhang",
+   "Chuanqi Tan",
+   "Baobao Chang",
+   "Songfang Huang",
+   "Fei Huang"
+  ],
+  "published": "2021-09-13",
+  "journal_ref": "",
+  "comment": "Accepted as a long paper to EMNLP 2021 Main Conference",
+  "primary": "cs.CL"
+ },
+ "2104.13478": {
+  "title": "Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges",
+  "authors": [
+   "Michael M. Bronstein",
+   "Joan Bruna",
+   "Taco Cohen",
+   "Petar Veličković"
+  ],
+  "published": "2021-04-27",
+  "journal_ref": "",
+  "comment": "156 pages. Work in progress -- comments welcome!",
+  "primary": "cs.LG"
+ },
+ "2103.01931": {
+  "title": "Categorical Foundations of Gradient-Based Learning",
+  "authors": [
+   "G. S. H. Cruttwell",
+   "Bruno Gavranović",
+   "Neil Ghani",
+   "Paul Wilson",
+   "Fabio Zanasi"
+  ],
+  "published": "2021-03-02",
+  "journal_ref": "",
+  "comment": "14 pages",
+  "primary": "cs.LG"
+ },
+ "2101.00190": {
+  "title": "Prefix-Tuning: Optimizing Continuous Prompts for Generation",
+  "authors": [
+   "Xiang Lisa Li",
+   "Percy Liang"
+  ],
+  "published": "2021-01-01",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2111.09832": {
+  "title": "Merging Models with Fisher-Weighted Averaging",
+  "authors": [
+   "Michael Matena",
+   "Colin Raffel"
+  ],
+  "published": "2021-11-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2108.06098": {
+  "title": "FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning",
+  "authors": [
+   "Nam Hyeon-Woo",
+   "Moon Ye-Bin",
+   "Tae-Hyun Oh"
+  ],
+  "published": "2021-08-13",
+  "journal_ref": "",
+  "comment": "Accepted at ICLR 2022",
+  "primary": "cs.LG"
+ },
+ "1902.00751": {
+  "title": "Parameter-Efficient Transfer Learning for NLP",
+  "authors": [
+   "Neil Houlsby",
+   "Andrei Giurgiu",
+   "Stanislaw Jastrzebski",
+   "Bruna Morrone",
+   "Quentin de Laroussilhe",
+   "Andrea Gesmundo",
+   "Mona Attariyan",
+   "Sylvain Gelly"
+  ],
+  "published": "2019-02-02",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1806.00900": {
+  "title": "Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced",
+  "authors": [
+   "Simon S. Du",
+   "Wei Hu",
+   "Jason D. Lee"
+  ],
+  "published": "2018-06-04",
+  "journal_ref": "",
+  "comment": "In NIPS 2018",
+  "primary": "cs.LG"
+ },
+ "1705.08045": {
+  "title": "Learning multiple visual domains with residual adapters",
+  "authors": [
+   "Sylvestre-Alvise Rebuffi",
+   "Hakan Bilen",
+   "Andrea Vedaldi"
+  ],
+  "published": "2017-05-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "1707.04585": {
+  "title": "The Reversible Residual Network: Backpropagation Without Storing Activations",
+  "authors": [
+   "Aidan N. Gomez",
+   "Mengye Ren",
+   "Raquel Urtasun",
+   "Roger B. Grosse"
+  ],
+  "published": "2017-07-14",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "1903.03671": {
+  "title": "Lenses and Learners",
+  "authors": [
+   "Brendan Fong",
+   "Michael Johnson"
+  ],
+  "published": "2019-03-05",
+  "journal_ref": "In: J. Cheney, H-S. Ko (eds.): Proceedings of the Eighth International Workshop on Bidirectional Transformations (Bx 2019), Philadelphia, PA, USA, June 4, 2019, published at http://ceur-ws.org",
+  "comment": "14 pages",
+  "primary": "cs.LG"
+ },
+ "1805.09298": {
+  "title": "Learning towards Minimum Hyperspherical Energy",
+  "authors": [
+   "Weiyang Liu",
+   "Rongmei Lin",
+   "Zhen Liu",
+   "Lixin Liu",
+   "Zhiding Yu",
+   "Bo Dai",
+   "Le Song"
+  ],
+  "published": "2018-05-23",
+  "journal_ref": "",
+  "comment": "NeurIPS 2018",
+  "primary": "cs.LG"
+ },
+ "2110.07904": {
+  "title": "SPoT: Better Frozen Model Adaptation through Soft Prompt Transfer",
+  "authors": [
+   "Tu Vu",
+   "Brian Lester",
+   "Noah Constant",
+   "Rami Al-Rfou",
+   "Daniel Cer"
+  ],
+  "published": "2021-10-15",
+  "journal_ref": "",
+  "comment": "Accepted as a main conference paper at ACL 2022, 21 pages, 8 figures, 7 tables",
+  "primary": "cs.CL"
+ },
+ "2005.00247": {
+  "title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+  "authors": [
+   "Jonas Pfeiffer",
+   "Aishwarya Kamath",
+   "Andreas Rücklé",
+   "Kyunghyun Cho",
+   "Iryna Gurevych"
+  ],
+  "published": "2020-05-01",
+  "journal_ref": "Proceedings of EACL 2021",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2004.04690": {
+  "title": "Orthogonal Over-Parameterized Training",
+  "authors": [
+   "Weiyang Liu",
+   "Rongmei Lin",
+   "Zhen Liu",
+   "James M. Rehg",
+   "Liam Paull",
+   "Li Xiong",
+   "Le Song",
+   "Adrian Weller"
+  ],
+  "published": "2020-04-09",
+  "journal_ref": "",
+  "comment": "CVPR 2021 Oral (43 Pages, Substantial Update from v3, Typos Fixed from v5)",
+  "primary": "cs.LG"
+ },
+ "2010.11918": {
+  "title": "AdapterDrop: On the Efficiency of Adapters in Transformers",
+  "authors": [
+   "Andreas Rücklé",
+   "Gregor Geigle",
+   "Max Glockner",
+   "Tilman Beck",
+   "Jonas Pfeiffer",
+   "Nils Reimers",
+   "Iryna Gurevych"
+  ],
+  "published": "2020-10-22",
+  "journal_ref": "",
+  "comment": "EMNLP 2021",
+  "primary": "cs.LG"
+ },
+ "2109.01903": {
+  "title": "Robust fine-tuning of zero-shot models",
+  "authors": [
+   "Mitchell Wortsman",
+   "Gabriel Ilharco",
+   "Jong Wook Kim",
+   "Mike Li",
+   "Simon Kornblith",
+   "Rebecca Roelofs",
+   "Raphael Gontijo-Lopes",
+   "Hannaneh Hajishirzi",
+   "Ali Farhadi",
+   "Hongseok Namkoong",
+   "Ludwig Schmidt"
+  ],
+  "published": "2021-09-04",
+  "journal_ref": "",
+  "comment": "CVPR 2022",
+  "primary": "cs.CV"
+ },
+ "2106.04489": {
+  "title": "Parameter-efficient Multi-task Fine-tuning for Transformers via Shared Hypernetworks",
+  "authors": [
+   "Rabeeh Karimi Mahabadi",
+   "Sebastian Ruder",
+   "Mostafa Dehghani",
+   "James Henderson"
+  ],
+  "published": "2021-06-08",
+  "journal_ref": "",
+  "comment": "accepted in ACL, 2021",
+  "primary": "cs.CL"
+ },
+ "2103.09762": {
+  "title": "Gradient Projection Memory for Continual Learning",
+  "authors": [
+   "Gobinda Saha",
+   "Isha Garg",
+   "Kaushik Roy"
+  ],
+  "published": "2021-03-17",
+  "journal_ref": "International Conference on Learning Representations (ICLR), 2021",
+  "comment": "Accepted for Oral Presentation at ICLR 2021 https://openreview.net/forum?id=3AOj0RCNC2",
+  "primary": "cs.LG"
+ },
+ "2106.03164": {
+  "title": "On the Effectiveness of Adapter-based Tuning for Pretrained Language Model Adaptation",
+  "authors": [
+   "Ruidan He",
+   "Linlin Liu",
+   "Hai Ye",
+   "Qingyu Tan",
+   "Bosheng Ding",
+   "Liying Cheng",
+   "Jia-Wei Low",
+   "Lidong Bing",
+   "Luo Si"
+  ],
+  "published": "2021-06-06",
+  "journal_ref": "",
+  "comment": "Accepted by ACL 2021 (long paper)",
+  "primary": "cs.CL"
+ },
+ "2105.06332": {
+  "title": "Towards Foundations of Categorical Cybernetics",
+  "authors": [
+   "Matteo Capucci",
+   "Bruno Gavranović",
+   "Jules Hedges",
+   "Eigil Fjeldgren Rischel"
+  ],
+  "published": "2021-05-13",
+  "journal_ref": "EPTCS 372, 2022, pp. 235-248",
+  "comment": "In Proceedings ACT 2021, arXiv:2211.01102",
+  "primary": "math.CT"
+ },
+ "2004.12406": {
+  "title": "Masking as an Efficient Alternative to Finetuning for Pretrained Language Models",
+  "authors": [
+   "Mengjie Zhao",
+   "Tao Lin",
+   "Fei Mi",
+   "Martin Jaggi",
+   "Hinrich Schütze"
+  ],
+  "published": "2020-04-26",
+  "journal_ref": "",
+  "comment": "EMNLP 2020; MZ and TL contribute equally",
+  "primary": "cs.CL"
+ },
+ "1804.04235": {
+  "title": "Adafactor: Adaptive Learning Rates with Sublinear Memory Cost",
+  "authors": [
+   "Noam Shazeer",
+   "Mitchell Stern"
+  ],
+  "published": "2018-04-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2106.10199": {
+  "title": "BitFit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models",
+  "authors": [
+   "Elad Ben-Zaken",
+   "Shauli Ravfogel",
+   "Yoav Goldberg"
+  ],
+  "published": "2021-06-18",
+  "journal_ref": "",
+  "comment": "Accepted at ACL 2022 main conference",
+  "primary": "cs.LG"
+ },
+ "2110.07867": {
+  "title": "Exploring Universal Intrinsic Task Subspace via Prompt Tuning",
+  "authors": [
+   "Yujia Qin",
+   "Xiaozhi Wang",
+   "Yusheng Su",
+   "Yankai Lin",
+   "Ning Ding",
+   "Jing Yi",
+   "Weize Chen",
+   "Zhiyuan Liu",
+   "Juanzi Li",
+   "Lei Hou",
+   "Peng Li",
+   "Maosong Sun",
+   "Jie Zhou"
+  ],
+  "published": "2021-10-15",
+  "journal_ref": "",
+  "comment": "Previously accepted by Findings of ACL 2022 and Findings of EMNLP 2022",
+  "primary": "cs.CL"
+ },
+ "1911.03090": {
+  "title": "What Would Elsa Do? Freezing Layers During Transformer Fine-Tuning",
+  "authors": [
+   "Jaejun Lee",
+   "Raphael Tang",
+   "Jimmy Lin"
+  ],
+  "published": "2019-11-08",
+  "journal_ref": "",
+  "comment": "5 pages",
+  "primary": "cs.CL"
+ },
+ "1906.10771": {
+  "title": "Importance Estimation for Neural Network Pruning",
+  "authors": [
+   "Pavlo Molchanov",
+   "Arun Mallya",
+   "Stephen Tyree",
+   "Iuri Frosio",
+   "Jan Kautz"
+  ],
+  "published": "2019-06-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1905.13655": {
+  "title": "Implicit Regularization in Deep Matrix Factorization",
+  "authors": [
+   "Sanjeev Arora",
+   "Nadav Cohen",
+   "Wei Hu",
+   "Yuping Luo"
+  ],
+  "published": "2019-05-31",
+  "journal_ref": "",
+  "comment": "Published at the conference on Neural Information Processing Systems (NeurIPS) 2019",
+  "primary": "cs.LG"
+ },
+ "2007.11622": {
+  "title": "TinyTL: Reduce Activations, Not Trainable Parameters for Efficient On-Device Learning",
+  "authors": [
+   "Han Cai",
+   "Chuang Gan",
+   "Ligeng Zhu",
+   "Song Han"
+  ],
+  "published": "2020-07-22",
+  "journal_ref": "",
+  "comment": "NeurIPS 2020",
+  "primary": "cs.CV"
+ },
+ "2109.01134": {
+  "title": "Learning to Prompt for Vision-Language Models",
+  "authors": [
+   "Kaiyang Zhou",
+   "Jingkang Yang",
+   "Chen Change Loy",
+   "Ziwei Liu"
+  ],
+  "published": "2021-09-02",
+  "journal_ref": "",
+  "comment": "International Journal of Computer Vision (IJCV), 2022. Update: Adds results on the DOSCO (DOmain Shift in COntext) benchmark",
+  "primary": "cs.CV"
+ },
+ "2110.07560": {
+  "title": "Composable Sparse Fine-Tuning for Cross-Lingual Transfer",
+  "authors": [
+   "Alan Ansell",
+   "Edoardo Maria Ponti",
+   "Anna Korhonen",
+   "Ivan Vulić"
+  ],
+  "published": "2021-10-14",
+  "journal_ref": "",
+  "comment": "Updated to match ACL (2022) version",
+  "primary": "cs.CL"
+ },
+ "2110.02861": {
+  "title": "8-bit Optimizers via Block-wise Quantization",
+  "authors": [
+   "Tim Dettmers",
+   "Mike Lewis",
+   "Sam Shleifer",
+   "Luke Zettlemoyer"
+  ],
+  "published": "2021-10-06",
+  "journal_ref": "",
+  "comment": "ICLR2022 spotlight version",
+  "primary": "cs.LG"
+ },
+ "2012.04728": {
+  "title": "Neural Mechanics: Symmetry and Broken Conservation Laws in Deep Learning Dynamics",
+  "authors": [
+   "Daniel Kunin",
+   "Javier Sagastuy-Brena",
+   "Surya Ganguli",
+   "Daniel L. K. Yamins",
+   "Hidenori Tanaka"
+  ],
+  "published": "2020-12-08",
+  "journal_ref": "",
+  "comment": "30 pages, 17 figures, ICLR 2021",
+  "primary": "cs.LG"
+ },
+ "2102.08597": {
+  "title": "Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with $1/n$ Parameters",
+  "authors": [
+   "Aston Zhang",
+   "Yi Tay",
+   "Shuai Zhang",
+   "Alvin Chan",
+   "Anh Tuan Luu",
+   "Siu Cheung Hui",
+   "Jie Fu"
+  ],
+  "published": "2021-02-17",
+  "journal_ref": "",
+  "comment": "Published as a conference paper at the 9th International Conference on Learning Representations (ICLR 2021)",
+  "primary": "cs.LG"
+ },
+ "2101.00121": {
+  "title": "WARP: Word-level Adversarial ReProgramming",
+  "authors": [
+   "Karen Hambardzumyan",
+   "Hrant Khachatrian",
+   "Jonathan May"
+  ],
+  "published": "2021-01-01",
+  "journal_ref": "",
+  "comment": "Accepted ACL 2021 Long Paper",
+  "primary": "cs.CL"
+ },
+ "2106.07032": {
+  "title": "Category Theory in Machine Learning",
+  "authors": [
+   "Dan Shiebler",
+   "Bruno Gavranović",
+   "Paul Wilson"
+  ],
+  "published": "2021-06-13",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2111.00160": {
+  "title": "DSEE: Dually Sparsity-embedded Efficient Tuning of Pre-trained Language Models",
+  "authors": [
+   "Xuxi Chen",
+   "Tianlong Chen",
+   "Weizhu Chen",
+   "Ahmed Hassan Awadallah",
+   "Zhangyang Wang",
+   "Yu Cheng"
+  ],
+  "published": "2021-10-30",
+  "journal_ref": "",
+  "comment": "Accepted by ACL 2023",
+  "primary": "cs.LG"
+ },
+ "1709.07871": {
+  "title": "FiLM: Visual Reasoning with a General Conditioning Layer",
+  "authors": [
+   "Ethan Perez",
+   "Florian Strub",
+   "Harm de Vries",
+   "Vincent Dumoulin",
+   "Aaron Courville"
+  ],
+  "published": "2017-09-22",
+  "journal_ref": "",
+  "comment": "AAAI 2018. Code available at http://github.com/ethanjperez/film . Extends arXiv:1707.03017",
+  "primary": "cs.CV"
+ },
+ "1310.1531": {
+  "title": "DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition",
+  "authors": [
+   "Jeff Donahue",
+   "Yangqing Jia",
+   "Oriol Vinyals",
+   "Judy Hoffman",
+   "Ning Zhang",
+   "Eric Tzeng",
+   "Trevor Darrell"
+  ],
+  "published": "2013-10-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "1804.08838": {
+  "title": "Measuring the Intrinsic Dimension of Objective Landscapes",
+  "authors": [
+   "Chunyuan Li",
+   "Heerad Farkhoor",
+   "Rosanne Liu",
+   "Jason Yosinski"
+  ],
+  "published": "2018-04-24",
+  "journal_ref": "",
+  "comment": "Published in ICLR 2018",
+  "primary": "cs.LG"
+ },
+ "1801.06519": {
+  "title": "Piggyback: Adapting a Single Network to Multiple Tasks by Learning to Mask Weights",
+  "authors": [
+   "Arun Mallya",
+   "Dillon Davis",
+   "Svetlana Lazebnik"
+  ],
+  "published": "2018-01-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "1802.06509": {
+  "title": "On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization",
+  "authors": [
+   "Sanjeev Arora",
+   "Nadav Cohen",
+   "Elad Hazan"
+  ],
+  "published": "2018-02-19",
+  "journal_ref": "",
+  "comment": "Published at the International Conference on Machine Learning (ICML) 2018",
+  "primary": "cs.LG"
+ },
+ "2110.07602": {
+  "title": "P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks",
+  "authors": [
+   "Xiao Liu",
+   "Kaixuan Ji",
+   "Yicheng Fu",
+   "Weng Lam Tam",
+   "Zhengxiao Du",
+   "Zhilin Yang",
+   "Jie Tang"
+  ],
+  "published": "2021-10-14",
+  "journal_ref": "",
+  "comment": "Proceedings of the 60th Annual Meeting of the Association of Computational Linguistics, 2022",
+  "primary": "cs.CL"
+ },
+ "1504.04788": {
+  "title": "Compressing Neural Networks with the Hashing Trick",
+  "authors": [
+   "Wenlin Chen",
+   "James T. Wilson",
+   "Stephen Tyree",
+   "Kilian Q. Weinberger",
+   "Yixin Chen"
+  ],
+  "published": "2015-04-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1609.00893": {
+  "title": "Low-Rank Tensor Networks for Dimensionality Reduction and Large-Scale Optimization Problems: Perspectives and Challenges PART 1",
+  "authors": [
+   "A. Cichocki",
+   "N. Lee",
+   "I. V. Oseledets",
+   "A. -H. Phan",
+   "Q. Zhao",
+   "D. Mandic"
+  ],
+  "published": "2016-09-04",
+  "journal_ref": "Foundations and Trends in Machine Learning, vol. 9, no. 4-5, pp. 249-429, 2016",
+  "comment": "176 pages",
+  "primary": "math.NA"
+ },
+ "2110.07577": {
+  "title": "UniPELT: A Unified Framework for Parameter-Efficient Language Model Tuning",
+  "authors": [
+   "Yuning Mao",
+   "Lambert Mathias",
+   "Rui Hou",
+   "Amjad Almahairi",
+   "Hao Ma",
+   "Jiawei Han",
+   "Wen-tau Yih",
+   "Madian Khabsa"
+  ],
+  "published": "2021-10-14",
+  "journal_ref": "",
+  "comment": "ACL 2022 (w. typo fixes)",
+  "primary": "cs.CL"
+ },
+ "1912.13503": {
+  "title": "Side-Tuning: A Baseline for Network Adaptation via Additive Side Networks",
+  "authors": [
+   "Jeffrey O Zhang",
+   "Alexander Sax",
+   "Amir Zamir",
+   "Leonidas Guibas",
+   "Jitendra Malik"
+  ],
+  "published": "2019-12-31",
+  "journal_ref": "",
+  "comment": "In ECCV 2020 (Spotlight). For more, see project website and code at http://sidetuning.berkeley.edu",
+  "primary": "cs.LG"
+ },
+ "1209.0430": {
+  "title": "Fixed-rank matrix factorizations and Riemannian low-rank optimization",
+  "authors": [
+   "B. Mishra",
+   "G. Meyer",
+   "S. Bonnabel",
+   "R. Sepulchre"
+  ],
+  "published": "2012-09-03",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "1910.07065": {
+  "title": "Reverse derivative categories",
+  "authors": [
+   "Robin Cockett",
+   "Geoffrey Cruttwell",
+   "Jonathan Gallagher",
+   "Jean-Simon Pacaud Lemay",
+   "Benjamin MacAdam",
+   "Gordon Plotkin",
+   "Dorette Pronk"
+  ],
+  "published": "2019-10-15",
+  "journal_ref": "",
+  "comment": "Extended version of paper to appear at CSL 2020",
+  "primary": "cs.LO"
+ },
+ "2003.00152": {
+  "title": "Training BatchNorm and Only BatchNorm: On the Expressive Power of Random Features in CNNs",
+  "authors": [
+   "Jonathan Frankle",
+   "David J. Schwab",
+   "Ari S. Morcos"
+  ],
+  "published": "2020-02-29",
+  "journal_ref": "",
+  "comment": "Published in ICLR 2021",
+  "primary": "cs.LG"
+ },
+ "1908.07125": {
+  "title": "Universal Adversarial Triggers for Attacking and Analyzing NLP",
+  "authors": [
+   "Eric Wallace",
+   "Shi Feng",
+   "Nikhil Kandpal",
+   "Matt Gardner",
+   "Sameer Singh"
+  ],
+  "published": "2019-08-20",
+  "journal_ref": "",
+  "comment": "EMNLP 2019",
+  "primary": "cs.CL"
+ },
+ "2107.13586": {
+  "title": "Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing",
+  "authors": [
+   "Pengfei Liu",
+   "Weizhe Yuan",
+   "Jinlan Fu",
+   "Zhengbao Jiang",
+   "Hiroaki Hayashi",
+   "Graham Neubig"
+  ],
+  "published": "2021-07-28",
+  "journal_ref": "",
+  "comment": "Website: http://pretrain.nlpedia.ai/",
+  "primary": "cs.CL"
+ },
+ "2012.07463": {
+  "title": "Parameter-Efficient Transfer Learning with Diff Pruning",
+  "authors": [
+   "Demi Guo",
+   "Alexander M. Rush",
+   "Yoon Kim"
+  ],
+  "published": "2020-12-14",
+  "journal_ref": "",
+  "comment": "ACL 2021",
+  "primary": "cs.CL"
+ },
+ "2110.04366": {
+  "title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+  "authors": [
+   "Junxian He",
+   "Chunting Zhou",
+   "Xuezhe Ma",
+   "Taylor Berg-Kirkpatrick",
+   "Graham Neubig"
+  ],
+  "published": "2021-10-08",
+  "journal_ref": "",
+  "comment": "ICLR 2022 (spotlight presentation). Code is available at https://github.com/jxhe/unify-parameter-efficient-tuning",
+  "primary": "cs.CL"
+ },
+ "2103.10385": {
+  "title": "GPT Understands, Too",
+  "authors": [
+   "Xiao Liu",
+   "Yanan Zheng",
+   "Zhengxiao Du",
+   "Ming Ding",
+   "Yujie Qian",
+   "Zhilin Yang",
+   "Jie Tang"
+  ],
+  "published": "2021-03-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2106.09685": {
+  "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Edward J. Hu",
+   "Yelong Shen",
+   "Phillip Wallis",
+   "Zeyuan Allen-Zhu",
+   "Yuanzhi Li",
+   "Shean Wang",
+   "Lu Wang",
+   "Weizhu Chen"
+  ],
+  "published": "2021-06-17",
+  "journal_ref": "",
+  "comment": "Draft V2 includes better baselines, experiments on GLUE, and more on adapter latency",
+  "primary": "cs.CL"
+ },
+ "2106.14806": {
+  "title": "Laplace Redux -- Effortless Bayesian Deep Learning",
+  "authors": [
+   "Erik Daxberger",
+   "Agustinus Kristiadi",
+   "Alexander Immer",
+   "Runa Eschenhagen",
+   "Matthias Bauer",
+   "Philipp Hennig"
+  ],
+  "published": "2021-06-28",
+  "journal_ref": "",
+  "comment": "NeurIPS 2021 camera-ready version; source code: https://github.com/AlexImmer/Laplace",
+  "primary": "cs.LG"
+ },
+ "1803.03635": {
+  "title": "The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks",
+  "authors": [
+   "Jonathan Frankle",
+   "Michael Carbin"
+  ],
+  "published": "2018-03-09",
+  "journal_ref": "ICLR 2019",
+  "comment": "ICLR camera ready",
+  "primary": "cs.LG"
+ },
+ "1602.07868": {
+  "title": "Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks",
+  "authors": [
+   "Tim Salimans",
+   "Diederik P. Kingma"
+  ],
+  "published": "2016-02-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2110.04544": {
+  "title": "CLIP-Adapter: Better Vision-Language Models with Feature Adapters",
+  "authors": [
+   "Peng Gao",
+   "Shijie Geng",
+   "Renrui Zhang",
+   "Teli Ma",
+   "Rongyao Fang",
+   "Yongfeng Zhang",
+   "Hongsheng Li",
+   "Yu Qiao"
+  ],
+  "published": "2021-10-09",
+  "journal_ref": "",
+  "comment": "Accepted by IJCV",
+  "primary": "cs.CV"
+ },
+ "2201.03514": {
+  "title": "Black-Box Tuning for Language-Model-as-a-Service",
+  "authors": [
+   "Tianxiang Sun",
+   "Yunfan Shao",
+   "Hong Qian",
+   "Xuanjing Huang",
+   "Xipeng Qiu"
+  ],
+  "published": "2022-01-10",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2022. Camera-ready version",
+  "primary": "cs.CL"
+ },
+ "2302.11529": {
+  "title": "Modular Deep Learning",
+  "authors": [
+   "Jonas Pfeiffer",
+   "Sebastian Ruder",
+   "Ivan Vulić",
+   "Edoardo Maria Ponti"
+  ],
+  "published": "2023-02-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2303.08566": {
+  "title": "Sensitivity-Aware Visual Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Haoyu He",
+   "Jianfei Cai",
+   "Jing Zhang",
+   "Dacheng Tao",
+   "Bohan Zhuang"
+  ],
+  "published": "2023-03-15",
+  "journal_ref": "",
+  "comment": "ICCV 2023 Oral",
+  "primary": "cs.CV"
+ },
+ "2206.04673": {
+  "title": "Neural Prompt Search",
+  "authors": [
+   "Yuanhan Zhang",
+   "Kaiyang Zhou",
+   "Ziwei Liu"
+  ],
+  "published": "2022-06-09",
+  "journal_ref": "",
+  "comment": "Code: https://github.com/Davidzhangyuanhan/NOAH",
+  "primary": "cs.CV"
+ },
+ "2210.08823": {
+  "title": "Scaling & Shifting Your Features: A New Baseline for Efficient Model Tuning",
+  "authors": [
+   "Dongze Lian",
+   "Daquan Zhou",
+   "Jiashi Feng",
+   "Xinchao Wang"
+  ],
+  "published": "2022-10-17",
+  "journal_ref": "",
+  "comment": "Accepted by NeurIPS2022",
+  "primary": "cs.CV"
+ },
+ "2305.18787": {
+  "title": "Universality and Limitations of Prompt Tuning",
+  "authors": [
+   "Yihan Wang",
+   "Jatin Chauhan",
+   "Wei Wang",
+   "Cho-Jui Hsieh"
+  ],
+  "published": "2023-05-30",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2305.05644": {
+  "title": "Towards Building the Federated GPT: Federated Instruction Tuning",
+  "authors": [
+   "Jianyi Zhang",
+   "Saeed Vahidian",
+   "Martin Kuo",
+   "Chunyuan Li",
+   "Ruiyi Zhang",
+   "Tong Yu",
+   "Yufan Zhou",
+   "Guoyin Wang",
+   "Yiran Chen"
+  ],
+  "published": "2023-05-09",
+  "journal_ref": "",
+  "comment": "Project page: https://github.com/JayZhang42/FederatedGPT-Shepherd",
+  "primary": "cs.CL"
+ },
+ "2112.06825": {
+  "title": "VL-Adapter: Parameter-Efficient Transfer Learning for Vision-and-Language Tasks",
+  "authors": [
+   "Yi-Lin Sung",
+   "Jaemin Cho",
+   "Mohit Bansal"
+  ],
+  "published": "2021-12-13",
+  "journal_ref": "",
+  "comment": "CVPR 2022 (15 pages; with new video-text and CLIP-ViL experiments)",
+  "primary": "cs.CV"
+ },
+ "2208.01618": {
+  "title": "An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion",
+  "authors": [
+   "Rinon Gal",
+   "Yuval Alaluf",
+   "Yuval Atzmon",
+   "Or Patashnik",
+   "Amit H. Bermano",
+   "Gal Chechik",
+   "Daniel Cohen-Or"
+  ],
+  "published": "2022-08-02",
+  "journal_ref": "",
+  "comment": "Project page: https://textual-inversion.github.io",
+  "primary": "cs.CV"
+ },
+ "2303.16199": {
+  "title": "LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention",
+  "authors": [
+   "Renrui Zhang",
+   "Jiaming Han",
+   "Chris Liu",
+   "Peng Gao",
+   "Aojun Zhou",
+   "Xiangfei Hu",
+   "Shilin Yan",
+   "Pan Lu",
+   "Hongsheng Li",
+   "Yu Qiao"
+  ],
+  "published": "2023-03-28",
+  "journal_ref": "",
+  "comment": "Accepted by ICLR 2024. Code is available at https://github.com/OpenGVLab/LLaMA-Adapter",
+  "primary": "cs.CV"
+ },
+ "2305.03937": {
+  "title": "Residual Prompt Tuning: Improving Prompt Tuning with Residual Reparameterization",
+  "authors": [
+   "Anastasia Razdaibiedina",
+   "Yuning Mao",
+   "Rui Hou",
+   "Madian Khabsa",
+   "Mike Lewis",
+   "Jimmy Ba",
+   "Amjad Almahairi"
+  ],
+  "published": "2023-05-06",
+  "journal_ref": "",
+  "comment": "ACL Findings 2023",
+  "primary": "cs.CL"
+ },
+ "2306.01708": {
+  "title": "TIES-Merging: Resolving Interference When Merging Models",
+  "authors": [
+   "Prateek Yadav",
+   "Derek Tam",
+   "Leshem Choshen",
+   "Colin Raffel",
+   "Mohit Bansal"
+  ],
+  "published": "2023-06-02",
+  "journal_ref": "",
+  "comment": "Published at NeurIPS 2023, 23 Pages, 13 Figures, 14 Tables",
+  "primary": "cs.LG"
+ },
+ "2206.13559": {
+  "title": "ST-Adapter: Parameter-Efficient Image-to-Video Transfer Learning",
+  "authors": [
+   "Junting Pan",
+   "Ziyi Lin",
+   "Xiatian Zhu",
+   "Jing Shao",
+   "Hongsheng Li"
+  ],
+  "published": "2022-06-27",
+  "journal_ref": "",
+  "comment": "Accepted in NeurIPS 2022",
+  "primary": "cs.CV"
+ },
+ "2206.08464": {
+  "title": "PRANC: Pseudo RAndom Networks for Compacting deep models",
+  "authors": [
+   "Parsa Nooralinejad",
+   "Ali Abbasi",
+   "Soroush Abbasi Koohpayegani",
+   "Kossar Pourahmadi Meibodi",
+   "Rana Muhammad Shahroz Khan",
+   "Soheil Kolouri",
+   "Hamed Pirsiavash"
+  ],
+  "published": "2022-06-16",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2205.13535": {
+  "title": "AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition",
+  "authors": [
+   "Shoufa Chen",
+   "Chongjian Ge",
+   "Zhan Tong",
+   "Jiangliu Wang",
+   "Yibing Song",
+   "Jue Wang",
+   "Ping Luo"
+  ],
+  "published": "2022-05-26",
+  "journal_ref": "",
+  "comment": "Accepted by NeurIPS 2022. Code: https://github.com/ShoufaChen/AdaptFormer",
+  "primary": "cs.CV"
+ },
+ "2303.11305": {
+  "title": "SVDiff: Compact Parameter Space for Diffusion Fine-Tuning",
+  "authors": [
+   "Ligong Han",
+   "Yinxiao Li",
+   "Han Zhang",
+   "Peyman Milanfar",
+   "Dimitris Metaxas",
+   "Feng Yang"
+  ],
+  "published": "2023-03-20",
+  "journal_ref": "",
+  "comment": "Added additional analysis and style-mixing results",
+  "primary": "cs.CV"
+ },
+ "2211.03831": {
+  "title": "Multi-Head Adapter Routing for Cross-Task Generalization",
+  "authors": [
+   "Lucas Caccia",
+   "Edoardo Ponti",
+   "Zhan Su",
+   "Matheus Pereira",
+   "Nicolas Le Roux",
+   "Alessandro Sordoni"
+  ],
+  "published": "2022-11-07",
+  "journal_ref": "",
+  "comment": "Accepted at NeurIPS 2023. Code is available at https://github.com/microsoft/mttl",
+  "primary": "cs.AI"
+ },
+ "2210.05643": {
+  "title": "A Kernel-Based View of Language Model Fine-Tuning",
+  "authors": [
+   "Sadhika Malladi",
+   "Alexander Wettig",
+   "Dingli Yu",
+   "Danqi Chen",
+   "Sanjeev Arora"
+  ],
+  "published": "2022-10-11",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2023. Code and pre-computed kernels are publicly available at https://github.com/princeton-nlp/LM-Kernel-FT",
+  "primary": "cs.LG"
+ },
+ "2305.14314": {
+  "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+  "authors": [
+   "Tim Dettmers",
+   "Artidoro Pagnoni",
+   "Ari Holtzman",
+   "Luke Zettlemoyer"
+  ],
+  "published": "2023-05-23",
+  "journal_ref": "",
+  "comment": "Extended NeurIPS submission",
+  "primary": "cs.LG"
+ },
+ "2302.05543": {
+  "title": "Adding Conditional Control to Text-to-Image Diffusion Models",
+  "authors": [
+   "Lvmin Zhang",
+   "Anyi Rao",
+   "Maneesh Agrawala"
+  ],
+  "published": "2023-02-10",
+  "journal_ref": "",
+  "comment": "Codes and Supplementary Material: https://github.com/lllyasviel/ControlNet",
+  "primary": "cs.CV"
+ },
+ "2302.08453": {
+  "title": "T2I-Adapter: Learning Adapters to Dig out More Controllable Ability for Text-to-Image Diffusion Models",
+  "authors": [
+   "Chong Mou",
+   "Xintao Wang",
+   "Liangbin Xie",
+   "Yanze Wu",
+   "Jian Zhang",
+   "Zhongang Qi",
+   "Ying Shan",
+   "Xiaohu Qie"
+  ],
+  "published": "2023-02-16",
+  "journal_ref": "",
+  "comment": "Tech Report. GitHub: https://github.com/TencentARC/T2I-Adapter",
+  "primary": "cs.CV"
+ },
+ "2303.15647": {
+  "title": "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Vladislav Lialin",
+   "Vijeta Deshpande",
+   "Xiaowei Yao",
+   "Anna Rumshisky"
+  ],
+  "published": "2023-03-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2302.09019": {
+  "title": "Tensor Networks Meet Neural Networks: A Survey and Future Perspectives",
+  "authors": [
+   "Maolin Wang",
+   "Yu Pan",
+   "Zenglin Xu",
+   "Guangxi Li",
+   "Xiangli Yang",
+   "Danilo Mandic",
+   "Andrzej Cichocki"
+  ],
+  "published": "2023-01-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2202.10054": {
+  "title": "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution",
+  "authors": [
+   "Ananya Kumar",
+   "Aditi Raghunathan",
+   "Robbie Jones",
+   "Tengyu Ma",
+   "Percy Liang"
+  ],
+  "published": "2022-02-21",
+  "journal_ref": "",
+  "comment": "ICLR (Oral) 2022",
+  "primary": "cs.LG"
+ },
+ "2204.04799": {
+  "title": "DualPrompt: Complementary Prompting for Rehearsal-free Continual Learning",
+  "authors": [
+   "Zifeng Wang",
+   "Zizhao Zhang",
+   "Sayna Ebrahimi",
+   "Ruoxi Sun",
+   "Han Zhang",
+   "Chen-Yu Lee",
+   "Xiaoqi Ren",
+   "Guolong Su",
+   "Vincent Perot",
+   "Jennifer Dy",
+   "Tomas Pfister"
+  ],
+  "published": "2022-04-10",
+  "journal_ref": "",
+  "comment": "Published at ECCV 2022 as a conference paper",
+  "primary": "cs.LG"
+ },
+ "2205.05638": {
+  "title": "Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning",
+  "authors": [
+   "Haokun Liu",
+   "Derek Tam",
+   "Mohammed Muqeeth",
+   "Jay Mohta",
+   "Tenghao Huang",
+   "Mohit Bansal",
+   "Colin Raffel"
+  ],
+  "published": "2022-05-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2112.08654": {
+  "title": "Learning to Prompt for Continual Learning",
+  "authors": [
+   "Zifeng Wang",
+   "Zizhao Zhang",
+   "Chen-Yu Lee",
+   "Han Zhang",
+   "Ruoxi Sun",
+   "Xiaoqi Ren",
+   "Guolong Su",
+   "Vincent Perot",
+   "Jennifer Dy",
+   "Tomas Pfister"
+  ],
+  "published": "2021-12-16",
+  "journal_ref": "",
+  "comment": "Published at CVPR 2022 as a conference paper",
+  "primary": "cs.LG"
+ },
+ "2209.04836": {
+  "title": "Git Re-Basin: Merging Models modulo Permutation Symmetries",
+  "authors": [
+   "Samuel K. Ainsworth",
+   "Jonathan Hayase",
+   "Siddhartha Srinivasa"
+  ],
+  "published": "2022-09-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2203.12119": {
+  "title": "Visual Prompt Tuning",
+  "authors": [
+   "Menglin Jia",
+   "Luming Tang",
+   "Bor-Chun Chen",
+   "Claire Cardie",
+   "Serge Belongie",
+   "Bharath Hariharan",
+   "Ser-Nam Lim"
+  ],
+  "published": "2022-03-23",
+  "journal_ref": "",
+  "comment": "ECCV2022",
+  "primary": "cs.CV"
+ },
+ "2203.17274": {
+  "title": "Exploring Visual Prompts for Adapting Large-Scale Models",
+  "authors": [
+   "Hyojin Bahng",
+   "Ali Jahanian",
+   "Swami Sankaranarayanan",
+   "Phillip Isola"
+  ],
+  "published": "2022-03-31",
+  "journal_ref": "",
+  "comment": "16 pages, 10 figures",
+  "primary": "cs.CV"
+ },
+ "2204.00595": {
+  "title": "Monarch: Expressive Structured Matrices for Efficient and Accurate Training",
+  "authors": [
+   "Tri Dao",
+   "Beidi Chen",
+   "Nimit Sohoni",
+   "Arjun Desai",
+   "Michael Poli",
+   "Jessica Grogan",
+   "Alexander Liu",
+   "Aniruddh Rao",
+   "Atri Rudra",
+   "Christopher Ré"
+  ],
+  "published": "2022-04-01",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2207.07039": {
+  "title": "Convolutional Bypasses Are Better Vision Transformer Adapters",
+  "authors": [
+   "Shibo Jie",
+   "Zhi-Hong Deng"
+  ],
+  "published": "2022-07-14",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2210.11292": {
+  "title": "Late Prompt Tuning: A Late Prompt Could Be Better Than Many Prompts",
+  "authors": [
+   "Xiangyang Liu",
+   "Tianxiang Sun",
+   "Xuanjing Huang",
+   "Xipeng Qiu"
+  ],
+  "published": "2022-10-20",
+  "journal_ref": "",
+  "comment": "Accepted by Findings of EMNLP 2022",
+  "primary": "cs.CL"
+ },
+ "2210.11466": {
+  "title": "Surgical Fine-Tuning Improves Adaptation to Distribution Shifts",
+  "authors": [
+   "Yoonho Lee",
+   "Annie S. Chen",
+   "Fahim Tajwar",
+   "Ananya Kumar",
+   "Huaxiu Yao",
+   "Percy Liang",
+   "Chelsea Finn"
+  ],
+  "published": "2022-10-20",
+  "journal_ref": "",
+  "comment": "ICLR 2023",
+  "primary": "cs.LG"
+ },
+ "2211.15583": {
+  "title": "On the Effectiveness of Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Zihao Fu",
+   "Haoran Yang",
+   "Anthony Man-Cho So",
+   "Wai Lam",
+   "Lidong Bing",
+   "Nigel Collier"
+  ],
+  "published": "2022-11-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2302.06600": {
+  "title": "Task-Specific Skill Localization in Fine-tuned Language Models",
+  "authors": [
+   "Abhishek Panigrahi",
+   "Nikunj Saunshi",
+   "Haoyu Zhao",
+   "Sanjeev Arora"
+  ],
+  "published": "2023-02-13",
+  "journal_ref": "",
+  "comment": "Accepted at 40th International Conference on Machine Learning (ICML 2023)",
+  "primary": "cs.CL"
+ },
+ "2304.15010": {
+  "title": "LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model",
+  "authors": [
+   "Peng Gao",
+   "Jiaming Han",
+   "Renrui Zhang",
+   "Ziyi Lin",
+   "Shijie Geng",
+   "Aojun Zhou",
+   "Wei Zhang",
+   "Pan Lu",
+   "Conghui He",
+   "Xiangyu Yue",
+   "Hongsheng Li",
+   "Yu Qiao"
+  ],
+  "published": "2023-04-28",
+  "journal_ref": "",
+  "comment": "Code and models are available at https://github.com/ZrrSkywalker/LLaMA-Adapter",
+  "primary": "cs.CV"
+ },
+ "2305.18292": {
+  "title": "Mix-of-Show: Decentralized Low-Rank Adaptation for Multi-Concept Customization of Diffusion Models",
+  "authors": [
+   "Yuchao Gu",
+   "Xintao Wang",
+   "Jay Zhangjie Wu",
+   "Yujun Shi",
+   "Yunpeng Chen",
+   "Zihan Fan",
+   "Wuyou Xiao",
+   "Rui Zhao",
+   "Shuning Chang",
+   "Weijia Wu",
+   "Yixiao Ge",
+   "Ying Shan",
+   "Mike Zheng Shou"
+  ],
+  "published": "2023-05-29",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2305.17333": {
+  "title": "Fine-Tuning Language Models with Just Forward Passes",
+  "authors": [
+   "Sadhika Malladi",
+   "Tianyu Gao",
+   "Eshaan Nichani",
+   "Alex Damian",
+   "Jason D. Lee",
+   "Danqi Chen",
+   "Sanjeev Arora"
+  ],
+  "published": "2023-05-27",
+  "journal_ref": "",
+  "comment": "Accepted by NeurIPS 2023 (oral). Code available at https://github.com/princeton-nlp/MeZO",
+  "primary": "cs.LG"
+ },
+ "2304.06648": {
+  "title": "DiffFit: Unlocking Transferability of Large Diffusion Models via Simple Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Enze Xie",
+   "Lewei Yao",
+   "Han Shi",
+   "Zhili Liu",
+   "Daquan Zhou",
+   "Zhaoqiang Liu",
+   "Jiawei Li",
+   "Zhenguo Li"
+  ],
+  "published": "2023-04-13",
+  "journal_ref": "",
+  "comment": "Tech Report",
+  "primary": "cs.CV"
+ },
+ "2305.14152": {
+  "title": "Memory-Efficient Fine-Tuning of Compressed Large Language Models via sub-4-bit Integer Quantization",
+  "authors": [
+   "Jeonghoon Kim",
+   "Jung Hyun Lee",
+   "Sungdong Kim",
+   "Joonsuk Park",
+   "Kang Min Yoo",
+   "Se Jung Kwon",
+   "Dongsoo Lee"
+  ],
+  "published": "2023-05-23",
+  "journal_ref": "",
+  "comment": "Published at NeurIPS 2023. Camera-ready version",
+  "primary": "cs.LG"
+ },
+ "2212.09849": {
+  "title": "Dataless Knowledge Fusion by Merging Weights of Language Models",
+  "authors": [
+   "Xisen Jin",
+   "Xiang Ren",
+   "Daniel Preotiuc-Pietro",
+   "Pengxiang Cheng"
+  ],
+  "published": "2022-12-19",
+  "journal_ref": "",
+  "comment": "ICLR 2023; The code is available at https://github.com/bloomberg/dataless-model-merging and https://github.com/AuCson/RegMean-LLama3-8B. Fixed typos",
+  "primary": "cs.CL"
+ },
+ "2301.01821": {
+  "title": "Parameter-Efficient Fine-Tuning Design Spaces",
+  "authors": [
+   "Jiaao Chen",
+   "Aston Zhang",
+   "Xingjian Shi",
+   "Mu Li",
+   "Alex Smola",
+   "Diyi Yang"
+  ],
+  "published": "2023-01-04",
+  "journal_ref": "",
+  "comment": "Code is available at https://github.com/amazon-science/peft-design-spaces",
+  "primary": "cs.CL"
+ },
+ "2210.14469": {
+  "title": "Inducer-tuning: Connecting Prefix-tuning and Adapter-tuning",
+  "authors": [
+   "Yifan Chen",
+   "Devamanyu Hazarika",
+   "Mahdi Namazifar",
+   "Yang Liu",
+   "Di Jin",
+   "Dilek Hakkani-Tur"
+  ],
+  "published": "2022-10-26",
+  "journal_ref": "",
+  "comment": "To appear in EMNLP 2022. Code is available at https://github.com/ychen-stat-ml/kernel-adapters",
+  "primary": "cs.CL"
+ },
+ "2210.03117": {
+  "title": "MaPLe: Multi-modal Prompt Learning",
+  "authors": [
+   "Muhammad Uzair Khattak",
+   "Hanoona Rasheed",
+   "Muhammad Maaz",
+   "Salman Khan",
+   "Fahad Shahbaz Khan"
+  ],
+  "published": "2022-10-06",
+  "journal_ref": "",
+  "comment": "Accepted at CVPR2023",
+  "primary": "cs.CV"
+ },
+ "2210.04457": {
+  "title": "XPrompt: Exploring the Extreme of Prompt Tuning",
+  "authors": [
+   "Fang Ma",
+   "Chen Zhang",
+   "Lei Ren",
+   "Jingang Wang",
+   "Qifan Wang",
+   "Wei Wu",
+   "Xiaojun Quan",
+   "Dawei Song"
+  ],
+  "published": "2022-10-10",
+  "journal_ref": "",
+  "comment": "15 pages, accepted to EMNLP 2022 main conference",
+  "primary": "cs.CL"
+ },
+ "2301.12132": {
+  "title": "AutoPEFT: Automatic Configuration Search for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Han Zhou",
+   "Xingchen Wan",
+   "Ivan Vulić",
+   "Anna Korhonen"
+  ],
+  "published": "2023-01-28",
+  "journal_ref": "",
+  "comment": "Accepted to TACL; pre-MIT Press publication version",
+  "primary": "cs.CL"
+ },
+ "2302.03024": {
+  "title": "AIM: Adapting Image Models for Efficient Video Action Recognition",
+  "authors": [
+   "Taojiannan Yang",
+   "Yi Zhu",
+   "Yusheng Xie",
+   "Aston Zhang",
+   "Chen Chen",
+   "Mu Li"
+  ],
+  "published": "2023-02-06",
+  "journal_ref": "",
+  "comment": "Accepted to ICLR 2023. Project webpage is at https://adapt-image-models.github.io/",
+  "primary": "cs.CV"
+ },
+ "2212.03145": {
+  "title": "FacT: Factor-Tuning for Lightweight Adaptation on Vision Transformer",
+  "authors": [
+   "Shibo Jie",
+   "Zhi-Hong Deng"
+  ],
+  "published": "2022-12-06",
+  "journal_ref": "",
+  "comment": "AAAI 2023 Oral. Code: https://github.com/JieShibo/PETL-ViT",
+  "primary": "cs.CV"
+ },
+ "2212.04488": {
+  "title": "Multi-Concept Customization of Text-to-Image Diffusion",
+  "authors": [
+   "Nupur Kumari",
+   "Bingliang Zhang",
+   "Richard Zhang",
+   "Eli Shechtman",
+   "Jun-Yan Zhu"
+  ],
+  "published": "2022-12-08",
+  "journal_ref": "",
+  "comment": "Updated v2 with results on the new CustomConcept101 dataset https://www.cs.cmu.edu/~custom-diffusion/dataset.html Project webpage: https://www.cs.cmu.edu/~custom-diffusion",
+  "primary": "cs.CV"
+ },
+ "2212.04089": {
+  "title": "Editing Models with Task Arithmetic",
+  "authors": [
+   "Gabriel Ilharco",
+   "Marco Tulio Ribeiro",
+   "Mitchell Wortsman",
+   "Suchin Gururangan",
+   "Ludwig Schmidt",
+   "Hannaneh Hajishirzi",
+   "Ali Farhadi"
+  ],
+  "published": "2022-12-08",
+  "journal_ref": "",
+  "comment": "In Proceedings of the 11th International Conference on Learning Representations (ICLR 2023)",
+  "primary": "cs.LG"
+ },
+ "2212.10650": {
+  "title": "KronA: Parameter Efficient Tuning with Kronecker Adapter",
+  "authors": [
+   "Ali Edalati",
+   "Marzieh Tahaei",
+   "Ivan Kobyzev",
+   "Vahid Partovi Nia",
+   "James J. Clark",
+   "Mehdi Rezagholizadeh"
+  ],
+  "published": "2022-12-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2203.05557": {
+  "title": "Conditional Prompt Learning for Vision-Language Models",
+  "authors": [
+   "Kaiyang Zhou",
+   "Jingkang Yang",
+   "Chen Change Loy",
+   "Ziwei Liu"
+  ],
+  "published": "2022-03-10",
+  "journal_ref": "",
+  "comment": "CVPR 2022. Update: Adds results on the DOSCO (DOmain Shift in COntext) benchmark",
+  "primary": "cs.CV"
+ },
+ "2204.04497": {
+  "title": "IDPG: An Instance-Dependent Prompt Generation Method",
+  "authors": [
+   "Zhuofeng Wu",
+   "Sinong Wang",
+   "Jiatao Gu",
+   "Rui Hou",
+   "Yuxiao Dong",
+   "V. G. Vinod Vydiswaran",
+   "Hao Ma"
+  ],
+  "published": "2022-04-09",
+  "journal_ref": "",
+  "comment": "To appear at the NAACL 2022 main conference",
+  "primary": "cs.CL"
+ },
+ "2111.09839": {
+  "title": "Training Neural Networks with Fixed Sparse Masks",
+  "authors": [
+   "Yi-Lin Sung",
+   "Varun Nair",
+   "Colin Raffel"
+  ],
+  "published": "2021-11-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2203.05482": {
+  "title": "Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time",
+  "authors": [
+   "Mitchell Wortsman",
+   "Gabriel Ilharco",
+   "Samir Yitzhak Gadre",
+   "Rebecca Roelofs",
+   "Raphael Gontijo-Lopes",
+   "Ari S. Morcos",
+   "Hongseok Namkoong",
+   "Ali Farhadi",
+   "Yair Carmon",
+   "Simon Kornblith",
+   "Ludwig Schmidt"
+  ],
+  "published": "2022-03-10",
+  "journal_ref": "",
+  "comment": "ICML 2022. The last three authors contributed equally",
+  "primary": "cs.LG"
+ },
+ "2210.17216": {
+  "title": "Symmetries, flat minima, and the conserved quantities of gradient flow",
+  "authors": [
+   "Bo Zhao",
+   "Iordan Ganev",
+   "Robin Walters",
+   "Rose Yu",
+   "Nima Dehmamy"
+  ],
+  "published": "2022-10-31",
+  "journal_ref": "",
+  "comment": "To appear at ICLR 2023",
+  "primary": "cs.LG"
+ },
+ "2305.18403": {
+  "title": "LoRAPrune: Structured Pruning Meets Low-Rank Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Mingyang Zhang",
+   "Hao Chen",
+   "Chunhua Shen",
+   "Zhen Yang",
+   "Linlin Ou",
+   "Xinyi Yu",
+   "Bohan Zhuang"
+  ],
+  "published": "2023-05-28",
+  "journal_ref": "",
+  "comment": "accepted by acl 2024 findings",
+  "primary": "cs.LG"
+ },
+ "2112.08348": {
+  "title": "Prompt Waywardness: The Curious Case of Discretized Interpretation of Continuous Prompts",
+  "authors": [
+   "Daniel Khashabi",
+   "Shane Lyu",
+   "Sewon Min",
+   "Lianhui Qin",
+   "Kyle Richardson",
+   "Sean Welleck",
+   "Hannaneh Hajishirzi",
+   "Tushar Khot",
+   "Ashish Sabharwal",
+   "Sameer Singh",
+   "Yejin Choi"
+  ],
+  "published": "2021-12-15",
+  "journal_ref": "",
+  "comment": "NAACL 2022",
+  "primary": "cs.CL"
+ },
+ "2203.06904": {
+  "title": "Delta Tuning: A Comprehensive Study of Parameter Efficient Methods for Pre-trained Language Models",
+  "authors": [
+   "Ning Ding",
+   "Yujia Qin",
+   "Guang Yang",
+   "Fuchao Wei",
+   "Zonghan Yang",
+   "Yusheng Su",
+   "Shengding Hu",
+   "Yulin Chen",
+   "Chi-Min Chan",
+   "Weize Chen",
+   "Jing Yi",
+   "Weilin Zhao",
+   "Xiaozhi Wang",
+   "Zhiyuan Liu",
+   "Hai-Tao Zheng",
+   "Jianfei Chen",
+   "Yang Liu",
+   "Jie Tang",
+   "Juanzi Li",
+   "Maosong Sun"
+  ],
+  "published": "2022-03-14",
+  "journal_ref": "",
+  "comment": "49 pages",
+  "primary": "cs.CL"
+ },
+ "2210.07558": {
+  "title": "DyLoRA: Parameter Efficient Tuning of Pre-trained Models using Dynamic Search-Free Low-Rank Adaptation",
+  "authors": [
+   "Mojtaba Valipour",
+   "Mehdi Rezagholizadeh",
+   "Ivan Kobyzev",
+   "Ali Ghodsi"
+  ],
+  "published": "2022-10-14",
+  "journal_ref": "",
+  "comment": "Accepted to EACL 2023",
+  "primary": "cs.CL"
+ },
+ "2203.16329": {
+  "title": "Parameter-efficient Model Adaptation for Vision Transformers",
+  "authors": [
+   "Xuehai He",
+   "Chunyuan Li",
+   "Pengchuan Zhang",
+   "Jianwei Yang",
+   "Xin Eric Wang"
+  ],
+  "published": "2022-03-29",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2305.16742": {
+  "title": "Parameter-Efficient Fine-Tuning without Introducing New Latency",
+  "authors": [
+   "Baohao Liao",
+   "Yan Meng",
+   "Christof Monz"
+  ],
+  "published": "2023-05-26",
+  "journal_ref": "",
+  "comment": "ACL2023 camera-ready version",
+  "primary": "cs.CL"
+ },
+ "2306.03435": {
+  "title": "On the Role of Attention in Prompt-tuning",
+  "authors": [
+   "Samet Oymak",
+   "Ankit Singh Rawat",
+   "Mahdi Soltanolkotabi",
+   "Christos Thrampoulidis"
+  ],
+  "published": "2023-06-06",
+  "journal_ref": "",
+  "comment": "Published at ICML 2023",
+  "primary": "cs.LG"
+ },
+ "2303.10512": {
+  "title": "AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Qingru Zhang",
+   "Minshuo Chen",
+   "Alexander Bukharin",
+   "Nikos Karampatziakis",
+   "Pengcheng He",
+   "Yu Cheng",
+   "Weizhu Chen",
+   "Tuo Zhao"
+  ],
+  "published": "2023-03-18",
+  "journal_ref": "",
+  "comment": "The 11th International Conference on Learning Representations (ICLR 2023)",
+  "primary": "cs.CL"
+ },
+ "2303.02861": {
+  "title": "Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning",
+  "authors": [
+   "Zhen Wang",
+   "Rameswar Panda",
+   "Leonid Karlinsky",
+   "Rogerio Feris",
+   "Huan Sun",
+   "Yoon Kim"
+  ],
+  "published": "2023-03-06",
+  "journal_ref": "",
+  "comment": "ICLR 2023. Project page: https://zhenwang9102.github.io/mpt.html",
+  "primary": "cs.CL"
+ },
+ "2303.02536": {
+  "title": "Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations",
+  "authors": [
+   "Atticus Geiger",
+   "Zhengxuan Wu",
+   "Christopher Potts",
+   "Thomas Icard",
+   "Noah D. Goodman"
+  ],
+  "published": "2023-03-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.AI"
+ },
+ "2302.07027": {
+  "title": "AdapterSoup: Weight Averaging to Improve Generalization of Pretrained Language Models",
+  "authors": [
+   "Alexandra Chronopoulou",
+   "Matthew E. Peters",
+   "Alexander Fraser",
+   "Jesse Dodge"
+  ],
+  "published": "2023-02-14",
+  "journal_ref": "",
+  "comment": "Accepted at EACL 2023; camera-ready version; fixed typo in related work",
+  "primary": "cs.CL"
+ },
+ "2302.08106": {
+  "title": "Towards Efficient Visual Adaption via Structural Re-parameterization",
+  "authors": [
+   "Gen Luo",
+   "Minglang Huang",
+   "Yiyi Zhou",
+   "Xiaoshuai Sun",
+   "Guannan Jiang",
+   "Zhiyu Wang",
+   "Rongrong Ji"
+  ],
+  "published": "2023-02-16",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2211.13218": {
+  "title": "CODA-Prompt: COntinual Decomposed Attention-based Prompting for Rehearsal-Free Continual Learning",
+  "authors": [
+   "James Seale Smith",
+   "Leonid Karlinsky",
+   "Vyshnavi Gutta",
+   "Paola Cascante-Bonilla",
+   "Donghyun Kim",
+   "Assaf Arbelle",
+   "Rameswar Panda",
+   "Rogerio Feris",
+   "Zsolt Kira"
+  ],
+  "published": "2022-11-23",
+  "journal_ref": "",
+  "comment": "Accepted by the 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2023)",
+  "primary": "cs.CV"
+ },
+ "2304.01933": {
+  "title": "LLM-Adapters: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models",
+  "authors": [
+   "Zhiqiang Hu",
+   "Lei Wang",
+   "Yihuai Lan",
+   "Wanyu Xu",
+   "Ee-Peng Lim",
+   "Lidong Bing",
+   "Xing Xu",
+   "Soujanya Poria",
+   "Roy Ka-Wei Lee"
+  ],
+  "published": "2023-04-04",
+  "journal_ref": "",
+  "comment": "EMNLP 2023. The code of our framework can be found at https://github.com/AGI-Edgerunners/LLM-Adapters. We will keep all of the code open-source and continue to update the framework with new adapters, LLMs, and tasks",
+  "primary": "cs.CL"
+ },
+ "2212.10025": {
+  "title": "When Federated Learning Meets Pre-trained Language Models' Parameter-Efficient Tuning Methods",
+  "authors": [
+   "Zhuo Zhang",
+   "Yuanhang Yang",
+   "Yong Dai",
+   "Lizhen Qu",
+   "Zenglin Xu"
+  ],
+  "published": "2022-12-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2305.12827": {
+  "title": "Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models",
+  "authors": [
+   "Guillermo Ortiz-Jimenez",
+   "Alessandro Favero",
+   "Pascal Frossard"
+  ],
+  "published": "2023-05-22",
+  "journal_ref": "Advances in Neural Information Processing Systems 36 (NeurIPS 2023)",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2202.13914": {
+  "title": "Combining Modular Skills in Multitask Learning",
+  "authors": [
+   "Edoardo M. Ponti",
+   "Alessandro Sordoni",
+   "Yoshua Bengio",
+   "Siva Reddy"
+  ],
+  "published": "2022-02-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2205.11961": {
+  "title": "ATTEMPT: Parameter-Efficient Multi-task Tuning via Attentional Mixtures of Soft Prompts",
+  "authors": [
+   "Akari Asai",
+   "Mohammadreza Salehi",
+   "Matthew E. Peters",
+   "Hannaneh Hajishirzi"
+  ],
+  "published": "2022-05-24",
+  "journal_ref": "",
+  "comment": "Published as a conference paper at EMNLP 2022 (long). Code available at https://github.com/AkariAsai/ATTEMPT",
+  "primary": "cs.CL"
+ },
+ "2205.12410": {
+  "title": "AdaMix: Mixture-of-Adaptations for Parameter-efficient Model Tuning",
+  "authors": [
+   "Yaqing Wang",
+   "Sahaj Agarwal",
+   "Subhabrata Mukherjee",
+   "Xiaodong Liu",
+   "Jing Gao",
+   "Ahmed Hassan Awadallah",
+   "Jianfeng Gao"
+  ],
+  "published": "2022-05-24",
+  "journal_ref": "",
+  "comment": "Accepted by EMNLP 2022",
+  "primary": "cs.CL"
+ },
+ "2207.09519": {
+  "title": "Tip-Adapter: Training-free Adaption of CLIP for Few-shot Classification",
+  "authors": [
+   "Renrui Zhang",
+   "Zhang Wei",
+   "Rongyao Fang",
+   "Peng Gao",
+   "Kunchang Li",
+   "Jifeng Dai",
+   "Yu Qiao",
+   "Hongsheng Li"
+  ],
+  "published": "2022-07-19",
+  "journal_ref": "",
+  "comment": "Accepted by ECCV 2022. arXiv admin note: substantial text overlap with arXiv:2111.03930",
+  "primary": "cs.CV"
+ },
+ "2306.00477": {
+  "title": "Make Pre-trained Model Reversible: From Parameter to Memory Efficient Fine-Tuning",
+  "authors": [
+   "Baohao Liao",
+   "Shaomu Tan",
+   "Christof Monz"
+  ],
+  "published": "2023-06-01",
+  "journal_ref": "",
+  "comment": "NeurIPS camera-ready version. Code at https://github.com/BaohaoLiao/mefts",
+  "primary": "cs.CL"
+ },
+ "2206.06522": {
+  "title": "LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning",
+  "authors": [
+   "Yi-Lin Sung",
+   "Jaemin Cho",
+   "Mohit Bansal"
+  ],
+  "published": "2022-06-13",
+  "journal_ref": "",
+  "comment": "NeurIPS 2022 (our code is available at: https://github.com/ylsung/Ladder-Side-Tuning)",
+  "primary": "cs.CL"
+ },
+ "2306.03341": {
+  "title": "Inference-Time Intervention: Eliciting Truthful Answers from a Language Model",
+  "authors": [
+   "Kenneth Li",
+   "Oam Patel",
+   "Fernanda Viégas",
+   "Hanspeter Pfister",
+   "Martin Wattenberg"
+  ],
+  "published": "2023-06-06",
+  "journal_ref": "",
+  "comment": "NeurIPS 2023 spotlight; code: https://github.com/likenneth/honest_llama",
+  "primary": "cs.LG"
+ },
+ "2312.03732": {
+  "title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA",
+  "authors": [
+   "Damjan Kalajdzievski"
+  ],
+  "published": "2023-11-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2311.11077": {
+  "title": "Adapters: A Unified Library for Parameter-Efficient and Modular Transfer Learning",
+  "authors": [
+   "Clifton Poth",
+   "Hannah Sterz",
+   "Indraneil Paul",
+   "Sukannya Purkayastha",
+   "Leon Engländer",
+   "Timo Imhof",
+   "Ivan Vulić",
+   "Sebastian Ruder",
+   "Iryna Gurevych",
+   "Jonas Pfeiffer"
+  ],
+  "published": "2023-11-18",
+  "journal_ref": "",
+  "comment": "EMNLP 2023: Systems Demonstrations",
+  "primary": "cs.CL"
+ },
+ "2401.04151": {
+  "title": "Chain of LoRA: Efficient Fine-tuning of Language Models via Residual Learning",
+  "authors": [
+   "Wenhan Xia",
+   "Chengwei Qin",
+   "Elad Hazan"
+  ],
+  "published": "2024-01-08",
+  "journal_ref": "",
+  "comment": "Work in progress",
+  "primary": "cs.LG"
+ },
+ "2310.18547": {
+  "title": "Punica: Multi-Tenant LoRA Serving",
+  "authors": [
+   "Lequn Chen",
+   "Zihao Ye",
+   "Yongji Wu",
+   "Danyang Zhuo",
+   "Luis Ceze",
+   "Arvind Krishnamurthy"
+  ],
+  "published": "2023-10-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.DC"
+ },
+ "2310.14152": {
+  "title": "Orthogonal Subspace Learning for Language Model Continual Learning",
+  "authors": [
+   "Xiao Wang",
+   "Tianze Chen",
+   "Qiming Ge",
+   "Han Xia",
+   "Rong Bao",
+   "Rui Zheng",
+   "Qi Zhang",
+   "Tao Gui",
+   "Xuanjing Huang"
+  ],
+  "published": "2023-10-22",
+  "journal_ref": "",
+  "comment": "EMNLP 2023 findings",
+  "primary": "cs.CL"
+ },
+ "2306.14870": {
+  "title": "Composing Parameter-Efficient Modules with Arithmetic Operations",
+  "authors": [
+   "Jinghan Zhang",
+   "Shiqi Chen",
+   "Junteng Liu",
+   "Junxian He"
+  ],
+  "published": "2023-06-26",
+  "journal_ref": "",
+  "comment": "NeurIPS 2023. Code is available at https://github.com/SJTU-LIT/PEM_composition",
+  "primary": "cs.CL"
+ },
+ "2306.07967": {
+  "title": "One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning",
+  "authors": [
+   "Arnav Chavan",
+   "Zhuang Liu",
+   "Deepak Gupta",
+   "Eric Xing",
+   "Zhiqiang Shen"
+  ],
+  "published": "2023-06-13",
+  "journal_ref": "",
+  "comment": "Technical report. v2: Add LLaMA-1&2 results. Code and models at https://github.com/Arnav0400/ViT-Slim/tree/master/GLoRA",
+  "primary": "cs.LG"
+ },
+ "2310.02575": {
+  "title": "AdaMerging: Adaptive Model Merging for Multi-Task Learning",
+  "authors": [
+   "Enneng Yang",
+   "Zhenyi Wang",
+   "Li Shen",
+   "Shiwei Liu",
+   "Guibing Guo",
+   "Xingwei Wang",
+   "Dacheng Tao"
+  ],
+  "published": "2023-10-04",
+  "journal_ref": "",
+  "comment": "International Conference on Learning Representations (ICLR 2024)",
+  "primary": "cs.LG"
+ },
+ "2402.11867": {
+  "title": "LoRA Training in the NTK Regime has No Spurious Local Minima",
+  "authors": [
+   "Uijeong Jang",
+   "Jason D. Lee",
+   "Ernest K. Ryu"
+  ],
+  "published": "2024-02-19",
+  "journal_ref": "",
+  "comment": "23 pages",
+  "primary": "cs.LG"
+ },
+ "2402.11592": {
+  "title": "Revisiting Zeroth-Order Optimization for Memory-Efficient LLM Fine-Tuning: A Benchmark",
+  "authors": [
+   "Yihua Zhang",
+   "Pingzhi Li",
+   "Junyuan Hong",
+   "Jiaxiang Li",
+   "Yimeng Zhang",
+   "Wenqing Zheng",
+   "Pin-Yu Chen",
+   "Jason D. Lee",
+   "Wotao Yin",
+   "Mingyi Hong",
+   "Zhangyang Wang",
+   "Sijia Liu",
+   "Tianlong Chen"
+  ],
+  "published": "2024-02-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.02347": {
+  "title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models",
+  "authors": [
+   "Fangzhao Zhang",
+   "Mert Pilanci"
+  ],
+  "published": "2024-02-04",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2310.10195": {
+  "title": "AdaLomo: Low-memory Optimization with Adaptive Learning Rate",
+  "authors": [
+   "Kai Lv",
+   "Hang Yan",
+   "Qipeng Guo",
+   "Haijun Lv",
+   "Xipeng Qiu"
+  ],
+  "published": "2023-10-16",
+  "journal_ref": "",
+  "comment": "ACL 2024 camera ready version",
+  "primary": "cs.LG"
+ },
+ "2402.03293": {
+  "title": "Flora: Low-Rank Adapters Are Secretly Gradient Compressors",
+  "authors": [
+   "Yongchang Hao",
+   "Yanshuai Cao",
+   "Lili Mou"
+  ],
+  "published": "2024-02-05",
+  "journal_ref": "",
+  "comment": "Accepted @ ICML 2024",
+  "primary": "cs.LG"
+ },
+ "2310.01405": {
+  "title": "Representation Engineering: A Top-Down Approach to AI Transparency",
+  "authors": [
+   "Andy Zou",
+   "Long Phan",
+   "Sarah Chen",
+   "James Campbell",
+   "Phillip Guo",
+   "Richard Ren",
+   "Alexander Pan",
+   "Xuwang Yin",
+   "Mantas Mazeika",
+   "Ann-Kathrin Dombrowski",
+   "Shashwat Goel",
+   "Nathaniel Li",
+   "Michael J. Byun",
+   "Zifan Wang",
+   "Alex Mallen",
+   "Steven Basart",
+   "Sanmi Koyejo",
+   "Dawn Song",
+   "Matt Fredrikson",
+   "J. Zico Kolter",
+   "Dan Hendrycks"
+  ],
+  "published": "2023-10-02",
+  "journal_ref": "",
+  "comment": "Code is available at https://github.com/andyzoujm/representation-engineering",
+  "primary": "cs.LG"
+ },
+ "2309.14859": {
+  "title": "Navigating Text-To-Image Customization: From LyCORIS Fine-Tuning to Model Evaluation",
+  "authors": [
+   "Shih-Ying Yeh",
+   "Yu-Guan Hsieh",
+   "Zhidong Gao",
+   "Bernard B W Yang",
+   "Giyeong Oh",
+   "Yanmin Gong"
+  ],
+  "published": "2023-09-26",
+  "journal_ref": "",
+  "comment": "In International Conference on Learning Representations 12 (ICLR 2024) [79 pages, 54 figures, 7 tables]",
+  "primary": "cs.CV"
+ },
+ "2401.06432": {
+  "title": "Heterogeneous LoRA for Federated Fine-tuning of On-Device Foundation Models",
+  "authors": [
+   "Yae Jee Cho",
+   "Luyang Liu",
+   "Zheng Xu",
+   "Aldi Fahrezi",
+   "Gauri Joshi"
+  ],
+  "published": "2024-01-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.01376": {
+  "title": "LoTR: Low Tensor Rank Weight Adaptation",
+  "authors": [
+   "Daniel Bershatsky",
+   "Daria Cherniuk",
+   "Talgat Daulbaev",
+   "Aleksandr Mikhalev",
+   "Ivan Oseledets"
+  ],
+  "published": "2024-02-02",
+  "journal_ref": "",
+  "comment": "Submitted; missing author and sections were added;",
+  "primary": "cs.CL"
+ },
+ "2308.06721": {
+  "title": "IP-Adapter: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models",
+  "authors": [
+   "Hu Ye",
+   "Jun Zhang",
+   "Sibo Liu",
+   "Xiao Han",
+   "Wei Yang"
+  ],
+  "published": "2023-08-13",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2310.11454": {
+  "title": "VeRA: Vector-based Random Matrix Adaptation",
+  "authors": [
+   "Dawid J. Kopiczko",
+   "Tijmen Blankevoort",
+   "Yuki M. Asano"
+  ],
+  "published": "2023-10-17",
+  "journal_ref": "",
+  "comment": "Accepted at ICLR 2024, website: https://dkopi.github.io/vera",
+  "primary": "cs.CL"
+ },
+ "2310.08659": {
+  "title": "LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large Language Models",
+  "authors": [
+   "Yixiao Li",
+   "Yifan Yu",
+   "Chen Liang",
+   "Pengcheng He",
+   "Nikos Karampatziakis",
+   "Weizhu Chen",
+   "Tuo Zhao"
+  ],
+  "published": "2023-10-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2311.09578": {
+  "title": "Tied-Lora: Enhancing parameter efficiency of LoRA with weight tying",
+  "authors": [
+   "Adithya Renduchintala",
+   "Tugrul Konuk",
+   "Oleksii Kuchaiev"
+  ],
+  "published": "2023-11-16",
+  "journal_ref": "",
+  "comment": "8 pages 4 figures",
+  "primary": "cs.CL"
+ },
+ "2311.11696": {
+  "title": "Sparse Low-rank Adaptation of Pre-trained Language Models",
+  "authors": [
+   "Ning Ding",
+   "Xingtai Lv",
+   "Qiaosen Wang",
+   "Yulin Chen",
+   "Bowen Zhou",
+   "Zhiyuan Liu",
+   "Maosong Sun"
+  ],
+  "published": "2023-11-20",
+  "journal_ref": "",
+  "comment": "Accepted to EMNLP 2023 (Main Conference)",
+  "primary": "cs.CL"
+ },
+ "2307.00144": {
+  "title": "Abide by the Law and Follow the Flow: Conservation Laws for Gradient Flows",
+  "authors": [
+   "Sibylle Marcotte",
+   "Rémi Gribonval",
+   "Gabriel Peyré"
+  ],
+  "published": "2023-06-30",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.07721": {
+  "title": "LoRA-drop: Efficient LoRA Parameter Pruning based on Output Evaluation",
+  "authors": [
+   "Hongyun Zhou",
+   "Xiangyu Lu",
+   "Wang Xu",
+   "Conghui Zhu",
+   "Tiejun Zhao",
+   "Muyun Yang"
+  ],
+  "published": "2024-02-12",
+  "journal_ref": "",
+  "comment": "15 pages, 12 figures",
+  "primary": "cs.LG"
+ },
+ "2402.09353": {
+  "title": "DoRA: Weight-Decomposed Low-Rank Adaptation",
+  "authors": [
+   "Shih-Yang Liu",
+   "Chien-Yi Wang",
+   "Hongxu Yin",
+   "Pavlo Molchanov",
+   "Yu-Chiang Frank Wang",
+   "Kwang-Ting Cheng",
+   "Min-Hung Chen"
+  ],
+  "published": "2024-02-14",
+  "journal_ref": "",
+  "comment": "ICML2024(Oral)",
+  "primary": "cs.CL"
+ },
+ "2311.03285": {
+  "title": "S-LoRA: Serving Thousands of Concurrent LoRA Adapters",
+  "authors": [
+   "Ying Sheng",
+   "Shiyi Cao",
+   "Dacheng Li",
+   "Coleman Hooper",
+   "Nicholas Lee",
+   "Shuo Yang",
+   "Christopher Chou",
+   "Banghua Zhu",
+   "Lianmin Zheng",
+   "Kurt Keutzer",
+   "Joseph E. Gonzalez",
+   "Ion Stoica"
+  ],
+  "published": "2023-11-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2310.18339": {
+  "title": "When MOE Meets LLMs: Parameter Efficient Fine-tuning for Multi-task Medical Applications",
+  "authors": [
+   "Qidong Liu",
+   "Xian Wu",
+   "Xiangyu Zhao",
+   "Yuanshao Zhu",
+   "Derong Xu",
+   "Feng Tian",
+   "Yefeng Zheng"
+  ],
+  "published": "2023-10-21",
+  "journal_ref": "",
+  "comment": "accepted by SIGIR'24",
+  "primary": "cs.CL"
+ },
+ "2307.06949": {
+  "title": "HyperDreamBooth: HyperNetworks for Fast Personalization of Text-to-Image Models",
+  "authors": [
+   "Nataniel Ruiz",
+   "Yuanzhen Li",
+   "Varun Jampani",
+   "Wei Wei",
+   "Tingbo Hou",
+   "Yael Pritch",
+   "Neal Wadhwa",
+   "Michael Rubinstein",
+   "Kfir Aberman"
+  ],
+  "published": "2023-07-13",
+  "journal_ref": "",
+  "comment": "project page: https://hyperdreambooth.github.io",
+  "primary": "cs.CV"
+ },
+ "2401.08565": {
+  "title": "Tuning Language Models by Proxy",
+  "authors": [
+   "Alisa Liu",
+   "Xiaochuang Han",
+   "Yizhong Wang",
+   "Yulia Tsvetkov",
+   "Yejin Choi",
+   "Noah A. Smith"
+  ],
+  "published": "2024-01-16",
+  "journal_ref": "",
+  "comment": "COLM 2024 camera-ready, code available at https://github.com/alisawuffles/proxy-tuning",
+  "primary": "cs.CL"
+ },
+ "2402.02242": {
+  "title": "Parameter-Efficient Fine-Tuning for Pre-Trained Vision Models: A Survey and Benchmark",
+  "authors": [
+   "Yi Xin",
+   "Jianjiang Yang",
+   "Siqi Luo",
+   "Yuntao Du",
+   "Qi Qin",
+   "Kangrui Cen",
+   "Yangfan He",
+   "Zhiwei Zhang",
+   "Bin Fu",
+   "Xiaokang Yang",
+   "Guangtao Zhai",
+   "Ming-Hsuan Yang",
+   "Xiaohong Liu"
+  ],
+  "published": "2024-02-03",
+  "journal_ref": "",
+  "comment": "Submitted to IJCV",
+  "primary": "cs.CV"
+ },
+ "2310.19698": {
+  "title": "When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations",
+  "authors": [
+   "Aleksandar Petrov",
+   "Philip H. S. Torr",
+   "Adel Bibi"
+  ],
+  "published": "2023-10-30",
+  "journal_ref": "",
+  "comment": "Accepted at ICLR 2024",
+  "primary": "cs.LG"
+ },
+ "2312.13558": {
+  "title": "The Truth is in There: Improving Reasoning in Language Models with Layer-Selective Rank Reduction",
+  "authors": [
+   "Pratyusha Sharma",
+   "Jordan T. Ash",
+   "Dipendra Misra"
+  ],
+  "published": "2023-12-21",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2310.17513": {
+  "title": "The Expressive Power of Low-Rank Adaptation",
+  "authors": [
+   "Yuchen Zeng",
+   "Kangwook Lee"
+  ],
+  "published": "2023-10-26",
+  "journal_ref": "",
+  "comment": "40 pages, 5 figures",
+  "primary": "cs.LG"
+ },
+ "2401.16405": {
+  "title": "Scaling Sparse Fine-Tuning to Large Language Models",
+  "authors": [
+   "Alan Ansell",
+   "Ivan Vulić",
+   "Hannah Sterz",
+   "Anna Korhonen",
+   "Edoardo M. Ponti"
+  ],
+  "published": "2024-01-29",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2402.09997": {
+  "title": "LoraRetriever: Input-Aware LoRA Retrieval and Composition for Mixed Tasks in the Wild",
+  "authors": [
+   "Ziyu Zhao",
+   "Leilei Gan",
+   "Guoyin Wang",
+   "Wangchunshu Zhou",
+   "Hongxia Yang",
+   "Kun Kuang",
+   "Fei Wu"
+  ],
+  "published": "2024-02-15",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.AI"
+ },
+ "2311.06243": {
+  "title": "Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization",
+  "authors": [
+   "Weiyang Liu",
+   "Zeju Qiu",
+   "Yao Feng",
+   "Yuliang Xiu",
+   "Yuxuan Xue",
+   "Longhui Yu",
+   "Haiwen Feng",
+   "Zhen Liu",
+   "Juyeon Heo",
+   "Songyou Peng",
+   "Yandong Wen",
+   "Michael J. Black",
+   "Adrian Weller",
+   "Bernhard Schölkopf"
+  ],
+  "published": "2023-11-10",
+  "journal_ref": "",
+  "comment": "ICLR 2024 (v2: 34 pages, 19 figures)",
+  "primary": "cs.LG"
+ },
+ "2306.03745": {
+  "title": "Soft Merging of Experts with Adaptive Routing",
+  "authors": [
+   "Mohammed Muqeeth",
+   "Haokun Liu",
+   "Colin Raffel"
+  ],
+  "published": "2023-06-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.05445": {
+  "title": "Accurate LoRA-Finetuning Quantization of LLMs via Information Retention",
+  "authors": [
+   "Haotong Qin",
+   "Xudong Ma",
+   "Xingyu Zheng",
+   "Xiaoyang Li",
+   "Yang Zhang",
+   "Shouda Liu",
+   "Jie Luo",
+   "Xianglong Liu",
+   "Michele Magno"
+  ],
+  "published": "2024-02-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2312.11875": {
+  "title": "Sparse is Enough in Fine-tuning Pre-trained Large Language Models",
+  "authors": [
+   "Weixi Song",
+   "Zuchao Li",
+   "Lefei Zhang",
+   "Hai Zhao",
+   "Bo Du"
+  ],
+  "published": "2023-12-19",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2024 Spotlight",
+  "primary": "cs.LG"
+ },
+ "2312.12148": {
+  "title": "Parameter-Efficient Fine-Tuning Methods for Pretrained Language Models: A Critical Review and Assessment",
+  "authors": [
+   "Lingling Xu",
+   "Haoran Xie",
+   "Si-Zhao Joe Qin",
+   "Xiaohui Tao",
+   "Fu Lee Wang"
+  ],
+  "published": "2023-12-19",
+  "journal_ref": "",
+  "comment": "20 pages, 4 figures",
+  "primary": "cs.CL"
+ },
+ "2311.12023": {
+  "title": "LQ-LoRA: Low-rank Plus Quantized Matrix Decomposition for Efficient Language Model Finetuning",
+  "authors": [
+   "Han Guo",
+   "Philip Greengard",
+   "Eric P. Xing",
+   "Yoon Kim"
+  ],
+  "published": "2023-11-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2307.13269": {
+  "title": "LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition",
+  "authors": [
+   "Chengsong Huang",
+   "Qian Liu",
+   "Bill Yuchen Lin",
+   "Tianyu Pang",
+   "Chao Du",
+   "Min Lin"
+  ],
+  "published": "2023-07-25",
+  "journal_ref": "",
+  "comment": "COLM 2024",
+  "primary": "cs.CL"
+ },
+ "2312.10136": {
+  "title": "Gradient-based Parameter Selection for Efficient Fine-Tuning",
+  "authors": [
+   "Zhi Zhang",
+   "Qizhe Zhang",
+   "Zijun Gao",
+   "Renrui Zhang",
+   "Ekaterina Shutova",
+   "Shiji Zhou",
+   "Shanghang Zhang"
+  ],
+  "published": "2023-12-15",
+  "journal_ref": "CVPR2024",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2402.07148": {
+  "title": "X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Molecular Design",
+  "authors": [
+   "Eric L. Buehler",
+   "Markus J. Buehler"
+  ],
+  "published": "2024-02-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cond-mat.soft"
+ },
+ "2309.02411": {
+  "title": "Delta-LoRA: Fine-Tuning High-Rank Parameters with the Delta of Low-Rank Matrices",
+  "authors": [
+   "Bojia Zi",
+   "Xianbiao Qi",
+   "Lingzhi Wang",
+   "Jianan Wang",
+   "Kam-Fai Wong",
+   "Lei Zhang"
+  ],
+  "published": "2023-09-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2311.12092": {
+  "title": "Concept Sliders: LoRA Adaptors for Precise Control in Diffusion Models",
+  "authors": [
+   "Rohit Gandikota",
+   "Joanna Materzynska",
+   "Tingrui Zhou",
+   "Antonio Torralba",
+   "David Bau"
+  ],
+  "published": "2023-11-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2308.12043": {
+  "title": "IncreLoRA: Incremental Parameter Allocation Method for Parameter-Efficient Fine-tuning",
+  "authors": [
+   "Feiyu Zhang",
+   "Liangzhi Li",
+   "Junhao Chen",
+   "Zhouqiang Jiang",
+   "Bowen Wang",
+   "Yiming Qian"
+  ],
+  "published": "2023-08-23",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2311.05556": {
+  "title": "LCM-LoRA: A Universal Stable-Diffusion Acceleration Module",
+  "authors": [
+   "Simian Luo",
+   "Yiqin Tan",
+   "Suraj Patil",
+   "Daniel Gu",
+   "Patrick von Platen",
+   "Apolinário Passos",
+   "Longbo Huang",
+   "Jian Li",
+   "Hang Zhao"
+  ],
+  "published": "2023-11-09",
+  "journal_ref": "",
+  "comment": "Technical Report",
+  "primary": "cs.CV"
+ },
+ "2310.19859": {
+  "title": "Res-Tuning: A Flexible and Efficient Tuning Paradigm via Unbinding Tuner from Backbone",
+  "authors": [
+   "Zeyinzi Jiang",
+   "Chaojie Mao",
+   "Ziyuan Huang",
+   "Ao Ma",
+   "Yiliang Lv",
+   "Yujun Shen",
+   "Deli Zhao",
+   "Jingren Zhou"
+  ],
+  "published": "2023-10-30",
+  "journal_ref": "",
+  "comment": "Accepted to NeurIPS 2023",
+  "primary": "cs.CV"
+ },
+ "2309.12307": {
+  "title": "LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models",
+  "authors": [
+   "Yukang Chen",
+   "Shengju Qian",
+   "Haotian Tang",
+   "Xin Lai",
+   "Zhijian Liu",
+   "Song Han",
+   "Jiaya Jia"
+  ],
+  "published": "2023-09-21",
+  "journal_ref": "",
+  "comment": "Code, models, dataset, and demo are available at https://github.com/dvlab-research/LongLoRA",
+  "primary": "cs.CL"
+ },
+ "2402.11417": {
+  "title": "LoRETTA: Low-Rank Economic Tensor-Train Adaptation for Ultra-Low-Parameter Fine-Tuning of Large Language Models",
+  "authors": [
+   "Yifan Yang",
+   "Jiajun Zhou",
+   "Ngai Wong",
+   "Zheng Zhang"
+  ],
+  "published": "2024-02-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2402.11455": {
+  "title": "LoRA-Flow: Dynamic LoRA Fusion for Large Language Models in Generative Tasks",
+  "authors": [
+   "Hanqing Wang",
+   "Bowen Ping",
+   "Shuo Wang",
+   "Xu Han",
+   "Yun Chen",
+   "Zhiyuan Liu",
+   "Maosong Sun"
+  ],
+  "published": "2024-02-18",
+  "journal_ref": "",
+  "comment": "Work in Progress",
+  "primary": "cs.CL"
+ },
+ "2312.11420": {
+  "title": "Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning",
+  "authors": [
+   "Bingchen Zhao",
+   "Haoqin Tu",
+   "Chen Wei",
+   "Jieru Mei",
+   "Cihang Xie"
+  ],
+  "published": "2023-12-18",
+  "journal_ref": "",
+  "comment": "The first two authors contributed equally",
+  "primary": "cs.CL"
+ },
+ "2307.05695": {
+  "title": "ReLoRA: High-Rank Training Through Low-Rank Updates",
+  "authors": [
+   "Vladislav Lialin",
+   "Namrata Shivagunde",
+   "Sherin Muckatira",
+   "Anna Rumshisky"
+  ],
+  "published": "2023-07-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2402.13144": {
+  "title": "Neural Network Diffusion",
+  "authors": [
+   "Kai Wang",
+   "Dongwen Tang",
+   "Boya Zeng",
+   "Yida Yin",
+   "Zhaopan Xu",
+   "Yukun Zhou",
+   "Zelin Zang",
+   "Trevor Darrell",
+   "Zhuang Liu",
+   "Yang You"
+  ],
+  "published": "2024-02-20",
+  "journal_ref": "",
+  "comment": "We introduce a novel approach for parameter generation, named neural network parameter diffusion (\\textbf{p-diff}), which employs a standard latent diffusion model to synthesize a new set of parameters",
+  "primary": "cs.LG"
+ },
+ "2312.15166": {
+  "title": "SOLAR 10.7B: Scaling Large Language Models with Simple yet Effective Depth Up-Scaling",
+  "authors": [
+   "Dahyun Kim",
+   "Chanjun Park",
+   "Sanghoon Kim",
+   "Wonsung Lee",
+   "Wonho Song",
+   "Yunsu Kim",
+   "Hyeonwoo Kim",
+   "Yungi Kim",
+   "Hyeonju Lee",
+   "Jihoo Kim",
+   "Changbae Ahn",
+   "Seonghoon Yang",
+   "Sukyung Lee",
+   "Hyunbyung Park",
+   "Gyoungjin Gim",
+   "Mikyoung Cha",
+   "Hwalsuk Lee",
+   "Sunghun Kim"
+  ],
+  "published": "2023-12-23",
+  "journal_ref": "",
+  "comment": "accepted to NAACL 2024 Industry Track",
+  "primary": "cs.CL"
+ },
+ "2401.15207": {
+  "title": "HiFT: A Hierarchical Full Parameter Fine-Tuning Strategy",
+  "authors": [
+   "Yongkang Liu",
+   "Yiqun Zhang",
+   "Qian Li",
+   "Tong Liu",
+   "Shi Feng",
+   "Daling Wang",
+   "Yifei Zhang",
+   "Hinrich Schütze"
+  ],
+  "published": "2024-01-26",
+  "journal_ref": "",
+  "comment": "under progress",
+  "primary": "cs.LG"
+ },
+ "2306.09782": {
+  "title": "Full Parameter Fine-tuning for Large Language Models with Limited Resources",
+  "authors": [
+   "Kai Lv",
+   "Yuqing Yang",
+   "Tengxiao Liu",
+   "Qinghui Gao",
+   "Qipeng Guo",
+   "Xipeng Qiu"
+  ],
+  "published": "2023-06-16",
+  "journal_ref": "",
+  "comment": "ACL 2024",
+  "primary": "cs.CL"
+ },
+ "2310.02556": {
+  "title": "NOLA: Compressing LoRA using Linear Combination of Random Basis",
+  "authors": [
+   "Soroush Abbasi Koohpayegani",
+   "KL Navaneet",
+   "Parsa Nooralinejad",
+   "Soheil Kolouri",
+   "Hamed Pirsiavash"
+  ],
+  "published": "2023-10-04",
+  "journal_ref": "",
+  "comment": "ICLR 2024. Our code is available here: https://github.com/UCDvision/NOLA",
+  "primary": "cs.CL"
+ },
+ "2402.12354": {
+  "title": "LoRA+: Efficient Low Rank Adaptation of Large Models",
+  "authors": [
+   "Soufiane Hayou",
+   "Nikhil Ghosh",
+   "Bin Yu"
+  ],
+  "published": "2024-02-19",
+  "journal_ref": "",
+  "comment": "27 pages",
+  "primary": "cs.LG"
+ },
+ "2402.05859": {
+  "title": "Learning to Route Among Specialized Experts for Zero-Shot Generalization",
+  "authors": [
+   "Mohammed Muqeeth",
+   "Haokun Liu",
+   "Yufan Liu",
+   "Colin Raffel"
+  ],
+  "published": "2024-02-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.05147": {
+  "title": "ApiQ: Finetuning of 2-Bit Quantized Large Language Model",
+  "authors": [
+   "Baohao Liao",
+   "Christian Herold",
+   "Shahram Khadivi",
+   "Christof Monz"
+  ],
+  "published": "2024-02-07",
+  "journal_ref": "",
+  "comment": "more benchmarks and new method, block-wise ApiQ. code: https://github.com/BaohaoLiao/ApiQ",
+  "primary": "cs.LG"
+ },
+ "2308.03303": {
+  "title": "LoRA-FA: Efficient and Effective Low Rank Representation Fine-tuning",
+  "authors": [
+   "Longteng Zhang",
+   "Lin Zhang",
+   "Shaohuai Shi",
+   "Xiaowen Chu",
+   "Bo Li"
+  ],
+  "published": "2023-08-07",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2306.07280": {
+  "title": "Controlling Text-to-Image Diffusion by Orthogonal Finetuning",
+  "authors": [
+   "Zeju Qiu",
+   "Weiyang Liu",
+   "Haiwen Feng",
+   "Yuxuan Xue",
+   "Yao Feng",
+   "Zhen Liu",
+   "Dan Zhang",
+   "Adrian Weller",
+   "Bernhard Schölkopf"
+  ],
+  "published": "2023-06-12",
+  "journal_ref": "",
+  "comment": "NeurIPS 2023 (v3: fixed formula typos in Section 3.5, 43 pages, 34 figures, project page: https://oft.wyliu.com/)",
+  "primary": "cs.CV"
+ },
+ "2308.13111": {
+  "title": "Bayesian Low-rank Adaptation for Large Language Models",
+  "authors": [
+   "Adam X. Yang",
+   "Maxime Robeyns",
+   "Xi Wang",
+   "Laurence Aitchison"
+  ],
+  "published": "2023-08-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2312.09979": {
+  "title": "LoRAMoE: Alleviate World Knowledge Forgetting in Large Language Models via MoE-Style Plugin",
+  "authors": [
+   "Shihan Dou",
+   "Enyu Zhou",
+   "Yan Liu",
+   "Songyang Gao",
+   "Jun Zhao",
+   "Wei Shen",
+   "Yuhao Zhou",
+   "Zhiheng Xi",
+   "Xiao Wang",
+   "Xiaoran Fan",
+   "Shiliang Pu",
+   "Jiang Zhu",
+   "Rui Zheng",
+   "Tao Gui",
+   "Qi Zhang",
+   "Xuanjing Huang"
+  ],
+  "published": "2023-12-15",
+  "journal_ref": "",
+  "comment": "14 pages, 7 figures",
+  "primary": "cs.CL"
+ },
+ "2310.12962": {
+  "title": "An Emulator for Fine-Tuning Large Language Models using Small Language Models",
+  "authors": [
+   "Eric Mitchell",
+   "Rafael Rafailov",
+   "Archit Sharma",
+   "Chelsea Finn",
+   "Christopher D. Manning"
+  ],
+  "published": "2023-10-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2309.16119": {
+  "title": "ModuLoRA: Finetuning 2-Bit LLMs on Consumer GPUs by Integrating with Modular Quantizers",
+  "authors": [
+   "Junjie Yin",
+   "Jiahao Dong",
+   "Yingheng Wang",
+   "Christopher De Sa",
+   "Volodymyr Kuleshov"
+  ],
+  "published": "2023-09-28",
+  "journal_ref": "",
+  "comment": "Update since being accepted to TMLR. Updated 2Bit results",
+  "primary": "cs.LG"
+ },
+ "2309.05444": {
+  "title": "Pushing Mixture of Experts to the Limit: Extremely Parameter Efficient MoE for Instruction Tuning",
+  "authors": [
+   "Ted Zadouri",
+   "Ahmet Üstün",
+   "Arash Ahmadian",
+   "Beyza Ermiş",
+   "Acyr Locatelli",
+   "Sara Hooker"
+  ],
+  "published": "2023-09-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2309.05173": {
+  "title": "DePT: Decomposed Prompt Tuning for Parameter-Efficient Fine-tuning",
+  "authors": [
+   "Zhengxiang Shi",
+   "Aldo Lipani"
+  ],
+  "published": "2023-09-11",
+  "journal_ref": "",
+  "comment": "ICLR 2024. Code is available at https://github.com/ZhengxiangShi/DePT",
+  "primary": "cs.CL"
+ },
+ "2309.14717": {
+  "title": "QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Yuhui Xu",
+   "Lingxi Xie",
+   "Xiaotao Gu",
+   "Xin Chen",
+   "Heng Chang",
+   "Hengheng Zhang",
+   "Zhengsu Chen",
+   "Xiaopeng Zhang",
+   "Qi Tian"
+  ],
+  "published": "2023-09-26",
+  "journal_ref": "",
+  "comment": "16 pages",
+  "primary": "cs.LG"
+ },
+ "2402.14753": {
+  "title": "Prompting a Pretrained Transformer Can Be a Universal Approximator",
+  "authors": [
+   "Aleksandar Petrov",
+   "Philip H. S. Torr",
+   "Adel Bibi"
+  ],
+  "published": "2024-02-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2312.05677": {
+  "title": "Batched Low-Rank Adaptation of Foundation Models",
+  "authors": [
+   "Yeming Wen",
+   "Swarat Chaudhuri"
+  ],
+  "published": "2023-12-09",
+  "journal_ref": "",
+  "comment": "16 pages, 3 figures",
+  "primary": "cs.LG"
+ },
+ "2311.03099": {
+  "title": "Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch",
+  "authors": [
+   "Le Yu",
+   "Bowen Yu",
+   "Haiyang Yu",
+   "Fei Huang",
+   "Yongbin Li"
+  ],
+  "published": "2023-11-06",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2024",
+  "primary": "cs.CL"
+ },
+ "2312.02432": {
+  "title": "Orthogonal Adaptation for Modular Customization of Diffusion Models",
+  "authors": [
+   "Ryan Po",
+   "Guandao Yang",
+   "Kfir Aberman",
+   "Gordon Wetzstein"
+  ],
+  "published": "2023-12-05",
+  "journal_ref": "",
+  "comment": "Project page: https://ryanpo.com/ortha/ Hugging Face Demo: https://huggingface.co/spaces/ujin-song/ortha",
+  "primary": "cs.CV"
+ },
+ "2402.15332": {
+  "title": "Position: Categorical Deep Learning is an Algebraic Theory of All Architectures",
+  "authors": [
+   "Bruno Gavranović",
+   "Paul Lessard",
+   "Andrew Dudzik",
+   "Tamara von Glehn",
+   "João G. M. Araújo",
+   "Petar Veličković"
+  ],
+  "published": "2024-02-23",
+  "journal_ref": "",
+  "comment": "To appear in ICML 2024. Comments welcome. More info at categoricaldeeplearning.com",
+  "primary": "cs.LG"
+ },
+ "2402.15179": {
+  "title": "Advancing Parameter Efficiency in Fine-tuning via Representation Editing",
+  "authors": [
+   "Muling Wu",
+   "Wenhao Liu",
+   "Xiaohua Wang",
+   "Tianlong Li",
+   "Changze Lv",
+   "Zixuan Ling",
+   "Jianhao Zhu",
+   "Cenyuan Zhang",
+   "Xiaoqing Zheng",
+   "Xuanjing Huang"
+  ],
+  "published": "2024-02-23",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2401.04679": {
+  "title": "RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation",
+  "authors": [
+   "Mahdi Nikdan",
+   "Soroush Tabesh",
+   "Elvir Crnčević",
+   "Dan Alistarh"
+  ],
+  "published": "2024-01-09",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2311.13600": {
+  "title": "ZipLoRA: Any Subject in Any Style by Effectively Merging LoRAs",
+  "authors": [
+   "Viraj Shah",
+   "Nataniel Ruiz",
+   "Forrester Cole",
+   "Erika Lu",
+   "Svetlana Lazebnik",
+   "Yuanzhen Li",
+   "Varun Jampani"
+  ],
+  "published": "2023-11-22",
+  "journal_ref": "",
+  "comment": "Project page: https://ziplora.github.io",
+  "primary": "cs.CV"
+ },
+ "2402.04902": {
+  "title": "L4Q: Parameter Efficient Quantization-Aware Fine-Tuning on Large Language Models",
+  "authors": [
+   "Hyesung Jeon",
+   "Yulhwa Kim",
+   "Jae-joon Kim"
+  ],
+  "published": "2024-02-07",
+  "journal_ref": "ACL (main) 2025",
+  "comment": "9 pages, 4 figures, 3 tables",
+  "primary": "cs.LG"
+ },
+ "2402.17193": {
+  "title": "When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method",
+  "authors": [
+   "Biao Zhang",
+   "Zhongtao Liu",
+   "Colin Cherry",
+   "Orhan Firat"
+  ],
+  "published": "2024-02-27",
+  "journal_ref": "",
+  "comment": "ICLR24",
+  "primary": "cs.CL"
+ },
+ "2406.01563": {
+  "title": "LoFiT: Localized Fine-tuning on LLM Representations",
+  "authors": [
+   "Fangcong Yin",
+   "Xi Ye",
+   "Greg Durrett"
+  ],
+  "published": "2024-06-03",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024 Camera Ready",
+  "primary": "cs.CL"
+ },
+ "2406.02214": {
+  "title": "SLTrain: a sparse plus low-rank approach for parameter and memory efficient pretraining",
+  "authors": [
+   "Andi Han",
+   "Jiaxiang Li",
+   "Wei Huang",
+   "Mingyi Hong",
+   "Akiko Takeda",
+   "Pratik Jawanpuria",
+   "Bamdev Mishra"
+  ],
+  "published": "2024-06-04",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2407.11046": {
+  "title": "A Survey on LoRA of Large Language Models",
+  "authors": [
+   "Yuren Mao",
+   "Yuhang Ge",
+   "Yijiang Fan",
+   "Wenyi Xu",
+   "Yu Mi",
+   "Zhonghao Hu",
+   "Yunjun Gao"
+  ],
+  "published": "2024-07-08",
+  "journal_ref": "",
+  "comment": "The article has been accepted by Frontiers of Computer Science (FCS), with the DOI: {10.1007/s11704-024-40663-9}",
+  "primary": "cs.LG"
+ },
+ "2405.17991": {
+  "title": "VeLoRA: Memory Efficient Training using Rank-1 Sub-Token Projections",
+  "authors": [
+   "Roy Miles",
+   "Pradyumna Reddy",
+   "Ismail Elezi",
+   "Jiankang Deng"
+  ],
+  "published": "2024-05-28",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024. Code available at https://github.com/roymiles/VeLoRA",
+  "primary": "cs.CV"
+ },
+ "2403.17919": {
+  "title": "LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning",
+  "authors": [
+   "Rui Pan",
+   "Xiang Liu",
+   "Shizhe Diao",
+   "Renjie Pi",
+   "Jipeng Zhang",
+   "Chi Han",
+   "Tong Zhang"
+  ],
+  "published": "2024-03-26",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024",
+  "primary": "cs.LG"
+ },
+ "2404.15159": {
+  "title": "MixLoRA: Enhancing Large Language Models Fine-Tuning with LoRA-based Mixture of Experts",
+  "authors": [
+   "Dengchun Li",
+   "Yingzi Ma",
+   "Naizheng Wang",
+   "Zhengmao Ye",
+   "Zhiyuan Cheng",
+   "Yinghao Tang",
+   "Yan Zhang",
+   "Lei Duan",
+   "Jie Zuo",
+   "Cal Yang",
+   "Mingjie Tang"
+  ],
+  "published": "2024-04-22",
+  "journal_ref": "",
+  "comment": "18 pages, 5 figures",
+  "primary": "cs.CL"
+ },
+ "2406.05641": {
+  "title": "PaRa: Personalizing Text-to-Image Diffusion via Parameter Rank Reduction",
+  "authors": [
+   "Shangyu Chen",
+   "Zizheng Pan",
+   "Jianfei Cai",
+   "Dinh Phung"
+  ],
+  "published": "2024-06-09",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2405.12130": {
+  "title": "MoRA: High-Rank Updating for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Ting Jiang",
+   "Shaohan Huang",
+   "Shengyue Luo",
+   "Zihan Zhang",
+   "Haizhen Huang",
+   "Furu Wei",
+   "Weiwei Deng",
+   "Feng Sun",
+   "Qi Zhang",
+   "Deqing Wang",
+   "Fuzhen Zhuang"
+  ],
+  "published": "2024-05-20",
+  "journal_ref": "",
+  "comment": "Work in Progress",
+  "primary": "cs.CL"
+ },
+ "2407.09946": {
+  "title": "Low-Rank Interconnected Adaptation across Layers",
+  "authors": [
+   "Yibo Zhong",
+   "Jinman Zhao",
+   "Yao Zhou"
+  ],
+  "published": "2024-07-13",
+  "journal_ref": "",
+  "comment": "Accepted to ACL 2025 (findings, long paper)",
+  "primary": "cs.CV"
+ },
+ "2410.01870": {
+  "title": "PEANuT: Parameter-Efficient Adaptation with Weight-aware Neural Tweakers",
+  "authors": [
+   "Yibo Zhong",
+   "Haoxiang Jiang",
+   "Lincan Li",
+   "Ryumei Nakada",
+   "Tianci Liu",
+   "Linjun Zhang",
+   "Huaxiu Yao",
+   "Haoyu Wang"
+  ],
+  "published": "2024-10-02",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2408.07666": {
+  "title": "Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities",
+  "authors": [
+   "Enneng Yang",
+   "Li Shen",
+   "Guibing Guo",
+   "Xingwei Wang",
+   "Xiaochun Cao",
+   "Jie Zhang",
+   "Dacheng Tao"
+  ],
+  "published": "2024-08-14",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2403.16187": {
+  "title": "ALoRA: Allocating Low-Rank Adaptation for Fine-tuning Large Language Models",
+  "authors": [
+   "Zequan Liu",
+   "Jiawen Lyn",
+   "Wei Zhu",
+   "Xing Tian",
+   "Yvette Graham"
+  ],
+  "published": "2024-03-24",
+  "journal_ref": "",
+  "comment": "Accepted by NAACL-2024",
+  "primary": "cs.CL"
+ },
+ "2403.12313": {
+  "title": "Improving LoRA in Privacy-preserving Federated Learning",
+  "authors": [
+   "Youbang Sun",
+   "Zitao Li",
+   "Yaliang Li",
+   "Bolin Ding"
+  ],
+  "published": "2024-03-18",
+  "journal_ref": "",
+  "comment": "published at ICLR 2024, full paper 17 pages",
+  "primary": "cs.LG"
+ },
+ "2405.17357": {
+  "title": "DoRA: Enhancing Parameter-Efficient Fine-Tuning with Dynamic Rank Distribution",
+  "authors": [
+   "Yulong Mao",
+   "Kaiyu Huang",
+   "Changhao Guan",
+   "Ganglin Bao",
+   "Fengran Mo",
+   "Jinan Xu"
+  ],
+  "published": "2024-05-27",
+  "journal_ref": "",
+  "comment": "Accepted by the main conference of ACL 2024",
+  "primary": "cs.CL"
+ },
+ "2403.00812": {
+  "title": "LoRA Meets Dropout under a Unified Framework",
+  "authors": [
+   "Sheng Wang",
+   "Liheng Chen",
+   "Jiyue Jiang",
+   "Boyang Xue",
+   "Lingpeng Kong",
+   "Chuan Wu"
+  ],
+  "published": "2024-02-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2404.04316": {
+  "title": "Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation",
+  "authors": [
+   "Xinyu Ma",
+   "Xu Chu",
+   "Zhibang Yang",
+   "Yang Lin",
+   "Xin Gao",
+   "Junfeng Zhao"
+  ],
+  "published": "2024-04-05",
+  "journal_ref": "",
+  "comment": "Appeared at ICML 2024",
+  "primary": "cs.LG"
+ },
+ "2406.06820": {
+  "title": "Adapters Strike Back",
+  "authors": [
+   "Jan-Martin O. Steitz",
+   "Stefan Roth"
+  ],
+  "published": "2024-06-10",
+  "journal_ref": "",
+  "comment": "To appear at CVPR 2024. Code: https://github.com/visinf/adapter_plus",
+  "primary": "cs.CV"
+ },
+ "2405.20271": {
+  "title": "ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections",
+  "authors": [
+   "Massimo Bini",
+   "Karsten Roth",
+   "Zeynep Akata",
+   "Anna Khoreva"
+  ],
+  "published": "2024-05-30",
+  "journal_ref": "",
+  "comment": "Accepted to ICML 2024. Code available at https://github.com/mwbini/ether",
+  "primary": "cs.LG"
+ },
+ "2409.05976": {
+  "title": "FLoRA: Federated Fine-Tuning Large Language Models with Heterogeneous Low-Rank Adaptations",
+  "authors": [
+   "Ziyao Wang",
+   "Zheyu Shen",
+   "Yexiao He",
+   "Guoheng Sun",
+   "Hongyi Wang",
+   "Lingjuan Lyu",
+   "Ang Li"
+  ],
+  "published": "2024-09-09",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2403.14608": {
+  "title": "Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey",
+  "authors": [
+   "Zeyu Han",
+   "Chao Gao",
+   "Jinyang Liu",
+   "Jeff Zhang",
+   "Sai Qian Zhang"
+  ],
+  "published": "2024-03-21",
+  "journal_ref": "",
+  "comment": "25 pages, 12 figures. Due to word limit, the abstract here is truncated. The full abstract is available in the PDF",
+  "primary": "cs.LG"
+ },
+ "2407.05417": {
+  "title": "See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition",
+  "authors": [
+   "Chongjie Si",
+   "Xiaokang Yang",
+   "Wei Shen"
+  ],
+  "published": "2024-07-07",
+  "journal_ref": "",
+  "comment": "Codes in https://github.com/Chongjie-Si/Subspace-Tuning",
+  "primary": "cs.LG"
+ },
+ "2402.16843": {
+  "title": "Multi-LoRA Composition for Image Generation",
+  "authors": [
+   "Ming Zhong",
+   "Yelong Shen",
+   "Shuohang Wang",
+   "Yadong Lu",
+   "Yizhu Jiao",
+   "Siru Ouyang",
+   "Donghan Yu",
+   "Jiawei Han",
+   "Weizhu Chen"
+  ],
+  "published": "2024-02-26",
+  "journal_ref": "",
+  "comment": "Transactions on Machine Learning Research (TMLR), 2024",
+  "primary": "cs.CV"
+ },
+ "2407.18242": {
+  "title": "LoRA-Pro: Are Low-Rank Adapters Properly Optimized?",
+  "authors": [
+   "Zhengbo Wang",
+   "Jian Liang",
+   "Ran He",
+   "Zilei Wang",
+   "Tieniu Tan"
+  ],
+  "published": "2024-07-25",
+  "journal_ref": "",
+  "comment": "Camera-Ready Version for ICLR 2025; technical corrections to previous version",
+  "primary": "cs.LG"
+ },
+ "2408.17383": {
+  "title": "MoRe Fine-Tuning with 10x Fewer Parameters",
+  "authors": [
+   "Wenxuan Tan",
+   "Nicholas Roberts",
+   "Tzu-Heng Huang",
+   "Jitian Zhao",
+   "John Cooper",
+   "Samuel Guo",
+   "Chengyu Duan",
+   "Frederic Sala"
+  ],
+  "published": "2024-08-30",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2406.09044": {
+  "title": "MiLoRA: Harnessing Minor Singular Components for Parameter-Efficient LLM Finetuning",
+  "authors": [
+   "Hanqing Wang",
+   "Yixia Li",
+   "Shuo Wang",
+   "Guanhua Chen",
+   "Yun Chen"
+  ],
+  "published": "2024-06-13",
+  "journal_ref": "",
+  "comment": "This paper has been accepted at NAACL 2025. Code is available at: https://github.com/sufenlp/MiLoRA",
+  "primary": "cs.CL"
+ },
+ "2404.13628": {
+  "title": "Mixture of LoRA Experts",
+  "authors": [
+   "Xun Wu",
+   "Shaohan Huang",
+   "Furu Wei"
+  ],
+  "published": "2024-04-21",
+  "journal_ref": "",
+  "comment": "17 pages, 11 figures",
+  "primary": "cs.CL"
+ },
+ "2403.09113": {
+  "title": "AutoLoRA: Automatically Tuning Matrix Ranks in Low-Rank Adaptation Based on Meta Learning",
+  "authors": [
+   "Ruiyi Zhang",
+   "Rushi Qiang",
+   "Sai Ashish Somayajula",
+   "Pengtao Xie"
+  ],
+  "published": "2024-03-14",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2405.17258": {
+  "title": "$\\textit{Trans-LoRA}$: towards data-free Transferable Parameter Efficient Finetuning",
+  "authors": [
+   "Runqian Wang",
+   "Soumya Ghosh",
+   "David Cox",
+   "Diego Antognini",
+   "Aude Oliva",
+   "Rogerio Feris",
+   "Leonid Karlinsky"
+  ],
+  "published": "2024-05-27",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2402.16902": {
+  "title": "PRoLoRA: Partial Rotation Empowers More Parameter-Efficient LoRA",
+  "authors": [
+   "Sheng Wang",
+   "Boyang Xue",
+   "Jiacheng Ye",
+   "Jiyue Jiang",
+   "Liheng Chen",
+   "Lingpeng Kong",
+   "Chuan Wu"
+  ],
+  "published": "2024-02-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2405.19597": {
+  "title": "SVFT: Parameter-Efficient Fine-Tuning with Singular Vectors",
+  "authors": [
+   "Vijay Lingam",
+   "Atula Tejaswi",
+   "Aditya Vavre",
+   "Aneesh Shetty",
+   "Gautham Krishna Gudur",
+   "Joydeep Ghosh",
+   "Alex Dimakis",
+   "Eunsol Choi",
+   "Aleksandar Bojchevski",
+   "Sujay Sanghavi"
+  ],
+  "published": "2024-05-30",
+  "journal_ref": "",
+  "comment": "17 pages, 5 figures, 14 tables",
+  "primary": "cs.LG"
+ },
+ "2408.01008": {
+  "title": "Tensor Train Low-rank Approximation (TT-LoRA): Democratizing AI with Accelerated LLMs",
+  "authors": [
+   "Afia Anjum",
+   "Maksim E. Eren",
+   "Ismael Boureima",
+   "Boian Alexandrov",
+   "Manish Bhattarai"
+  ],
+  "published": "2024-08-02",
+  "journal_ref": "",
+  "comment": "LA-UR-24-28177",
+  "primary": "cs.LG"
+ },
+ "2406.01775": {
+  "title": "OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Kerim Büyükakyüz"
+  ],
+  "published": "2024-06-03",
+  "journal_ref": "",
+  "comment": "10 pages, 5 figures",
+  "primary": "cs.CL"
+ },
+ "2406.11675": {
+  "title": "BLoB: Bayesian Low-Rank Adaptation by Backpropagation for Large Language Models",
+  "authors": [
+   "Yibin Wang",
+   "Haizhou Shi",
+   "Ligong Han",
+   "Dimitris Metaxas",
+   "Hao Wang"
+  ],
+  "published": "2024-06-17",
+  "journal_ref": "",
+  "comment": "Accepted at NeurIPS 2024. Additional experiments have been included in the appendix",
+  "primary": "cs.LG"
+ },
+ "2409.16167": {
+  "title": "Merging LoRAs like Playing LEGO: Pushing the Modularity of LoRA to Extremes Through Rank-Wise Clustering",
+  "authors": [
+   "Ziyu Zhao",
+   "Tao Shen",
+   "Didi Zhu",
+   "Zexi Li",
+   "Jing Su",
+   "Xuwu Wang",
+   "Kun Kuang",
+   "Fei Wu"
+  ],
+  "published": "2024-09-24",
+  "journal_ref": "https://openreview.net/forum?id=j6fsbpAllN&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions)",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2405.15179": {
+  "title": "VB-LoRA: Extreme Parameter Efficient Fine-Tuning with Vector Banks",
+  "authors": [
+   "Yang Li",
+   "Shaobo Han",
+   "Shihao Ji"
+  ],
+  "published": "2024-05-24",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024",
+  "primary": "cs.CL"
+ },
+ "2409.00119": {
+  "title": "3-in-1: 2D Rotary Adaptation for Efficient Finetuning, Efficient Batching and Composability",
+  "authors": [
+   "Baohao Liao",
+   "Christof Monz"
+  ],
+  "published": "2024-08-28",
+  "journal_ref": "",
+  "comment": "Accepted to NeurIPS 2024. Code: https://github.com/BaohaoLiao/road",
+  "primary": "cs.LG"
+ },
+ "2405.13952": {
+  "title": "Spectral Adapter: Fine-Tuning in Spectral Space",
+  "authors": [
+   "Fangzhao Zhang",
+   "Mert Pilanci"
+  ],
+  "published": "2024-05-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2404.02827": {
+  "title": "BAdam: A Memory Efficient Full Parameter Optimization Method for Large Language Models",
+  "authors": [
+   "Qijun Luo",
+   "Hengxu Yu",
+   "Xiao Li"
+  ],
+  "published": "2024-04-03",
+  "journal_ref": "",
+  "comment": "Accepted for Publication in Conference on Neural Information Processing Systems, 2024",
+  "primary": "cs.LG"
+ },
+ "2406.05223": {
+  "title": "CorDA: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning",
+  "authors": [
+   "Yibo Yang",
+   "Xiaojie Li",
+   "Zhongzhu Zhou",
+   "Shuaiwen Leon Song",
+   "Jianlong Wu",
+   "Liqiang Nie",
+   "Bernard Ghanem"
+  ],
+  "published": "2024-06-07",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024",
+  "primary": "cs.LG"
+ },
+ "2407.11062": {
+  "title": "EfficientQAT: Efficient Quantization-Aware Training for Large Language Models",
+  "authors": [
+   "Mengzhao Chen",
+   "Wenqi Shao",
+   "Peng Xu",
+   "Jiahao Wang",
+   "Peng Gao",
+   "Kaipeng Zhang",
+   "Ping Luo"
+  ],
+  "published": "2024-07-10",
+  "journal_ref": "",
+  "comment": "ACL 2025 Main, camera ready version",
+  "primary": "cs.LG"
+ },
+ "2406.00132": {
+  "title": "QuanTA: Efficient High-Rank Fine-Tuning of LLMs with Quantum-Informed Tensor Adaptation",
+  "authors": [
+   "Zhuo Chen",
+   "Rumen Dangovski",
+   "Charlotte Loh",
+   "Owen Dugan",
+   "Di Luo",
+   "Marin Soljačić"
+  ],
+  "published": "2024-05-31",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2406.06623": {
+  "title": "Spectrum: Targeted Training on Signal to Noise Ratio",
+  "authors": [
+   "Eric Hartford",
+   "Lucas Atkins",
+   "Fernando Fernandes Neto",
+   "David Golchinfar"
+  ],
+  "published": "2024-06-07",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2407.19342": {
+  "title": "Parameter-Efficient Fine-Tuning via Circular Convolution",
+  "authors": [
+   "Aochuan Chen",
+   "Jiashun Cheng",
+   "Zijing Liu",
+   "Ziqi Gao",
+   "Fugee Tsung",
+   "Yu Li",
+   "Jia Li"
+  ],
+  "published": "2024-07-27",
+  "journal_ref": "",
+  "comment": "ACL 2025",
+  "primary": "cs.LG"
+ },
+ "2405.17604": {
+  "title": "LoRA-XS: Low-Rank Adaptation with Extremely Small Number of Parameters",
+  "authors": [
+   "Klaudia Bałazy",
+   "Mohammadreza Banaei",
+   "Karl Aberer",
+   "Jacek Tabor"
+  ],
+  "published": "2024-05-27",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2406.11909": {
+  "title": "Mixture-of-Subspaces in Low-Rank Adaptation",
+  "authors": [
+   "Taiqiang Wu",
+   "Jiahao Wang",
+   "Zhe Zhao",
+   "Ngai Wong"
+  ],
+  "published": "2024-06-16",
+  "journal_ref": "",
+  "comment": "EMNLP 2024 Main, Oral",
+  "primary": "cs.LG"
+ },
+ "2402.16842": {
+  "title": "Asymmetry in Low-Rank Adapters of Foundation Models",
+  "authors": [
+   "Jiacheng Zhu",
+   "Kristjan Greenewald",
+   "Kimia Nadjahi",
+   "Haitz Sáez de Ocáriz Borde",
+   "Rickard Brüel Gabrielsson",
+   "Leshem Choshen",
+   "Marzyeh Ghassemi",
+   "Mikhail Yurochkin",
+   "Justin Solomon"
+  ],
+  "published": "2024-02-26",
+  "journal_ref": "",
+  "comment": "17 pages, 2 figures, 9 tables",
+  "primary": "cs.LG"
+ },
+ "2402.16141": {
+  "title": "PeriodicLoRA: Breaking the Low-Rank Bottleneck in LoRA Optimization",
+  "authors": [
+   "Xiangdi Meng",
+   "Damai Dai",
+   "Weiyao Luo",
+   "Zhe Yang",
+   "Shaoxiang Wu",
+   "Xiaochen Wang",
+   "Peiyi Wang",
+   "Qingxiu Dong",
+   "Liang Chen",
+   "Zhifang Sui"
+  ],
+  "published": "2024-02-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2404.00228": {
+  "title": "InfLoRA: Interference-Free Low-Rank Adaptation for Continual Learning",
+  "authors": [
+   "Yan-Shuo Liang",
+   "Wu-Jun Li"
+  ],
+  "published": "2024-03-30",
+  "journal_ref": "",
+  "comment": "Accepted by the 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2024)",
+  "primary": "cs.LG"
+ },
+ "2404.09610": {
+  "title": "LoRA Dropout as a Sparsity Regularizer for Overfitting Control",
+  "authors": [
+   "Yang Lin",
+   "Xinyu Ma",
+   "Xu Chu",
+   "Yujie Jin",
+   "Zhibang Yang",
+   "Yasha Wang",
+   "Hong Mei"
+  ],
+  "published": "2024-04-15",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2405.14739": {
+  "title": "Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning",
+  "authors": [
+   "Chongjie Si",
+   "Xuehui Wang",
+   "Xue Yang",
+   "Zhengqin Xu",
+   "Qingyun Li",
+   "Jifeng Dai",
+   "Yu Qiao",
+   "Xiaokang Yang",
+   "Wei Shen"
+  ],
+  "published": "2024-05-23",
+  "journal_ref": "",
+  "comment": "2025 ICLR",
+  "primary": "cs.CV"
+ },
+ "2406.10785": {
+  "title": "ShareLoRA: Parameter Efficient and Robust Large Language Model Fine-tuning via Shared Low-Rank Adaptation",
+  "authors": [
+   "Yurun Song",
+   "Junchen Zhao",
+   "Ian G. Harris",
+   "Sangeetha Abdu Jyothi"
+  ],
+  "published": "2024-06-16",
+  "journal_ref": "",
+  "comment": "17 pages, 7 figures",
+  "primary": "cs.CL"
+ },
+ "2405.15525": {
+  "title": "Sparse Matrix in Large Language Model Fine-tuning",
+  "authors": [
+   "Haoze He",
+   "Juncheng Billy Li",
+   "Xuan Jiang",
+   "Heather Miller"
+  ],
+  "published": "2024-05-24",
+  "journal_ref": "",
+  "comment": "14 pages",
+  "primary": "cs.CL"
+ },
+ "2406.12832": {
+  "title": "LaMDA: Large Model Fine-Tuning via Spectrally Decomposed Low-Dimensional Adaptation",
+  "authors": [
+   "Seyedarmin Azizi",
+   "Souvik Kundu",
+   "Massoud Pedram"
+  ],
+  "published": "2024-06-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2405.17484": {
+  "title": "Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation",
+  "authors": [
+   "Shen Yuan",
+   "Haotian Liu",
+   "Hongteng Xu"
+  ],
+  "published": "2024-05-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2406.06248": {
+  "title": "Compute Better Spent: Replacing Dense Layers with Structured Matrices",
+  "authors": [
+   "Shikai Qiu",
+   "Andres Potapczynski",
+   "Marc Finzi",
+   "Micah Goldblum",
+   "Andrew Gordon Wilson"
+  ],
+  "published": "2024-06-10",
+  "journal_ref": "",
+  "comment": "ICML 24. Code available at https://github.com/shikaiqiu/compute-better-spent",
+  "primary": "cs.LG"
+ },
+ "2406.08447": {
+  "title": "The Impact of Initialization on LoRA Finetuning Dynamics",
+  "authors": [
+   "Soufiane Hayou",
+   "Nikhil Ghosh",
+   "Bin Yu"
+  ],
+  "published": "2024-06-12",
+  "journal_ref": "",
+  "comment": "TDLR: Different Initializations lead to completely different finetuning dynamics. One initialization (set A random and B zero) is generally better than the natural opposite initialization. arXiv admin note: text overlap with arXiv:2402.12354",
+  "primary": "cs.LG"
+ },
+ "2405.03003": {
+  "title": "Parameter-Efficient Fine-Tuning with Discrete Fourier Transform",
+  "authors": [
+   "Ziqi Gao",
+   "Qichao Wang",
+   "Aochuan Chen",
+   "Zijing Liu",
+   "Bingzhe Wu",
+   "Liang Chen",
+   "Jia Li"
+  ],
+  "published": "2024-05-05",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2024",
+  "primary": "cs.LG"
+ },
+ "2404.19245": {
+  "title": "HydraLoRA: An Asymmetric LoRA Architecture for Efficient Fine-Tuning",
+  "authors": [
+   "Chunlin Tian",
+   "Zhan Shi",
+   "Zhijiang Guo",
+   "Li Li",
+   "Chengzhong Xu"
+  ],
+  "published": "2024-04-30",
+  "journal_ref": "",
+  "comment": "19 pages, 7 figures",
+  "primary": "cs.CL"
+ },
+ "2408.12857": {
+  "title": "Memory-Efficient LLM Training with Online Subspace Descent",
+  "authors": [
+   "Kaizhao Liang",
+   "Bo Liu",
+   "Lizhang Chen",
+   "Qiang Liu"
+  ],
+  "published": "2024-08-23",
+  "journal_ref": "",
+  "comment": "Code is available at https://github.com/kyleliang919/Online-Subspace-Descent",
+  "primary": "cs.LG"
+ },
+ "2407.01906": {
+  "title": "Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models",
+  "authors": [
+   "Zihan Wang",
+   "Deli Chen",
+   "Damai Dai",
+   "Runxin Xu",
+   "Zhuoshu Li",
+   "Y. Wu"
+  ],
+  "published": "2024-07-02",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2404.02948": {
+  "title": "PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models",
+  "authors": [
+   "Fanxu Meng",
+   "Zhaohui Wang",
+   "Muhan Zhang"
+  ],
+  "published": "2024-04-03",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024 spotlight",
+  "primary": "cs.LG"
+ },
+ "2409.15371": {
+  "title": "MiSS: Revisiting the Trade-off in LoRA with an Efficient Shard-Sharing Structure",
+  "authors": [
+   "Jiale Kang",
+   "Qingyu Yin"
+  ],
+  "published": "2024-09-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2409.01035": {
+  "title": "Task-Specific Directions: Definition, Exploration, and Utilization in Parameter Efficient Fine-Tuning",
+  "authors": [
+   "Chongjie Si",
+   "Zhiyi Shi",
+   "Shifan Zhang",
+   "Xiaokang Yang",
+   "Hanspeter Pfister",
+   "Wei Shen"
+  ],
+  "published": "2024-09-02",
+  "journal_ref": "",
+  "comment": "2026, TPAMI, Codes in https://github.com/Chongjie-Si/Subspace-Tuning",
+  "primary": "cs.CL"
+ },
+ "2402.17263": {
+  "title": "MELoRA: Mini-Ensemble Low-Rank Adapters for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Pengjie Ren",
+   "Chengshun Shi",
+   "Shiguang Wu",
+   "Mengqi Zhang",
+   "Zhaochun Ren",
+   "Maarten de Rijke",
+   "Zhumin Chen",
+   "Jiahuan Pei"
+  ],
+  "published": "2024-02-27",
+  "journal_ref": "",
+  "comment": "ACL2024",
+  "primary": "cs.CL"
+ },
+ "2409.14396": {
+  "title": "Flat-LoRA: Low-Rank Adaptation over a Flat Loss Landscape",
+  "authors": [
+   "Tao Li",
+   "Zhengbao He",
+   "Yujun Li",
+   "Yasheng Wang",
+   "Lifeng Shang",
+   "Xiaolin Huang"
+  ],
+  "published": "2024-09-22",
+  "journal_ref": "",
+  "comment": "ICML 2025",
+  "primary": "cs.LG"
+ },
+ "2406.16793": {
+  "title": "Adam-mini: Use Fewer Learning Rates To Gain More",
+  "authors": [
+   "Yushun Zhang",
+   "Congliang Chen",
+   "Ziniu Li",
+   "Tian Ding",
+   "Chenwei Wu",
+   "Diederik P. Kingma",
+   "Yinyu Ye",
+   "Zhi-Quan Luo",
+   "Ruoyu Sun"
+  ],
+  "published": "2024-06-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2403.13001": {
+  "title": "Fundamental Components of Deep Learning: A category-theoretic approach",
+  "authors": [
+   "Bruno Gavranović"
+  ],
+  "published": "2024-03-13",
+  "journal_ref": "",
+  "comment": "PhD Thesis defended at University of Strathclyde",
+  "primary": "cs.LG"
+ },
+ "2407.08296": {
+  "title": "Q-GaLore: Quantized GaLore with INT4 Projection and Layer-Adaptive Low-Rank Gradients",
+  "authors": [
+   "Zhenyu Zhang",
+   "Ajay Jaiswal",
+   "Lu Yin",
+   "Shiwei Liu",
+   "Jiawei Zhao",
+   "Yuandong Tian",
+   "Zhangyang Wang"
+  ],
+  "published": "2024-07-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2408.08345": {
+  "title": "5%>100%: Breaking Performance Shackles of Full Fine-Tuning on Visual Recognition Tasks",
+  "authors": [
+   "Dongshuo Yin",
+   "Leiyi Hu",
+   "Bin Li",
+   "Youqun Zhang",
+   "Xue Yang"
+  ],
+  "published": "2024-08-15",
+  "journal_ref": "",
+  "comment": "arXiv admin note: substantial text overlap with arXiv:2311.15010",
+  "primary": "cs.CV"
+ },
+ "2405.11157": {
+  "title": "Towards Modular LLMs by Building and Reusing a Library of LoRAs",
+  "authors": [
+   "Oleksiy Ostapenko",
+   "Zhan Su",
+   "Edoardo Maria Ponti",
+   "Laurent Charlin",
+   "Nicolas Le Roux",
+   "Matheus Pereira",
+   "Lucas Caccia",
+   "Alessandro Sordoni"
+  ],
+  "published": "2024-05-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2406.13175": {
+  "title": "Sparse High Rank Adapters",
+  "authors": [
+   "Kartikeya Bhardwaj",
+   "Nilesh Prasad Pandey",
+   "Sweta Priyadarshi",
+   "Viswanath Ganapathy",
+   "Shreya Kadambi",
+   "Rafael Esteves",
+   "Shubhankar Borse",
+   "Paul Whatmough",
+   "Risheek Garrepalli",
+   "Mart Van Baalen",
+   "Harris Teague",
+   "Markus Nagel"
+  ],
+  "published": "2024-06-19",
+  "journal_ref": "",
+  "comment": "NeurIPS 2024",
+  "primary": "cs.LG"
+ },
+ "2410.01623": {
+  "title": "Fira: Can We Achieve Full-rank Training of LLMs Under Low-rank Constraint?",
+  "authors": [
+   "Xi Chen",
+   "Kaituo Feng",
+   "Changsheng Li",
+   "Xunhao Lai",
+   "Xiangyu Yue",
+   "Ye Yuan",
+   "Guoren Wang"
+  ],
+  "published": "2024-10-02",
+  "journal_ref": "",
+  "comment": "NeurIPS 2025, Project page: https://github.com/xichen-fy/Fira",
+  "primary": "cs.LG"
+ },
+ "2403.19243": {
+  "title": "Efficient Learning With Sine-Activated Low-rank Matrices",
+  "authors": [
+   "Yiping Ji",
+   "Hemanth Saratchandran",
+   "Cameron Gordon",
+   "Zeyu Zhang",
+   "Simon Lucey"
+  ],
+  "published": "2024-03-28",
+  "journal_ref": "",
+  "comment": "The first two authors contributed equally. Paper accepted at ICLR 2025",
+  "primary": "cs.LG"
+ },
+ "2410.00938": {
+  "title": "MoS: Unleashing Parameter Efficiency of Low-Rank Adaptation with Mixture of Shards",
+  "authors": [
+   "Sheng Wang",
+   "Liheng Chen",
+   "Pengan Chen",
+   "Jingwei Dong",
+   "Boyang Xue",
+   "Jiyue Jiang",
+   "Lingpeng Kong",
+   "Chuan Wu"
+  ],
+  "published": "2024-10-01",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2404.03592": {
+  "title": "ReFT: Representation Finetuning for Language Models",
+  "authors": [
+   "Zhengxuan Wu",
+   "Aryaman Arora",
+   "Zheng Wang",
+   "Atticus Geiger",
+   "Dan Jurafsky",
+   "Christopher D. Manning",
+   "Christopher Potts"
+  ],
+  "published": "2024-04-04",
+  "journal_ref": "",
+  "comment": "preprint",
+  "primary": "cs.CL"
+ },
+ "2403.03507": {
+  "title": "GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection",
+  "authors": [
+   "Jiawei Zhao",
+   "Zhenyu Zhang",
+   "Beidi Chen",
+   "Zhangyang Wang",
+   "Anima Anandkumar",
+   "Yuandong Tian"
+  ],
+  "published": "2024-03-06",
+  "journal_ref": "",
+  "comment": "ICML 2024 (Oral)",
+  "primary": "cs.LG"
+ },
+ "2405.16528": {
+  "title": "LoQT: Low-Rank Adapters for Quantized Pretraining",
+  "authors": [
+   "Sebastian Loeschcke",
+   "Mads Toftrup",
+   "Michael J. Kastoryano",
+   "Serge Belongie",
+   "Vésteinn Snæbjarnarson"
+  ],
+  "published": "2024-05-26",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2405.09673": {
+  "title": "LoRA Learns Less and Forgets Less",
+  "authors": [
+   "Dan Biderman",
+   "Jacob Portes",
+   "Jose Javier Gonzalez Ortiz",
+   "Mansheej Paul",
+   "Philip Greengard",
+   "Connor Jennings",
+   "Daniel King",
+   "Sam Havens",
+   "Vitaliy Chiley",
+   "Jonathan Frankle",
+   "Cody Blakeney",
+   "John P. Cunningham"
+  ],
+  "published": "2024-05-15",
+  "journal_ref": "",
+  "comment": "Final version with new experiments and analyses, as accepted to Transactions on Machine Learning Research, August 2024 (Featured Certification). https://openreview.net/forum?id=aloEru2qCG&noteId=Jb3PQNQDI2",
+  "primary": "cs.LG"
+ },
+ "2407.05000": {
+  "title": "LoRA-GA: Low-Rank Adaptation with Gradient Approximation",
+  "authors": [
+   "Shaowen Wang",
+   "Linxi Yu",
+   "Jian Li"
+  ],
+  "published": "2024-07-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.18965": {
+  "title": "On the Crucial Role of Initialization for Matrix Factorization",
+  "authors": [
+   "Bingcong Li",
+   "Liang Zhang",
+   "Aryan Mokhtari",
+   "Niao He"
+  ],
+  "published": "2024-10-24",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.04060": {
+  "title": "LoRTA: Low Rank Tensor Adaptation of Large Language Models",
+  "authors": [
+   "Ignacio Hounie",
+   "Charilaos Kanatsoulis",
+   "Arnuv Tandon",
+   "Alejandro Ribeiro"
+  ],
+  "published": "2024-10-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2502.05539": {
+  "title": "SSH: Sparse Spectrum Adaptation via Discrete Hartley Transformation",
+  "authors": [
+   "Yixian Shen",
+   "Qi Bi",
+   "Jia-Hong Huang",
+   "Hongyi Zhu",
+   "Andy D. Pimentel",
+   "Anuj Pathania"
+  ],
+  "published": "2025-02-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2503.12576": {
+  "title": "RaSA: Rank-Sharing Low-Rank Adaptation",
+  "authors": [
+   "Zhiwei He",
+   "Zhaopeng Tu",
+   "Xing Wang",
+   "Xingyu Chen",
+   "Zhijie Wang",
+   "Jiahao Xu",
+   "Tian Liang",
+   "Wenxiang Jiao",
+   "Zhuosheng Zhang",
+   "Rui Wang"
+  ],
+  "published": "2025-03-16",
+  "journal_ref": "",
+  "comment": "ICLR 2025",
+  "primary": "cs.CL"
+ },
+ "2504.12397": {
+  "title": "Activated LoRA: Fine-tuned LLMs for Intrinsics",
+  "authors": [
+   "Kristjan Greenewald",
+   "Luis Lastras",
+   "Thomas Parnell",
+   "Vraj Shah",
+   "Lucian Popa",
+   "Giulio Zizzo",
+   "Chulaka Gunasekara",
+   "Ambrish Rawat",
+   "David Cox"
+  ],
+  "published": "2025-04-16",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.07170": {
+  "title": "Parameter Efficient Fine-tuning via Explained Variance Adaptation",
+  "authors": [
+   "Fabian Paischer",
+   "Lukas Hauzenberger",
+   "Thomas Schmied",
+   "Benedikt Alkin",
+   "Marc Peter Deisenroth",
+   "Sepp Hochreiter"
+  ],
+  "published": "2024-10-09",
+  "journal_ref": "",
+  "comment": "Accepted at NeurIPS 2025, Shared first authorship, Code available at https://github.com/ml-jku/EVA",
+  "primary": "cs.LG"
+ },
+ "2504.07097": {
+  "title": "Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning",
+  "authors": [
+   "Nikhil Shivakumar Nayak",
+   "Krishnateja Killamsetty",
+   "Ligong Han",
+   "Abhishek Bhandwaldar",
+   "Prateek Chanda",
+   "Kai Xu",
+   "Hao Wang",
+   "Aldo Pareja",
+   "Oleg Silkin",
+   "Mustafa Eyceoz",
+   "Akash Srivastava"
+  ],
+  "published": "2025-04-09",
+  "journal_ref": "",
+  "comment": "25 pages, 13 figures, 6 tables",
+  "primary": "cs.LG"
+ },
+ "2504.00254": {
+  "title": "ElaLoRA: Elastic & Learnable Low-Rank Adaptation for Efficient Model Fine-Tuning",
+  "authors": [
+   "Huandong Chang",
+   "Zicheng Ma",
+   "Mingyuan Ma",
+   "Zhenting Qi",
+   "Andrew Sabot",
+   "Hong Jiang",
+   "H. T. Kung"
+  ],
+  "published": "2025-03-31",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2505.14238": {
+  "title": "ABBA-Adapters: Efficient and Expressive Fine-Tuning of Foundation Models",
+  "authors": [
+   "Raghav Singhal",
+   "Kaustubh Ponkshe",
+   "Rohit Vartak",
+   "Praneeth Vepakomma"
+  ],
+  "published": "2025-05-20",
+  "journal_ref": "",
+  "comment": "ICLR 2026. Raghav Singhal, Kaustubh Ponkshe, and Rohit Vartak contributed equally to this work",
+  "primary": "cs.CL"
+ },
+ "2504.00851": {
+  "title": "Generalized Tensor-based Parameter-Efficient Fine-Tuning via Lie Group Transformations",
+  "authors": [
+   "Chongjie Si",
+   "Zhiyi Shi",
+   "Xuehui Wang",
+   "Yichen Xiao",
+   "Xiaokang Yang",
+   "Wei Shen"
+  ],
+  "published": "2025-04-01",
+  "journal_ref": "",
+  "comment": "2025 ICCV",
+  "primary": "cs.LG"
+ },
+ "2506.06266": {
+  "title": "Cartridges: Lightweight and general-purpose long context representations via self-study",
+  "authors": [
+   "Sabri Eyuboglu",
+   "Ryan Ehrlich",
+   "Simran Arora",
+   "Neel Guha",
+   "Dylan Zinsley",
+   "Emily Liu",
+   "Will Tennien",
+   "Atri Rudra",
+   "James Zou",
+   "Azalia Mirhoseini",
+   "Christopher Re"
+  ],
+  "published": "2025-06-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2507.05566": {
+  "title": "SingLoRA: Low Rank Adaptation Using a Single Matrix",
+  "authors": [
+   "David Bensaïd",
+   "Noam Rotstein",
+   "Roy Velich",
+   "Daniel Bensaïd",
+   "Ron Kimmel"
+  ],
+  "published": "2025-07-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.AI"
+ },
+ "2504.07448": {
+  "title": "LoRI: Reducing Cross-Task Interference in Multi-Task Low-Rank Adaptation",
+  "authors": [
+   "Juzheng Zhang",
+   "Jiacheng You",
+   "Ashwinee Panda",
+   "Tom Goldstein"
+  ],
+  "published": "2025-04-10",
+  "journal_ref": "",
+  "comment": "COLM 2025",
+  "primary": "cs.LG"
+ },
+ "2503.03499": {
+  "title": "State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models",
+  "authors": [
+   "Wonjun Kang",
+   "Kevin Galim",
+   "Yuchen Zeng",
+   "Minjae Lee",
+   "Hyung Il Koo",
+   "Nam Ik Cho"
+  ],
+  "published": "2025-03-05",
+  "journal_ref": "",
+  "comment": "Accepted at ACL 2025 Main",
+  "primary": "cs.LG"
+ },
+ "2501.13198": {
+  "title": "SD-LoRA: Scalable Decoupled Low-Rank Adaptation for Class Incremental Learning",
+  "authors": [
+   "Yichen Wu",
+   "Hongming Piao",
+   "Long-Kai Huang",
+   "Renzhen Wang",
+   "Wanhua Li",
+   "Hanspeter Pfister",
+   "Deyu Meng",
+   "Kede Ma",
+   "Ying Wei"
+  ],
+  "published": "2025-01-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.03617": {
+  "title": "What Matters for Model Merging at Scale?",
+  "authors": [
+   "Prateek Yadav",
+   "Tu Vu",
+   "Jonathan Lai",
+   "Alexandra Chronopoulou",
+   "Manaal Faruqui",
+   "Mohit Bansal",
+   "Tsendsuren Munkhdalai"
+  ],
+  "published": "2024-10-04",
+  "journal_ref": "",
+  "comment": "20 Pages, 7 Figures, 4 Tables",
+  "primary": "cs.LG"
+ },
+ "2410.17222": {
+  "title": "Context-aware Prompt Tuning: Advancing In-Context Learning with Adversarial Methods",
+  "authors": [
+   "Tsachi Blau",
+   "Moshe Kimhi",
+   "Yonatan Belinkov",
+   "Alexander Bronstein",
+   "Chaim Baskin"
+  ],
+  "published": "2024-10-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2412.06289": {
+  "title": "S$^{2}$FT: Efficient, Scalable and Generalizable LLM Fine-tuning by Structured Sparsity",
+  "authors": [
+   "Xinyu Yang",
+   "Jixuan Leng",
+   "Geyang Guo",
+   "Jiawei Zhao",
+   "Ryumei Nakada",
+   "Linjun Zhang",
+   "Huaxiu Yao",
+   "Beidi Chen"
+  ],
+  "published": "2024-12-09",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2411.15804": {
+  "title": "LoRA-Mini : Adaptation Matrices Decomposition and Selective Training",
+  "authors": [
+   "Ayush Singh",
+   "Rajdeep Aher",
+   "Shivank Garg"
+  ],
+  "published": "2024-11-24",
+  "journal_ref": "",
+  "comment": "11 pages",
+  "primary": "cs.CL"
+ },
+ "2410.02200": {
+  "title": "Revisiting Prefix-tuning: Statistical Benefits of Reparameterization among Prompts",
+  "authors": [
+   "Minh Le",
+   "Chau Nguyen",
+   "Huy Nguyen",
+   "Quyen Tran",
+   "Trung Le",
+   "Nhat Ho"
+  ],
+  "published": "2024-10-03",
+  "journal_ref": "",
+  "comment": "Accepted to ICLR 2025. 42 pages, 8 tables, 3 figures",
+  "primary": "cs.LG"
+ },
+ "2503.07027": {
+  "title": "EasyControl: Adding Efficient and Flexible Control for Diffusion Transformer",
+  "authors": [
+   "Yuxuan Zhang",
+   "Yirui Yuan",
+   "Yiren Song",
+   "Haofan Wang",
+   "Jiaming Liu"
+  ],
+  "published": "2025-03-10",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2412.06071": {
+  "title": "KaSA: Knowledge-Aware Singular-Value Adaptation of Large Language Models",
+  "authors": [
+   "Fan Wang",
+   "Juyong Jiang",
+   "Chansung Park",
+   "Sunghun Kim",
+   "Jing Tang"
+  ],
+  "published": "2024-12-08",
+  "journal_ref": "",
+  "comment": "The first three authors contributed equally to this work; Accepted by ICLR 2025",
+  "primary": "cs.CL"
+ },
+ "2502.16894": {
+  "title": "Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment",
+  "authors": [
+   "Chenghao Fan",
+   "Zhenyi Lu",
+   "Sichen Liu",
+   "Chengfeng Gu",
+   "Xiaoye Qu",
+   "Wei Wei",
+   "Yu Cheng"
+  ],
+  "published": "2025-02-24",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2025",
+  "primary": "cs.CL"
+ },
+ "2505.11235": {
+  "title": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+  "authors": [
+   "Fei Wu",
+   "Jia Hu",
+   "Geyong Min",
+   "Shiqiang Wang"
+  ],
+  "published": "2025-05-16",
+  "journal_ref": "In Proceedings of the 14th International Conference on Learning Representations (ICLR), April 2026",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2509.15974": {
+  "title": "BEFT: Bias-Efficient Fine-Tuning of Language Models in Low-Data Regimes",
+  "authors": [
+   "Baichuan Huang",
+   "Ananth Balashankar",
+   "Amir Aminifar"
+  ],
+  "published": "2025-09-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2502.09376": {
+  "title": "LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)",
+  "authors": [
+   "Junsu Kim",
+   "Jaeyeon Kim",
+   "Ernest K. Ryu"
+  ],
+  "published": "2025-02-13",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2503.05431": {
+  "title": "Quantum-PEFT: Ultra parameter-efficient fine-tuning",
+  "authors": [
+   "Toshiaki Koike-Akino",
+   "Francesco Tonin",
+   "Yongtao Wu",
+   "Frank Zhengqing Wu",
+   "Leyla Naz Candogan",
+   "Volkan Cevher"
+  ],
+  "published": "2025-03-07",
+  "journal_ref": "",
+  "comment": "ICLR 2025",
+  "primary": "cs.LG"
+ },
+ "2508.00230": {
+  "title": "Towards Higher Effective Rank in Parameter-efficient Fine-tuning using Khatri--Rao Product",
+  "authors": [
+   "Paul Albert",
+   "Frederic Z. Zhang",
+   "Hemanth Saratchandran",
+   "Anton van den Hengel",
+   "Ehsan Abbasnejad"
+  ],
+  "published": "2025-08-01",
+  "journal_ref": "",
+  "comment": "To appear in ICCV 2025",
+  "primary": "cs.LG"
+ },
+ "2411.19557": {
+  "title": "Initialization using Update Approximation is a Silver Bullet for Extremely Efficient Low-Rank Fine-Tuning",
+  "authors": [
+   "Kaustubh Ponkshe",
+   "Raghav Singhal",
+   "Eduard Gorbunov",
+   "Alexey Tumanov",
+   "Samuel Horvath",
+   "Praneeth Vepakomma"
+  ],
+  "published": "2024-11-29",
+  "journal_ref": "",
+  "comment": "Kaustubh Ponkshe and Raghav Singhal contributed equally to this work",
+  "primary": "cs.CL"
+ },
+ "2506.00799": {
+  "title": "Uni-LoRA: One Vector is All You Need",
+  "authors": [
+   "Kaiyang Li",
+   "Shaobo Han",
+   "Qing Su",
+   "Wei Li",
+   "Zhipeng Cai",
+   "Shihao Ji"
+  ],
+  "published": "2025-06-01",
+  "journal_ref": "",
+  "comment": "NeurIPS 2025 Spotlight",
+  "primary": "cs.LG"
+ },
+ "2410.09016": {
+  "title": "Parameter-Efficient Fine-Tuning of State Space Models",
+  "authors": [
+   "Kevin Galim",
+   "Wonjun Kang",
+   "Yuchen Zeng",
+   "Hyung Il Koo",
+   "Kangwook Lee"
+  ],
+  "published": "2024-10-11",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2025. Code is available at https://github.com/furiosa-ai/ssm-peft",
+  "primary": "cs.LG"
+ },
+ "2503.02659": {
+  "title": "Put the Space of LoRA Initialization to the Extreme to Preserve Pre-trained Knowledge",
+  "authors": [
+   "Pengwei Tang",
+   "Xiaolin Hu",
+   "Yong Liu",
+   "Lizhong Ding",
+   "Dongjie Zhang",
+   "Xing Wu",
+   "Debing Zhang"
+  ],
+  "published": "2025-03-04",
+  "journal_ref": "",
+  "comment": "Accepted at AAAI 2026. We rediscovered why our approach works from the perspective of the LoRA initialization space. Accordingly, we added new experiments and also removed inappropriate experiments (those without catastrophic forgetting)",
+  "primary": "cs.CL"
+ },
+ "2507.06558": {
+  "title": "The Primacy of Magnitude in Low-Rank Adaptation",
+  "authors": [
+   "Zicheng Zhang",
+   "Haoran Li",
+   "Yifeng Zhang",
+   "Guoqiang Gong",
+   "Jiaxing Wang",
+   "Junxing Hu",
+   "Pengzhang Liu",
+   "Qixia Jiang"
+  ],
+  "published": "2025-07-09",
+  "journal_ref": "NeurIPS 2025",
+  "comment": "Accepted by NeurIPS 2025, spotlight",
+  "primary": "cs.LG"
+ },
+ "2410.13025": {
+  "title": "LoRA Soups: Merging LoRAs for Practical Skill Composition Tasks",
+  "authors": [
+   "Akshara Prabhakar",
+   "Yuanzhi Li",
+   "Karthik Narasimhan",
+   "Sham Kakade",
+   "Eran Malach",
+   "Samy Jelassi"
+  ],
+  "published": "2024-10-16",
+  "journal_ref": "",
+  "comment": "COLING 2025 Industry track; 9 pages plus references and appendices",
+  "primary": "cs.CL"
+ },
+ "2410.04207": {
+  "title": "Learning on LoRAs: GL-Equivariant Processing of Low-Rank Weight Spaces for Large Finetuned Models",
+  "authors": [
+   "Theo Putterman",
+   "Derek Lim",
+   "Yoav Gelberg",
+   "Stefanie Jegelka",
+   "Haggai Maron"
+  ],
+  "published": "2024-10-05",
+  "journal_ref": "",
+  "comment": "24 pages",
+  "primary": "cs.LG"
+ },
+ "2411.05877": {
+  "title": "Generative Adapter: Contextualizing Language Models in Parameters with A Single Forward Pass",
+  "authors": [
+   "Tong Chen",
+   "Hao Fang",
+   "Patrick Xia",
+   "Xiaodong Liu",
+   "Benjamin Van Durme",
+   "Luke Zettlemoyer",
+   "Jianfeng Gao",
+   "Hao Cheng"
+  ],
+  "published": "2024-11-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2502.06820": {
+  "title": "LoCA: Location-Aware Cosine Adaptation for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Zhekai Du",
+   "Yinjie Min",
+   "Jingjing Li",
+   "Ke Lu",
+   "Changliang Zou",
+   "Liuhua Peng",
+   "Tingjin Chu",
+   "Mingming Gong"
+  ],
+  "published": "2025-02-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.21228": {
+  "title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+  "authors": [
+   "Reece Shuttleworth",
+   "Jacob Andreas",
+   "Antonio Torralba",
+   "Pratyusha Sharma"
+  ],
+  "published": "2024-10-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2505.10939": {
+  "title": "GenKnowSub: Improving Modularity and Reusability of LLMs through General Knowledge Subtraction",
+  "authors": [
+   "Mohammadtaha Bagherifard",
+   "Sahar Rajabi",
+   "Ali Edalat",
+   "Yadollah Yaghoobzadeh"
+  ],
+  "published": "2025-05-16",
+  "journal_ref": "",
+  "comment": "Accepted to ACL 2025 (main conference, short paper), 10 pages",
+  "primary": "cs.CL"
+ },
+ "2506.03133": {
+  "title": "PoLAR: Polar-Decomposed Low-Rank Adapter Representation",
+  "authors": [
+   "Kai Lion",
+   "Liang Zhang",
+   "Bingcong Li",
+   "Niao He"
+  ],
+  "published": "2025-06-03",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2410.09758": {
+  "title": "BiDoRA: Bi-level Optimization-Based Weight-Decomposed Low-Rank Adaptation",
+  "authors": [
+   "Peijia Qin",
+   "Ruiyi Zhang",
+   "Pengtao Xie"
+  ],
+  "published": "2024-10-13",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2504.15777": {
+  "title": "Tina: Tiny Reasoning Models via LoRA",
+  "authors": [
+   "Shangshang Wang",
+   "Julian Asilis",
+   "Ömer Faruk Akgül",
+   "Enes Burak Bilgin",
+   "Ollie Liu",
+   "Willie Neiswanger"
+  ],
+  "published": "2025-04-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2509.04259": {
+  "title": "RL's Razor: Why Online Reinforcement Learning Forgets Less",
+  "authors": [
+   "Idan Shenfeld",
+   "Jyothish Pari",
+   "Pulkit Agrawal"
+  ],
+  "published": "2025-09-04",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2504.20437": {
+  "title": "GaLore 2: Large-Scale LLM Pre-Training by Gradient Low-Rank Projection",
+  "authors": [
+   "DiJia Su",
+   "Andrew Gu",
+   "Jane Xu",
+   "Yuandong Tian",
+   "Jiawei Zhao"
+  ],
+  "published": "2025-04-29",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2501.17148": {
+  "title": "AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders",
+  "authors": [
+   "Zhengxuan Wu",
+   "Aryaman Arora",
+   "Atticus Geiger",
+   "Zheng Wang",
+   "Jing Huang",
+   "Dan Jurafsky",
+   "Christopher D. Manning",
+   "Christopher Potts"
+  ],
+  "published": "2025-01-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2411.15098": {
+  "title": "OminiControl: Minimal and Universal Control for Diffusion Transformer",
+  "authors": [
+   "Zhenxiong Tan",
+   "Songhua Liu",
+   "Xingyi Yang",
+   "Qiaochu Xue",
+   "Xinchao Wang"
+  ],
+  "published": "2024-11-22",
+  "journal_ref": "",
+  "comment": "Accepted to ICCV 2025",
+  "primary": "cs.CV"
+ },
+ "2505.20355": {
+  "title": "GraLoRA: Granular Low-Rank Adaptation for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Yeonjoon Jung",
+   "Daehyun Ahn",
+   "Hyungjun Kim",
+   "Taesu Kim",
+   "Eunhyeok Park"
+  ],
+  "published": "2025-05-26",
+  "journal_ref": "",
+  "comment": "39th Conference on Neural Information Processing Systems (NeurIPS 2025)",
+  "primary": "cs.LG"
+ },
+ "2506.10943": {
+  "title": "Self-Adapting Language Models",
+  "authors": [
+   "Adam Zweiger",
+   "Jyothish Pari",
+   "Han Guo",
+   "Ekin Akyürek",
+   "Yoon Kim",
+   "Pulkit Agrawal"
+  ],
+  "published": "2025-06-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2505.21289": {
+  "title": "LoFT: Low-Rank Adaptation That Behaves Like Full Fine-Tuning",
+  "authors": [
+   "Nurbek Tastan",
+   "Stefanos Laskaridis",
+   "Martin Takac",
+   "Karthik Nandakumar",
+   "Samuel Horvath"
+  ],
+  "published": "2025-05-27",
+  "journal_ref": "",
+  "comment": "Accepted to ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2506.09105": {
+  "title": "MetaTT: A Global Tensor-Train Adapter for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Javier Lopez-Piqueres",
+   "Pranav Deshpande",
+   "Archan Ray",
+   "Mattia J. Villani",
+   "Marco Pistoia",
+   "Niraj Kumar"
+  ],
+  "published": "2025-06-10",
+  "journal_ref": "",
+  "comment": "Accepted version to TMLR",
+  "primary": "cs.LG"
+ },
+ "2505.12532": {
+  "title": "Exploring Sparsity for Parameter Efficient Fine Tuning Using Wavelets for Vision",
+  "authors": [
+   "Ahmet Bilican",
+   "M. Akın Yılmaz",
+   "A. Murat Tekalp",
+   "R. Gökberk Cinbiş"
+  ],
+  "published": "2025-05-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2501.06252": {
+  "title": "Transformer-Squared: Self-adaptive LLMs",
+  "authors": [
+   "Qi Sun",
+   "Edoardo Cetin",
+   "Yujin Tang"
+  ],
+  "published": "2025-01-09",
+  "journal_ref": "",
+  "comment": "To appear at the 13th International Conference on Learning Representations (ICLR 2025)",
+  "primary": "cs.LG"
+ },
+ "2410.15027": {
+  "title": "Group Diffusion Transformers are Unsupervised Multitask Learners",
+  "authors": [
+   "Lianghua Huang",
+   "Wei Wang",
+   "Zhi-Fan Wu",
+   "Huanzhang Dou",
+   "Yupeng Shi",
+   "Yutong Feng",
+   "Chen Liang",
+   "Yu Liu",
+   "Jingren Zhou"
+  ],
+  "published": "2024-10-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2410.23775": {
+  "title": "In-Context LoRA for Diffusion Transformers",
+  "authors": [
+   "Lianghua Huang",
+   "Wei Wang",
+   "Zhi-Fan Wu",
+   "Yupeng Shi",
+   "Huanzhang Dou",
+   "Chen Liang",
+   "Yutong Feng",
+   "Yu Liu",
+   "Jingren Zhou"
+  ],
+  "published": "2024-10-31",
+  "journal_ref": "",
+  "comment": "Tech report. Project page: https://ali-vilab.github.io/In-Context-LoRA-Page/",
+  "primary": "cs.CV"
+ },
+ "2502.18461": {
+  "title": "K-LoRA: Unlocking Training-Free Fusion of Any Subject and Style LoRAs",
+  "authors": [
+   "Ziheng Ouyang",
+   "Zhen Li",
+   "Qibin Hou"
+  ],
+  "published": "2025-02-25",
+  "journal_ref": "",
+  "comment": "CVPR 2025, Project page: https://k-lora.github.io/K-LoRA.io/",
+  "primary": "cs.CV"
+ },
+ "2502.01235": {
+  "title": "LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently",
+  "authors": [
+   "Yuanhe Zhang",
+   "Fanghui Liu",
+   "Yudong Chen"
+  ],
+  "published": "2025-02-03",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2025 (Oral)",
+  "primary": "stat.ML"
+ },
+ "2410.11289": {
+  "title": "Subspace Optimization for Large Language Models with Convergence Guarantees",
+  "authors": [
+   "Yutong He",
+   "Pengrui Li",
+   "Yipeng Hu",
+   "Chuyan Chen",
+   "Kun Yuan"
+  ],
+  "published": "2024-10-15",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2025",
+  "primary": "cs.LG"
+ },
+ "2506.20629": {
+  "title": "PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models",
+  "authors": [
+   "Soufiane Hayou",
+   "Nikhil Ghosh",
+   "Bin Yu"
+  ],
+  "published": "2025-06-25",
+  "journal_ref": "",
+  "comment": "TD,LR: A lightweight module type selection method for LoRA finetuning. PLoP gives precise placements for LoRA adapters for improved performance",
+  "primary": "cs.LG"
+ },
+ "2505.12455": {
+  "title": "AltLoRA: Towards Better Gradient Approximation in Low-Rank Adaptation with Alternating Projections",
+  "authors": [
+   "Xin Yu",
+   "Yujia Wang",
+   "Jinghui Chen",
+   "Lingzhou Xue"
+  ],
+  "published": "2025-05-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2506.16289": {
+  "title": "The Condition Number as a Scale-Invariant Proxy for Information Encoding in Neural Units",
+  "authors": [
+   "Oswaldo Ludwig"
+  ],
+  "published": "2025-06-19",
+  "journal_ref": "",
+  "comment": "This version includes a new experiment using a larger LLM and introducing KappaTune-LoRA",
+  "primary": "stat.ML"
+ },
+ "2506.00772": {
+  "title": "LIFT the Veil for the Truth: Principal Weights Emerge after Rank Reduction for Reasoning-Focused Supervised Fine-Tuning",
+  "authors": [
+   "Zihang Liu",
+   "Tianyu Pang",
+   "Oleg Balabanov",
+   "Chaoqun Yang",
+   "Tianjin Huang",
+   "Lu Yin",
+   "Yaoqing Yang",
+   "Shiwei Liu"
+  ],
+  "published": "2025-06-01",
+  "journal_ref": "",
+  "comment": "ICML 2025",
+  "primary": "cs.LG"
+ },
+ "2501.16559": {
+  "title": "LoRA-X: Bridging Foundation Models with Training-Free Cross-Model Adaptation",
+  "authors": [
+   "Farzad Farhadzadeh",
+   "Debasmit Das",
+   "Shubhankar Borse",
+   "Fatih Porikli"
+  ],
+  "published": "2025-01-27",
+  "journal_ref": "",
+  "comment": "Accepted to ICLR 2025",
+  "primary": "cs.CV"
+ },
+ "2509.22793": {
+  "title": "DEFT: Decompositional Efficient Fine-Tuning for Text-to-Image Models",
+  "authors": [
+   "Komal Kumar",
+   "Rao Muhammad Anwer",
+   "Fahad Shahbaz Khan",
+   "Salman Khan",
+   "Ivan Laptev",
+   "Hisham Cholakkal"
+  ],
+  "published": "2025-09-26",
+  "journal_ref": "",
+  "comment": "13 Figures, 21 pages, accepted in NeurIPS 2025",
+  "primary": "cs.CV"
+ },
+ "2502.12171": {
+  "title": "GoRA: Gradient-driven Adaptive Low Rank Adaptation",
+  "authors": [
+   "Haonan He",
+   "Peng Ye",
+   "Yuchen Ren",
+   "Yuan Yuan",
+   "Luyang Zhou",
+   "Shucun Ju",
+   "Lei Chen"
+  ],
+  "published": "2025-02-13",
+  "journal_ref": "",
+  "comment": "NeurIPS 2025",
+  "primary": "cs.LG"
+ },
+ "2504.20690": {
+  "title": "In-Context Edit: Enabling Instructional Image Editing with In-Context Generation in Large Scale Diffusion Transformer",
+  "authors": [
+   "Zechuan Zhang",
+   "Ji Xie",
+   "Yu Lu",
+   "Zongxin Yang",
+   "Yi Yang"
+  ],
+  "published": "2025-04-29",
+  "journal_ref": "",
+  "comment": "Accepted by NeurIPS 2025, there will be future updates for camera ready version. Code: https://github.com/River-Zhang/ICEdit",
+  "primary": "cs.CV"
+ },
+ "2506.19847": {
+  "title": "Orthogonal Finetuning Made Scalable",
+  "authors": [
+   "Zeju Qiu",
+   "Weiyang Liu",
+   "Adrian Weller",
+   "Bernhard Schölkopf"
+  ],
+  "published": "2025-06-24",
+  "journal_ref": "",
+  "comment": "EMNLP 2025 Main (18 pages, 7 figures, project page: https://spherelab.ai/oftv2/)",
+  "primary": "cs.LG"
+ },
+ "2411.04358": {
+  "title": "Robust and Efficient Fine-tuning of LLMs with Bayesian Reparameterization of Low-Rank Adaptation",
+  "authors": [
+   "Ayan Sengupta",
+   "Vaibhav Seth",
+   "Arinjay Pathak",
+   "Aastha Verma",
+   "Natraj Raman",
+   "Sriram Gopalakrishnan",
+   "Niladri Chatterjee",
+   "Tanmoy Chakraborty"
+  ],
+  "published": "2024-11-07",
+  "journal_ref": "",
+  "comment": "The paper is accepted in TMLR'25",
+  "primary": "cs.LG"
+ },
+ "2503.06982": {
+  "title": "Understanding the Learning Dynamics of LoRA: A Gradient Flow Perspective on Low-Rank Adaptation in Matrix Factorization",
+  "authors": [
+   "Ziqing Xu",
+   "Hancheng Min",
+   "Lachlan Ewen MacDonald",
+   "Jinqi Luo",
+   "Salma Tarmoun",
+   "Enrique Mallada",
+   "Rene Vidal"
+  ],
+  "published": "2025-03-10",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2506.06105": {
+  "title": "Text-to-LoRA: Instant Transformer Adaption",
+  "authors": [
+   "Rujikorn Charakorn",
+   "Edoardo Cetin",
+   "Yujin Tang",
+   "Robert Tjarko Lange"
+  ],
+  "published": "2025-06-06",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2025",
+  "primary": "cs.LG"
+ },
+ "2410.20625": {
+  "title": "LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization",
+  "authors": [
+   "Jui-Nan Yen",
+   "Si Si",
+   "Zhao Meng",
+   "Felix Yu",
+   "Sai Surya Duvvuri",
+   "Inderjit S. Dhillon",
+   "Cho-Jui Hsieh",
+   "Sanjiv Kumar"
+  ],
+  "published": "2024-10-27",
+  "journal_ref": "",
+  "comment": "Published as an oral paper at ICLR 2025. The code for our project is available at https://github.com/gkevinyen5418/LoRA-RITE",
+  "primary": "cs.LG"
+ },
+ "2506.16406": {
+  "title": "Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights",
+  "authors": [
+   "Zhiyuan Liang",
+   "Dongwen Tang",
+   "Yuhao Zhou",
+   "Xuanlei Zhao",
+   "Mingjia Shi",
+   "Wangbo Zhao",
+   "Zekai Li",
+   "Peihao Wang",
+   "Konstantin Schürholt",
+   "Damian Borth",
+   "Michael M. Bronstein",
+   "Yang You",
+   "Zhangyang Wang",
+   "Kai Wang"
+  ],
+  "published": "2025-06-19",
+  "journal_ref": "",
+  "comment": "We propose a method that can generate LoRA parameters in seconds",
+  "primary": "cs.LG"
+ },
+ "2506.16500": {
+  "title": "SparseLoRA: Accelerating LLM Fine-Tuning with Contextual Sparsity",
+  "authors": [
+   "Samir Khaki",
+   "Xiuyu Li",
+   "Junxian Guo",
+   "Ligeng Zhu",
+   "Chenfeng Xu",
+   "Konstantinos N. Plataniotis",
+   "Amir Yazdanbakhsh",
+   "Kurt Keutzer",
+   "Song Han",
+   "Zhijian Liu"
+  ],
+  "published": "2025-06-19",
+  "journal_ref": "",
+  "comment": "ICML 2025. The first three authors contributed equally to this work. Project page: https://z-lab.ai/projects/sparselora",
+  "primary": "cs.LG"
+ },
+ "2412.05270": {
+  "title": "APOLLO: SGD-like Memory, AdamW-level Performance",
+  "authors": [
+   "Hanqing Zhu",
+   "Zhenyu Zhang",
+   "Wenyan Cong",
+   "Xi Liu",
+   "Sem Park",
+   "Vikas Chandra",
+   "Bo Long",
+   "David Z. Pan",
+   "Zhangyang Wang",
+   "Jinwon Lee"
+  ],
+  "published": "2024-12-06",
+  "journal_ref": "",
+  "comment": "Accepted to MLSys 2025; the newest version with new experiments",
+  "primary": "cs.LG"
+ },
+ "2502.14502": {
+  "title": "How Much Knowledge Can You Pack into a LoRA Adapter without Harming LLM?",
+  "authors": [
+   "Sergey Pletenev",
+   "Maria Marina",
+   "Daniil Moskovskiy",
+   "Vasily Konovalov",
+   "Pavel Braslavski",
+   "Alexander Panchenko",
+   "Mikhail Salnikov"
+  ],
+  "published": "2025-02-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2412.00081": {
+  "title": "Task Singular Vectors: Reducing Task Interference in Model Merging",
+  "authors": [
+   "Antonio Andrea Gargiulo",
+   "Donato Crisostomi",
+   "Maria Sofia Bucarelli",
+   "Simone Scardapane",
+   "Fabrizio Silvestri",
+   "Emanuele Rodolà"
+  ],
+  "published": "2024-11-26",
+  "journal_ref": "",
+  "comment": "In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition 2025 (CVPR)",
+  "primary": "cs.LG"
+ },
+ "2503.18225": {
+  "title": "DeLoRA: Decoupling Angles and Strength in Low-rank Adaptation",
+  "authors": [
+   "Massimo Bini",
+   "Leander Girrbach",
+   "Zeynep Akata"
+  ],
+  "published": "2025-03-23",
+  "journal_ref": "",
+  "comment": "ICLR 2025",
+  "primary": "cs.LG"
+ },
+ "2502.00987": {
+  "title": "RandLoRA: Full-rank parameter-efficient fine-tuning of large models",
+  "authors": [
+   "Paul Albert",
+   "Frederic Z. Zhang",
+   "Hemanth Saratchandran",
+   "Cristian Rodriguez-Opazo",
+   "Anton van den Hengel",
+   "Ehsan Abbasnejad"
+  ],
+  "published": "2025-02-03",
+  "journal_ref": "",
+  "comment": "To appear at the International Conference on Learning Representations (ICLR) 2025",
+  "primary": "cs.CL"
+ },
+ "2509.17786": {
+  "title": "Accurate and Efficient Low-Rank Model Merging in Core Space",
+  "authors": [
+   "Aniello Panariello",
+   "Daniel Marczak",
+   "Simone Magistri",
+   "Angelo Porrello",
+   "Bartłomiej Twardowski",
+   "Andrew D. Bagdanov",
+   "Simone Calderara",
+   "Joost van de Weijer"
+  ],
+  "published": "2025-09-22",
+  "journal_ref": "",
+  "comment": "Accepted at 39th Conference on Neural Information Processing Systems (NeurIPS 2025), San Diego, USA",
+  "primary": "cs.CV"
+ },
+ "2505.11711": {
+  "title": "Reinforcement Learning Finetunes Small Subnetworks in Large Language Models",
+  "authors": [
+   "Sagnik Mukherjee",
+   "Lifan Yuan",
+   "Dilek Hakkani-Tur",
+   "Hao Peng"
+  ],
+  "published": "2025-05-16",
+  "journal_ref": "",
+  "comment": "NeuRIPS 2025",
+  "primary": "cs.LG"
+ },
+ "2410.19735": {
+  "title": "Model merging with SVD to tie the Knots",
+  "authors": [
+   "George Stoica",
+   "Pratik Ramesh",
+   "Boglarka Ecsedi",
+   "Leshem Choshen",
+   "Judy Hoffman"
+  ],
+  "published": "2024-10-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2510.11696": {
+  "title": "QeRL: Beyond Efficiency -- Quantization-enhanced Reinforcement Learning for LLMs",
+  "authors": [
+   "Wei Huang",
+   "Yi Ge",
+   "Shuai Yang",
+   "Yicheng Xiao",
+   "Huizi Mao",
+   "Yujun Lin",
+   "Hanrong Ye",
+   "Sifei Liu",
+   "Ka Chun Cheung",
+   "Hongxu Yin",
+   "Yao Lu",
+   "Xiaojuan Qi",
+   "Song Han",
+   "Yukang Chen"
+  ],
+  "published": "2025-10-13",
+  "journal_ref": "",
+  "comment": "Code is available at https://github.com/NVlabs/QeRL",
+  "primary": "cs.LG"
+ },
+ "2605.31484": {
+  "title": "Balanced LoRA: Removing Parameter Invariance to Accelerate Convergence",
+  "authors": [
+   "Valérie Castin",
+   "Kimia Nadjahi",
+   "Pierre Ablin",
+   "Gabriel Peyré"
+  ],
+  "published": "2026-05-29",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2511.08567": {
+  "title": "The Path Not Taken: RLVR Provably Learns Off the Principals",
+  "authors": [
+   "Hanqing Zhu",
+   "Zhenyu Zhang",
+   "Hanxian Huang",
+   "DiJia Su",
+   "Zechun Liu",
+   "Jiawei Zhao",
+   "Igor Fedorov",
+   "Hamed Pirsiavash",
+   "Zhizhou Sha",
+   "Jinwon Lee",
+   "David Z. Pan",
+   "Zhangyang Wang",
+   "Yuandong Tian",
+   "Kai Sheng Tai"
+  ],
+  "published": "2025-11-11",
+  "journal_ref": "",
+  "comment": "Preliminary version accepted as a spotlight in NeurIPS 2025 Workshop on Efficient Reasoning",
+  "primary": "cs.LG"
+ },
+ "2602.19111": {
+  "title": "Astra: Activation-Space Tail-Eigenvector Low-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Kainan Liu",
+   "Yong Zhang",
+   "Ning Cheng",
+   "Yun Zhu",
+   "Yanmeng Wang",
+   "Shaojun Wang",
+   "Jing Xiao"
+  ],
+  "published": "2026-02-22",
+  "journal_ref": "",
+  "comment": "22 pages, 10 figures",
+  "primary": "cs.CL"
+ },
+ "2601.22708": {
+  "title": "A Unified Study of LoRA Variants: Taxonomy, Review, Codebase, and Empirical Evaluation",
+  "authors": [
+   "Haonan He",
+   "Jingqi Ye",
+   "Minglei Li",
+   "Zhengbo Wang",
+   "Tao Chen",
+   "Lei Bai",
+   "Peng Ye"
+  ],
+  "published": "2026-01-30",
+  "journal_ref": "",
+  "comment": "Submitted to IEEE Transactions on Pattern Analysis and Machine Intelligence, Under Review",
+  "primary": "cs.LG"
+ },
+ "2604.21905": {
+  "title": "Low-Rank Adaptation Redux for Large Models",
+  "authors": [
+   "Bingcong Li",
+   "Yilang Zhang",
+   "Georgios B. Giannakis"
+  ],
+  "published": "2026-04-23",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.04118": {
+  "title": "Learning to Reason in 13 Parameters",
+  "authors": [
+   "John X. Morris",
+   "Niloofar Mireshghallah",
+   "Mark Ibrahim",
+   "Saeed Mahloujifar"
+  ],
+  "published": "2026-02-04",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2604.01694": {
+  "title": "MiCA Learns More Knowledge Than LoRA and Full Fine-Tuning",
+  "authors": [
+   "Sten Rüdiger",
+   "Sebastian Raschka"
+  ],
+  "published": "2026-04-02",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2510.23346": {
+  "title": "Block-Diagonal LoRA for Eliminating Communication Overhead in Tensor Parallel LoRA Serving",
+  "authors": [
+   "Xinyu Wang",
+   "Jonas M. Kübler",
+   "Kailash Budhathoki",
+   "Yida Wang",
+   "Matthäus Kleindessner"
+  ],
+  "published": "2025-10-27",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2512.23485": {
+  "title": "FRoD: Full-Rank Efficient Fine-Tuning with Rotational Degrees for Fast Convergence",
+  "authors": [
+   "Guoan Wan",
+   "Tianyu Chen",
+   "Fangzheng Feng",
+   "Haoyi Zhou",
+   "Runhua Xu"
+  ],
+  "published": "2025-12-29",
+  "journal_ref": "",
+  "comment": "The 40th Annual AAAI Conference on Artificial Intelligence",
+  "primary": "cs.LG"
+ },
+ "2602.06358": {
+  "title": "SHINE: A Scalable In-Context Hypernetwork for Mapping Context to LoRA in a Single Pass",
+  "authors": [
+   "Yewei Liu",
+   "Xiyuan Wang",
+   "Yansheng Mao",
+   "Yoav Gelbery",
+   "Haggai Maron",
+   "Muhan Zhang"
+  ],
+  "published": "2026-02-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2512.07703": {
+  "title": "PVeRA: Probabilistic Vector-Based Random Matrix Adaptation",
+  "authors": [
+   "Leo Fillioux",
+   "Enzo Ferrante",
+   "Paul-Henry Cournède",
+   "Maria Vakalopoulou",
+   "Stergios Christodoulidis"
+  ],
+  "published": "2025-12-08",
+  "journal_ref": "WACV 2026",
+  "comment": "",
+  "primary": "cs.CV"
+ },
+ "2510.15103": {
+  "title": "Continual Learning via Sparse Memory Finetuning",
+  "authors": [
+   "Jessy Lin",
+   "Luke Zettlemoyer",
+   "Gargi Ghosh",
+   "Wen-Tau Yih",
+   "Aram Markosyan",
+   "Vincent-Pierre Berges",
+   "Barlas Oğuz"
+  ],
+  "published": "2025-10-16",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2602.15902": {
+  "title": "Doc-to-LoRA: Learning to Instantly Internalize Contexts",
+  "authors": [
+   "Rujikorn Charakorn",
+   "Edoardo Cetin",
+   "Shinnosuke Uesaka",
+   "Robert Tjarko Lange"
+  ],
+  "published": "2026-02-13",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2607.09287": {
+  "title": "Super-Tuning: From Activation-Aware Pruning to Sparse Fine-Tuning",
+  "authors": [
+   "Ivan Ilin",
+   "Philip Zmushko",
+   "Peter Richtárik"
+  ],
+  "published": "2026-07-10",
+  "journal_ref": "",
+  "comment": "26 pages, 3 figures, 19 tables. Code: https://github.com/vectozavr/SuperTuning",
+  "primary": "cs.LG"
+ },
+ "2512.23165": {
+  "title": "Evaluating Parameter Efficient Methods for RLVR",
+  "authors": [
+   "Qingyu Yin",
+   "Yulun Wu",
+   "Zhennan Shen",
+   "Sunbowen Li",
+   "Zhilin Wang",
+   "Yanshu Li",
+   "Chak Tou Leong",
+   "Jiale Kang",
+   "Jinjin Gu"
+  ],
+  "published": "2025-12-29",
+  "journal_ref": "",
+  "comment": "Preprint",
+  "primary": "cs.LG"
+ },
+ "2602.04998": {
+  "title": "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning",
+  "authors": [
+   "Yu-Ang Lee",
+   "Ching-Yun Ko",
+   "Pin-Yu Chen",
+   "Mi-Yen Yeh"
+  ],
+  "published": "2026-02-04",
+  "journal_ref": "",
+  "comment": "Project page: https://github.com/yuang-lee/lr-matters-lora",
+  "primary": "cs.LG"
+ },
+ "2604.19254": {
+  "title": "ShadowPEFT: Shadow Network for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Xianming Li",
+   "Zongxi Li",
+   "Tsz-fung Andrew Lee",
+   "Jing Li",
+   "Haoran Xie",
+   "Qing Li"
+  ],
+  "published": "2026-04-21",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2605.11872": {
+  "title": "LOFT: Low-Rank Orthogonal Fine-Tuning via Task-Aware Support Selection",
+  "authors": [
+   "Lanxin Zhao",
+   "Bamdev Mishra",
+   "Pratik Jawanpuria",
+   "Lequan Lin",
+   "Dai Shi",
+   "Junbin Gao",
+   "Andi Han"
+  ],
+  "published": "2026-05-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2606.31813": {
+  "title": "Geometry-Preserving Orthonormal Initialization for Low-Rank Adaptation in RLVR",
+  "authors": [
+   "Ruijia Zhang",
+   "Jiacheng Zhu",
+   "Hanqing Zhu",
+   "Laixi Shi"
+  ],
+  "published": "2026-06-30",
+  "journal_ref": "",
+  "comment": "30 pages, accepted to ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2605.15916": {
+  "title": "LoCO: Low-rank Compositional Rotation Fine-tuning",
+  "authors": [
+   "An Nguyen",
+   "Jaesik Choi",
+   "Anh Tong"
+  ],
+  "published": "2026-05-15",
+  "journal_ref": "",
+  "comment": "IJCAI 2026",
+  "primary": "cs.LG"
+ },
+ "2606.12883": {
+  "title": "The Hidden Power of Scaling Factor in LoRA Optimization",
+  "authors": [
+   "Zicheng Zhang",
+   "Haoran Li",
+   "Jiaxing Wang",
+   "Guoqiang Gong",
+   "Anqi Li",
+   "Yudong Hu",
+   "Ting Xiong",
+   "Yurong Gao",
+   "Junxing Hu",
+   "Zhida Jiang",
+   "Yifeng Zhang",
+   "Pengzhang Liu",
+   "Qixia Jiang"
+  ],
+  "published": "2026-06-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.AI"
+ },
+ "2605.03373": {
+  "title": "Learning Dynamics of Zeroth-Order Optimization: A Kernel Perspective",
+  "authors": [
+   "Zhe Li",
+   "Bicheng Ying",
+   "Zidong Liu",
+   "Haibo Yang"
+  ],
+  "published": "2026-05-05",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2602.06385": {
+  "title": "Uniform Spectral Growth and Convergence of Muon in LoRA-Style Matrix Factorization",
+  "authors": [
+   "Changmin Kang",
+   "Jihun Yun",
+   "Baekrok Shin",
+   "Yeseul Cho",
+   "Chulhee Yun"
+  ],
+  "published": "2026-02-06",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.24283": {
+  "title": "Taming Momentum: Rethinking Optimizer States Through Low-Rank Approximation",
+  "authors": [
+   "Zhengbo Wang",
+   "Jian Liang",
+   "Ran He",
+   "Zilei Wang",
+   "Tieniu Tan"
+  ],
+  "published": "2026-02-27",
+  "journal_ref": "",
+  "comment": "Camera-ready version. Accepted as Oral at ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2604.01762": {
+  "title": "FourierMoE: Fourier Mixture-of-Experts Adaptation of Large Language Models",
+  "authors": [
+   "Juyong Jiang",
+   "Fan Wang",
+   "Hong Qi",
+   "Sunghun Kim",
+   "Jing Tang"
+  ],
+  "published": "2026-04-02",
+  "journal_ref": "",
+  "comment": "The first two authors contributed equally to this work; listing order is random",
+  "primary": "cs.LG"
+ },
+ "2603.00425": {
+  "title": "Weight Updates as Activation Shifts: A Principled Framework for Steering",
+  "authors": [
+   "Dyah Adila",
+   "John Cooper",
+   "Alexander Yun",
+   "Avi Trost",
+   "Frederic Sala"
+  ],
+  "published": "2026-02-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2604.09088": {
+  "title": "Memory-Efficient Transfer Learning with Fading Side Networks via Masked Dual Path Distillation",
+  "authors": [
+   "Yutong Zhang",
+   "Jiaxin Chen",
+   "Honglin Chen",
+   "Kaiqi Zheng",
+   "Shengcai Liao",
+   "Hanwen Zhong",
+   "Weixin Li",
+   "Yunhong Wang"
+  ],
+  "published": "2026-04-10",
+  "journal_ref": "",
+  "comment": "CVPR2026 Accepted",
+  "primary": "cs.CV"
+ },
+ "2602.17095": {
+  "title": "FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment",
+  "authors": [
+   "Chuiyang Meng",
+   "Ming Tang",
+   "Vincent W. S. Wong"
+  ],
+  "published": "2026-02-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2605.14217": {
+  "title": "PreFT: Prefill-only finetuning for efficient inference",
+  "authors": [
+   "Andrew Lanpouthakoun",
+   "Aryaman Arora",
+   "Zhengxuan Wu",
+   "Dhruv Pai",
+   "Ben Keigwin",
+   "Dan Jurafsky",
+   "Christopher Potts"
+  ],
+  "published": "2026-05-14",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2606.00944": {
+  "title": "PRISM: Gauge-Invariant Tangent-Space Differentially Private LoRA",
+  "authors": [
+   "Shihao Wang",
+   "Xueru Zhang"
+  ],
+  "published": "2026-05-31",
+  "journal_ref": "",
+  "comment": "Accepted at the 43rd International Conference on Machine Learning (ICML 2026) as an oral presentation",
+  "primary": "cs.LG"
+ },
+ "2605.29716": {
+  "title": "NaRA: Noise-Aware LoRA for Parameter-Efficient Fine-Tuning of Diffusion LLMs",
+  "authors": [
+   "Shuaidi Wang",
+   "Zhan Zhuang",
+   "Ruping Huang",
+   "Yu Zhang"
+  ],
+  "published": "2026-05-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.AI"
+ },
+ "2606.03723": {
+  "title": "Compress then Merge: From Multiple LoRAs into One Low-Rank Adapter",
+  "authors": [
+   "Zhengbao He",
+   "Ruiqi Ding",
+   "Zhehao Huang",
+   "Ruikai Yang",
+   "Tao Li",
+   "Xiaolin Huang"
+  ],
+  "published": "2026-06-02",
+  "journal_ref": "",
+  "comment": "Accepted to ICML 2026. Code: https://github.com/ZhengbaoHe/compress-then-merge",
+  "primary": "cs.LG"
+ },
+ "2602.23638": {
+  "title": "FedRot-LoRA: Mitigating Rotational Misalignment in Federated LoRA",
+  "authors": [
+   "Haoran Zhang",
+   "Dongjun Kim",
+   "Seohyeon Cha",
+   "Haris Vikalo"
+  ],
+  "published": "2026-02-27",
+  "journal_ref": "",
+  "comment": "ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2603.14228": {
+  "title": "Not All Directions Matter: Towards Structured and Task-Aware Low-Rank Model Adaptation",
+  "authors": [
+   "Xi Xiao",
+   "Chenrui Ma",
+   "Yunbei Zhang",
+   "Chen Liu",
+   "Zhuxuanzi Wang",
+   "Yanshu Li",
+   "Lin Zhao",
+   "Guosheng Hu",
+   "Tianyang Wang",
+   "Hao Xu"
+  ],
+  "published": "2026-03-15",
+  "journal_ref": "",
+  "comment": "ACL 2026",
+  "primary": "cs.CV"
+ },
+ "2601.19659": {
+  "title": "KeepLoRA: Continual Learning with Residual Gradient Adaptation",
+  "authors": [
+   "Mao-Lin Luo",
+   "Zi-Hao Zhou",
+   "Yi-Lin Zhang",
+   "Yuanyu Wan",
+   "Tong Wei",
+   "Min-Ling Zhang"
+  ],
+  "published": "2026-01-27",
+  "journal_ref": "",
+  "comment": "Accepted at ICLR 2026",
+  "primary": "cs.CV"
+ },
+ "2603.01097": {
+  "title": "Understanding LoRA as Knowledge Memory: An Empirical Analysis",
+  "authors": [
+   "Seungju Back",
+   "Dongwoo Lee",
+   "Naun Kang",
+   "Taehee Lee",
+   "S. K. Hong",
+   "Youngjune Gwon",
+   "Sungjin Ahn"
+  ],
+  "published": "2026-03-01",
+  "journal_ref": "",
+  "comment": "ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2601.21003": {
+  "title": "Bayesian-LoRA: Probabilistic Low-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Moule Lin",
+   "Shuhao Guan",
+   "Andrea Patane",
+   "David Gregg",
+   "Goetz Botterweck"
+  ],
+  "published": "2026-01-28",
+  "journal_ref": "",
+  "comment": "accepted by ICML 2026",
+  "primary": "cs.AI"
+ },
+ "2602.06204": {
+  "title": "Learning Rate Scaling across LoRA Ranks and Transfer to Full Finetuning",
+  "authors": [
+   "Nan Chen",
+   "Soledad Villar",
+   "Soufiane Hayou"
+  ],
+  "published": "2026-02-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2604.06440": {
+  "title": "Visual prompting reimagined: The power of the Activation Prompts",
+  "authors": [
+   "Yihua Zhang",
+   "Hongkang Li",
+   "Yuguang Yao",
+   "Aochuan Chen",
+   "Shuai Zhang",
+   "Pin-Yu Chen",
+   "Meng Wang",
+   "Sijia Liu"
+  ],
+  "published": "2026-04-07",
+  "journal_ref": "",
+  "comment": "AISTATS 2026",
+  "primary": "cs.CV"
+ },
+ "2603.05204": {
+  "title": "Stable-LoRA: Stabilizing Feature Learning of Low-Rank Adaptation",
+  "authors": [
+   "Yize Wu",
+   "Ke Gao",
+   "Ling Li",
+   "Yanjun Wu"
+  ],
+  "published": "2026-03-05",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.01053": {
+  "title": "LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents",
+  "authors": [
+   "Hyesung Jeon",
+   "Hyeongju Ha",
+   "Jae-Joon Kim"
+  ],
+  "published": "2026-02-01",
+  "journal_ref": "ICML 2026 Poster",
+  "comment": "25 pages, 10 figures, 22 tables",
+  "primary": "cs.LG"
+ },
+ "2601.17261": {
+  "title": "AGZO: Activation-Guided Zeroth-Order Optimization for LLM Fine-Tuning",
+  "authors": [
+   "Wei Lin",
+   "Yining Jiang",
+   "Qingyu Song",
+   "Qiao Xiang",
+   "Hong Xu"
+  ],
+  "published": "2026-01-24",
+  "journal_ref": "",
+  "comment": "21 pages in total, including 9 pages of main text, with 4 figures and 3 tables Accepted by ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2608.10850": {
+  "title": "Diffract: Spectral View of LLM Domain Adaptation",
+  "authors": [
+   "Nikita Borodin",
+   "Maria Krylova",
+   "Artem Zabolotnyi",
+   "Dmitry Aspisov",
+   "Egor Shikov",
+   "Nikita Tyuplyaev",
+   "Oleg Travkin",
+   "Roman Alferov",
+   "Dmitry Vinichenko"
+  ],
+  "published": "2026-08-11",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2026. Code: https://github.com/Risk-AI-Research/diffract",
+  "primary": "cs.LG"
+ },
+ "2605.21147": {
+  "title": "SMoA: Spectrum Modulation Adapter for Parameter-Efficient Fine-Tuning",
+  "authors": [
+   "Yongkang Liu",
+   "Xing Li",
+   "Mengjie Zhao",
+   "Shanru Zhang",
+   "Zijing Wang",
+   "Qian Li",
+   "Shi Feng",
+   "Feiliang Ren",
+   "Daling Wang",
+   "Hinrich Schütze"
+  ],
+  "published": "2026-05-20",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.17155": {
+  "title": "Powering Up Zeroth-Order Training via Subspace Gradient Orthogonalization",
+  "authors": [
+   "Yicheng Lang",
+   "Changsheng Wang",
+   "Yihua Zhang",
+   "Mingyi Hong",
+   "Zheng Zhang",
+   "Wotao Yin",
+   "Sijia Liu"
+  ],
+  "published": "2026-02-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2604.02338": {
+  "title": "LiME: Lightweight Mixture of Experts for Efficient Multimodal Multi-task Learning",
+  "authors": [
+   "Md Kowsher",
+   "Haris Mansoor",
+   "Nusrat Jahan Prottasha",
+   "Ozlem Garibay",
+   "Victor Zhu",
+   "Zhengping Ji",
+   "Chen Chen"
+  ],
+  "published": "2026-02-01",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.12323": {
+  "title": "The Appeal and Reality of Recycling LoRAs with Adaptive Merging",
+  "authors": [
+   "Haokun Liu",
+   "Gyung Hyun Je",
+   "Marco Ciccone",
+   "Zhenlin Xu",
+   "Prasanth YSS",
+   "Colin Raffel"
+  ],
+  "published": "2026-02-12",
+  "journal_ref": "",
+  "comment": "24 pages, 14 figures, 5 tables. Preprint",
+  "primary": "cs.LG"
+ },
+ "2601.09361": {
+  "title": "GeoRA: Geometry-Aware Low-Rank Adaptation for RLVR",
+  "authors": [
+   "Jiaying Zhang",
+   "Lei Shi",
+   "Jiguo Li",
+   "Jun Xu",
+   "Jiuchong Gao",
+   "Jinghua Hao",
+   "Renqing He"
+  ],
+  "published": "2026-01-14",
+  "journal_ref": "",
+  "comment": "Accepted at ACL 2026 Main",
+  "primary": "cs.LG"
+ },
+ "2603.00191": {
+  "title": "Task-Driven Subspace Decomposition for Knowledge Sharing and Isolation in LoRA-based Continual Learning",
+  "authors": [
+   "Lingfeng He",
+   "De Cheng",
+   "Huaijie Wang",
+   "Xi Yang",
+   "Nannan Wang",
+   "Xinbo Gao"
+  ],
+  "published": "2026-02-27",
+  "journal_ref": "",
+  "comment": "Accepted by ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2602.05943": {
+  "title": "Orthogonal Model Merging",
+  "authors": [
+   "Sihan Yang",
+   "Kexuan Shi",
+   "Weiyang Liu"
+  ],
+  "published": "2026-02-05",
+  "journal_ref": "",
+  "comment": "Technical report (18 pages, 9 figures, project page: https://spherelab.ai/OrthoMerge/)",
+  "primary": "cs.LG"
+ },
+ "2601.22905": {
+  "title": "FlexLoRA: Entropy-Guided Flexible Low-Rank Adaptation",
+  "authors": [
+   "Muqing Liu",
+   "Chongjie Si",
+   "Yuheng Jia"
+  ],
+  "published": "2026-01-30",
+  "journal_ref": "",
+  "comment": "2026 ICLR. Codes in https://github.com/Chongjie-Si/Subspace-Tuning",
+  "primary": "cs.LG"
+ },
+ "2602.02001": {
+  "title": "Preserve-Then-Quantize: Balancing Rank Budgets for Quantization Error Reconstruction in LLMs",
+  "authors": [
+   "Yoonjun Cho",
+   "Dongjae Jeon",
+   "Soeun Kim",
+   "Moongyu Jeon",
+   "Albert No"
+  ],
+  "published": "2026-02-02",
+  "journal_ref": "",
+  "comment": "Accepted at ICML 2026. Project page: https://ai-isl.github.io/srr",
+  "primary": "cs.LG"
+ },
+ "2605.07850": {
+  "title": "MatryoshkaLoRA: Learning Accurate Hierarchical Low-Rank Representations for LLM Fine-Tuning",
+  "authors": [
+   "Ionut-Vlad Modoranu",
+   "Mher Safaryan",
+   "Dan Alistarh"
+  ],
+  "published": "2026-05-08",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2604.21901": {
+  "title": "GiVA: Gradient-Informed Bases for Vector-Based Adaptation",
+  "authors": [
+   "Neeraj Gangwar",
+   "Rishabh Deshmukh",
+   "Michael Shavlovsky",
+   "Hancao Li",
+   "Vivek Mittal",
+   "Lexing Ying",
+   "Nickvash Kani"
+  ],
+  "published": "2026-04-23",
+  "journal_ref": "",
+  "comment": "Accepted to AISTATS 2026",
+  "primary": "cs.CL"
+ },
+ "2606.13971": {
+  "title": "Prompt2Effect: Training-Free Image-to-Video Model Specialization via LoRA Generation",
+  "authors": [
+   "Xiaomeng Yang",
+   "Yanyu Li",
+   "Gordon Guocheng Qian",
+   "Ivan Skorokhodov",
+   "Viacheslav Ivanov",
+   "Avalon Vinella",
+   "Xuan Zhang",
+   "Yanzhi Wang",
+   "Sergey Tulyakov",
+   "Anil Kag"
+  ],
+  "published": "2026-06-11",
+  "journal_ref": "",
+  "comment": "Accepted to ECCV 2026, project page: https://xiaomeng-yang.github.io/Prompt2Effect",
+  "primary": "cs.CV"
+ },
+ "2402.15415": {
+  "title": "Understanding Catastrophic Forgetting In LoRA via Mean-Field Attention Dynamics",
+  "authors": [
+   "Hugo Koubbi",
+   "Louis Hernandez",
+   "Matthieu Boussard"
+  ],
+  "published": "2024-02-23",
+  "journal_ref": "",
+  "comment": "New version accepted at ICML 2026, with new results and without previous results",
+  "primary": "cs.LG"
+ },
+ "2501.18936": {
+  "title": "Revisit Visual Prompt Tuning: The Expressiveness of Prompt Experts",
+  "authors": [
+   "Minh Le",
+   "Anh Nguyen",
+   "Huy Nguyen",
+   "Chau Nguyen",
+   "Anh Tran",
+   "Nhat Ho"
+  ],
+  "published": "2025-01-31",
+  "journal_ref": "",
+  "comment": "Accepted to ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2503.22178": {
+  "title": "AdaRank: Adaptive Rank Pruning for Enhanced Model Merging",
+  "authors": [
+   "Chanhyuk Lee",
+   "Jiho Choi",
+   "Chanryeol Lee",
+   "Donggyun Kim",
+   "Seunghoon Hong"
+  ],
+  "published": "2025-03-28",
+  "journal_ref": "",
+  "comment": "ICLR 2026. Code available at: http://github.com/david3684/AdaRank",
+  "primary": "cs.LG"
+ },
+ "2505.13430": {
+  "title": "Fine-tuning Quantized Neural Networks with Zeroth-order Optimization",
+  "authors": [
+   "Sifeng Shang",
+   "Jiayi Zhou",
+   "Chenyu Lin",
+   "Minxian Li",
+   "Kaiyang Zhou"
+  ],
+  "published": "2025-05-19",
+  "journal_ref": "",
+  "comment": "Accepted by ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2506.03230": {
+  "title": "DiaBlo: Diagonal Blocks Are Sufficient For Finetuning",
+  "authors": [
+   "Selcuk Gurses",
+   "Aozhong Zhang",
+   "Yanxia Deng",
+   "Xun Dong",
+   "Xin Li",
+   "Naigang Wang",
+   "Penghang Yin",
+   "Zi Yang"
+  ],
+  "published": "2025-06-03",
+  "journal_ref": "",
+  "comment": "Accepted by ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2506.09034": {
+  "title": "FZOO: Fast Zeroth-Order Optimizer for Fine-Tuning Large Language Models towards Adam-Scale Speed",
+  "authors": [
+   "Sizhe Dang",
+   "Yangyang Guo",
+   "Yanjun Zhao",
+   "Haishan Ye",
+   "Xiaodong Zheng",
+   "Guang Dai",
+   "Ivor Tsang"
+  ],
+  "published": "2025-06-10",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2506.13674": {
+  "title": "PrefixMemory-Tuning: Modernizing Prefix-Tuning by Decoupling the Prefix from Attention",
+  "authors": [
+   "Haonan Wang",
+   "Brian Chen",
+   "Siquan Li",
+   "Xinhe Liang",
+   "Hwee Kuan Lee",
+   "Kenji Kawaguchi",
+   "Tianyang Hu"
+  ],
+  "published": "2025-06-16",
+  "journal_ref": "",
+  "comment": "ICLR 2026",
+  "primary": "cs.CL"
+ },
+ "2507.00029": {
+  "title": "LoRA-Mixer: Coordinate Modular LoRA Experts Through Serial Attention Routing",
+  "authors": [
+   "Wenbing Li",
+   "Zikai Song",
+   "Hang Zhou",
+   "Yunyao Zhang",
+   "Junqing Yu",
+   "Wei Yang"
+  ],
+  "published": "2025-06-17",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2507.06415": {
+  "title": "PERK: Long-Context Reasoning as Test-Time Learning",
+  "authors": [
+   "Zeming Chen",
+   "Angelika Romanou",
+   "Gail Weiss",
+   "Antoine Bosselut"
+  ],
+  "published": "2025-07-08",
+  "journal_ref": "The Fourteenth International Conference on Learning Representations, 2026",
+  "comment": "ICLR 2026, 10 pages, 7 figures, test-time learning, long context, meta-learning",
+  "primary": "cs.CL"
+ },
+ "2507.12142": {
+  "title": "LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank Adapters",
+  "authors": [
+   "Vladimir Bogachev",
+   "Vladimir Aletov",
+   "Alexander Molozhavenko",
+   "Denis Bobkov",
+   "Vera Soboleva",
+   "Aibek Alanov",
+   "Maxim Rakhuba"
+  ],
+  "published": "2025-07-16",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2509.03234": {
+  "title": "TeRA: Vector-based Random Tensor Network for High-Rank Adaptation of Large Language Models",
+  "authors": [
+   "Yuxuan Gu",
+   "Wuyang Zhou",
+   "Giorgos Iacovides",
+   "Danilo Mandic"
+  ],
+  "published": "2025-09-03",
+  "journal_ref": "",
+  "comment": "Accepted at ACL main conference 2026. Code is available at https://github.com/guyuxuan9/TeRA",
+  "primary": "cs.LG"
+ },
+ "2509.24244": {
+  "title": "Model Merging Scaling Laws in Large Language Models",
+  "authors": [
+   "Yuanyi Wang",
+   "Yanggan Gu",
+   "Yiming Zhang",
+   "Qi Zhou",
+   "Zhaoyi Yan",
+   "Congkai Xie",
+   "Xinyao Wang",
+   "Jianbo Yuan",
+   "Hongxia Yang"
+  ],
+  "published": "2025-09-29",
+  "journal_ref": "",
+  "comment": "ICML 2026",
+  "primary": "cs.AI"
+ },
+ "2509.25214": {
+  "title": "On-the-Fly Adaptation to Quantization: Configuration-Aware LoRA for Efficient Fine-Tuning of Quantized LLMs",
+  "authors": [
+   "Rongguang Ye",
+   "Ming Tang",
+   "Edith C. H. Ngai"
+  ],
+  "published": "2025-09-22",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2509.25684": {
+  "title": "LD-MoLE: Learnable Dynamic Routing for Mixture of LoRA Experts",
+  "authors": [
+   "Yuan Zhuang",
+   "Yi Shen",
+   "Yuexin Bian",
+   "Qing Su",
+   "Shihao Ji",
+   "Yuanyuan Shi",
+   "Fei Miao"
+  ],
+  "published": "2025-09-30",
+  "journal_ref": "",
+  "comment": "International Conference on Learning Representations (ICLR 2026)",
+  "primary": "cs.CL"
+ },
+ "2510.09160": {
+  "title": "Efficient Resource-Constrained Training of Transformers via Subspace Optimization",
+  "authors": [
+   "Le-Trung Nguyen",
+   "Enzo Tartaglione",
+   "Van-Tam Nguyen"
+  ],
+  "published": "2025-10-10",
+  "journal_ref": "",
+  "comment": "ICLR 2026 Oral",
+  "primary": "cs.LG"
+ },
+ "2510.09658": {
+  "title": "Gradient-Sign Masking for Task Vector Transport Across Pre-Trained Models",
+  "authors": [
+   "Filippo Rinaldi",
+   "Aniello Panariello",
+   "Giacomo Salici",
+   "Fengyuan Liu",
+   "Marco Ciccone",
+   "Angelo Porrello",
+   "Simone Calderara"
+  ],
+  "published": "2025-10-07",
+  "journal_ref": "",
+  "comment": "Accepted at ICLR 2026",
+  "primary": "cs.LG"
+ },
+ "2510.23818": {
+  "title": "ScaLoRA: Optimally Scaled Low-Rank Adaptation for Efficient High-Rank Fine-Tuning",
+  "authors": [
+   "Yilang Zhang",
+   "Xiaodong Yang",
+   "Yiwei Cai",
+   "Georgios B. Giannakis"
+  ],
+  "published": "2025-10-27",
+  "journal_ref": "",
+  "comment": "Accepted to ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2510.24561": {
+  "title": "LoRA-DA: Data-Aware Initialization for Low-Rank Adaptation via Asymptotic Analysis",
+  "authors": [
+   "Qingyue Zhang",
+   "Chang Chu",
+   "Tianren Peng",
+   "Qi Li",
+   "Xiangyang Luo",
+   "Zhihao Jiang",
+   "Shao-Lun Huang"
+  ],
+  "published": "2025-10-28",
+  "journal_ref": "",
+  "comment": "Published at ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2512.00902": {
+  "title": "Elastic Mixture of Rank-Wise Experts for Knowledge Reuse in Federated Fine-Tuning",
+  "authors": [
+   "Yebo Wu",
+   "Jingguang Li",
+   "Zhijiang Guo",
+   "Li Li"
+  ],
+  "published": "2025-11-30",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.DC"
+ },
+ "2512.18248": {
+  "title": "On the Convergence Rate of LoRA Gradient Descent",
+  "authors": [
+   "Siqiao Mu",
+   "Diego Klabjan"
+  ],
+  "published": "2025-12-20",
+  "journal_ref": "",
+  "comment": "ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2512.23017": {
+  "title": "Merge before Forget: A Single LoRA Continual Learning via Continual Merging",
+  "authors": [
+   "Fuli Qiao",
+   "Mehrdad Mahdavi"
+  ],
+  "published": "2025-12-28",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2602.22538": {
+  "title": "RAIN-Merging: A Gradient-Free Method to Enhance Instruction Following in Large Reasoning Models with Preserved Thinking Format",
+  "authors": [
+   "Zhehao Huang",
+   "Yuhang Liu",
+   "Baijiong Lin",
+   "Yixin Lou",
+   "Zhengbao He",
+   "Hanling Tian",
+   "Tao Li",
+   "Xiaolin Huang"
+  ],
+  "published": "2026-02-26",
+  "journal_ref": "",
+  "comment": "41 pages, ICLR 2026 Oral",
+  "primary": "cs.LG"
+ },
+ "2603.05500": {
+  "title": "POET-X: Memory-efficient LLM Training by Scaling Orthogonal Transformation",
+  "authors": [
+   "Zeju Qiu",
+   "Lixin Liu",
+   "Adrian Weller",
+   "Han Shi",
+   "Weiyang Liu"
+  ],
+  "published": "2026-03-05",
+  "journal_ref": "",
+  "comment": "ICML 2026 Oral (15 pages, 7 figures, project page: https://spherelab.ai/poetx/)",
+  "primary": "cs.LG"
+ },
+ "2603.06242": {
+  "title": "DC-Merge: Improving Model Merging with Directional Consistency",
+  "authors": [
+   "Han-Chen Zhang",
+   "Zi-Hao Zhou",
+   "Mao-Lin Luo",
+   "Shimin Di",
+   "Min-Ling Zhang",
+   "Tong Wei"
+  ],
+  "published": "2026-03-06",
+  "journal_ref": "",
+  "comment": "Accepted by CVPR 2026 Main Track",
+  "primary": "cs.LG"
+ },
+ "2604.06169": {
+  "title": "In-Place Test-Time Training",
+  "authors": [
+   "Guhao Feng",
+   "Shengjie Luo",
+   "Kai Hua",
+   "Ge Zhang",
+   "Di He",
+   "Wenhao Huang",
+   "Tianle Cai"
+  ],
+  "published": "2026-04-07",
+  "journal_ref": "",
+  "comment": "ICLR 2026 Oral Presentation; Code is released at https://github.com/ByteDance-Seed/In-Place-TTT",
+  "primary": "cs.LG"
+ },
+ "2604.14669": {
+  "title": "Zeroth-Order Optimization at the Edge of Stability",
+  "authors": [
+   "Minhak Song",
+   "Liang Zhang",
+   "Bingcong Li",
+   "Niao He",
+   "Michael Muehlebach",
+   "Sewoong Oh"
+  ],
+  "published": "2026-04-16",
+  "journal_ref": "",
+  "comment": "ICML 2026",
+  "primary": "cs.LG"
+ },
+ "2604.16826": {
+  "title": "Crowded in B-Space: Calibrating Shared Directions for LoRA Merging",
+  "authors": [
+   "Yixuan Tang",
+   "Yi Yang"
+  ],
+  "published": "2026-04-18",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.CL"
+ },
+ "2605.10741": {
+  "title": "AdaPaD: Adaptive Parallel Deflation for PEFT with Self-Correcting Rank Discovery",
+  "authors": [
+   "Barbara Su",
+   "Fangshuo Liao",
+   "Anastasios Kyrillidis"
+  ],
+  "published": "2026-05-11",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2605.18822": {
+  "title": "Hybrid-LoRA: Bridging Full Fine-Tuning and Low-Rank Adaptation for Post-Training",
+  "authors": [
+   "Chengqian Zhang",
+   "Wei Zhu",
+   "Kyumin Lee"
+  ],
+  "published": "2026-05-12",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2605.19767": {
+  "title": "AR1-ZO: Topology-Aware Rank-1 Zeroth-Order Queries for High-Rank LoRA Fine-Tuning",
+  "authors": [
+   "Ziye Chen",
+   "Hongbin Lin",
+   "Chenyu Zhang",
+   "Xiangda Yan",
+   "Yongjie Yang",
+   "Yao Shu"
+  ],
+  "published": "2026-05-19",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2605.25565": {
+  "title": "RotMoLE: Enhancing Mixture of Low-Rank Experts through Rotational Gating Mechanism",
+  "authors": [
+   "Mengyang Sun",
+   "Maochuan Dou",
+   "Tao Feng",
+   "Dan Zhang",
+   "Yihao Wang",
+   "Junpeng Liu",
+   "Yifan Zhu",
+   "Jie Tang"
+  ],
+  "published": "2026-05-25",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2607.05711": {
+  "title": "FourTune: Towards Fully 4-Bit Efficient Post-Training for Diffusion Models",
+  "authors": [
+   "Bowen Xue",
+   "Zihan Min",
+   "Xingyang Li",
+   "Zhekai Zhang",
+   "Haocheng Xi",
+   "Lvmin Zhang",
+   "Maneesh Agrawala",
+   "Jun-Yan Zhu",
+   "Song Han",
+   "Yujun Lin",
+   "Muyang Li"
+  ],
+  "published": "2026-07-07",
+  "journal_ref": "",
+  "comment": "",
+  "primary": "cs.LG"
+ },
+ "2607.19326": {
+  "title": "Selective State-Space Adaptation and Retrieval for Language Model Reasoning",
+  "authors": [
+   "Atahan Dokme",
+   "Larry Heck"
+  ],
+  "published": "2026-07-21",
+  "journal_ref": "",
+  "comment": "Accepted to EMNLP 2026 (Main Conference). 22 pages, 5 figures, 20 tables. Code: https://github.com/atahandokme/malora-mara",
+  "primary": "cs.CL"
+ },
+ "2608.24469": {
+  "title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+  "authors": [
+   "Alexandru-Dragos Manolache",
+   "Yunqiang Li",
+   "Jan van Gemert"
+  ],
+  "published": "2026-08-25",
+  "journal_ref": "",
+  "comment": "Accepted at ECCV 2026. To be published in Volume 17015 of the Lecture Notes in Computer Science series",
+  "primary": "cs.CV"
+ },
+ "2608.26430": {
+  "title": "Fine-Tuning of Transformer models with Frames",
+  "authors": [
+   "Harshavardhan Adepu",
+   "Li Zhang",
+   "Sanjiv Kumar",
+   "Vikas Singh"
+  ],
+  "published": "2026-08-26",
+  "journal_ref": "",
+  "comment": "21 pages, 6 figures",
+  "primary": "cs.AI"
+ },
+ "2609.27982": {
+  "title": "Riemannian Structure and Optimization for a Class of Low-Parametric Orthogonal Matrices",
+  "authors": [
+   "Ali Aliev",
+   "Maxim Rakhuba"
+  ],
+  "published": "2026-09-23",
+  "journal_ref": "",
+  "comment": "37 pages, 2 figures",
+  "primary": "cs.LG"
+ },
+ "2609.36766": {
+  "title": "When Can Prefixes Compile LoRA? Exact Resource-Capped Tests for Frozen Attention",
+  "authors": [
+   "Joyanta Jyoti Mondal",
+   "Ibne Farabi Shihab"
+  ],
+  "published": "2026-09-29",
+  "journal_ref": "",
+  "comment": "26 pages, 4 figures",
+  "primary": "cs.LG"
+ }
+}

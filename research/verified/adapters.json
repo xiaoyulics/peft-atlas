@@ -1,0 +1,1661 @@
+{
+ "family": "adapters",
+ "family_title": "Adapter modules and side networks (architectural insertion)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "residual-adapter",
+   "name": "Residual Adapters",
+   "full_name": "Residual adapter modules for multi-domain ResNets",
+   "paper_title": "Learning multiple visual domains with residual adapters",
+   "authors": "Rebuffi et al.",
+   "year": 2017,
+   "venue": "NeurIPS 2017",
+   "arxiv": "1705.08045",
+   "url": "https://arxiv.org/abs/1705.08045",
+   "code_url": "https://github.com/srebuffi/residual_adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "g(x;\\alpha) = x + \\alpha * x,\\quad \\alpha\\in\\mathbb{R}^{C\\times C\\times 1\\times 1}\\ (\\text{bank of }1{\\times}1\\text{ filters, wrapped with domain-specific BN});\\quad \\text{frozen: domain-agnostic }3{\\times}3\\text{ filters } w_1,w_2;\\ \\text{trained per domain: } \\alpha,\\ \\text{BN scale/shift}",
+   "trainable_params": "2(C^2+5C)\\ \\text{per residual block (vs. } 2(h^2C^2+hC)\\text{ shared, } h=3)",
+   "locus": "inside every ResNet residual block, in series after each 3x3 convolution (with batch-norm)",
+   "modification_kind": "architectural-insertion",
+   "structure": "Serial insertion of a linear near-identity endomorphism I+\\alpha of the C-channel feature space (a per-pixel C\\times C matrix, i.e. 1x1 conv) composed with domain-specific BN affine maps; full-rank, no bottleneck, no nonlinearity. The CVPR 2018 follow-up (Rebuffi et al., arXiv:1803.10082) moves the 1x1 adapter in parallel to the 3x3 convolution.",
+   "mergeable": "yes",
+   "mergeable_reason": "At inference every piece is linear or affine: BN, the 1x1 adapter I+\\alpha and the BN that follows sit between a frozen 3x3 convolution and the ReLU (Fig. 2). They therefore fold exactly into a domain-specific 3x3 filter bank plus bias (per tap W' = D_2(I+\\alpha D_1)W). The paper keeps them unmerged so that one backbone is shared across domains.",
+   "identity_at_init": "Exactly the identity when \\alpha=0 (residual form); in the paper adapters are first co-trained with the backbone on ImageNet, then only domain-specific parameters (with strong weight decay on \\alpha) are trained per domain.",
+   "key_idea": "Split a multi-domain ResNet into frozen domain-agnostic filters plus tiny domain-specific residual 1x1 adapters that collapse to the identity at zero, so one network can be steered across very different visual domains; this is the origin of the term 'adapter' later imported to NLP by Houlsby et al.",
+   "results_note": "On the Visual Decathlon (10 image domains) residual adapters adding ~11% parameters per domain are close to or better than full per-domain fine-tuning while avoiding forgetting.",
+   "relations": [],
+   "sources": [
+    "https://arxiv.org/abs/1705.08045",
+    "https://arxiv.org/pdf/1705.08045",
+    "https://github.com/srebuffi/residual_adapters"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked against the arXiv PDF (v5): title, authors, NIPS 2017 venue, g(x;\\alpha)=x+\\alpha*x with 1x1 filters, BN placement, the 2(C^2+5C) domain-specific parameter count and the ~11% per-domain overhead (Sec. 3.2, 5).",
+   "corrections": [
+    "mergeable: 'conditional' -> 'yes'. Every merge yields a task-specific weight, so needing a per-domain copy is not a condition. The adapter (BN, then 1x1 conv with skip, then BN) sits between the frozen 3x3 conv and the ReLU (paper Fig. 2), so it folds exactly.",
+    "Removed relation 'competes-with repadapter'. The two methods are six years apart, RepAdapter does not cite Rebuffi et al., and they do not compete. The structural link is now described in repadapter.structure."
+   ]
+  },
+  {
+   "id": "houlsby-adapter",
+   "name": "Adapter (Houlsby)",
+   "full_name": "Bottleneck adapter modules (serial, two per layer)",
+   "paper_title": "Parameter-Efficient Transfer Learning for NLP",
+   "authors": "Houlsby et al.",
+   "year": 2019,
+   "venue": "ICML 2019",
+   "arxiv": "1902.00751",
+   "url": "https://arxiv.org/abs/1902.00751",
+   "code_url": "https://github.com/google-research/adapter-bert",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = F(x)\\ (\\text{frozen sublayer after its output projection});\\quad y \\leftarrow y + W_{up}\\,\\sigma(W_{down}\\,y + b_{down}) + b_{up};\\quad \\text{then } \\mathrm{LN}(x+y);\\quad W_{down}\\in\\mathbb{R}^{r\\times d},\\ W_{up}\\in\\mathbb{R}^{d\\times r}\\ \\text{trained (plus LayerNorm and head); all pretrained weights frozen}",
+   "trainable_params": "2\\,(2rd + r + d)\\ \\text{per layer (two adapters)} + \\text{LayerNorm parameters}",
+   "locus": "two serial adapters per Transformer layer: after the attention output projection and after the FFN, each before the residual add and LayerNorm",
+   "modification_kind": "architectural-insertion",
+   "structure": "Bottleneck MLP inserted serially with an internal residual connection: each frozen sublayer F is post-composed with the near-identity endomorphism \\mathrm{id}+W_{up}\\sigma W_{down} of \\mathbb{R}^d (rank-r bottleneck, nonlinear).",
+   "mergeable": "no",
+   "mergeable_reason": "The nonlinearity inside the bottleneck prevents folding the adapter into the frozen linear weights, so inference keeps the extra sequential modules and latency.",
+   "identity_at_init": "Near-identity, not exact. Projection weights are drawn from a zero-mean Gaussian with std 10^{-2} truncated at 2 std, and biases are zero, so the adapter output is close to 0 and the internal skip makes the module approximately the identity. The paper's init-scale sweep finds performance robust for std <= 10^{-2} and degrading for larger scales.",
+   "key_idea": "Insert small bottleneck modules with a skip connection into every Transformer layer and train only them (plus LayerNorms), so one frozen BERT serves many tasks with a few percent new parameters per task.",
+   "results_note": "On GLUE with BERT-Large, adapters reach a mean score of 80.0 vs 80.4 for full fine-tuning while adding 3.6% parameters per task, and remain competitive across 26 text-classification tasks.",
+   "relations": [
+    {
+     "target": "residual-adapter",
+     "type": "builds-on",
+     "note": "Transfers Rebuffi et al.'s residual adapter idea to Transformers, adding a bottleneck and a nonlinearity."
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "dual-to",
+     "note": "Serial (post-composition) vs parallel (sum with the sublayer) insertion of the same bottleneck module, as analysed by He et al. (2022)."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Main alternative PEFT family; LoRA is a linear, parallel, mergeable update."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/1902.00751",
+    "https://arxiv.org/html/1902.00751",
+    "https://github.com/google-research/adapter-bert",
+    "https://docs.adapterhub.ml/methods.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv/ICML 2019 confirmed. The paper states 2md+d+m parameters per adapter, two serial adapters per layer after the output projection and before the skip-add and LayerNorm, LayerNorm parameters trained, and truncated N(0,1e-4) init. The GLUE numbers (80.0 vs 80.4, 3.6%) match the paper.",
+   "corrections": [
+    "identity_at_init: replaced 'training can fail if init deviates too far' with the paper's actual finding (Sec. 3.6, Fig. 6): robust for std <= 1e-2, degrading for larger init scales."
+   ]
+  },
+  {
+   "id": "pfeiffer-adapter",
+   "name": "Pfeiffer Adapter",
+   "full_name": "Pfeiffer (single sequential bottleneck) adapter, SeqBn",
+   "paper_title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2020,
+   "venue": "EACL 2021",
+   "arxiv": "2005.00247",
+   "url": "https://arxiv.org/abs/2005.00247",
+   "code_url": "https://github.com/adapter-hub/adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "a = \\mathrm{LN}\\big(x + F(x)\\big)\\ (F = \\text{frozen FFN sublayer, LN its frozen post-LayerNorm});\\quad y = W_{up}\\,\\mathrm{ReLU}(W_{down}\\,a + b_{down}) + b_{up} + F(x);\\quad h = \\mathrm{LN}(y + x);\\quad W_{down}\\in\\mathbb{R}^{r\\times d},\\ W_{up}\\in\\mathbb{R}^{d\\times r}\\ \\text{trained; backbone frozen}",
+   "trainable_params": "2rd + r + d\\ \\text{per layer (one adapter; default reduction factor } d/r = 16)",
+   "locus": "one adapter per Transformer layer, only after the feed-forward block",
+   "modification_kind": "architectural-insertion",
+   "structure": "Same algebraic shape as the Houlsby adapter (serial residual bottleneck MLP) but inserted once per layer, after the FFN, with the residual taken from the FFN sublayer; found by an architecture search over positions, residuals, LayerNorms, reduction factors and nonlinearities.",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear bottleneck in series with the FFN cannot be absorbed into frozen weights.",
+   "identity_at_init": "Approximate only. The paper adds 'randomly initialized' adapters, and the AdapterHub default (init_weights='bert') is N(0, 0.02^2) weights with zero biases. The bottleneck output is small but not zero, and there is no exact zero-init guarantee.",
+   "key_idea": "A single adapter after the FFN performs on par with Houlsby's two adapters per layer while halving the inserted modules and compute; it became the default sequential adapter (SeqBnConfig) of AdapterHub and the building block of AdapterFusion and MAD-X.",
+   "results_note": "In the paper's architecture search on SST-2, CommonsenseQA and argument mining, the single post-FFN adapter matched the Houlsby configuration with half as many adapters.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Keeps only the FFN-side adapter of the Houlsby design."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2005.00247",
+    "https://arxiv.org/html/2005.00247",
+    "https://arxiv.org/html/2005.00052",
+    "https://docs.adapterhub.ml/methods.html",
+    "https://arxiv.org/html/2406.06820"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Single post-FFN adapter found by an architecture search on SST-2, CSQA and Argument (AdapterFusion App. A.2). EACL 2021 confirmed via arXiv journal-ref. Default reduction factor 16 confirmed in AdapterHub SeqBnConfig.",
+   "corrections": [
+    "formula_latex: made the residual explicit. MAD-X Eq. 1 defines r_l as the output of the FFN and h_l as the output of the following LayerNorm. AdapterHub SeqBnConfig (original_ln_before/after=True, residual_before_ln=True) computes LN(W_up ReLU(W_down LN(x+F(x))) + F(x) + x). The earlier text 'rho = residual of the FFN sublayer' was ambiguous.",
+    "identity_at_init: the init is now attributed to AdapterHub's default ('bert', std 0.02). The paper only says 'randomly initialized'."
+   ]
+  },
+  {
+   "id": "mad-x",
+   "name": "MAD-X",
+   "full_name": "Multiple ADapters for Cross-lingual transfer (language, task and invertible adapters)",
+   "paper_title": "MAD-X: An Adapter-Based Framework for Multi-Task Cross-Lingual Transfer",
+   "authors": "Pfeiffer et al.",
+   "year": 2020,
+   "venue": "EMNLP 2020",
+   "arxiv": "2005.00052",
+   "url": "https://arxiv.org/abs/2005.00052",
+   "code_url": "https://github.com/adapter-hub/adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{LA}_l(h_l,\\rho_l) = U_l\\,\\mathrm{ReLU}(D_l h_l) + \\rho_l,\\quad \\mathrm{TA}_l(h_l,\\rho_l) = U'_l\\,\\mathrm{ReLU}\\big(D'_l\\,\\mathrm{LA}_l(h_l,\\rho_l)\\big) + \\rho_l;\\quad A_{inv}:\\ o_1 = F(e_2)+e_1,\\ o_2 = G(o_1)+e_2,\\ \\ A_{inv}^{-1}:\\ e_2 = o_2 - G(o_1),\\ e_1 = o_1 - F(e_2);\\ \\ F,G\\ \\text{bottleneck MLPs};\\ \\text{backbone frozen}",
+   "trainable_params": "\\underbrace{2r_Ld}_{\\text{language}} + \\underbrace{2r_Td}_{\\text{task}}\\ \\text{per layer} + \\underbrace{\\tfrac{d^2}{2}}_{\\text{invertible (once)}}\\ (\\text{+ biases; paper: } r_L = d/2,\\ r_T = d/16)",
+   "locus": "language and task adapters stacked after the FFN in every layer; invertible adapter on the input embeddings with its inverse before the tied output embeddings",
+   "modification_kind": "architectural-insertion",
+   "structure": "Serial composition (stacking) TA\\circ LA of two bottleneck adapters that share the FFN residual, plus an invertible NICE additive-coupling bijection A_{inv} on token embeddings whose exact inverse is applied before the tied output embedding; language modules are swappable at inference (zero-shot transfer by replacing LA^{src} with LA^{tgt}).",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear bottlenecks and coupling layers must be executed at inference; swapping modules is the point of the design.",
+   "identity_at_init": "Not explicitly enforced: adapters use the standard small random init of Pfeiffer adapters; the coupling A_{inv} equals the identity only when F=G=0.",
+   "key_idea": "Factor cross-lingual transfer into separately trained, swappable language adapters (MLM on unlabeled text), task adapters stacked on top, and invertible embedding adapters, so a task adapter trained in one language transfers zero-shot to another by swapping the language adapter.",
+   "results_note": "With XLM-R Base, full MAD-X improves over XLM-R by more than 5 F1 on average for cross-lingual NER (largest gains on low-resource and unseen languages) and is competitive on XQuAD.",
+   "relations": [
+    {
+     "target": "pfeiffer-adapter",
+     "type": "builds-on",
+     "note": "Language and task adapters use the Pfeiffer architecture."
+    },
+    {
+     "target": "adapterfusion",
+     "type": "competes-with",
+     "note": "Alternative way to compose adapters: stacking/swapping instead of attention-based fusion."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2005.00052",
+    "https://arxiv.org/html/2005.00052",
+    "https://docs.adapterhub.ml/methods.html",
+    "https://docs.adapterhub.ml/adapter_composition.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eqs. for LA, TA and the NICE invertible adapter match the paper (Sec. 4.1-4.3). F and G use D in R^{h/4 x h/2}, which gives h^2/2 invertible parameters. Default dims 384/192/48 for XLM-R Base give ~8.25M per language (paper Table 5). EMNLP 2020 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "adapterfusion",
+   "name": "AdapterFusion",
+   "full_name": "AdapterFusion: attention-based composition of task adapters",
+   "paper_title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2020,
+   "venue": "EACL 2021",
+   "arxiv": "2005.00247",
+   "url": "https://arxiv.org/abs/2005.00247",
+   "code_url": "https://github.com/adapter-hub/adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "s_{l,t} = \\mathrm{softmax}_{n}\\big(h_{l,t}^{\\top}Q_l \\cdot z_{l,t,n}^{\\top}K_l\\big),\\quad z'_{l,t,n} = z_{l,t,n}^{\\top}V_l,\\quad o_{l,t} = \\sum_{n=1}^{N} s_{l,t,n}\\,z'_{l,t,n};\\quad \\text{frozen: backbone and } N \\text{ trained task adapters } \\Phi_n;\\ \\text{trained: } Q_l,K_l,V_l\\ (\\text{and head})",
+   "trainable_params": "3d^2 + 3d\\ \\text{per layer}\\ (Q_l,K_l,V_l\\in\\mathbb{R}^{d\\times d})",
+   "locus": "a fusion layer after the N parallel task adapters at the FFN position of every layer",
+   "modification_kind": "composition-or-routing",
+   "structure": "Input-dependent convex combination: a dot-product attention whose query is the FFN output and whose keys/values are the outputs of N frozen adapters, i.e. a context-dependent point of the simplex \\Delta^{N-1} mixing V-projected adapter outputs (two-stage: knowledge extraction, then composition).",
+   "mergeable": "no",
+   "mergeable_reason": "All N adapters and the attention mixer run at inference; the mixing weights depend on the input.",
+   "identity_at_init": "No: Q and K are random; V is initialized to an identity diagonal plus 1e-6 noise (and L2-regularized toward it), so at init the layer outputs an attention-weighted average of adapter outputs, not the base model.",
+   "key_idea": "Separate knowledge extraction (train one adapter per task, non-destructively) from knowledge composition (learn a small attention layer that mixes the frozen adapters per token for a target task), avoiding catastrophic forgetting and task interference of multi-task fine-tuning.",
+   "results_note": "Across 16 NLU tasks with BERT-base, AdapterFusion improves over full fine-tuning and over single-task and multi-task adapters on the target task.",
+   "relations": [
+    {
+     "target": "pfeiffer-adapter",
+     "type": "builds-on",
+     "note": "Fuses single-task Pfeiffer adapters."
+    },
+    {
+     "target": "adamix",
+     "type": "competes-with",
+     "note": "Both mix several adapters per layer; AdaMix routes stochastically and averages weights instead of attending over outputs."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2005.00247",
+    "https://arxiv.org/html/2005.00247",
+    "https://docs.adapterhub.ml/adapter_composition.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Fusion attention softmax(h^T Q . z^T K) with value projection z^T V matches Sec. 3.2. V is initialized to an identity diagonal plus 1e-6 noise and L2-regularized (Sec. 4.3). 3d^2+3d assumes biased d x d Q/K/V, as in the AdapterHub implementation. EACL 2021 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "adapterdrop",
+   "name": "AdapterDrop",
+   "full_name": "AdapterDrop: dropping adapters from lower Transformer layers",
+   "paper_title": "AdapterDrop: On the Efficiency of Adapters in Transformers",
+   "authors": "Rücklé et al.",
+   "year": 2020,
+   "venue": "EMNLP 2021",
+   "arxiv": "2010.11918",
+   "url": "https://arxiv.org/abs/2010.11918",
+   "code_url": "https://github.com/adapter-hub/adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h^{(l)} = \\begin{cases} F_l\\big(h^{(l-1)}\\big) & l \\le n \\\\ A_l\\big(F_l(h^{(l-1)})\\big) & l > n \\end{cases},\\qquad n \\text{ fixed (specialized) or } n\\sim\\mathcal{U}\\{0,\\dots,11\\}\\ \\text{per batch (robust)};\\ \\text{backbone frozen, adapters } A_l \\text{ trained}",
+   "trainable_params": "(L-n)\\,(2rd + r + d)\\ \\text{for specialized AdapterDrop (adapters only in the top } L-n \\text{ layers)};\\ L\\,(2rd+r+d)\\ \\text{for robust AdapterDrop (all adapters trained, } n \\text{ resampled per batch)}",
+   "locus": "adapters kept only in the upper L-n layers; the first n layers are the unmodified backbone",
+   "modification_kind": "architectural-insertion",
+   "structure": "Restricts the set of insertion sites to a final segment of the layer chain, so the composite factors as (adapted top) \\circ (shared frozen bottom); the shared prefix can be computed once for many tasks. The robust variant samples n per batch (stochastic depth over adapters). Also prunes AdapterFusion to its most-attended adapters.",
+   "mergeable": "no",
+   "mergeable_reason": "Remaining adapters are ordinary nonlinear bottleneck adapters.",
+   "identity_at_init": "Inherited from the underlying adapter initialization (approximate identity); the first n layers are exactly the backbone.",
+   "key_idea": "Lower layers matter little for adapters, so removing their adapters (during training and/or inference) speeds up training and multi-task inference with small accuracy loss; one robustly trained model can be run with any number of dropped layers.",
+   "results_note": "With RoBERTa-base on GLUE, dropping adapters from the first five layers keeps 97.1% (specialized) / 95.4% (robust) of performance and makes simultaneous inference on 8 tasks 39% faster; pruning AdapterFusion from 8 to 2 adapters keeps performance.",
+   "relations": [
+    {
+     "target": "pfeiffer-adapter",
+     "type": "builds-on",
+     "note": "Applied to Pfeiffer and Houlsby adapters."
+    },
+    {
+     "target": "adapterfusion",
+     "type": "builds-on",
+     "note": "AdapterFusion pruning removes the least-activated adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2010.11918",
+    "https://arxiv.org/html/2010.11918"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Specialized/robust variants, n drawn from [0,11] per batch, 97.1%/95.4% retention with 5 dropped layers and 39% faster 8-task inference all match the paper. EMNLP 2021 confirmed via arXiv comment.",
+   "corrections": [
+    "trainable_params: added the robust variant, which trains all L adapters with n ~ U[0,11] per batch (paper Sec. 3)."
+   ]
+  },
+  {
+   "id": "k-adapter",
+   "name": "K-Adapter",
+   "full_name": "K-Adapter: knowledge-specific side adapters",
+   "paper_title": "K-Adapter: Infusing Knowledge into Pre-Trained Models with Adapters",
+   "authors": "Wang et al.",
+   "year": 2020,
+   "venue": "Findings of ACL-IJCNLP 2021",
+   "arxiv": "2002.01808",
+   "url": "https://arxiv.org/abs/2002.01808",
+   "code_url": "https://github.com/microsoft/k-adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "a_k = \\mathcal{A}_k\\big([\\,h_{l_k}\\,;\\,a_{k-1}\\,]\\big),\\ \\ \\mathcal{A}_k = \\text{down-proj} \\to N\\ \\text{Transformer layers} \\to \\text{up-proj (skip across the projections)},\\ \\ l_k\\in\\{0,11,23\\};\\quad \\text{output } [\\,h_L\\,;\\,a_K\\,];\\quad \\text{knowledge pre-training: backbone frozen, } \\mathcal{A}\\text{ trained}",
+   "trainable_params": "\\approx 42\\text{M per knowledge adapter during knowledge pre-training (RoBERTa-Large frozen; } K=3 \\text{ adapter layers at backbone layers } \\{0,11,23\\},\\ N=2,\\ H_A=768,\\ H_d=768,\\ H_u=1024);\\ \\text{downstream fine-tuning updates RoBERTa with the adapters frozen}",
+   "locus": "outside plug-in (side network) reading hidden states of backbone layers {0, 11, 23}; its output is concatenated with the backbone's final hidden state",
+   "modification_kind": "architectural-insertion",
+   "structure": "Side network: a separate small Transformer stack that reads (by concatenation) intermediate backbone states and never writes back into the backbone; the final representation is the concatenation (a product) of backbone and side-network features, and multiple knowledge adapters are combined by further concatenation.",
+   "mergeable": "no",
+   "mergeable_reason": "A separate network with its own Transformer layers runs alongside the backbone.",
+   "identity_at_init": "No: adapters are randomly initialized; the backbone representation is left untouched (outputs are concatenated, not added), so original features stay available but the head sees a new concatenated feature.",
+   "key_idea": "Inject different kinds of knowledge (factual relations from Wikidata, dependency syntax) into independent side adapters trained with the backbone frozen, enabling continual, non-interfering knowledge infusion. Note: for downstream tasks the paper keeps the adapters fixed and fine-tunes RoBERTa, so it is a modular knowledge-infusion method rather than a downstream PEFT method.",
+   "results_note": "K-Adapter (factual + linguistic) improves RoBERTa-Large on entity typing (OpenEntity +1.38 F1), relation classification and question answering.",
+   "relations": [
+    {
+     "target": "side-tuning",
+     "type": "competes-with",
+     "note": "Concurrent side-network design; K-Adapter reads intermediate layers and fuses by concatenation."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "competes-with",
+     "note": "Plugs adapters outside the backbone instead of inside each layer."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2002.01808",
+    "https://arxiv.org/html/2002.01808",
+    "https://github.com/microsoft/k-adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Architecture (K adapter layers with N=2 Transformer layers, skip across projections, plug-in at {0,11,23}, concatenation fusion, ~42M parameters) matches Sec. 3.1. Venue confirmed via Crossref DOI 10.18653/v1/2021.findings-acl.121.",
+   "corrections": [
+    "trainable_params: added the downstream regime. The paper (App. E) fixes the adapters and fine-tunes all of RoBERTa, so the ~42M figure applies only to knowledge pre-training."
+   ]
+  },
+  {
+   "id": "compacter",
+   "name": "Compacter",
+   "full_name": "Compacter: low-rank hypercomplex (Kronecker) adapter layers",
+   "paper_title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+   "authors": "Karimi Mahabadi et al.",
+   "year": 2021,
+   "venue": "NeurIPS 2021",
+   "arxiv": "2106.04647",
+   "url": "https://arxiv.org/abs/2106.04647",
+   "code_url": "https://github.com/rabeehk/compacter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "A^{l}(x) = \\mathrm{LPHM}^{U^l}\\big(\\mathrm{GeLU}(\\mathrm{LPHM}^{D^l}(x))\\big) + x,\\quad W = \\sum_{i=1}^{n} A_i \\otimes \\big(s_i t_i^{\\top}\\big),\\ \\ A_i\\in\\mathbb{R}^{n\\times n}\\ \\text{shared by all adapters},\\ s_i\\in\\mathbb{R}^{d/n},\\ t_i\\in\\mathbb{R}^{r/n}\\ \\text{per adapter};\\ \\text{backbone frozen (LayerNorms trained)}",
+   "trainable_params": "2(d+r)\\ \\text{per adapter} + n^3\\ \\text{shared}\\ \\ (\\text{total } 4L(d+r)+n^3 \\text{ with two adapters per layer})",
+   "locus": "Houlsby positions (after attention and after FFN); Compacter++ keeps only the post-FFN adapter",
+   "modification_kind": "architectural-insertion",
+   "structure": "Bottleneck adapter whose down/up matrices are parameterized hypercomplex multiplications: sums of n Kronecker products A_i\\otimes B_i with globally shared 'slow' factors A_i and per-adapter rank-one 'fast' factors B_i = s_i t_i^{\\top}; parameter cost O(d+r) instead of O(dr).",
+   "mergeable": "no",
+   "mergeable_reason": "Still a nonlinear serial bottleneck; the Kronecker structure only compresses its weights.",
+   "identity_at_init": "Not explicitly guaranteed in the paper; the residual form makes the module near-identity when the generated projections are small.",
+   "key_idea": "Compress adapter weights with parameterized hypercomplex (Kronecker-sum) layers whose small factors are shared across all layers and whose large factors are rank-one, reaching ~0.05% trainable parameters.",
+   "results_note": "With T5-base, Compacter (0.073%) and Compacter++ (0.047% of parameters) match full fine-tuning on GLUE and outperform it on SuperGLUE and in low-resource settings.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Same adapter positions and residual bottleneck, with Kronecker-factored weights."
+    },
+    {
+     "target": "pfeiffer-adapter",
+     "type": "builds-on",
+     "note": "Compacter++ uses the single post-FFN placement."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.04647",
+    "https://arxiv.org/html/2106.04647",
+    "https://docs.adapterhub.ml/methods.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "LPHM adapter, W = sum_i A_i (x) s_i t_i^T with A_i shared across all layers and positions, and the total 4L(k+d)+n^3 parameters match Sec. 3-4 (biases ignored, as in the paper). 0.073%/0.047% figures confirmed. NeurIPS 2021 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "hyperformer",
+   "name": "HyperFormer",
+   "full_name": "HyperFormer / HyperFormer++: hypernetwork-generated task-conditional adapters",
+   "paper_title": "Parameter-efficient Multi-task Fine-tuning for Transformers via Shared Hypernetworks",
+   "authors": "Karimi Mahabadi et al.",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2106.04489",
+   "url": "https://arxiv.org/abs/2106.04489",
+   "code_url": "https://github.com/rabeehk/hyperformer",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "A^{l}_{\\tau}(x) = \\mathrm{LN}^{l}_{\\tau}\\big(U^{l}_{\\tau}\\,\\mathrm{GeLU}(D^{l}_{\\tau}x)\\big) + x,\\quad (U^{l}_{\\tau},D^{l}_{\\tau}) = (W^{U},W^{D})\\,I_{\\tau},\\ \\ (\\gamma^{l}_{\\tau},\\beta^{l}_{\\tau}) = (W^{\\gamma},W^{\\beta})\\,I_{\\tau},\\ \\ I_{\\tau} = h'_I(z_{\\tau}, l_i, p_j)\\ (\\text{HyperFormer++});\\ \\text{backbone frozen except its LayerNorms}",
+   "trainable_params": "t(T+4+2L) + 8te + 2t(2dr + 2d)\\ \\text{in total for } T \\text{ tasks (HyperFormer++, } t=64,\\ e=128);\\ \\text{a new task adds } t",
+   "locus": "Houlsby positions (after attention and FFN blocks) in the T5 encoder and decoder, plus task-conditional LayerNorm inside adapters",
+   "modification_kind": "architectural-insertion",
+   "structure": "Adapter weights are the image of a learned linear map (hypernetwork) applied to an embedding of (task, layer id, adapter position); all adapters therefore lie in a shared t-dimensional linear subspace of adapter-parameter space, with nonlinear adapters instantiated from it.",
+   "mergeable": "no",
+   "mergeable_reason": "Once a task embedding is fixed the generated module is an ordinary nonlinear bottleneck adapter, which cannot be folded into the frozen weights.",
+   "identity_at_init": "No exact guarantee: generated adapter weights are random at init (residual form gives approximate identity only if the generated weights are small).",
+   "key_idea": "Share knowledge across tasks by generating every task's adapter and conditional-LayerNorm parameters from one hypernetwork conditioned on task, layer and position embeddings, so adding a task costs only a task embedding.",
+   "results_note": "In multi-task GLUE with T5-base, HyperFormer++ scores 86.48 vs 84.88 for task-specific adapters with 0.29% trainable parameters per task, and improves few-shot domain generalization.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Generates Houlsby-style adapters with a hypernetwork."
+    },
+    {
+     "target": "compacter",
+     "type": "competes-with",
+     "note": "Same authors; parameter sharing via hypernetwork vs via shared Kronecker factors."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.04489",
+    "https://arxiv.org/html/2106.04489",
+    "https://github.com/rabeehk/hyperformer"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Adapter A = LN_tau(U GeLU(D x)) + x, the linear hypernetworks (W^U, W^D) I_tau and the HyperFormer++ total t(T+4+2L)+8te+2t(2hd+2h) (t=64, e=128) match the paper (Sec. 2, 4.1). GLUE 86.48 vs 84.88 confirmed. ACL 2021 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "parallel-adapter",
+   "name": "Parallel Adapter",
+   "full_name": "(Scaled) Parallel Adapter",
+   "paper_title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "code_url": "https://github.com/jxhe/unify-parameter-efficient-tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h \\leftarrow F(x) + s\\cdot W_{up}\\,\\sigma(W_{down}\\,x),\\quad x = \\text{input of the frozen sublayer } F\\ (\\text{FFN or attention});\\ \\ s=1\\ (\\text{PA}),\\ s>1\\ \\text{fixed (scaled PA, e.g. } s=4);\\ \\ W_{down}\\in\\mathbb{R}^{r\\times d},\\ W_{up}\\in\\mathbb{R}^{d\\times r}\\ \\text{trained}",
+   "trainable_params": "2rd\\ (+\\,r + d \\text{ biases})\\ \\text{per adapted sublayer}",
+   "locus": "in parallel to the FFN (preferred) or attention sublayer, reading the sublayer input",
+   "modification_kind": "architectural-insertion",
+   "structure": "Additive parallel composition: the frozen sublayer map F is replaced by F + s\\,g with g = W_{up}\\sigma W_{down} a bottleneck MLP of the same input (a sum of two morphisms with common domain), versus the serial post-composition (\\mathrm{id}+g)\\circ F of sequential adapters.",
+   "mergeable": "no",
+   "mergeable_reason": "The bottleneck is nonlinear and F (an FFN) is nonlinear, so F+sg cannot be rewritten as the original architecture; with \\sigma = id around a single linear map it collapses to LoRA, which is mergeable.",
+   "identity_at_init": "Exact for the scaled PA as implemented: LoRA-style init (W_down Kaiming-uniform, W_up = 0), so the parallel branch outputs 0 at init.",
+   "key_idea": "Viewing prefix tuning as a gated parallel adapter on attention outputs suggests moving adapters from serial to parallel insertion, placing them at the FFN, and borrowing LoRA's scaling; parallel insertion beats serial at equal budget (a similar parallel adapter was proposed concurrently by Zhu et al., 2021 for MT).",
+   "results_note": "On XSum summarization and WMT16 en-ro translation, the FFN parallel adapter outperforms the FFN sequential adapter by 1.7 ROUGE-2 and 0.8 BLEU at the same parameter budget.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "LoRA is a scaled parallel adapter around a single linear map with \\sigma = identity."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "He et al. show prefix tuning equals a softmax-gated parallel adapter on head outputs; PA transfers this insertion form."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "dual-to",
+     "note": "Parallel vs serial insertion of the same bottleneck."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.04366",
+    "https://arxiv.org/html/2110.04366",
+    "https://docs.adapterhub.ml/methods.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "PA/scaled PA (s=4 fixed, or trainable s) and the LoRA-style init used for scaled PA (App. A.3) are confirmed. PA(ffn) beats SA(ffn) by 1.7 R-2 / 0.8 BLEU (Sec. 4.3). ICLR 2022 (spotlight) confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "mam-adapter",
+   "name": "MAM Adapter",
+   "full_name": "Mix-And-Match Adapter",
+   "paper_title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "code_url": "https://github.com/jxhe/unify-parameter-efficient-tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{attention: } \\mathrm{head} = \\mathrm{Attn}\\big(xW_q,\\ [P_k; CW_k],\\ [P_v; CW_v]\\big),\\ P_k,P_v\\in\\mathbb{R}^{\\ell\\times d/n_h}\\ (\\ell=30);\\quad \\text{FFN: } h \\leftarrow \\mathrm{FFN}(x) + s\\cdot W_{up}\\,\\sigma(W_{down}\\,x),\\ r=512;\\ \\text{backbone frozen}",
+   "trainable_params": "2\\ell d + 2rd\\ \\text{per layer at inference }(\\ell = 30,\\ r = 512;\\ \\text{prefix trained through an MLP reparameterization})",
+   "locus": "prefix vectors at every attention layer (small budget) plus a scaled parallel adapter at every FFN (large budget)",
+   "modification_kind": "hybrid",
+   "structure": "Sum of two of the unified-view instances in each layer: a softmax-gated parallel modification of attention heads (prefix tuning) and a scaled parallel bottleneck on the FFN, with the parameter budget deliberately allocated mostly to the FFN.",
+   "mergeable": "no",
+   "mergeable_reason": "Prefixes add attention slots and the FFN adapter is nonlinear.",
+   "identity_at_init": "Partial: the scaled parallel adapter starts at 0 (W_up = 0), but prefixes change attention from the first step (prefix tuning has no exact identity init).",
+   "key_idea": "Transfer the favourable design choices found by the unified analysis: parallel insertion, FFN modification with large capacity, scaling composition, and multi-head attention modification with a tiny prefix.",
+   "results_note": "With 6.7% tuned parameters, MAM matches full fine-tuning on XSum and en-ro and is the best of the compared PEFT methods; with RoBERTa-base and 0.5% parameters it reaches 87.4 MNLI / 94.2 SST-2 vs 87.6 / 94.6 for full fine-tuning.",
+   "relations": [
+    {
+     "target": "parallel-adapter",
+     "type": "combines",
+     "note": "Scaled parallel adapter at the FFN."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "combines",
+     "note": "Prefix tuning (l=30) at attention."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.04366",
+    "https://arxiv.org/html/2110.04366",
+    "https://docs.adapterhub.ml/method_combinations.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Prefix l=30 at attention plus scaled PA r=512 at the FFN (Sec. 4.6), prefixes reparameterized by an MLP during training (App. A). 6.7% (XSum/en-ro) and 0.5% (MNLI 87.4 / SST-2 94.2) confirmed. AdapterHub MAMConfig = PrefixTuning(bottleneck 800) + ParBn(reduction 2, scaling 4).",
+   "corrections": []
+  },
+  {
+   "id": "unipelt",
+   "name": "UniPELT",
+   "full_name": "UniPELT: unified, gated parameter-efficient language model tuning",
+   "paper_title": "UniPELT: A Unified Framework for Parameter-Efficient Language Model Tuning",
+   "authors": "Mao et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2110.07577",
+   "url": "https://arxiv.org/abs/2110.07577",
+   "code_url": "https://github.com/morningmoni/UniPELT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h'_A = \\mathcal{G}_A\\,W_{up}\\,\\phi(W_{down}\\,h_{FN}) + h_F;\\quad K' = [\\mathcal{G}_P P_K;\\,K],\\ V' = [\\mathcal{G}_P P_V;\\,V];\\quad W = W_0 + \\mathcal{G}_L\\,\\Delta W_{\\text{LoRA}};\\quad \\mathcal{G}_m = \\mathrm{sigmoid}\\big(\\mathrm{FFN}_m(\\cdot)\\big)\\in(0,1),\\ m\\in\\{A,P,L\\};\\ \\text{backbone frozen}",
+   "trainable_params": "2rd\\ (\\text{adapter}) + 2\\ell d\\ (\\text{prefix}) + 2\\,r'(d_{in}+d_{out})\\ (\\text{LoRA on } W_q,W_v) + O(d)\\ \\text{gates, per layer}",
+   "locus": "sequential adapter after the FFN, prefixes at attention keys/values, LoRA on W_q and W_v, each with its own gate in every layer",
+   "modification_kind": "hybrid",
+   "structure": "Input-dependent sigmoid-gated sum of three heterogeneous submodules inside each layer (serial adapter, prefix, LoRA): a learned, per-example mixture over PEFT 'experts', with each gate able to switch its submodule off.",
+   "mergeable": "no",
+   "mergeable_reason": "Adapter and prefix branches are not mergeable and the LoRA gate depends on the input.",
+   "identity_at_init": "Not exact: inherits submodule initializations (LoRA B = 0 and near-zero adapters, but prefixes perturb attention from the start).",
+   "key_idea": "Rather than choosing one PEFT method per task, include adapter, prefix tuning and LoRA as submodules and learn gates that activate whichever combination suits the data and task.",
+   "results_note": "On GLUE, UniPELT gains 1-4 points over the best individual submodule in low-resource settings, often exceeds the upper bound of its submodules, and matches or beats fine-tuning with more data.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "combines",
+     "note": "Gated sequential bottleneck adapter submodule. The paper cites Houlsby et al. but places one adapter after the FFN (Pfeiffer-style placement, also AdapterHub UniPELTConfig = SeqBn reduction 16)."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "combines",
+     "note": "Gated prefix submodule."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Gate replaces LoRA's constant scaling."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.07577",
+    "https://arxiv.org/html/2110.07577",
+    "https://docs.adapterhub.ml/method_combinations.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Gates G_A, G_P and G_L (sigmoid FFNs), G_A h_A + h_F, gated prefixes and G_L replacing LoRA's alpha all match Sec. 3. Defaults L=10, D_mid=48 and LoRA rank 8 on W_q,W_v are confirmed. ACL 2022 confirmed.",
+   "corrections": [
+    "relations[houlsby-adapter].note: clarified that UniPELT uses a single post-FFN adapter (Eq. 1 uses h_FN)."
+   ]
+  },
+  {
+   "id": "adamix",
+   "name": "AdaMix",
+   "full_name": "Mixture-of-Adaptations",
+   "paper_title": "AdaMix: Mixture-of-Adaptations for Parameter-efficient Model Tuning",
+   "authors": "Wang et al.",
+   "year": 2022,
+   "venue": "EMNLP 2022",
+   "arxiv": "2205.12410",
+   "url": "https://arxiv.org/abs/2205.12410",
+   "code_url": "https://github.com/microsoft/AdaMix",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{train: } x \\leftarrow x + f\\big(x\\,\\mathcal{W}^{down}_{i,k}\\big)\\,\\mathcal{W}^{up}_{i,j},\\ \\ (j,k)\\ \\text{sampled uniformly per step};\\ \\ \\mathcal{L} = \\mathrm{CE} + \\tfrac12\\big(\\mathrm{KL}(z^{\\mathcal{A}}\\Vert z^{\\mathcal{B}}) + \\mathrm{KL}(z^{\\mathcal{B}}\\Vert z^{\\mathcal{A}})\\big);\\quad \\text{inference: } \\mathcal{W}'^{up}_{i} = \\tfrac1M\\sum_{j}\\mathcal{W}^{up}_{ij},\\ \\mathcal{W}'^{down}_{i} = \\tfrac1M\\sum_{j}\\mathcal{W}^{down}_{ij}",
+   "trainable_params": "(M+1)\\,rd\\ (+\\text{biases})\\ \\text{per adapter during training in the default setting (} M \\text{ down-projections, one shared up-projection, Sec. 3.4)},\\ 2Mrd \\text{ without sharing};\\ 2rd\\ \\text{per adapter after merging (default } M=4)",
+   "locus": "Houlsby adapter positions (or LoRA matrices when the underlying method is LoRA)",
+   "modification_kind": "architectural-insertion",
+   "structure": "A sparse mixture of M adapter 'experts' per layer with random (parameter-free) routing during training, consistency-regularized between two stochastic routes, and collapsed by weight averaging into a single adapter of the original size for inference (a model-soup within one layer).",
+   "mergeable": "no",
+   "mergeable_reason": "The averaged adapter is still a nonlinear bottleneck (mergeable into W only when the underlying method is LoRA).",
+   "identity_at_init": "Inherits the underlying PEFT initialization (approximate identity for adapters; exact for LoRA with B = 0).",
+   "key_idea": "Train several adaptation modules per layer with stochastic routing (same FLOPs as one), then average them into one module, gaining ensemble-like benefits at the cost and size of a single adapter.",
+   "results_note": "Tuning 0.1-0.2% of parameters, AdaMix outperforms full fine-tuning on all GLUE tasks with RoBERTa-large (0.23%) and beats LoRA and adapters on E2E NLG with GPT-2.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Mixture of Houlsby adapters."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Also instantiated as a mixture of LoRA modules."
+    },
+    {
+     "target": "adapterfusion",
+     "type": "competes-with",
+     "note": "Mixes adapters without input-dependent routing at inference."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.12410",
+    "https://arxiv.org/html/2205.12410",
+    "https://github.com/microsoft/AdaMix"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Stochastic routing x <- x + f(x W^down_ik) W^up_ij, symmetric-KL consistency loss, inference-time weight averaging and M=4 match Sec. 3. '0.1-0.2%' and '0.23%' (RoBERTa-large GLUE table) are both stated in the paper. EMNLP 2022 confirmed.",
+   "corrections": [
+    "trainable_params: 'M*2rd (up-projections may be shared)' -> '(M+1)rd'. The paper's default shares the up-projection (W^up_ij = W^up_i), giving M down- plus 1 up-projection."
+   ]
+  },
+  {
+   "id": "llama-adapter",
+   "name": "LLaMA-Adapter",
+   "full_name": "LLaMA-Adapter (adaption prompts with zero-initialized gated attention)",
+   "paper_title": "LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2303.16199",
+   "url": "https://arxiv.org/abs/2303.16199",
+   "code_url": "https://github.com/OpenGVLab/LLaMA-Adapter",
+   "hf_peft": true,
+   "hf_peft_config": "AdaptionPromptConfig(adapter_len, adapter_layers)",
+   "formula_latex": "S_l = \\tfrac{Q_lK_l^{\\top}}{\\sqrt{d}},\\ \\ K_l = [P_l;T_l;t_l]W_k,\\ V_l = [P_l;T_l;t_l]W_v;\\quad S^{g}_l = \\big[\\mathrm{softmax}(S^{K}_l)\\cdot\\tanh(g_l);\\ \\mathrm{softmax}(S^{M+1}_l)\\big];\\quad t^{o}_l = W_o\\,S^{g}_l V_l;\\ \\ P_l\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{and per-head gates } g_l\\ \\text{trained (top } L' \\text{ layers)};\\ W_{q,k,v,o}\\ \\text{frozen}",
+   "trainable_params": "L'\\ell d + L' n_h\\ \\ (\\ell = 10,\\ L' = 30 \\Rightarrow \\approx 1.2\\text{M for LLaMA-7B})",
+   "locus": "self-attention of the topmost L' layers: learnable adaption prompts used as extra keys/values (through the frozen W_k, W_v) with a gated, separately normalized softmax",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Learned prompt tokens prepended at each upper layer and attended through their own softmax whose output is multiplied by a zero-initialized tanh gate; because the word-token softmax is kept separate, the layer equals the original attention plus an additive gated prefix branch. In He et al.'s unified view this is a zero-gated parallel attention branch, whose softmax bottleneck has width \\ell and whose projections are tied to the frozen W_{q,k,v,o}.",
+   "mergeable": "no",
+   "mergeable_reason": "The adaption prompts add attention slots in the top layers at inference.",
+   "identity_at_init": "Exact: g_l = 0 gives tanh(g_l) = 0, so the prompt branch contributes nothing and the separately normalized word-token attention is unchanged.",
+   "key_idea": "Prefix-like prompts in the upper layers combined with a zero-initialized gate inject instruction-following ability progressively without disturbing the pretrained model at the start of training; the same zero-init attention also injects image tokens for multimodal reasoning.",
+   "results_note": "Fine-tunes frozen LLaMA-7B on 52K self-instruct demonstrations with 1.2M parameters in under one hour on 8 A100s, giving instruction-following comparable to fully fine-tuned Alpaca-7B; also extends to ScienceQA and other multimodal benchmarks.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Prompts in upper layers, routed through frozen K/V projections and zero-gated."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.16199",
+    "https://arxiv.org/html/2303.16199",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/adaption_prompt",
+    "https://huggingface.co/docs/peft/package_reference/llama_adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "S^g = [softmax(S^K) tanh(g); softmax(S^{M+1})], per-head zero-init gates, K=10 prompts in the top L=30 of 32 layers and 1.2M parameters all match Sec. 3. ICLR 2024 confirmed. HF PEFT AdaptionPromptConfig(adapter_len, adapter_layers) exists in v0.21.1 (llama, mistral, gpt2). HF uses one scalar zero-init gate per layer applied without tanh, not per-head tanh gates.",
+   "corrections": [
+    "Removed relation 'dual-to parallel-adapter'. It is not a duality, and 'special-case-of' would overstate it (RoPE-rotated queries, tied projections). The unified-view reading is kept as a sentence in structure."
+   ]
+  },
+  {
+   "id": "llama-adapter-v2",
+   "name": "LLaMA-Adapter V2",
+   "full_name": "LLaMA-Adapter V2: parameter-efficient visual instruction model",
+   "paper_title": "LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model",
+   "authors": "Gao et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2304.15010",
+   "url": "https://arxiv.org/abs/2304.15010",
+   "code_url": "https://github.com/OpenGVLab/LLaMA-Adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = W_0x \\;\\to\\; y = s\\cdot(W_0x + b),\\ \\ b\\ \\text{init } 0,\\ s\\ \\text{init } 1\\ \\text{(every linear layer; released code applies } s \\text{ to the input: } y = W_0(s\\odot x) + b);\\ \\ +\\ \\text{zero-gated adaption prompts in the last } L' \\text{ layers and visual tokens with zero-init attention in early layers; norms unfrozen; } W_0 \\text{ frozen}",
+   "trainable_params": "(d_{in}+d_{out})\\ \\text{per linear layer (scale + bias)} + \\text{norm gains} + L'\\ell d + \\text{gates} + \\text{early visual prompts/projection}\\ \\ (\\text{paper: bias/scale/norm part} \\approx 5\\text{M} = 0.04\\%;\\ \\approx 14\\text{M new parameters over LLaMA in total})",
+   "locus": "every linear layer (bias + scale), all normalization layers, adaption prompts in the last layers, visual prompts in early layers",
+   "modification_kind": "hybrid",
+   "structure": "Composite of (i) affine reparameterization of every linear map by a diagonal scale and bias (a BitFit/SSF-like action, mergeable), (ii) LLaMA-Adapter zero-gated prefix attention in the upper layers, and (iii) early fusion of visual tokens, with disjoint parameter groups trained on image-text vs instruction data.",
+   "mergeable": "no",
+   "mergeable_reason": "The scale/bias part can be folded into W_0, but the gated adaption prompts and visual-token attention cannot.",
+   "identity_at_init": "Exact: bias 0, scale 1 and zero-initialized attention gates leave the model unchanged at init.",
+   "key_idea": "Unlock more capacity cheaply (bias + scale on all linear layers, unfrozen norms), inject visual tokens early and instruction prompts late, and train the two parameter groups on disjoint data to avoid interference between image-text alignment and instruction following; expert captioning/OCR models can be plugged in at inference.",
+   "results_note": "Adds about 0.04% (~5M) new parameters to LLaMA for language instruction tuning and obtains open-ended multimodal instruction following trained only on image-text pairs plus language instruction data.",
+   "relations": [
+    {
+     "target": "llama-adapter",
+     "type": "builds-on",
+     "note": "Adds bias/scale tuning, early visual fusion and disjoint-parameter joint training."
+    },
+    {
+     "target": "bitfit",
+     "type": "combines",
+     "note": "Bias tuning of linear layers (plus scale)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2304.15010",
+    "https://arxiv.org/html/2304.15010",
+    "https://github.com/OpenGVLab/LLaMA-Adapter/blob/main/llama_adapter_v2_chat65b/llama/model.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eq. 1 y = s(Wx+b), b=0, s=1 confirmed. Released chat65b code applies s elementwise to the input and b to the output (forward_linear_with_scale_and_bias), i.e. W(s.x)+b, so per-layer cost is d_in+d_out. No peer-reviewed venue found (Semantic Scholar: arXiv only).",
+   "corrections": [
+    "trainable_params: '~14M tuned in total for the 7B multimodal model' -> the paper's own statements (~5M = 0.04% for bias/scale/norm; ~14M new parameters over LLaMA). The paper does not tie 14M to the 7B multimodal variant only.",
+    "confidence: 'medium' -> 'high'. Every field was checked against the paper, the official code and (for ShadowPEFT) the HF PEFT source."
+   ]
+  },
+  {
+   "id": "side-tuning",
+   "name": "Side-Tuning",
+   "full_name": "Side-Tuning: additive side networks",
+   "paper_title": "Side-Tuning: A Baseline for Network Adaptation via Additive Side Networks",
+   "authors": "Zhang et al.",
+   "year": 2019,
+   "venue": "ECCV 2020",
+   "arxiv": "1912.13503",
+   "url": "https://arxiv.org/abs/1912.13503",
+   "code_url": "https://github.com/jozhang97/side-tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "R(x) = \\alpha\\,B(x) + (1-\\alpha)\\,S(x),\\quad B\\ \\text{frozen base},\\ S\\ \\text{trainable side network},\\ \\alpha\\ \\text{learned or scheduled (e.g. } \\alpha(N) = \\tfrac{k}{k+N})",
+   "trainable_params": "|\\theta_S| + 1\\ \\ (\\text{side network of any size: a copy of } B, \\text{ a distilled small net, or a tiny MLP})",
+   "locus": "representation level: late fusion of base and side features before the task decoder",
+   "modification_kind": "architectural-insertion",
+   "structure": "Late-fusion side network: an alpha-blend (convex combination) of frozen base features and side-network features computed from the same input, with no access to intermediate backbone activations; alpha = 1 is feature extraction, alpha = 0 with S a copy of B is fine-tuning.",
+   "mergeable": "no",
+   "mergeable_reason": "The side network is a separate forward computation that must run at inference.",
+   "identity_at_init": "Exact when S is initialized as a copy of B (the paper's default when architectures match): R(x) = B(x) for any alpha; otherwise S is initialized by distillation from B (approximate).",
+   "key_idea": "Adapt a frozen network by learning a residual side network whose output is blended with the base representation; it never degrades the base task and treats the base as a black box (it can even be a non-network).",
+   "results_note": "Competitive with fine-tuning on transfer and incremental-learning benchmarks (iCIFAR, iTaskonomy, Habitat RL, SQuAD v2 with BERT) without forgetting, often with side networks much smaller than the base.",
+   "relations": [
+    {
+     "target": "ladder-side-tuning",
+     "type": "competes-with",
+     "note": "LST extends side networks with ladder connections to intermediate activations for memory efficiency."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/1912.13503",
+    "https://arxiv.org/html/1912.13503",
+    "http://sidetuning.berkeley.edu"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Alpha-blending R = alpha B + (1-alpha) S, curriculum alpha(N)=k/(k+N), side net initialized as a copy of the base or by distillation: all match Sec. 3. ECCV 2020 confirmed via Crossref (LNCS).",
+   "corrections": []
+  },
+  {
+   "id": "ladder-side-tuning",
+   "name": "LST",
+   "full_name": "Ladder Side-Tuning",
+   "paper_title": "LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning",
+   "authors": "Sung et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2206.06522",
+   "url": "https://arxiv.org/abs/2206.06522",
+   "code_url": "https://github.com/ylsung/Ladder-Side-Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h^{g}_{i} = \\mathrm{Layer}^{g}_{i}\\big(\\mu_i\\,\\mathrm{Down}_i(h^{f}_{i}) + (1-\\mu_i)\\,h^{g}_{i-1}\\big),\\ \\ \\mu_i = \\mathrm{sigmoid}(\\alpha_i/T),\\ \\alpha_i\\ \\text{init } 0,\\ T=0.1;\\quad \\hat y = \\mathrm{LMHead}\\big(\\mathrm{Up}(h^{g}_{N})\\big);\\ \\ \\text{backbone } f \\text{ frozen and run forward-only; side network } g,\\ \\mathrm{Down}_i,\\ \\mathrm{Up}\\ \\text{trained}",
+   "trainable_params": "\\approx |\\theta_f|/r^{2} + O(L\\,d^{2}/r)\\ \\ (\\text{side Transformer with all widths divided by the reduction factor } r,\\ \\text{plus ladder projections})",
+   "locus": "a separate thin side network fed by shortcut ('ladder') connections from every backbone layer (and the embeddings); predictions come from the side network through the frozen LM head",
+   "modification_kind": "architectural-insertion",
+   "structure": "Side network = 1/r-width pruned copy of the backbone receiving, at each depth, a gated convex combination of a linearly down-projected backbone activation and its own previous state; information flows only backbone -> side, so no gradient enters the backbone.",
+   "mergeable": "no",
+   "mergeable_reason": "The side network is extra computation at inference (it produces the prediction).",
+   "identity_at_init": "No: the output is produced by the side network, so the model does not equal the backbone at init; instead the side network is initialized by structural pruning of backbone weights (Fisher-information row importance) and gates start at mu = 0.5.",
+   "key_idea": "Parameter efficiency is not memory efficiency: by never backpropagating through the backbone (gradients only flow through a small ladder-connected side network), training memory drops far below adapters or LoRA.",
+   "results_note": "On GLUE with T5-base, LST saves 69% of full fine-tuning memory (2.7x more savings than Adapter/LoRA at similar parameter usage) and beats Adapter and LoRA in the low-memory regime; it also scales to T5-3B and CLIP-T5 vision-language tasks.",
+   "relations": [
+    {
+     "target": "side-tuning",
+     "type": "builds-on",
+     "note": "Adds ladder connections to intermediate activations and pruning-based init."
+    },
+    {
+     "target": "k-adapter",
+     "type": "competes-with",
+     "note": "Both read intermediate backbone states into a side network."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Compared in the memory-accuracy trade-off."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2206.06522",
+    "https://arxiv.org/html/2206.06522",
+    "https://github.com/ylsung/Ladder-Side-Tuning"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Gate mu_i = sigmoid(alpha_i/T) with alpha_i zero-init and T=0.1, 1/r-width side net, down/up projections, reuse of the frozen embeddings and LM head, and Fisher-based structural-pruning init all match Sec. 3. 69% memory / 2.7x confirmed. NeurIPS 2022 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "res-tuning",
+   "name": "Res-Tuning",
+   "full_name": "Res-Tuning / Res-Tuning-Bypass: tuners unbound from the backbone",
+   "paper_title": "Res-Tuning: A Flexible and Efficient Tuning Paradigm via Unbinding Tuner from Backbone",
+   "authors": "Jiang et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2310.19859",
+   "url": "https://arxiv.org/abs/2310.19859",
+   "code_url": "https://github.com/modelscope/ms-swift",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "x' = \\mathrm{OP}(x) + \\text{Res-Tuner}(x),\\ \\ \\mathrm{OP}\\in\\{\\mathrm{MHA},\\mathrm{FFN},\\text{block}\\}\\ \\text{frozen};\\quad \\text{Bypass: } x^{b}_{0} = x_0,\\ \\ x^{b}_{l} = \\lambda\\,\\text{Res-Tuner}_{h}(x_l) + (1-\\lambda)\\,\\text{Res-Tuner}_{v}(x^{b}_{l-1}),\\ \\lambda = \\mathrm{sigmoid}(\\cdot)\\ \\text{init } 0.5",
+   "trainable_params": "\\sum_{\\text{tuned ops}} |\\theta_{\\text{tuner}}|\\ \\ (\\text{tuner-dependent, e.g. } 2rd \\text{ per bottleneck tuner})",
+   "locus": "tuners in parallel to MHA, FFN and whole blocks (Res-Tuning), or a detached bypass network fed by every block output (Res-Tuning-Bypass)",
+   "modification_kind": "architectural-insertion",
+   "structure": "'Unbinding': prefix, prompt and adapter tuning are rewritten (with empirical equivalence) as frozen operation plus a parallel residual tuner, so tuners become free-standing modules added to backbone operations; the Bypass variant assembles horizontal (backbone -> bypass) and vertical (bypass -> bypass) tuners into a ladder-like side network.",
+   "mergeable": "no",
+   "mergeable_reason": "Tuners are generally nonlinear (attention or MLP) modules, and the Bypass variant is a separate network.",
+   "identity_at_init": "Depends on the tuner instantiation (zero-initialized output projections give the identity in the attached form); the Bypass variant does not reproduce the backbone at init.",
+   "key_idea": "Decoupling tuner design from the backbone structure lets any tuner be attached anywhere and combined freely, and detaching the tuners into a bypass avoids backpropagating through the backbone and allows one backbone pass for many tasks.",
+   "results_note": "State-of-the-art VTAB-1K accuracy among PETL methods at similar parameter counts; Res-Tuning-Bypass cuts training memory by 49.7% and multi-task inference time by 80.9% on discriminative tasks, and by 70.7% / 83.6% for Stable Diffusion generation.",
+   "relations": [
+    {
+     "target": "parallel-adapter",
+     "type": "generalizes",
+     "note": "Any tuner placed in parallel to any frozen operation."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "generalizes",
+     "note": "Prefix tuning unbound as a separate attention over prefixes added to MHA."
+    },
+    {
+     "target": "ladder-side-tuning",
+     "type": "competes-with",
+     "note": "Bypass is a ladder-style side network for memory efficiency."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.19859",
+    "https://arxiv.org/html/2310.19859",
+    "https://res-tuning.github.io/",
+    "https://github.com/modelscope/ms-swift/blob/main/swift/tuners/restuning.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "x' = OP(x) + Res-Tuner(x) and the bypass x^b_l = lambda RT_h(x_l) + (1-lambda) RT_v(x^b_{l-1}), with lambda = sigmoid init 0.5, match Sec. 3. 49.7%/80.9% and 70.7%/83.6% savings confirmed. NeurIPS 2023 confirmed via arXiv comment.",
+   "corrections": [
+    "code_url: '' -> ModelScope SWIFT. ResTuningConfig in swift/tuners/restuning.py implements Res-Tuning and cites the paper. There is no standalone repository; the project page links only the arXiv paper."
+   ]
+  },
+  {
+   "id": "controlnet",
+   "name": "ControlNet",
+   "full_name": "ControlNet: trainable-copy side network with zero convolutions",
+   "paper_title": "Adding Conditional Control to Text-to-Image Diffusion Models",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICCV 2023",
+   "arxiv": "2302.05543",
+   "url": "https://arxiv.org/abs/2302.05543",
+   "code_url": "https://github.com/lllyasviel/ControlNet",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y_c = \\mathcal{F}(x;\\Theta) + \\mathcal{Z}\\big(\\mathcal{F}(x + \\mathcal{Z}(c;\\Theta_{z1});\\Theta_c);\\Theta_{z2}\\big),\\quad \\Theta\\ \\text{frozen},\\ \\Theta_c \\leftarrow \\Theta\\ \\text{(trainable copy)},\\ \\mathcal{Z} = 1{\\times}1\\ \\text{conv with zero weights and bias}",
+   "trainable_params": "|\\Theta_c| + |\\Theta_{z}| + |\\mathcal{E}|\\ \\ (\\text{trainable copy of the 12 encoder blocks and the middle block of the SD U-Net, the zero convolutions, and a tiny 4-layer conv encoder } \\mathcal{E} \\text{ mapping the } 512^2 \\text{ condition to } 64^2)",
+   "locus": "trainable copy of the U-Net encoder and middle block; its outputs are added through zero convolutions to the skip connections and middle block of the frozen U-Net",
+   "modification_kind": "architectural-insertion",
+   "structure": "Side network = trainable copy of the encoder that additionally receives the condition c, connected to the frozen network at both ends through zero-initialized 1x1 convolutions; it extends the input object from x to (x, c) and adds residual corrections to the frozen decoder's skip features.",
+   "mergeable": "no",
+   "mergeable_reason": "The copy processes the extra condition input and must run at inference.",
+   "identity_at_init": "Exact: both zero convolutions output 0 at the first step, so y_c = F(x; Theta) and the trainable copy starts as the pretrained encoder.",
+   "key_idea": "Reuse the deep pretrained encoder as a backbone for learning a new conditioning signal by training a copy of it and connecting it with zero convolutions, which protects the frozen model from harmful gradients early in training.",
+   "results_note": "Adds spatial controls (edges, depth, segmentation, human pose, etc.) to Stable Diffusion, with training robust on both small (<50k) and large (>1M) datasets.",
+   "relations": [
+    {
+     "target": "side-tuning",
+     "type": "builds-on",
+     "note": "Copy-initialized side network added to a frozen model."
+    },
+    {
+     "target": "t2i-adapter",
+     "type": "competes-with",
+     "note": "Lighter-weight alternative for spatial conditioning."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2302.05543",
+    "https://arxiv.org/html/2302.05543",
+    "https://github.com/lllyasviel/ControlNet"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eq. 2 y_c = F(x;Theta) + Z(F(x + Z(c;Theta_z1);Theta_c);Theta_z2), with zero 1x1 convs and a trainable copy of the 12 encoder blocks plus the middle block, matches the paper. ICCV 2023 is the accepted venue (arXiv has no journal-ref).",
+   "corrections": [
+    "trainable_params: added the tiny condition encoder E(.) (four 4x4 conv layers, Sec. 3.3), which is also trained."
+   ]
+  },
+  {
+   "id": "t2i-adapter",
+   "name": "T2I-Adapter",
+   "full_name": "T2I-Adapter: lightweight condition adapters for text-to-image diffusion",
+   "paper_title": "T2I-Adapter: Learning Adapters to Dig out More Controllable Ability for Text-to-Image Diffusion Models",
+   "authors": "Mou et al.",
+   "year": 2023,
+   "venue": "AAAI 2024",
+   "arxiv": "2302.08453",
+   "url": "https://arxiv.org/abs/2302.08453",
+   "code_url": "https://github.com/TencentARC/T2I-Adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "F_c = \\mathcal{F}_{AD}(C),\\quad \\hat F^{\\,i}_{enc} = F^{\\,i}_{enc} + F^{\\,i}_{c},\\ i\\in\\{1,2,3,4\\};\\quad \\text{multi-condition: } F_c = \\sum_{k=1}^{K}\\omega_k\\,\\mathcal{F}^{k}_{AD}(C_k);\\ \\ \\text{SD frozen, } \\mathcal{F}_{AD}\\ \\text{trained}",
+   "trainable_params": "\\approx 77\\text{M per adapter (18M small, 5M tiny variants)}",
+   "locus": "external condition encoder whose four multi-scale features are added to the frozen U-Net encoder features",
+   "modification_kind": "architectural-insertion",
+   "structure": "Additive feature injection from a small external network (pixel-unshuffle, convolutions and residual blocks): each condition defines a translation of the frozen encoder's intermediate states at four scales, and several adapters compose by weighted sum without retraining.",
+   "mergeable": "no",
+   "mergeable_reason": "The adapter processes the extra condition input at inference.",
+   "identity_at_init": "Not guaranteed by construction (no zero-init is described); the original model is recovered exactly when no adapter is attached or its weight omega_k = 0.",
+   "key_idea": "Align the internal knowledge of a frozen text-to-image model with external control signals using small, composable condition encoders that only need one pass per generation.",
+   "results_note": "Supports sketch, depth, segmentation, keypose and color-palette control of Stable Diffusion with ~77M parameters, and multi-condition control by composing adapters without extra training.",
+   "relations": [
+    {
+     "target": "controlnet",
+     "type": "competes-with",
+     "note": "Smaller external encoder instead of a trainable copy of the U-Net encoder."
+    },
+    {
+     "target": "ip-adapter",
+     "type": "competes-with",
+     "note": "Image-prompt vs structural-condition adapters for frozen diffusion models."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2302.08453",
+    "https://arxiv.org/html/2302.08453",
+    "https://github.com/TencentARC/T2I-Adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Additive multi-scale encoder injection, weighted multi-adapter composition F_c = sum omega_k F_AD^k(C_k), and ~77M/18M/5M parameters match the paper. AAAI 2024 confirmed via Crossref DOI 10.1609/aaai.v38i5.28226.",
+   "corrections": []
+  },
+  {
+   "id": "ip-adapter",
+   "name": "IP-Adapter",
+   "full_name": "IP-Adapter: image prompt adapter with decoupled cross-attention",
+   "paper_title": "IP-Adapter: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models",
+   "authors": "Ye et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2308.06721",
+   "url": "https://arxiv.org/abs/2308.06721",
+   "code_url": "https://github.com/tencent-ailab/IP-Adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "Z^{new} = \\mathrm{Attention}(Q,K,V) + \\lambda\\cdot\\mathrm{Attention}(Q,K',V'),\\quad Q = ZW_q,\\ K = c_tW_k,\\ V = c_tW_v\\ \\text{(frozen)},\\ \\ K' = c_iW'_k,\\ V' = c_iW'_v\\ \\text{(trained, init from } W_k,W_v)",
+   "trainable_params": "2\\,d_{c}\\,d\\ \\text{per cross-attention layer } (W'_k,W'_v) + \\text{image-embedding projection}\\ \\ (\\approx 22\\text{M for SD 1.5, 16 layers})",
+   "locus": "a parallel image cross-attention branch added to every cross-attention layer of the U-Net, sharing the frozen query",
+   "modification_kind": "architectural-insertion",
+   "structure": "Decoupled cross-attention: a second attention over new image-prompt tokens (with its own key/value projections and its own softmax) is added to the frozen text cross-attention output; lambda scales the branch. Structurally this is the same decoupled-softmax parallel attention branch as LLaMA-Adapter's gated prompts, but its keys/values come from an input (the image embedding) through new trainable projections.",
+   "mergeable": "no",
+   "mergeable_reason": "The image branch attends over extra tokens derived from the image prompt at inference.",
+   "identity_at_init": "Not at init (W'_k, W'_v are copied from W_k, W_v so the branch is active from the start); the original model is recovered exactly with lambda = 0.",
+   "key_idea": "Instead of concatenating image and text features into the frozen cross-attention, add a separate cross-attention for image features so a small adapter gives strong image-prompt control while remaining compatible with text prompts and structural controls.",
+   "results_note": "A ~22M-parameter IP-Adapter is comparable to or better than fully fine-tuned image-prompt models and remains compatible with text prompts and ControlNet-style controls.",
+   "relations": [
+    {
+     "target": "t2i-adapter",
+     "type": "competes-with",
+     "note": "Another lightweight conditioning adapter for frozen diffusion models."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2308.06721",
+    "https://arxiv.org/html/2308.06721",
+    "https://github.com/tencent-ailab/IP-Adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Decoupled cross-attention Z = Attn(Q,K,V) + lambda Attn(Q,K',V'), with W'_k, W'_v initialized from W_k, W_v, 16 cross-attention layers and ~22M parameters, matches Sec. 3. lambda=1 in training. No peer-reviewed venue found (Semantic Scholar/Crossref): arXiv.",
+   "corrections": [
+    "Removed relation 'dual-to llama-adapter'. The two share a mechanism but are not dual, and neither is a special case of the other. The analogy now sits in structure."
+   ]
+  },
+  {
+   "id": "adaptformer",
+   "name": "AdaptFormer",
+   "full_name": "AdaptFormer (AdaptMLP parallel bottleneck for ViTs)",
+   "paper_title": "AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition",
+   "authors": "Chen et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2205.13535",
+   "url": "https://arxiv.org/abs/2205.13535",
+   "code_url": "https://github.com/ShoufaChen/AdaptFormer",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\tilde x_\\ell = W_{up}\\,\\mathrm{ReLU}\\big(W_{down}\\,\\mathrm{LN}(x'_\\ell)\\big),\\quad x_\\ell = \\mathrm{MLP}\\big(\\mathrm{LN}(x'_\\ell)\\big) + s\\cdot\\tilde x_\\ell + x'_\\ell,\\ \\ s = 0.1;\\ \\ \\text{ViT frozen, } W_{down},W_{up}\\ \\text{trained}",
+   "trainable_params": "2rd + r + d\\ \\text{per block}",
+   "locus": "in parallel to the MLP (FFN) block of every ViT layer",
+   "modification_kind": "architectural-insertion",
+   "structure": "Scaled parallel bottleneck adapter on the FFN (AdaptMLP), i.e. the vision instance of the scaled parallel adapter with s < 1.",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear bottleneck in parallel with a nonlinear MLP.",
+   "identity_at_init": "Exact: W_up and all adapter biases are zero-initialized (W_down Kaiming-normal), so the branch outputs 0 at init.",
+   "key_idea": "Adapt ViTs through a lightweight parallel branch next to the MLP rather than through token-space prompts, which scales to the many tokens of video.",
+   "results_note": "With ViT-B, ~1.5% extra parameters give about 10% and 19% relative improvement over full fine-tuning on Something-Something v2 and HMDB51, and it beats VPT on image benchmarks.",
+   "relations": [
+    {
+     "target": "parallel-adapter",
+     "type": "equivalent-to",
+     "note": "Same functional form (scaled parallel adapter at the FFN), concurrently proposed for vision."
+    },
+    {
+     "target": "vpt",
+     "type": "competes-with",
+     "note": "Main vision PEFT baseline."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.13535",
+    "https://arxiv.org/html/2205.13535",
+    "https://github.com/ShoufaChen/AdaptFormer"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "x_l = MLP(LN(x')) + s ReLU(LN(x') W_down) W_up + x', s=0.1, W_down Kaiming-normal, W_up and biases zero (Sec. 3, 4.1). 1.5% params with ~10%/19% relative gains on SSv2/HMDB51 confirmed. NeurIPS 2022 confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "convpass",
+   "name": "Convpass",
+   "full_name": "Convolutional Bypasses for ViT",
+   "paper_title": "Convolutional Bypasses Are Better Vision Transformer Adapters",
+   "authors": "Jie and Deng",
+   "year": 2022,
+   "venue": "ECAI 2024",
+   "arxiv": "2207.07039",
+   "url": "https://arxiv.org/abs/2207.07039",
+   "code_url": "https://github.com/JieShibo/PETL-ViT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "X' \\leftarrow X + \\mathrm{MHSA/MLP}\\big(\\mathrm{LN}(X)\\big) + s\\cdot\\mathrm{Convpass}\\big(\\mathrm{LN}(X)\\big),\\quad \\mathrm{Convpass} = \\mathrm{Conv}^{\\uparrow}_{1\\times1}\\circ\\mathrm{GELU}\\circ\\mathrm{Conv}_{3\\times3}\\circ\\mathrm{GELU}\\circ\\mathrm{Conv}^{\\downarrow}_{1\\times1}\\ \\text{on tokens reshaped to the patch grid ([cls] as a } 1{\\times}1 \\text{ image)}",
+   "trainable_params": "2L\\big((2r+1)d + 9r^2 + 2r\\big)\\ \\text{in total (two Convpass per layer; paper } r = 8)",
+   "locus": "in parallel to both MHSA and MLP in every ViT block",
+   "modification_kind": "architectural-insertion",
+   "structure": "Parallel convolutional bottleneck (ResNet-style 1x1-3x3-1x1 block on the reshaped token grid) that injects spatial-locality inductive bias; unrolled, each layer becomes an ensemble of transformer, CNN and hybrid paths.",
+   "mergeable": "no",
+   "mergeable_reason": "The 3x3 convolution mixes neighbouring tokens and the block is nonlinear, so it cannot be absorbed into per-token frozen weights.",
+   "identity_at_init": "Exact in the official code: up-projection weights and biases are zero-initialized (down-projection Xavier; 3x3 conv initialized to identity at its centre tap).",
+   "key_idea": "Language-oriented adapters lack visual inductive bias; a convolutional bypass restores 2D locality during fine-tuning and works especially well in the low-data regime.",
+   "results_note": "With under 0.5% extra parameters, Convpass outperforms language-oriented PETL modules (Adapter, LoRA, VPT, NOAH) on VTAB-1K and few-shot fine-grained classification.",
+   "relations": [
+    {
+     "target": "parallel-adapter",
+     "type": "builds-on",
+     "note": "Parallel insertion with a scaling factor, with a convolutional bottleneck."
+    },
+    {
+     "target": "adaptformer",
+     "type": "competes-with",
+     "note": "Vision adapter baseline."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2207.07039",
+    "https://arxiv.org/html/2207.07039",
+    "https://github.com/JieShibo/PETL-ViT",
+    "https://ebooks.iospress.nl/doi/10.3233/FAIA240489"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "ECAI 2024 confirmed via Crossref (FAIA vol., DOI 10.3233/FAIA240489). The parameter count 2L((2h+1)d+9h^2+2h) with h=8 is stated in Sec. 4. Official code: up-projection weights and biases zero, down Xavier, 3x3 conv zero plus identity at the centre tap (unless xavier_init=True).",
+   "corrections": [
+    "authors: 'Jie et al.' -> 'Jie and Deng'. The paper has two authors (Shibo Jie, Zhi-Hong Deng), and the catalog uses 'A and B' for two-author papers, as in 'Steitz and Roth'."
+   ]
+  },
+  {
+   "id": "st-adapter",
+   "name": "ST-Adapter",
+   "full_name": "Spatio-Temporal Adapter",
+   "paper_title": "ST-Adapter: Parameter-Efficient Image-to-Video Transfer Learning",
+   "authors": "Pan et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2206.13559",
+   "url": "https://arxiv.org/abs/2206.13559",
+   "code_url": "https://github.com/linziyi96/st-adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{ST\\text{-}Adapter}(X) = X + f\\big(\\mathrm{DWConv3D}(XW_{down})\\big)\\,W_{up},\\quad X\\in\\mathbb{R}^{T\\times N\\times d}\\ \\text{reshaped to } T\\times h\\times w\\times r \\text{ before the depth-wise } 3{\\times}1{\\times}1 \\text{ convolution};\\ \\text{image backbone frozen}",
+   "trainable_params": "2rd + k_Tk_Hk_W\\,r + O(d + r)\\ \\text{per adapter } (k = 3{\\times}1{\\times}1)",
+   "locus": "one adapter before the MHSA of every ViT block (operating on the T frames' patch tokens)",
+   "modification_kind": "architectural-insertion",
+   "structure": "Serial residual bottleneck with a depth-wise spatio-temporal convolution in the compressed space, i.e. a token-mixing linear operator across neighbouring frames inserted between down- and up-projection; it gives an image model temporal reasoning. (The official code has no activation between the depth-wise convolution and W_up, and adapts only the patch tokens, leaving [CLS] unchanged.)",
+   "mergeable": "no",
+   "mergeable_reason": "The 3D convolution mixes tokens across frames and positions, so it cannot be folded into per-token frozen weights.",
+   "identity_at_init": "Exact in the official code: depth-wise 3D-conv weights and all biases are zero-initialized, so the adapter outputs X at init.",
+   "key_idea": "Turn a frozen image transformer into a video model by inserting cheap adapters whose bottleneck contains a depth-wise 3D convolution for temporal modelling.",
+   "results_note": "With CLIP ViT-B/16, ST-Adapter matches full fine-tuning on Kinetics-400 (82.0 vs 81.7) and SSv2 (66.3 vs 66.1) while updating 7.2M vs 121.6M parameters.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Adds a spatio-temporal operator inside the bottleneck."
+    },
+    {
+     "target": "aim",
+     "type": "competes-with",
+     "note": "Image-to-video adaptation by adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2206.13559",
+    "https://arxiv.org/html/2206.13559",
+    "https://github.com/linziyi96/st-adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eq. 2 matches the paper. The default kernel is 3x1x1 (Table 7), one adapter before MHSA, bottleneck 384 in the main setting. Official code zero-inits the conv weight/bias and both linear biases. K400 82.0 vs 81.7, SSv2 66.3 vs 66.1, 7.2M vs 121.57M confirmed. NeurIPS 2022 confirmed.",
+   "corrections": [
+    "structure: noted that the official models_adapter.py applies fc1 -> depthwise Conv3d -> fc2 with no activation f and skips the [CLS] token, unlike the paper's Eq. 2."
+   ]
+  },
+  {
+   "id": "aim",
+   "name": "AIM",
+   "full_name": "Adapting Image Models (spatial, temporal and joint adaptation)",
+   "paper_title": "AIM: Adapting Image Models for Efficient Video Action Recognition",
+   "authors": "Yang et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2302.03024",
+   "url": "https://arxiv.org/abs/2302.03024",
+   "code_url": "https://github.com/taoyang1122/adapt-image-models",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "z^{T}_{l} = z_{l-1} + \\mathrm{Ad}_T\\big(\\text{T-MSA}(\\mathrm{LN}(z_{l-1}))\\big),\\ \\ z^{S}_{l} = z^{T}_{l} + \\mathrm{Ad}_S\\big(\\text{S-MSA}(\\mathrm{LN}(z^{T}_{l}))\\big),\\ \\ z_l = z^{S}_{l} + \\mathrm{MLP}\\big(\\mathrm{LN}(z^{S}_{l})\\big) + s\\cdot\\mathrm{Ad}_J\\big(\\mathrm{LN}(z^{S}_{l})\\big);\\ \\ \\text{T-MSA} = \\text{S-MSA frozen, applied along time};\\ s = 0.5",
+   "trainable_params": "3\\,(2rd + r + d)\\ \\text{per block } (r = d/4)",
+   "locus": "three adapters per ViT block: after the reused temporal attention (no skip), after spatial attention (with skip), and parallel to the MLP (no skip, scaled by s)",
+   "modification_kind": "architectural-insertion",
+   "structure": "Reuses the frozen spatial self-attention as a temporal attention by re-indexing tokens (the same frozen operator acting along a different axis), and adds serial adapters after both attentions plus a scaled parallel adapter at the MLP.",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear adapters and an additional (reused) attention pass at inference.",
+   "identity_at_init": "Exact. The second FC layer of every adapter is zero-initialized, and the temporal and joint (MLP-parallel) adapters have no internal skip connection, so both branches output 0 while the spatial adapter (with skip) is the identity. The model equals the image model at init.",
+   "key_idea": "Equip a frozen image transformer with spatio-temporal reasoning without new attention weights: reuse its attention over time and train only lightweight adapters.",
+   "results_note": "Achieves comparable or better accuracy than fully fine-tuned video models with far fewer tunable parameters on four action-recognition benchmarks (Kinetics-400/700, Something-Something v2, Diving-48).",
+   "relations": [
+    {
+     "target": "st-adapter",
+     "type": "competes-with",
+     "note": "Image-to-video adaptation with adapters."
+    },
+    {
+     "target": "adaptformer",
+     "type": "builds-on",
+     "note": "Joint adaptation is a scaled parallel adapter at the MLP."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2302.03024",
+    "https://arxiv.org/html/2302.03024",
+    "https://github.com/taoyang1122/adapt-image-models"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Equations for temporal/spatial/joint adaptation, the frozen MSA reused along time, bottleneck ratio 0.25, s=0.5 and the zero-init second FC match the paper (Sec. 3, App. A) and the official code. ICLR 2023 confirmed.",
+   "corrections": [
+    "identity_at_init/locus: the joint MLP-parallel adapter also has no skip (official vit_clip.py: MLP_Adapter = Adapter(skip_connect=False)). Without this, s*Adapter(LN(z)) would not vanish at init."
+   ]
+  },
+  {
+   "id": "repadapter",
+   "name": "RepAdapter",
+   "full_name": "Re-parameterizable visual adapter",
+   "paper_title": "Towards Efficient Visual Adaption via Structural Re-parameterization",
+   "authors": "Luo et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2302.08106",
+   "url": "https://arxiv.org/abs/2302.08106",
+   "code_url": "https://github.com/luogen1996/RepAdapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{Ad}(x) = x + s\\big(W_u(W_dx + b_d) + b_u\\big),\\ \\ W_d\\in\\mathbb{R}^{r\\times d}\\ \\text{dense},\\ W_u\\in\\mathbb{R}^{d\\times r}\\ \\text{group-wise (block-diagonal, } k \\text{ groups)};\\quad \\text{placed before a frozen projection } W_0:\\ W_0' = W_0\\,(I + sW_uW_d),\\ \\ b_0' = b_0 + sW_0(W_ub_d + b_u)",
+   "trainable_params": "rd + \\tfrac{rd}{k} + r + d\\ \\text{per adapter (two adapters per block)}",
+   "locus": "sequentially before MHA (i.e. feeding W_q, W_k, W_v) and before the FFN (feeding W_1) in every ViT block, after LayerNorm",
+   "modification_kind": "architectural-insertion",
+   "structure": "Activation-free serial adapter I + sW_uW_d (identity plus a rank-\\le r, group-structured matrix) placed immediately before a frozen linear map, so it is absorbed by right multiplication W_0 \\mapsto W_0(I + sW_uW_d); equivalently an additive update \\Delta W = sW_0W_uW_d. Structurally it is a low-rank, token-space instance of Rebuffi et al.'s linear residual adapter I+\\alpha, although RepAdapter does not cite that work. One adapter feeds W_q, W_k and W_v together, so their merged updates share the same factor.",
+   "mergeable": "yes",
+   "mergeable_reason": "Without nonlinearity the adapter is an affine map preceding a frozen linear projection, so it folds exactly into that projection's weight and bias, giving zero extra inference cost.",
+   "identity_at_init": "Exact: W_u and both biases are zero-initialized (W_d Xavier), so the adapter is the identity at init.",
+   "key_idea": "Removing the nonlinearity of visual adapters costs no accuracy, and a linear adapter placed before a projection can be re-parameterized into it, giving adapter-style training with LoRA-like zero inference overhead.",
+   "results_note": "Outperforms prior PETL methods on VTAB-1k on average with zero added inference latency, and transfers to ConvNeXt, Swin, CLIP, segmentation and video tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Both have zero inference overhead after merging, and RepAdapter reports +1.6% average VTAB-1k over LoRA. RepAdapter's merged update Delta W = sW_0W_uW_d (plus a bias shift) is rank <= r, but B = sW_0W_u is tied to W_0, W_u is group-wise, and A = W_d is shared by all projections fed by the same adapter. It is a constrained LoRA-type update, not an equivalent one."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Serial bottleneck without the nonlinearity."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2302.08106",
+    "https://arxiv.org/html/2302.08106",
+    "https://github.com/luogen1996/RepAdapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eq. 9-11 (activation-free adapter, W_ada = W_dW_u + I, Rep = W_ada W_0) and the default c=8, k=2, s searched in {0.1,...,10} match the paper. Official repadapter.py: Xavier W_d, zero W_u and biases, scale s. No peer-reviewed venue found (Semantic Scholar: arXiv only).",
+   "corrections": [
+    "formula_latex: clarified that only the up-projection W_u is group-wise and the down-projection W_d is dense (paper Sec. 3.2.2 'dense-to-sparse'; code conv_A groups=1, conv_B groups=k). The old text read as if both were group-wise.",
+    "Removed relation 'builds-on residual-adapter'. RepAdapter does not cite Rebuffi et al., so the lineage claim is unsupported; the structural link was moved to structure.",
+    "relation to lora: 'equivalent-to' -> 'competes-with'. The merged update has a W_0-tied, group-structured B shared across Q/K/V plus a bias shift, so it is not equivalent to independent LoRA. The paper compares against LoRA directly."
+   ]
+  },
+  {
+   "id": "mona",
+   "name": "Mona",
+   "full_name": "Multi-cognitive Visual Adapter",
+   "paper_title": "5%>100%: Breaking Performance Shackles of Full Fine-Tuning on Visual Recognition Tasks",
+   "authors": "Yin et al.",
+   "year": 2024,
+   "venue": "CVPR 2025",
+   "arxiv": "2408.08345",
+   "url": "https://arxiv.org/abs/2408.08345",
+   "code_url": "https://github.com/Leiyi-Hu/mona",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "x_{norm} = s_1\\cdot\\mathrm{LN}(x_0) + s_2\\cdot x_0;\\ \\ f_{dw}(z) = z + \\tfrac13\\sum_{i=1}^{3}\\omega^{i}_{dw}\\,\\hat\\otimes\\,z\\ (3{\\times}3,5{\\times}5,7{\\times}7);\\ \\ f_{pw}(z) = z + \\omega_{pw}\\,\\bar\\otimes\\,z;\\ \\ x = x_0 + U^{l}\\,\\sigma\\big(f_{pw}(f_{dw}(D^{l}x_{norm}))\\big)",
+   "trainable_params": "(2r+3)d + r^2 + 84r + 2\\ \\text{per Mona module; two per block } (r = 64)",
+   "locus": "two serial Mona modules per Swin block, after the MSA and after the MLP",
+   "modification_kind": "architectural-insertion",
+   "structure": "Serial residual bottleneck whose input is a learned blend of normalized and raw features and whose compressed space is processed by averaged multi-scale depth-wise convolutions and a 1x1 convolution, each with its own skip connection.",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear, token-mixing convolutional bottleneck.",
+   "identity_at_init": "No. The paper states no identity-at-init guarantee, and the official code leaves the up-projection U^l at PyTorch's default (Kaiming-uniform) init, so the adapter output is not zero at init. In code s_1 and s_2 are per-channel vectors initialized to 1e-6 and 1.",
+   "key_idea": "Make visual adapters 'see' like vision models (multi-scale depth-wise filters) and let them re-normalize the frozen features, so adapter tuning can surpass full fine-tuning on dense prediction tasks. First released in Nov 2023 as arXiv:2311.15010 ('Adapter is All You Need for Tuning Visual Tasks').",
+   "results_note": "With Swin backbones, Mona surpasses full fine-tuning on COCO instance segmentation (about +1%), ADE20K, Pascal VOC, DOTA/STAR oriented detection and image classification.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Serial bottleneck with visual filters and scaled LayerNorm."
+    },
+    {
+     "target": "convpass",
+     "type": "competes-with",
+     "note": "Convolutional visual adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2408.08345",
+    "https://arxiv.org/html/2408.08345",
+    "https://arxiv.org/abs/2311.15010",
+    "https://arxiv.org/html/2311.15010",
+    "https://github.com/Leiyi-Hu/mona"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eqs. 2-5 (x_norm = s_1|x_0|_LN + s_2 x_0, averaged 3/5/7 depth-wise convs with skip, 1x1 conv with skip, GeLU, up-projection) and the paper's per-block count 2((2n+3)m+n^2+84n+2) with n=64 are confirmed. The paper counts s_1, s_2 as 2 scalars, while the code uses d-dimensional vectors. CVPR 2025 confirmed via Crossref DOI 10.1109/CVPR52734.2025.01869.",
+   "corrections": [
+    "year: 2023 -> 2024, the first-version year of the listed arXiv:2408.08345 (CVPR 2025 version). The earlier Nov 2023 preprint arXiv:2311.15010 has a different title and is mentioned in key_idea.",
+    "identity_at_init: replaced 'near-identity when the up-projection is small' with what the official code does: project2 uses the default init (not zero or small), gamma (s_1) = 1e-6, gammax (s_2) = 1."
+   ]
+  },
+  {
+   "id": "clip-adapter",
+   "name": "CLIP-Adapter",
+   "full_name": "CLIP-Adapter: residual feature adapters for CLIP",
+   "paper_title": "CLIP-Adapter: Better Vision-Language Models with Feature Adapters",
+   "authors": "Gao et al.",
+   "year": 2021,
+   "venue": "IJCV 2024",
+   "arxiv": "2110.04544",
+   "url": "https://arxiv.org/abs/2110.04544",
+   "code_url": "https://github.com/gaopengcuhk/CLIP-Adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "A_v(f) = \\mathrm{ReLU}(f^{\\top}W^{v}_{1})W^{v}_{2},\\quad f^{\\star} = \\alpha\\,A_v(f)^{\\top} + (1-\\alpha)\\,f;\\ \\ (\\text{optionally } W^{\\star} = \\beta A_t(W)^{\\top} + (1-\\beta)W);\\quad \\text{logits} \\propto W^{\\star}f^{\\star};\\ \\text{CLIP encoders frozen}",
+   "trainable_params": "2dr\\ \\text{per adapted branch } (r = d/4;\\ \\text{default: visual branch only})",
+   "locus": "on the final CLIP image embedding (and optionally the text-generated classifier weights), outside the encoders",
+   "modification_kind": "architectural-insertion",
+   "structure": "Residual-blended bottleneck MLP on the output embedding: a convex combination with residual ratio alpha of the frozen feature and its adapted image, i.e. post-composition of the encoder with an endomorphism of the embedding space.",
+   "mergeable": "no",
+   "mergeable_reason": "A nonlinear MLP after the encoder (negligible cost, but not foldable).",
+   "identity_at_init": "No exact identity: the bottleneck is randomly initialized; closeness to zero-shot CLIP is controlled by the residual ratio alpha (small for generic datasets, larger for fine-grained or shifted domains).",
+   "key_idea": "For few-shot CLIP transfer, a tiny residual feature adapter at the end of the encoder, blended with the original feature, beats learning prompts (CoOp) while avoiding overfitting.",
+   "results_note": "Outperforms zero-shot CLIP, linear-probe CLIP and CoOp on 11 few-shot classification datasets across shot settings, with large gains on fine-grained datasets.",
+   "relations": [
+    {
+     "target": "coop",
+     "type": "competes-with",
+     "note": "Feature adapter vs learned text prompts for few-shot CLIP."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Bottleneck adapter applied once to the output feature with a residual ratio."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.04544",
+    "https://arxiv.org/html/2110.04544",
+    "https://github.com/gaopengcuhk/CLIP-Adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eqs. 4-7 match the paper: A_v(f) = ReLU(f^T W1) W2 and f* = alpha A_v(f)^T + (1-alpha) f, bottleneck 256 = d/4, visual branch only by default. Official code is bias-free and adds a second ReLU after the up-projection. IJCV confirmed (online Sep 2023, print vol. 132, Feb 2024; DOI 10.1007/s11263-023-01891-x).",
+   "corrections": []
+  },
+  {
+   "id": "tip-adapter",
+   "name": "Tip-Adapter",
+   "full_name": "Training-free CLIP-Adapter (cache model); Tip-Adapter-F",
+   "paper_title": "Tip-Adapter: Training-free Adaption of CLIP for Few-shot Classification",
+   "authors": "Zhang et al.",
+   "year": 2022,
+   "venue": "ECCV 2022",
+   "arxiv": "2207.09519",
+   "url": "https://arxiv.org/abs/2207.09519",
+   "code_url": "https://github.com/gaopengcuhk/Tip-Adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{logits} = \\alpha\\,\\varphi\\big(f_{test}F_{train}^{\\top}\\big)L_{train} + f_{test}W_c^{\\top},\\quad \\varphi(x) = \\exp\\big(-\\beta(1-x)\\big);\\quad F_{train}\\in\\mathbb{R}^{NK\\times d}\\ \\text{(cached CLIP features)},\\ L_{train}\\in\\{0,1\\}^{NK\\times N};\\ \\text{Tip-Adapter-F trains } F_{train}\\ \\text{only}",
+   "trainable_params": "0\\ (\\text{Tip-Adapter});\\ \\ NK\\,d\\ (\\text{Tip-Adapter-F: cache keys})",
+   "locus": "on the final CLIP image embedding: a key-value cache built from the K-shot N-class training set, blended with CLIP's zero-shot logits",
+   "modification_kind": "architectural-insertion",
+   "structure": "Non-parametric key-value cache acting as a two-layer adapter whose first layer is the matrix of cached features (with exponential activation) and whose second layer is the one-hot label matrix, added residually to the zero-shot classifier; Tip-Adapter-F unfreezes the keys as an initialization.",
+   "mergeable": "no",
+   "mergeable_reason": "The cache (NK keys) must be stored and queried at inference.",
+   "identity_at_init": "With alpha = 0 the model is zero-shot CLIP exactly; the cache is constructed (not randomly initialized) from few-shot features, so no training is needed.",
+   "key_idea": "Set the adapter's weights directly from the few-shot data (keys = image features, values = labels), making CLIP adaptation training-free; optionally fine-tune the keys for a few epochs.",
+   "results_note": "Training-free Tip-Adapter is comparable to CoOp and CLIP-Adapter, and Tip-Adapter-F sets the state of the art on 16-shot ImageNet with only 20 epochs (vs 200 for CoOp/CLIP-Adapter), across 11 datasets. First released Nov 2021 as arXiv:2111.03930.",
+   "relations": [
+    {
+     "target": "clip-adapter",
+     "type": "builds-on",
+     "note": "A CLIP-Adapter whose bottleneck weights are set from the cache (features and one-hot labels) with an exponential activation."
+    },
+    {
+     "target": "coop",
+     "type": "competes-with",
+     "note": "Few-shot CLIP adaptation baseline."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2207.09519",
+    "https://arxiv.org/html/2207.09519",
+    "https://arxiv.org/abs/2111.03930",
+    "https://github.com/gaopengcuhk/Tip-Adapter"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eq. logits = alpha phi(f F^T) L + f W_c^T with phi(x) = exp(-beta(1-x)), and Tip-Adapter-F unfreezing only the keys F_train, match Sec. 3. ECCV 2022 confirmed via Crossref (LNCS, DOI 10.1007/978-3-031-19833-5_29).",
+   "corrections": [
+    "year: 2021 -> 2022, the first-version year of the listed arXiv:2207.09519 (ECCV 2022 version). The Nov 2021 preprint arXiv:2111.03930 ('...Training-free CLIP-Adapter for Better Vision-Language Modeling') is mentioned in results_note."
+   ]
+  },
+  {
+   "id": "adapter-plus",
+   "name": "Adapter+",
+   "full_name": "Adapter+ (post-adapter with channel-wise scaling)",
+   "paper_title": "Adapters Strike Back",
+   "authors": "Steitz and Roth",
+   "year": 2024,
+   "venue": "CVPR 2024",
+   "arxiv": "2406.06820",
+   "url": "https://arxiv.org/abs/2406.06820",
+   "code_url": "https://github.com/visinf/adapter_plus",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = \\mathrm{FFN}(x) + x;\\quad y \\leftarrow y + s\\odot\\big(W_{up}\\,\\mathrm{GELU}(W_{down}\\,y + b_{down}) + b_{up}\\big),\\quad s\\in\\mathbb{R}^{d}\\ \\text{learned channel-wise scaling};\\ \\ \\text{ViT frozen}",
+   "trainable_params": "2rd + r + 2d\\ \\text{per ViT block}",
+   "locus": "Post-Adapter position: once per ViT block, after the FFN including its residual add",
+   "modification_kind": "architectural-insertion",
+   "structure": "Serial residual bottleneck at the end of each block whose correction is post-composed with a learned diagonal map diag(s) (channel-wise scaling); systematic study of positions (pre, post, parallel, intermediate), initializations and normalization.",
+   "mergeable": "no",
+   "mergeable_reason": "Nonlinear serial bottleneck.",
+   "identity_at_init": "Near-identity: Houlsby initialization (weights from a zero-mean Gaussian with std 0.01 truncated at 2 std, zero biases), which beat BERT and LoRA-style inits in the paper's ablation.",
+   "key_idea": "Plain adapters were under-reported for ViTs; placed after the block (Post-Adapter), Houlsby-initialized, without LayerNorm and with a learned channel-wise scale, they give the best parameter-accuracy trade-off.",
+   "results_note": "Reaches 77.6% average accuracy on VTAB (ViT-B/16) without per-task hyperparameter optimization and 90.7% on FGVC, the best parameter-accuracy trade-off among the compared methods.",
+   "relations": [
+    {
+     "target": "pfeiffer-adapter",
+     "type": "builds-on",
+     "note": "Uses the post-FFN position found by Pfeiffer et al."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "Houlsby initialization."
+    },
+    {
+     "target": "vpt",
+     "type": "competes-with",
+     "note": "Re-evaluated against VPT, SSF, LoRA, FacT, SPT."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.06820",
+    "https://arxiv.org/html/2406.06820",
+    "https://github.com/visinf/adapter_plus",
+    "https://docs.adapterhub.ml/methods.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Post-Adapter x -> Adapter(FFN(x)+x) + (FFN(x)+x) with Adapter = s . (sigma(xW_down+b)W_up+b), channel-wise s in R^d, no LN, and Houlsby init (std 0.01 truncated at 2 std) match Sec. 3. VTAB 77.6% and FGVC 90.7% confirmed. CVPR 2024 confirmed via arXiv comment. AdapterHub AdapterPlusConfig (houlsby init, channel scaling) exists.",
+   "corrections": []
+  },
+  {
+   "id": "shadow-peft",
+   "name": "ShadowPEFT",
+   "full_name": "ShadowPEFT: shadow network for parameter-efficient fine-tuning",
+   "paper_title": "ShadowPEFT: Shadow Network for Parameter-Efficient Fine-Tuning",
+   "authors": "Li et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2604.19254",
+   "url": "https://arxiv.org/abs/2604.19254",
+   "code_url": "https://github.com/ShadowLLM/shadow-peft",
+   "hf_peft": true,
+   "hf_peft_config": "ShadowConfig(r, shadow_alpha, shadow_model)",
+   "formula_latex": "s^{(0)} = f_{\\text{shadow}}(x);\\ \\ \\delta^{(\\ell)} = h^{(\\ell-1)}_{out} - s^{(\\ell-1)},\\ \\ h^{(\\ell)} = h^{(\\ell-1)}_{out} + \\alpha\\,W^{(\\ell)}_{up}W^{(\\ell)}_{down}\\,\\delta^{(\\ell)},\\ \\ h^{(\\ell)}_{out} = f^{(\\ell)}_{\\text{base}}(h^{(\\ell)});\\ \\ s^{(\\ell)} = (1-g^{(\\ell)})\\odot s^{(\\ell-1)} + g^{(\\ell)}\\odot T^{(\\ell)}(h^{(\\ell)}_{out}),\\ g^{(\\ell)} = \\sigma\\big(G^{(\\ell)}(h^{(\\ell)}_{out})\\big);\\ \\ f_{\\text{base}}\\ \\text{frozen}",
+   "trainable_params": "|\\theta_{\\text{shadow}}| + \\sum_{\\ell}\\big(2rd + 4d\\,h_g\\big) + |\\text{shadow head}|\\ \\ (W_{down},W_{up}\\ \\text{bias-free};\\ T^{(\\ell)}, G^{(\\ell)}\\ \\text{are bias-free two-layer MLPs of width } h_g;\\ \\text{HF default } h_g = r = 8,\\ \\text{one-layer mirror shadow backbone})",
+   "locus": "input of every targeted decoder block (shadow injection) plus a small parallel shadow backbone whose state is carried through depth",
+   "modification_kind": "architectural-insertion",
+   "structure": "Two-way coupled side network: a persistent shadow state evolves through depth by GRU-like gated convex updates from the backbone outputs, and injects a low-rank (bottleneck) correction of the discrepancy h - s into each frozen block's input; adaptation is an input-dependent trajectory rather than a static weight delta.",
+   "mergeable": "no",
+   "mergeable_reason": "The correction depends on an evolving, input-dependent shadow state; HF PEFT raises an error on merge for this reason.",
+   "identity_at_init": "Exact for the base pathway: W_up is zero-initialized, so the injected correction is 0 and the frozen model's function is unchanged at init.",
+   "key_idea": "Concentrate all trainable adaptation in a compact shadow model coupled layer-wise to the frozen LLM; because the shadow is trained as a full predictor it can be detached for shadow-only (e.g. edge) inference and initialized from a smaller pretrained model.",
+   "results_note": "On Qwen backbones at three scales, ShadowPEFT is competitive with or better than LoRA and DoRA at closely matched trainable-parameter budgets on generation and understanding benchmarks.",
+   "relations": [
+    {
+     "target": "ladder-side-tuning",
+     "type": "builds-on",
+     "note": "Side network fed by backbone states, but with shadow-to-base injection (two-way coupling) and no aim of avoiding backbone backprop."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Main baseline; LoRA/DoRA at matched budgets."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.19254",
+    "https://arxiv.org/html/2604.19254",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/shadow",
+    "https://huggingface.co/docs/peft/package_reference/shadow",
+    "https://github.com/ShadowLLM/shadow-peft"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Eqs. 1-6 (s^(0) = f_shadow(x), delta = h_out - s, Dropout(delta W_down) W_up, h = h_out + alpha delta~, GRU-like gated update) match the paper. W_up = 0 at init. HF PEFT v0.21.1 has tuners/shadow, ShadowLayer.merge raises NotImplementedError, and the docs page package_reference/shadow exists. No venue: arXiv (v2 Sep 2026).",
+   "corrections": [
+    "trainable_params: made |T|+|G| explicit as 4 d h_g (bias-free two-layer SiLU MLPs, paper App. B) and added the HF defaults.",
+    "hf_peft_config: 'ShadowConfig' -> 'ShadowConfig(r, shadow_alpha, shadow_model)' (defaults r=8, shadow_alpha=0.1, shadow_model='mirror'), matching the field style used for AdaptionPromptConfig.",
+    "confidence: 'medium' -> 'high'. Every field was checked against the paper, the official code and (for ShadowPEFT) the HF PEFT source."
+   ]
+  }
+ ],
+ "papers": [
+  {
+   "id": "unified-view-peft",
+   "title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "claim": "Adapters, prefix tuning and LoRA are all modifications \\Delta h added to specific hidden states and differ only along four axes: functional form, insertion form (sequential vs parallel), modified representation (attention vs FFN) and composition function (simple, gated, scaled); prefix tuning is exactly a softmax-gated parallel adapter on attention heads.",
+   "relevance": "Provides the canonical coordinate system for the adapter family (serial vs parallel composition, gating and scaling as composition laws), directly suggesting a categorical reading where adapters are endomorphisms post-composed with sublayers and parallel adapters are sums of morphisms with a common domain.",
+   "sources": [
+    "https://arxiv.org/abs/2110.04366",
+    "https://arxiv.org/html/2110.04366"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2110.04366 (He, 2021). ICLR 2022 spotlight per arXiv comment. The four design dimensions and the prefix = gated parallel adapter derivation (Sec. 3) are confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "adapter-effectiveness",
+   "title": "On the Effectiveness of Adapter-based Tuning for Pretrained Language Model Adaptation",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2106.03164",
+   "url": "https://arxiv.org/abs/2106.03164",
+   "claim": "Adapter-based tuning yields representations that deviate less from the pretrained model than fine-tuning, mitigating forgetting; it outperforms fine-tuning on low-resource and cross-lingual tasks and is more robust to overfitting and learning-rate changes.",
+   "relevance": "Empirical evidence that the near-identity, frozen-backbone structure of adapters acts as an implicit regularizer toward the pretrained function, a key property for any theory of PEFT as a small deformation of a base model.",
+   "sources": [
+    "https://arxiv.org/abs/2106.03164"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2106.03164 (Ruidan He, 2021). ACL 2021 long paper per arXiv comment. The claims match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "adapterhub",
+   "title": "AdapterHub: A Framework for Adapting Transformers",
+   "authors": "Pfeiffer et al.",
+   "year": 2020,
+   "venue": "EMNLP 2020 (System Demonstrations)",
+   "arxiv": "2007.07779",
+   "url": "https://arxiv.org/abs/2007.07779",
+   "claim": "A framework on top of HuggingFace Transformers for training, sharing and dynamically 'stitching-in' pre-trained adapters for different tasks and languages.",
+   "relevance": "Made adapters first-class, swappable, composable objects (the infrastructure behind MAD-X, AdapterFusion and AdapterDrop), the practical counterpart of treating adapters as modular morphisms.",
+   "sources": [
+    "https://arxiv.org/abs/2007.07779"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2007.07779 (Pfeiffer, 2020). EMNLP 2020 System Demonstrations per arXiv comment.",
+   "corrections": []
+  },
+  {
+   "id": "adapters-library",
+   "title": "Adapters: A Unified Library for Parameter-Efficient and Modular Transfer Learning",
+   "authors": "Poth et al.",
+   "year": 2023,
+   "venue": "EMNLP 2023 (System Demonstrations)",
+   "arxiv": "2311.11077",
+   "url": "https://arxiv.org/abs/2311.11077",
+   "claim": "Unifies about ten adapter methods (sequential/parallel bottleneck, Compacter, prefix tuning, LoRA, (IA)^3, MAM, UniPELT, and more) behind one interface with composition blocks (Stack, Fuse, Split, BatchSplit, Parallel, Average) for building complex adapter setups.",
+   "relevance": "Its composition blocks are an explicit operational algebra of adapters (sequential composition, fusion, splitting, averaging), a natural target for a categorical semantics of adapter composition.",
+   "sources": [
+    "https://arxiv.org/abs/2311.11077",
+    "https://docs.adapterhub.ml/methods.html",
+    "https://docs.adapterhub.ml/method_combinations.html",
+    "https://docs.adapterhub.ml/adapter_composition.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2311.11077 (Poth, 2023). EMNLP 2023 System Demonstrations per arXiv comment. '10 diverse adapter methods' and the composition blocks are confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "llm-adapters",
+   "title": "LLM-Adapters: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models",
+   "authors": "Hu et al.",
+   "year": 2023,
+   "venue": "EMNLP 2023",
+   "arxiv": "2304.01933",
+   "url": "https://arxiv.org/abs/2304.01933",
+   "claim": "A framework integrating series adapters, parallel adapters, prompt-based and reparameterization methods into LLaMA, BLOOM and GPT-J; the best placements are after the MLP for series adapters, parallel to the MLP for parallel adapters, and on both attention and MLP for LoRA, and 7B models with adapters can rival much larger zero-shot models on math and commonsense reasoning.",
+   "relevance": "Transfers the serial vs parallel adapter taxonomy to decoder-only LLMs and gives placement evidence that any structural theory of insertion sites must explain.",
+   "sources": [
+    "https://arxiv.org/abs/2304.01933",
+    "https://arxiv.org/html/2304.01933"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2304.01933 (Zhiqiang Hu, 2023). EMNLP 2023 per arXiv comment. The placement findings match Sec. 4.1 exactly.",
+   "corrections": []
+  },
+  {
+   "id": "modular-deep-learning",
+   "title": "Modular Deep Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2023,
+   "venue": "TMLR 2023",
+   "arxiv": "2302.11529",
+   "url": "https://arxiv.org/abs/2302.11529",
+   "claim": "Surveys modular architectures in which parameter-efficient modules are conditionally routed and aggregated, giving a unified view of computation functions, routing functions and aggregation functions across many research threads.",
+   "relevance": "Its decomposition into modules, routing and aggregation is close to a categorical description (objects = representations, morphisms = modules, routing/aggregation = coproduct/colimit-like combinators) and covers adapters, fusion and mixtures.",
+   "sources": [
+    "https://arxiv.org/abs/2302.11529"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2302.11529 (Pfeiffer, 2023). TMLR 2023 per Semantic Scholar.",
+   "corrections": []
+  },
+  {
+   "id": "vl-adapter",
+   "title": "VL-Adapter: Parameter-Efficient Transfer Learning for Vision-and-Language Tasks",
+   "authors": "Sung et al.",
+   "year": 2021,
+   "venue": "CVPR 2022",
+   "arxiv": "2112.06825",
+   "url": "https://arxiv.org/abs/2112.06825",
+   "claim": "Benchmarks Adapter, HyperFormer, Compacter and prompt tuning on image-text and video-text tasks with CLIP-BART/T5 in a unified multi-task setup; a single adapter shared across tasks (4.18% of parameters for image-text, 3.39% for video-text) matches full fine-tuning.",
+   "relevance": "Shows that weight sharing of adapters across tasks (one module serving many tasks) is often best, informing how adapter objects should be indexed by tasks in a unified theory.",
+   "sources": [
+    "https://arxiv.org/abs/2112.06825",
+    "https://arxiv.org/html/2112.06825"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2112.06825 (Sung, 2021). CVPR 2022 per arXiv comment. 4.18% / 3.39% are confirmed in the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "delta-tuning",
+   "title": "Parameter-efficient fine-tuning of large-scale pre-trained language models",
+   "authors": "Ding et al.",
+   "year": 2022,
+   "venue": "Nature Machine Intelligence 2023",
+   "arxiv": "2203.06904",
+   "url": "https://www.nature.com/articles/s42256-023-00626-4",
+   "claim": "Formalizes delta tuning and divides methods into addition-based (adapters, prompts), specification-based (selective) and reparameterization-based (low-rank) families, with theoretical perspectives (optimization and optimal control) and experiments on over 100 NLP tasks.",
+   "relevance": "The addition-based class is the adapter family of this catalog; the three-way taxonomy is a baseline that a categorical classification should refine.",
+   "sources": [
+    "https://arxiv.org/abs/2203.06904",
+    "https://www.nature.com/articles/s42256-023-00626-4"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2203.06904 (Ding, 2022). Published in Nature Machine Intelligence (online 2 Mar 2023, DOI 10.1038/s42256-023-00626-4) under a different title from the arXiv one ('Delta Tuning: A Comprehensive Study of Parameter Efficient Methods for Pre-trained Language Models'). 'Over 100 NLP tasks' is confirmed.",
+   "corrections": [
+    "title: removed the appended '(Delta Tuning)', which is not part of the Nature MI title. The arXiv title differs and is recorded in verification_notes."
+   ]
+  },
+  {
+   "id": "peft-design-spaces",
+   "title": "Parameter-Efficient Fine-Tuning Design Spaces",
+   "authors": "Chen et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2301.01821",
+   "url": "https://arxiv.org/abs/2301.01821",
+   "claim": "Parameterizes PEFT designs by layer grouping, trainable-parameter allocation, tunable groups and strategy assignment, and finds patterns (spindle grouping, uniform allocation, tune all groups, proper strategy per group) that yield methods outperforming individual adapter, prefix, BitFit and LoRA strategies.",
+   "relevance": "Treats the choice of adapter type and insertion site as points in a structured design space, a precursor to treating PEFT methods as structured objects rather than isolated recipes.",
+   "sources": [
+    "https://arxiv.org/abs/2301.01821"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2301.01821 (Jiaao Chen, 2023). ICLR 2023 per Semantic Scholar. The four components and the design patterns match the abstract.",
+   "corrections": [
+    "confidence: 'medium' -> 'high'. Venue confirmed (Semantic Scholar) and the claim matches the abstract."
+   ]
+  },
+  {
+   "id": "peft-survey-han",
+   "title": "Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey",
+   "authors": "Han et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2403.14608",
+   "url": "https://arxiv.org/abs/2403.14608",
+   "claim": "Comprehensive survey of PEFT algorithms (additive incl. adapters, selective, reparameterized, hybrid), their computational overhead, applications and system design.",
+   "relevance": "Standard reference taxonomy for placing the adapter family (serial, parallel, hybrid adapters) alongside other PEFT families.",
+   "sources": [
+    "https://arxiv.org/abs/2403.14608"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2403.14608 (Zeyu Han, 2024). TMLR 2024 per Semantic Scholar.",
+   "corrections": [
+    "confidence: 'medium' -> 'high'. Venue confirmed (Semantic Scholar) and the claim matches the abstract."
+   ]
+  }
+ ],
+ "notes": "Scope: methods that insert new modules into the computation graph. Organised by insertion morphology: (i) serial bottleneck adapters (residual-adapter, houlsby-adapter, pfeiffer-adapter, mad-x, compacter, hyperformer, adapter-plus, st-adapter, mona, repadapter); (ii) parallel adapters (parallel-adapter, adaptformer, convpass, aim joint adapter, ip-adapter branch); (iii) side / ladder networks (side-tuning, k-adapter, ladder-side-tuning, res-tuning, controlnet, t2i-adapter, shadow-peft); (iv) composition and unified frameworks (adapterfusion, adapterdrop, mam-adapter, unipelt, adamix); (v) output-level adapters for CLIP (clip-adapter, tip-adapter); (vi) gated prompt-adapters (llama-adapter, llama-adapter-v2). HF PEFT (v0.21.1, 2026-09-29) implements only two members of this family: LLaMA-Adapter (AdaptionPromptConfig) and ShadowPEFT (ShadowConfig); bottleneck adapters live in the AdapterHub 'adapters' library instead: DoubleSeqBnConfig = Houlsby, SeqBnConfig = Pfeiffer, ParBnConfig = parallel adapter, AdapterPlusConfig = Adapter+, SeqBnInvConfig/DoubleSeqBnInvConfig = MAD-X invertible adapters, CompacterConfig/CompacterPlusPlusConfig, MAMConfig (prefix bottleneck 800 + ParBn), UniPELTConfig (LoRA r=8, prefix length 10, SeqBn reduction 16, all gated; noted by AdapterHub as slightly different from the paper), and composition blocks Stack/Fuse/Split/BatchSplit/Parallel/Average. Overlaps with other families: llama-adapter also appears in the prompts family (same id, aligned to modification_kind input-or-activation-augmentation); adapterfusion and adamix could also be filed under composition/routing; repadapter is mergeable and, after merging, is a constrained LoRA-type additive update (B tied to W_0, shared across Q/K/V, plus a bias shift). residual-adapter is likewise exactly mergeable at inference. Boundary cases included deliberately: controlnet, t2i-adapter and ip-adapter are conditioning adapters/side networks for diffusion (they add a new input modality rather than re-target a task; ControlNet's trainable copy is not small), and k-adapter fine-tunes the backbone downstream (knowledge infusion). Year field is the first-version year of the listed arXiv record (the published version). Earlier preprints with different titles exist for mona (arXiv:2311.15010, Nov 2023) and tip-adapter (arXiv:2111.03930, Nov 2021). Code-level details verified from official repositories: Convpass, ST-Adapter, RepAdapter zero-init; LLaMA-Adapter V2 code applies the scale to the input (W(s*x)+b) whereas the paper writes s(Wx+b). Compacter does not state an exact identity-at-init guarantee. Mona's official code is not identity at init (default-initialized up-projection). Res-Tuning has no standalone repository; it is implemented in ModelScope SWIFT (ResTuningConfig). Considered but omitted for low uptake or being better placed elsewhere: PALs (Stickland & Murray, ICML 2019), CIAT parallel adapter for MT (Zhu et al. 2021), SparseAdapter (EMNLP Findings 2022), Quantized Side Tuning (ACL 2024), Hyperdecoders, Hyper-X, Polytropon (routing family), AdapterSoup (merging family), SSF and (IA)^3 (scaling family), Rebuffi et al. 2018 parallel residual adapters (folded into residual-adapter), Tiny-Attention adapter, Kronecker adapters (KronA), MoSA, E^3VA, DTL, UniPT, Side4Video, SAM-Adapter (application).",
+ "verification_summary": "Adversarially verified on 2026-10-01: 31 methods and 10 papers, none dropped. All 41 arXiv ids (plus 1803.10082, 2311.15010, 2111.03930) were batch-checked against the arXiv API for title, first author and first-version year. Venues were confirmed via arXiv comments/journal-ref, Crossref DOIs (ECAI, AAAI, CVPR 2025, IJCV, ECCV, ACL Findings, Nature MI) and Semantic Scholar (TMLR, ICLR 2023; arXiv-only for RepAdapter, IP-Adapter, LLaMA-Adapter V2, ShadowPEFT). Every formula and parameter count was re-checked against the arXiv HTML/PDF full text, and the official code was read where init or parametrization was in doubt. HF PEFT claims were checked against huggingface/peft main (v0.21.1, 2026-09-29): only AdaptionPromptConfig and ShadowConfig belong to this family. 30 corrections in total. Key fixes: residual-adapter mergeable conditional -> yes; AdaMix training parameters (M+1)rd (shared up-projection); Pfeiffer residual made explicit; AIM joint adapter has no skip; Mona not identity at init in official code; RepAdapter W_d dense / W_u group-wise; Mona year 2024 and Tip-Adapter year 2022 (to match the listed arXiv ids); Convpass authors 'Jie and Deng'; Res-Tuning code in ModelScope SWIFT; four unjustified relations removed (residual-adapter->repadapter, repadapter->residual-adapter, llama-adapter->parallel-adapter, ip-adapter->llama-adapter) and RepAdapter-LoRA retyped as competes-with."
+}

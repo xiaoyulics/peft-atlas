@@ -1,0 +1,1715 @@
+% Appendix C (continued): complete proofs for Exposés IV, V and VI, Definition IV.1 to Theorem VI.5.
+% Sources: theory/propositions.json (statements, repaired proofs, public statements, round-2 notes),
+% theory/round2_verdicts.json (suggested fixes for IV.2-IV.4, V.2-V.4, VI.3-VI.5, all applied), theory/framework.md
+% (Exposés IV-VI), site/sections/07-lens.html, 08-base.html and 09-merge.html (refereed proofs). The restated results
+% follow sections/04-lens.tex, 05-base.tex and 06-merge.tex. External results are Auxiliary results B.1-B.39.
+% This file continues Appendix C and has no \section of its own.
+
+% ====================================================================================================
+\subsection{Definition IV.1}\label{proof:IV.1}
+
+\begin{restate}{Definition}{IV.1}{forward and backward methods}
+\begin{itemize}
+  \item A \textbf{forward} method acts on the parameter port by a lens in the image of $\mathsf R$, namely
+  $(\rho,\mathsf R[\rho])$.
+  \item A \textbf{backward}, or cotangent-side, method acts by a lens whose forward part is $\id_\Theta$ and whose
+  backward part is a \emph{compression} $c_t:T^*_\theta\Theta\to S$ into a state space $S$, paired with an
+  \emph{anchor} $a_t:S\to T_\theta\Theta$. The update is
+  \[\theta\leftarrow\theta-\eta\,a_t\big(\mathrm{opt}(c_t(\nabla L))\big).\]
+\end{itemize}
+Examples: GaLore, with $c_t=P_t\T$ and $a_t=P_t$ for $P_t$ from a gradient SVD; GaLore with a random projector, the same
+with $P_t$ random; LISA, a layer-block coordinate projection paired with the same projection; MeZO, with
+$c_t(g)=\langle z_t,g\rangle$ estimated by finite differences without a backward pass, and $a_t(\lambda)=\lambda z_t$.
+Flora as published fits only as the trivial lens, with compression and anchor the identity and the random compression of
+its momentum inside $\mathrm{opt}$.
+\end{restate}
+
+A definition needs no proof. This subsection fixes the conventions used in the proofs of Exposé~IV and checks the
+identities that the definition and its table record.
+
+\paragraph{Conventions}
+As in \S\ref{proof:III.1}, weight space $\Theta=\R^{m\times n}$, or a product of such boxes, carries the Frobenius inner
+product, covectors are written as matrices, and the transpose $\mathcal L^*$ of a linear map $\mathcal L$ is its adjoint.
+We model a first-order optimizer as a machine with a state. At step $t$ it holds a state $\varsigma_t$, receives a tensor
+$g_t$ (the gradient it is fed) and the tensor $x_t$ it updates, returns an output $U_t=F_t(\varsigma_t,g_t,x_t)$, moves to
+the state $\varsigma_{t+1}=H_t(\varsigma_t,g_t,x_t)$, and the update is $x_{t+1}=x_t-\eta_tU_t$. The maps may depend on the
+step counter $t$, for instance through Adam's bias corrections or Adafactor's relative step size. The optimizer
+\emph{does not read the parameter tensor} when $F_t$ and $H_t$ do not depend on $x_t$. SGD, heavy-ball and Nesterov
+momentum, Adam and AMSGrad, and Adafactor with \texttt{scale\_\allowbreak parameter=False} are of this kind; Adafactor's
+factored second moments and its clipping of the update by $\mathrm{RMS}(U_t)$ read only $g_t$ and the state. The
+following ingredients read $x_t$, or a gradient other than $g_t$:
+\begin{itemize}
+  \item coupled weight decay, which feeds $g_t+\lambda x_t$ in place of $g_t$;
+  \item decoupled weight decay (AdamW with $\lambda>0$), which adds $-\eta_t\lambda x_t$ to the update;
+  \item LAMB and LARS, which multiply the update by a trust ratio $\phi(\lVert x_t\rVert)/\lVert U_t\rVert$;
+  \item Adafactor with parameter scaling, which multiplies the step by $\max(\epsilon_2,\mathrm{RMS}(x_t))$ (the option
+  \texttt{scale\_\allowbreak parameter=\allowbreak True});
+  \item clipping by the global norm of the full gradient, which rescales $g_t$ by $\min(1,\tau/\lVert G_t\rVert)$, where
+  $G_t$ is the gradient of every trainable tensor of the procedure.
+\end{itemize}
+
+\begin{proof}[Verification of the identities in Definition IV.1]
+\emph{The lens of a reparametrisation.} A smooth $\rho:Q\to\Theta$ has reverse derivative
+$\mathsf R[\rho](q,\gamma)=J_\rho(q)\T\gamma=D\rho_q\T\gamma$ (\bgref{B.17}). For a composite $\rho\circ\sigma$ the chain rule
+gives
+\[\mathsf R[\rho\circ\sigma](q',\gamma)=D\sigma_{q'}\T D\rho_{\sigma(q')}\T\gamma=\mathsf R[\sigma]\big(q',\mathsf R[\rho](\sigma(q'),\gamma)\big),\]
+which is composition of lenses, so $\rho\mapsto(\rho,\mathsf R[\rho])$ respects composition of reparametrisations. The
+gradient that a forward method feeds its optimizer is the pullback $\nabla_q(L\circ\rho)=D\rho_q\T\nabla_\theta L=
+\mathsf R[\rho](q,\nabla_\theta L)$.
+
+\emph{A forward step to first order.} One step of a forward method sets $q\leftarrow q-\eta U$ with
+$U=\mathrm{opt}(D\rho_q\T\nabla L)$, so the weight moves to
+\[\rho(q-\eta U)=\theta-\eta\,D\rho_q\,U+O(\eta^2).\]
+To first order in $\eta$ this is the backward update with $c=D\rho_q\T$ and $a=D\rho_q$. The two agree exactly when $\rho$ is
+affine along the step, which is the situation of \thmref{Proposition}{IV.2}.
+
+\emph{The examples.} For GaLore with left projection, $P_t\in\R^{m\times r}$ has orthonormal columns,
+$S=\R^{r\times n}$, $c_t(G)=P_t\T G$ and $a_t(U)=P_tU$, so the update $W\leftarrow W-\eta\alpha P_t\,\mathrm{opt}(P_t\T G)$ is
+the displayed one with $\alpha$ absorbed into $\eta$; with right projection, $c_t(G)=GP_t$ and $a_t(U)=UP_t\T$. In each case
+$a_t=c_t^*$, since $\langle P_tU,G\rangle=\langle U,P_t\T G\rangle$. LISA's $S$ is the space of the sampled layers (with the
+embedding and the head), $c_t$ restricts a gradient to it and $a_t$ includes it back, so again $a_t=c_t^*$. For MeZO,
+$S=\R$, $a_t(\lambda)=\lambda z_t$ and $c_t(g)=\langle z_t,g\rangle=a_t^*(g)$. MeZO does not compute $c_t(\nabla L)$; it
+estimates it by the central difference $\big(L(\theta+\varepsilon z_t)-L(\theta-\varepsilon z_t)\big)/(2\varepsilon)$,
+whose error is $O(\varepsilon^2)$ for a loss with Lipschitz Hessian (\auxref{B.34}(a)), so it is the displayed update up to
+its estimator. Flora as published (its reference implementation) returns $(1-\beta)\hat g_t+\beta\,\mathrm{up}_t(M_t)$, where $\hat g_t$ is the
+Adafactor-normalised full gradient and $\mathrm{up}_t(M_t)$ the decompressed momentum \citep{hao2024flora}. The first term
+is generically of full rank, so the update does not lie in $\operatorname{im}P_t$, and the only reading in the form of the
+definition is $c_t=a_t=\id$ with the random compression inside $\mathrm{opt}$.
+
+\emph{The cometric of a backward method.} With plain (S)GD on the compressed gradient, $\mathrm{opt}=\id$, the update is
+$\theta\leftarrow\theta-\eta\,a_tc_t\nabla L$, so the induced cometric is $K_t=a_tc_t$ (\thmref{Definition}{III.1}). For the
+first three examples $a_t=c_t^*$, so $K_t=a_ta_t^*$ is symmetric positive semidefinite; for GaLore with left projection,
+$K_t(G)=P_tP_t\T G$.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Proposition IV.2}\label{proof:IV.2}
+
+\begin{restate}{Proposition}{IV.2}{the degree-one collapse; known, \citet{xtorrobahennigen2025duality} for GaLore (their
+Thm~1 and Cor.~3, App.~B for weight decay) and \citet{hao2024flora} for random projections}
+Let $\rho_k(C)=W_k+\mathcal LC$ with $\mathcal L$ linear and $C_0=0$. Let $\mathrm{opt}$ be a first-order optimizer, with
+no coupled or decoupled weight decay, whose state and output depend only on the sequence of gradients it is fed, and
+which does not read the parameter tensor: SGD, heavy-ball or Nesterov momentum, Adam or AMSGrad, or Adafactor with
+\texttt{scale\_\allowbreak parameter=False} (fixed or relative step, with its factorisation applied to the compressed
+gradient in the same tensor shape as $C$). Run both procedures below with the same implementation of $\mathrm{opt}$, on
+the same minibatches, and from the same optimizer state, fresh or carried over. Then they produce the same
+$W$-trajectory over a period:
+\begin{itemize}
+  \item training $C$ with $\mathrm{opt}$ and merging at the end of the period;
+  \item the backward method with $c=\mathcal L^*$ and $a=\mathcal L$, started at $W_k$.
+\end{itemize}
+AdamW with $\lambda>0$, LAMB and LARS trust ratios, parameter-scaled Adafactor (\texttt{scale\_\allowbreak
+parameter=True}, the default in HF and in \texttt{galore\_torch}'s \texttt{GaLoreAdafactor}) and global-norm clipping of
+the full gradient (such as HF Trainer's default \texttt{max\_grad\_norm=1.0}, whenever it triggers) all break the
+identity. Injectivity of $\mathcal L$ is not needed.
+
+In particular, on each matrix that GaLore projects (its other parameters train in full in both procedures), GaLore with
+a projector $P_k$ fixed on each period equals one-sided LoRA $W_k+P_kC$ (frozen $B=P_k$, or frozen $A$ when projecting
+on the right), merged and re-based every period, with $C$'s optimizer state (moments and step counter) carried over
+unchanged across re-basings, with no reset. $P_k$ must be exactly GaLore's matrix, signs and column order included; its
+span alone does not suffice, because the state is reused without transport. ReLoRA-style resets give a different
+trajectory. The identity is exact with weight decay $0$, no full-gradient clipping, and an optimizer from the admissible
+class; \texttt{galore\_torch}'s \texttt{GaLoreAdafactor} defaults to \texttt{scale\_\allowbreak parameter=True} and is
+excluded. \texttt{GaLoreAdamW} is the transformers-style AdamW, which adds $\varepsilon$ to $\sqrt v$ before the bias
+correction, so the LoRA side must use the same implementation. GaLore's scale $\alpha$ multiplies the optimizer output, so
+it acts as a learning-rate factor; a LoRA-style scale inside $\rho$ gives a different trajectory under Adam with
+$\varepsilon>0$.
+\end{restate}
+
+\begin{proof}
+We use the optimizer model of \S\ref{proof:IV.1}. Fix a period of $T$ steps, write $L_t$ for the loss of the minibatch used
+at step $t$ (the same in both procedures) and $\eta_t$ for the step size.
+
+\emph{The two procedures.} In the first, the trainable tensor is $C$ with $C_0=0$ and the weight is
+$W^{(1)}_t:=\rho_k(C_t)=W_k+\mathcal LC_t$. By the chain rule the gradient fed to $\mathrm{opt}$ is
+\[g^{(1)}_t=\nabla_C(L_t\circ\rho_k)(C_t)=\mathcal L^*\nabla L_t\big(W^{(1)}_t\big),\]
+$\mathrm{opt}$ returns $U^{(1)}_t$, and $C_{t+1}=C_t-\eta_tU^{(1)}_t$. In the second, $W^{(2)}_0=W_k$, the gradient fed to
+$\mathrm{opt}$ is $g^{(2)}_t=c\big(\nabla L_t(W^{(2)}_t)\big)=\mathcal L^*\nabla L_t\big(W^{(2)}_t\big)$, $\mathrm{opt}$ returns
+$U^{(2)}_t$, and $W^{(2)}_{t+1}=W^{(2)}_t-\eta_t\mathcal LU^{(2)}_t$.
+
+\emph{Induction.} We show that for $0\le t\le T$ the weights $W^{(1)}_t$ and $W^{(2)}_t$ agree and the two optimizer
+states agree. At $t=0$, $W^{(1)}_0=W_k+\mathcal L0=W_k=W^{(2)}_0$, and the states agree by hypothesis. Suppose both claims
+hold at $t$. The two procedures evaluate the same minibatch loss at the same weight, so they compute the same weight
+gradient and feed $\mathrm{opt}$ the same tensor $g_t:=g^{(1)}_t=g^{(2)}_t$. Since $\mathrm{opt}$ is the same
+implementation and does not read the parameter tensor, its output and its next state are the same function of the state,
+of $g_t$ and of $t$ in both procedures. Hence $U^{(1)}_t=U^{(2)}_t=:U_t$ and the next states agree. Then
+\[W^{(1)}_{t+1}=W_k+\mathcal L(C_t-\eta_tU_t)=W^{(1)}_t-\eta_t\mathcal LU_t=W^{(2)}_{t+1}.\]
+At the end of the period merging sets the weight to $\rho_k(C_T)=W^{(1)}_T=W^{(2)}_T$. The argument never inverts
+$\mathcal L$, so injectivity is not needed. Every operation that $\mathrm{opt}$ applies to $g_t$ and its state, such as
+Adafactor's factorisation in the shape of $C$ (which is the shape of $g_t$ in both procedures) and its update clipping, is
+covered, since it reads nothing else.
+
+\emph{The excluded ingredients.} Each of them reads a tensor that differs between the procedures, and in each case the
+first step already separates the trajectories for suitable data; it suffices to exhibit this. Take $\mathcal L$ injective,
+$W_k\ne0$ and a minibatch gradient $G_0$ with $\mathcal L^*G_0\ne0$.
+\begin{itemize}
+  \item \emph{Decoupled decay.} The first procedure sets $C_1=C_0-\eta_0U_0-\eta_0\lambda C_0=-\eta_0U_0$, so
+  $W^{(1)}_1=W_k-\eta_0\mathcal LU_0$; the second sets $W^{(2)}_1=W_k-\eta_0\mathcal LU_0-\eta_0\lambda W_k$. They differ by
+  $\eta_0\lambda W_k\ne0$. In general decay pulls $W$ towards $W_k$ in the first procedure and towards $0$ in the second.
+  \item \emph{Coupled decay.} The first procedure feeds $\mathcal L^*G_0+\lambda C_0=\mathcal L^*G_0$, the second
+  $\mathcal L^*(G_0+\lambda W_k)$. These differ whenever $\mathcal L^*W_k\ne0$, and for SGD the first steps then differ,
+  since $\mathcal L$ is injective.
+  \item \emph{Trust ratios and parameter scaling.} The first procedure reads $\lVert C_0\rVert=\mathrm{RMS}(C_0)=0$, the
+  second $\lVert W_k\rVert>0$ and $\mathrm{RMS}(W_k)>0$. The resulting step sizes differ for generic $W_k$, because the
+  first does not depend on $W_k$ and the second does.
+  \item \emph{Global-norm clipping of the full gradient.} The first procedure clips by the norm of its trainable gradient
+  $\mathcal L^*G_0$, the second (GaLore in HF Trainer) by the norm of the full weight gradient $G_0$. Under SGD with
+  $\lVert\mathcal L^*G_0\rVert\le\tau<\lVert G_0\rVert$ the first step is $-\eta_0\mathcal L\mathcal L^*G_0$ in the first
+  procedure and $-\eta_0(\tau/\lVert G_0\rVert)\mathcal L\mathcal L^*G_0$ in the second; they differ because
+  $\mathcal L\mathcal L^*G_0\ne0$.
+\end{itemize}
+
+\emph{GaLore.} On a projected matrix with left projection, GaLore's update in period $k$ is
+$W\leftarrow W-\eta\alpha P_k\,\mathrm{opt}(P_k\T G)$. This is the backward method with $c=P_k\T$ and $a=P_k$, and for
+$\mathcal LC=P_kC$ we have $\mathcal L^*=P_k\T$; the factor $\alpha$ multiplies the output of $\mathrm{opt}$, so it is part
+of the step size. With right projection, $\mathcal LC=CP_k\T$ and $\mathcal L^*G=GP_k$. Now induct over periods. Suppose that
+at the start of period $k$ the whole model, every projected and unprojected tensor, is the same in GaLore and in the
+re-based one-sided LoRA, and that so are all optimizer states. The unprojected parameters train in full with the same
+optimizer in both, so they follow the same trajectory once the projected matrices do. GaLore computes $P_k$ from the
+gradient at the start of the period, and the one-sided LoRA uses that same matrix as its frozen factor. The first part of
+the proposition, applied with $\mathcal LC=P_kC$, gives the same trajectory through the period, and merging $P_kC_T$ into
+$W_k$ gives the same $W_{k+1}$. GaLore keeps the state of $\mathrm{opt}$, which lives on tensors of the shape of $C$, and
+the one-sided LoRA carries $C$'s state over while resetting $C$ to $0$; so the states at the start of period $k+1$ agree
+too. This proves the corollary.
+
+\emph{The exact matrix.} Replacing $P_k$ by $P_kO$ with $O\in\Ort(r)$ keeps the span and changes the trajectory when state
+is carried. Take heavy-ball momentum with coefficient $\beta>0$ and SGD steps, $U_t=m_{t+1}=\beta m_t+g_t$, and a carried
+momentum $m$ whose first row is nonzero, and let $O=\diag(-1,1,\dots,1)$. With $P_k$ the first step of the period moves
+$W$ by $-\eta P_k(\beta m+P_k\T G)$. With $P_kO$ the compressed gradient is $OP_k\T G$, the momentum is reused without
+transport, and $W$ moves by $-\eta P_kO(\beta m+OP_k\T G)=-\eta P_k(\beta Om+P_k\T G)$. The difference is
+$-\eta\beta P_k(Om-m)\ne0$, since $P_k$ is injective and $Om-m$ is minus twice the first row of $m$. The same computation
+applies to Adam's first moment.
+
+\emph{Resets.} ReLoRA resets the optimizer state at every re-basing. For heavy-ball momentum the first step of period $k+1$
+is then $-\eta P_{k+1}g$ instead of $-\eta P_{k+1}(\beta m+g)$, which differs whenever the carried momentum $m$ is
+nonzero.
+
+\emph{Implementation and scale.} With bias corrections $b_1=1-\beta_1^t$ and $b_2=1-\beta_2^t$, transformers-style AdamW
+and \texttt{torch.optim.Adam} take the steps
+\[\eta\,\frac{\sqrt{b_2}}{b_1}\,\frac{m_t}{\sqrt{v_t}+\varepsilon}\qquad\text{and}\qquad
+\eta\,\frac{m_t/b_1}{\sqrt{v_t/b_2}+\varepsilon}=\eta\,\frac{\sqrt{b_2}}{b_1}\,\frac{m_t}{\sqrt{v_t}+\varepsilon\sqrt{b_2}} .\]
+For $\varepsilon>0$ the two differ, because they use different effective $\varepsilon$; hence the hypothesis of one
+implementation. Finally, put GaLore's $\alpha$ inside $\rho$, $\rho(C)=W_k+\alpha P_kC$. The compressed gradient becomes
+$\alpha P_k\T G$, Adam's moments become $\alpha m_t$ and $\alpha^2v_t$, and the weight moves by
+\[-\eta\,\alpha P_k\frac{\alpha\hat m_t}{\alpha\sqrt{\hat v_t}+\varepsilon}=-\eta\,\alpha P_k\frac{\hat m_t}{\sqrt{\hat v_t}+\varepsilon/\alpha},\]
+against $-\eta\alpha P_k\,\hat m_t/(\sqrt{\hat v_t}+\varepsilon)$ for GaLore. These agree for $\varepsilon=0$, or when the LoRA
+side's $\varepsilon$ is multiplied by $\alpha$, and differ for $\varepsilon>0$ and $\alpha\ne1$ whenever $\hat m_t\ne0$.
+\end{proof}
+
+\begin{remark*}{numerical checks}
+The values reported after \thmref{Proposition}{IV.2} ($7\times10^{-16}$ over one period and $5\times10^{-15}$ over four
+under Adam with the state carried; $8\times10^{-17}$ against the official \texttt{galore\_torch} optimizers; the
+separations $0.029$, $0.020$, $0.030$ and $0.12$ for a reset, weight decay $0.1$, HF-default Adafactor and a flipped
+column) instantiate the identity and the four breaking mechanisms above (Appendix~\ref{app:repro}).
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Proposition IV.3}\label{proof:IV.3}
+
+\begin{restate}{Proposition}{IV.3}{integrability; after Frobenius' theorem}
+Let $D$ be a smooth distribution of constant rank $k$ on an open set $U\subseteq\Theta$, for instance the anchor
+distribution $D_\theta=\operatorname{im}a(\theta)$ of a time-independent backward method. Then $D$ is involutive on $U$ if
+and only if through every $\theta\in U$ passes an injective immersion $\rho_\theta:(\R^k,0)\to(U,\theta)$ with
+$\operatorname{im}D\rho_\theta=D$ along its image. A single such $\rho$ through $\theta_0$ gives involutivity only along
+$\operatorname{im}\rho$. For example, $D=\spanop\{\partial_x,\ \partial_y+xz\,\partial_z\}$ on $\R^3$ has
+$[\partial_x,\partial_y+xz\,\partial_z]=z\,\partial_z\notin D$ off $z=0$, yet the plane $z=0$ is an integral manifold.
+
+The dynamic content needs separate hypotheses.
+\begin{itemize}
+  \item In continuous time, if $D$ is involutive, a backward flow with $\dot\theta\in D_\theta$ stays on the leaf through
+  $\theta_0$.
+  \item In the discrete update of \thmref{Definition}{IV.1}, the iterates stay on a leaf for all step sizes and all
+  optimizer outputs $s$ (all losses) if and only if that leaf contains $(\theta+D_\theta)\cap U$ at every iterate, that
+  is, if and only if the leaves are affine; an anchor constant over the period gives this (\thmref{Proposition}{IV.2}).
+  \item Under gradient flow, dynamic equivalence with a forward lens $(\rho,\mathsf R[\rho])$ forces matching frames,
+  $a_tc_t=D\rho\,\Lambda\,D\rho^\top$ along the trajectory. Hence $K=ac$ is symmetric positive semidefinite and, for
+  injective $a$, $c=Ma^\top$ with $M$ symmetric positive semidefinite on $S$, possibly depending on $\theta$. If in
+  addition $\rho$ is an immersion with $\dim Q=\rk D$, then $\rho$ is a local isometry from $(Q,\Lambda^{-1})$ onto the
+  leaf with metric $(aMa^\top)^{-1}|_D$, so that metric must be flat. Forward methods with gauge fibres escape this
+  requirement: $\rho(B)=BB^\top$ on symmetric matrices induces the curved Bures--Wasserstein metric, and balanced
+  full-rank LoRA also induces a curved leaf metric. For discrete steps, exact agreement for every step size further
+  forces $\rho$ to be affine along each horizontal line $q+t\,\Lambda D\rho_q^\top g$.
+\end{itemize}
+
+\emph{Instances.} Every projector-type backward method (GaLore with any period $T$ and any projector, its
+random-projector variant, LISA, MeZO) has an anchor that does not depend on $\theta$ within its period. Its distribution
+is constant, hence trivially involutive with affine leaves (vacuously at $T=1$, where a period is a single step). Under
+the optimizer hypotheses of \thmref{Proposition}{IV.2} (no weight decay of either kind, no full-gradient clipping; GaLore
+and MeZO need weight decay $0$, and LISA's AdamW with positive decay violates them), these methods are rebasing schemes
+of linear forward methods with period $T$, including $T=1$, whose reach \thmref{Theorem}{V.3} describes. Each MeZO step is a step of the linear method
+$\theta_t+\lambda z_t$, up to its SPSA estimator, and GaLore with $T=1$ is one-sided LoRA re-based every step. What
+separates these methods from LoRA-type methods is the resampling schedule together with the carry-over of optimizer
+state; integrability plays no part in it. Flora as published (Adafactor base, with a full-rank current-gradient term in
+the code), APOLLO (a low-rank-estimated scaling applied to the full gradient) and Fira (a scaled full-rank residual) are
+not of the form of \thmref{Definition}{IV.1} with their projections as anchors, because their updates leave
+$\operatorname{im}a$.
+
+Non-involutivity proper needs a $\theta$-dependent anchor. Full-batch GaLore with $T=1$, read as the distribution
+$D_W=\operatorname{Hom}(\R^n,U_r(\nabla L(W)))$ (or $\operatorname{Hom}(V_r(\nabla L(W)),\R^m)$ when $m\ge n$, as GaLore
+projects) wherever a singular-value gap exists, is involutive if and only if $U_r(\nabla L(W))$ (respectively
+$V_r(\nabla L(W))$) is invariant along $D$. That fails generically for every $r\ge1$ once both matrix dimensions are at
+least $2$. For every $r$ with $1\le r<\min(m,n)$ it fails for $L=\tfrac12\lVert W\rVert_F^2$, and numerically it fails
+for least squares and cross-entropy with several samples. It holds, for instance, for single-sample least squares, and
+automatically only when the distribution is a line field ($nr=1$). Minibatch GaLore with $T=1$ and MeZO violate
+time-independence, because their anchors depend on step-wise randomness.
+\end{restate}
+
+\begin{proof}
+Throughout, a \emph{leaf} of an involutive $D$ is a maximal connected integral manifold, and the leaves form a foliation
+of $U$ (\auxref{B.31}(c)).
+
+\emph{(1) The Frobenius equivalence.} Suppose $D$ is involutive and let $\theta\in U$. By \auxref{B.31}(b) there is a chart
+$\varphi:V\to(-\delta,\delta)^{\dim\Theta}$ centred at $\theta$ in which $D$ is spanned by the first $k$
+coordinate fields. Let $\psi:\R^k\to(-\delta,\delta)^k$ be the diffeomorphism $\psi_i(y)=\tfrac{2\delta}{\pi}\arctan y_i$ and
+put $\rho_\theta(y)=\varphi^{-1}(\psi(y),0)$. Then $\rho_\theta(0)=\theta$, $\rho_\theta$ is an injective immersion into
+$U$, and $\operatorname{im}D\rho_\theta(y)$ is spanned by the first $k$ coordinate fields at $\rho_\theta(y)$, which is
+$D_{\rho_\theta(y)}$. Conversely, suppose such immersions exist through every point, and let $X,Y$ be sections of $D$ near
+$\theta$. An immersion is locally an embedding (\auxref{B.1}(b)), so $\rho_\theta$ maps a neighbourhood of $0$ onto an
+embedded integral manifold through $\theta$, and \auxref{B.31}(a) gives $[X,Y]_\theta\in D_\theta$. Since $\theta$ was
+arbitrary, $D$ is involutive.
+
+The same application of \auxref{B.31}(a) to the local pieces of $\operatorname{im}\rho$ shows that a single integral
+immersion $\rho$ forces $[X,Y]\in D$ at the points of $\operatorname{im}\rho$; off $\operatorname{im}\rho$ it says nothing, as
+the example shows. In the example,
+$X_1=\partial_x$ and $X_2=\partial_y+xz\,\partial_z$ are linearly independent everywhere, so $D$ has constant rank $2$, and
+$[X_1,X_2]=\partial_x(xz)\,\partial_z=z\,\partial_z$. A vector of $D$ at $(x,y,z)$ has the form $(a,b,bxz)$, which equals
+$(0,0,z)$ only if $a=b=0$ and $z=0$; so $[X_1,X_2]\notin D$ wherever $z\ne0$, and $D$ is involutive on no open set meeting
+$\{z\ne0\}$. On the plane $z=0$, $D=\spanop\{\partial_x,\partial_y\}$ is its tangent plane, so $\rho(u,v)=(u,v,0)$ is an
+injective immersion with $\operatorname{im}D\rho=D$ along its image, and there $[X_1,X_2]=0\in D$.
+
+\emph{(2) Continuous time.} Let $D$ be involutive, let $\theta(t)$, $t\in J$ an interval containing $0$, be an absolutely
+continuous curve in $U$ with $\theta(0)=\theta_0$ and $\dot\theta(t)\in D_{\theta(t)}$ for almost every $t$, and let $N$ be
+the leaf through $\theta_0$. Put $J_N=\{t\in J:\theta(t)\in N\}$, which contains $0$. Fix $t_*\in J$ and a flat chart around
+$\theta(t_*)$ as in \auxref{B.31}(b). For $t$ near $t_*$ the curve stays in the chart and keeps its last $\dim\Theta-k$
+coordinates constant, so it stays in the slice $\Sigma$ through $\theta(t_*)$. A slice is a connected integral manifold, and
+a connected integral manifold that meets a leaf lies in it (\auxref{B.31}(c)), so if $\Sigma$ meets $N$ it lies in $N$. If $t_*\in J_N$, the slice $\Sigma$ meets $N$ at $\theta(t_*)$, so a neighbourhood of
+$t_*$ lies in $J_N$: $J_N$ is open. If $t_n\to t_*$ with $t_n\in J_N$, then for large $n$ the point $\theta(t_n)$ lies in
+$\Sigma\cap N$, so $\Sigma\subseteq N$ and $t_*\in J_N$: $J_N$ is closed. Hence $J_N=J$.
+
+\emph{(3) Discrete steps.} The update is $\theta'=\theta-\eta\,a(\theta)s$ with $\eta>0$ and $s\in S$ arbitrary. As $\eta$
+and $s$ range, $-\eta\,a(\theta)s$ ranges over the linear space $\operatorname{im}a(\theta)=D_\theta$, so the possible next
+iterates in $U$ form $(\theta+D_\theta)\cap U$. They all lie on the leaf $N$ through $\theta$ iff $(\theta+D_\theta)\cap
+U\subseteq N$; this is the first equivalence. Call the leaves \emph{affine} when every leaf $N$ equals $(\theta+D_\theta)\cap
+U$ for each $\theta\in N$. If the containment holds at every point of every leaf, then for each $\theta\in N$ a small
+$k$-disc of the plane $\theta+D_\theta$ around $\theta$ lies in $N$. Take a flat chart around $\theta$ (\auxref{B.31}(b)) and
+shrink the disc into it. The leaves form a foliation (\auxref{B.31}(c)), so $N$ meets the chart in countably many slices, on
+each of which the last $\dim\Theta-k$ coordinates are constant. On the connected disc these coordinates are continuous and
+take countably many values, so they are constant, and the disc lies in the slice through $\theta$, a $k$-dimensional integral
+manifold, in which it is open by invariance of domain. Hence its tangent planes, all equal to $D_\theta$, are the planes
+$D_x$ at its points, so $D$ is
+locally constant along $N$, so constant on the connected $N$; every path in $N$ then has velocity in $D_\theta$, so
+$N\subseteq\theta+D_\theta$, and with the containment $N=(\theta+D_\theta)\cap U$. The converse is clear. For an anchor that is constant over the period, $D_\theta=V$ is defined
+on $U=\Theta$, sections of $D$ are $V$-valued functions whose derivatives and brackets are again $V$-valued, and the leaves
+are the planes $\theta+V$; the condition holds, as \thmref{Proposition}{IV.2} uses.
+
+\emph{(4) Frames.} A backward method under gradient flow ($\mathrm{opt}=\id$) moves the weight by
+$\dot\theta=-a_tc_t\nabla L$; the forward method moves it by $\dot\theta=-D\rho_q\Lambda D\rho_q\T\nabla L$
+(\thmref{Definition}{III.1}). We read ``for every loss'' as including time-dependent losses, as minibatch training produces.
+Let both methods follow the same trajectory up to time $t_1$ for a loss $L$, and switch at $t_1$ to $L+\langle\gamma,\cdot\rangle$.
+The trajectories still agree up to $t_1$, and their right derivatives at $t_1$ agree, so
+$a_{t_1}c_{t_1}(\nabla L+\gamma)=K_{q(t_1)}(\nabla L+\gamma)$ for every covector $\gamma$, that is,
+$a_{t_1}c_{t_1}=D\rho\,\Lambda\,D\rho\T$ at $q(t_1)$. This operator is symmetric positive semidefinite, with range in
+$\operatorname{im}a=D$. If $a$ is injective, let $a^+=(a\T a)^{-1}a\T$, so $P=aa^+$ is the orthogonal projector onto
+$\operatorname{im}a$, and put $M=a^+(ac)(a^+)\T$, which is symmetric positive semidefinite. Since $ac$ is symmetric with
+range in $\operatorname{im}a$, $ac=P(ac)=(ac)P$, so $ac=P(ac)P=aMa\T$, and $a(c-Ma\T)=0$ gives $c=Ma\T$.
+
+Now let $\rho$ be an immersion with $\dim Q=\rk D=k$. Then $D\rho_q\Lambda D\rho_q\T$ has rank $k$ and range in $D$, so
+$\operatorname{im}D\rho_q=D_{\rho(q)}$, and $\rho$ maps small open sets of $Q$ diffeomorphically onto open pieces of leaves.
+On $D$ the cometric $K=aMa\T$ is invertible as a map from $D^*$ to $D$, and its inverse is a metric $g_D$ on $D$:
+$g_D(v,v)=\langle\xi,v\rangle$ whenever $K\xi=v$. For $u\in T_qQ$ put $v=D\rho_qu$. Since $D\rho_q$ is injective,
+$D\rho_q\T$ is onto, so there is $\xi$ with $D\rho_q\T\xi=\Lambda^{-1}u$, and then $K\xi=D\rho_q\Lambda\Lambda^{-1}u=v$. Hence
+\[g_D(D\rho_qu,D\rho_qu)=\langle\xi,D\rho_qu\rangle=\langle D\rho_q\T\xi,u\rangle=\langle\Lambda^{-1}u,u\rangle .\]
+So $\rho$ is a local isometry from $Q$ with the constant metric $\Lambda^{-1}$, which is flat, onto the leaf with metric
+$g_D=(aMa\T)^{-1}|_D$, and by \auxref{B.32}(a) the leaf metric is flat.
+
+\emph{(5) Gauge fibres: $BB\T$.} Let $\rho(B)=BB\T$ on $Q=\R^{n\times n}$ with $\Lambda=I$, landing in $\Sym(n)$, and pair
+covectors with $\Sym(n)$ by the trace. Then $D\rho_B(\dot B)=\dot BB\T+B\dot B\T$, and for symmetric $G$,
+$\langle G,\dot BB\T+B\dot B\T\rangle=\langle2GB,\dot B\rangle$, so $D\rho_B\T G=2GB$ and
+\[K(G)=D\rho_B(2GB)=2(G\theta+\theta G),\qquad\theta=BB\T .\]
+This depends only on $\theta$, not on the point of the fibre $\{BR:R\in\Ort(n)\}$. On the positive definite matrices it is
+invertible (\auxref{B.20}), so $D=\Sym(n)$ there. Put $a=K^{1/2}$ and $c=a\T$. The backward flow
+$\dot\theta=-K(\theta)\nabla L$ and the forward flow pushed to $\theta$ solve the same ordinary differential equation with
+smooth right-hand side, so they agree for every loss. The leaf metric $K^{-1}$ is a constant multiple of the
+Bures--Wasserstein metric (\auxref{B.32}(b)), which is not flat for $n\ge2$. Here $\dim Q=n^2>\dim\Sym(n)$, so $\rho$ is no
+immersion, in line with (4).
+
+\emph{(6) Gauge fibres: balanced full-rank LoRA.} Take $m=n=r\ge2$, $s=1$ and equal block rates $\eta_A=\eta_B=1$, and
+restrict to balanced factors, $B\T B=AA\T$, with $W=BA$ invertible; gradient flow preserves balancedness by the Noether
+charge of \thmref{Theorem}{III.5}. From $B\T B=AA\T$, $W\T W=A\T(B\T B)A=(A\T A)^2$ and $WW\T=B(AA\T)B\T=(BB\T)^2$, so
+$A\T A=\lvert W\rvert:=(W\T W)^{1/2}$ and $BB\T=\lvert W\T\rvert:=(WW\T)^{1/2}$, the unique positive definite square roots.
+By \thmref{Observation}{III.2},
+\[K_W(G)=G\,\lvert W\rvert+\lvert W\T\rvert\,G ,\]
+a function of $W$ alone, invertible by \auxref{B.20}; as in (5) a backward method with $a=K^{1/2}$, $c=a\T$ reproduces the
+flow, and the leaf is an open subset of $\GL_n$ with metric $g_W(X,X)=\langle K_W^{-1}X,X\rangle$. The transpose $\tau(W)=W\T$
+is an isometry of $g$: $K_{W\T}(G\T)=(K_WG)\T$, so $K_{W\T}^{-1}(X\T)=(K_W^{-1}X)\T$ and
+$g_{W\T}(X\T,X\T)=g_W(X,X)$. Its fixed points in $\GL_n$ are the invertible symmetric matrices, and the positive definite ones
+form an open subset $F$ of them, an embedded submanifold on which $d\tau=\id$. A $g$-geodesic $\gamma$ with $\gamma(0)\in F$ and $\dot\gamma(0)$ tangent to $F$
+is carried by $\tau$ to a geodesic with the same initial data (\auxref{B.38}(a)), so $\tau\circ\gamma=\gamma$ and
+$\gamma$ stays in $F$ for small times. Every geodesic tangent to $F$ stays in $F$, so $F$ is totally geodesic, and by the
+Gauss equation its intrinsic sectional curvatures equal those of $g$ on its tangent planes (\auxref{B.38}(b)). On $F$,
+$\lvert W\rvert=\lvert W\T\rvert=W$, and the induced metric is $\langle L_W^{-1}X,X\rangle$ with $L_W(G)=GW+WG$ on $\Sym(n)$,
+half the cometric of (5); this is a constant multiple of the Bures--Wasserstein metric, which has a plane of positive
+sectional curvature for $n\ge2$ (\auxref{B.32}(b)). So $g$ has a plane of nonzero sectional curvature and is not flat.
+
+\emph{(7) Discrete steps and horizontal lines.} A plain GD step of the forward method from $q$, with $g=\nabla L(\rho(q))$,
+lands at $\rho(q-\eta v)$ with $v=\Lambda D\rho_q\T g$; the backward step lands at $\rho(q)-\eta\,a c\,g$. Agreement for small
+$\eta$ forces $ac=D\rho_q\Lambda D\rho_q\T$ as in (4), so the backward step is $\rho(q)-\eta\,D\rho_qv$. Agreement for every
+$\eta>0$, and for $-g$ as well as $g$ (another loss), says $\rho(q+tv)=\rho(q)+t\,D\rho_qv$ for all real $t$ in the domain:
+$\rho$ is affine along the line $q+t\Lambda D\rho_q\T g$.
+
+\emph{(8) Instances.} Within a period, GaLore's anchor is a fixed matrix $P_k$, LISA's a fixed coordinate inclusion, and
+MeZO's the fixed vector $z_t$ for its single step; none depends on $\theta$, so (3) applies on $U=\Theta$ (vacuously when a
+period is one step). Each pair has $c=a^*$ (\S\ref{proof:IV.1}), so with $\mathcal L=a$ it is the backward method of
+\thmref{Proposition}{IV.2}, and under that proposition's optimizer hypotheses each period is a period of the linear forward
+method $\theta_k+\mathcal LC$, merged at its end. For MeZO, $\mathcal L(\lambda)=\lambda z_t$, and the identification holds up
+to the error of the central difference (\auxref{B.34}). Integrability holds for all of them, so it cannot tell them apart,
+and by \thmref{Proposition}{IV.2} what distinguishes them from LoRA is how the projector changes and which state is
+carried. Flora's update contains the full-rank term $(1-\beta)\hat g_t$, APOLLO's is $G\,\diag(s)$ with $G$ the full
+gradient \citep{zhu2024apollo}, and Fira's adds a scaled multiple of $(I-P_tP_t\T)G$ \citep{chen2024fira}; for gradients with
+$(I-P_tP_t\T)G\ne0$ each update leaves $\operatorname{im}P_t$, so none is of the displayed form with $a=P_t$.
+
+\emph{(9) The GaLore field.} Let $L$ be smooth. On the open set where $\sigma_r(\nabla L(W))>\sigma_{r+1}(\nabla L(W))$,
+let $\Pi(W)$ be the orthogonal projector onto $U_r(\nabla L(W))$, the top-$r$ eigenspace of $S(W)=\nabla L(W)\nabla L(W)\T$. It
+is a smooth function of $W$ there, being a Riesz projector of $S(W)$ whose spectral gap persists (\auxref{B.37}). The fields
+$X_E(W)=\Pi(W)E$, $E\in\R^{m\times n}$, span $D_W=\{Z:\operatorname{col}Z\subseteq U_r\}$. Write $\Pi'(Z)=D\Pi(W)[Z]$.
+Differentiating $\Pi^2=\Pi$ gives $\Pi'\Pi+\Pi\Pi'=\Pi'$, hence $\Pi\Pi'\Pi=0$ and $(I-\Pi)\Pi'(I-\Pi)=0$. With
+$N(Z):=(I-\Pi)\Pi'(Z)\Pi$ and the symmetry of $\Pi'(Z)$,
+\begin{equation}\label{eq:C3-proj-deriv}
+\Pi'(Z)=N(Z)+N(Z)\T ,
+\end{equation}
+so $\Pi'(Z)=0$ iff $N(Z)=0$. The bracket is $[X_E,X_F]=\Pi'(\Pi E)F-\Pi'(\Pi F)E$, and its component normal to $D$ is
+\[(I-\Pi)[X_E,X_F]=N(\Pi E)\,\Pi F-N(\Pi F)\,\Pi E .\]
+\emph{Criterion.} If $U_r$ is invariant along $D$, that is $\Pi'(Z)=0$ for $Z\in D$, the normal component vanishes and $D$ is
+involutive. Conversely, let $D$ be involutive and $n\ge2$. For $u,u'\in U_r$ and $x,y\in\R^n$ linearly independent, take
+$\Pi E=ux\T$ and $\Pi F=u'y\T$: involutivity gives $N(ux\T)u'\,y\T=N(u'y\T)u\,x\T$. The left side has its rows in
+$\spanop\{y\}$ and the right side in $\spanop\{x\}$, so both vanish, and $N(ux\T)u'=0$. As $u'$ ranges over $U_r$ and
+$N(Z)$ vanishes on $U_r^\perp$, $N(ux\T)=0$ for all $u\in U_r$ and $x\in\R^n$ (given $x$, pick $y$ independent of it), so
+$N=0$ on $D$ by linearity, and $U_r$ is invariant along $D$. For right projection apply this to the transpose. The failure proved next covers every $1\le r<\min(m,n)$
+with $m,n\ge2$; the remaining case with a gap is $n=r=1$, where $D_W=U_1$ is a line field, and a line field is always
+involutive, since $[fX,gX]=(f\,Xg-g\,Xf)X$.
+
+\emph{Failure for $L=\tfrac12\lVert W\rVert_F^2$.} Here $\nabla L(W)=W$. Let $p=\min(m,n)\ge2$, $1\le r<p$, and
+$W=\sum_{i\le p}\sigma_ie_ie_i\T$ with $\sigma_1>\dots>\sigma_p>0$, so $U_r=\spanop\{e_1,\dots,e_r\}$ and $S=WW\T$ is
+diagonal with entries $\lambda_i=\sigma_i^2$ ($i\le p$) and $0$. For a smooth symmetric family $S(t)$ with $S(0)=S$,
+differentiating $[S(t),\Pi(t)]=0$ gives $[\dot S,\Pi]+[S,\dot\Pi]=0$; the $(i,j)$ entry with $i\le r<j$ reads
+$-\dot S_{ij}+(\lambda_i-\lambda_j)\dot\Pi_{ij}=0$, and $\dot\Pi$ vanishes on the diagonal blocks by the identities above.
+So $\dot\Pi_{ij}=\dot S_{ij}/(\lambda_i-\lambda_j)$ for $i\le r<j$. Take $Z=e_1x\T\in D$, so $\dot S=ZW\T+WZ\T$. Then
+$\dot S_{1j}=x\T W\T e_j=\sigma_jx_j$ for $r<j\le p$, $\dot S_{1j}=0$ for $j>p$, and $\dot S_{ij}=0$ for $2\le i\le r<j$. Hence
+\[N(e_1x\T)=\sum_{j=r+1}^{p}\frac{\sigma_jx_j}{\sigma_1^2-\sigma_j^2}\,e_je_1\T .\]
+With $E=e_1e_{r+1}\T$ and $F=e_1e_1\T$ we get $N(\Pi F)=0$ and
+\[(I-\Pi)[X_E,X_F]=N(e_1e_{r+1}\T)\,e_1e_1\T=\frac{\sigma_{r+1}}{\sigma_1^2-\sigma_{r+1}^2}\,e_{r+1}e_1\T\ne0 ,\]
+so $D$ is not involutive at $W$. At $m=n=2$, $r=1$ and $W=\diag(2,1)$, the frame $X_i=X_{e_1e_i\T}$ gives the full bracket
+$[X_1,X_2]=\Pi'(e_1e_1\T)e_1e_2\T-\Pi'(e_1e_2\T)e_1e_1\T=0-\tfrac13(e_1e_2\T+e_2e_1\T)e_1e_1\T=-\tfrac13e_2e_1\T$; the frame
+$X_i=u(W)e_i\T$, with $u$ the top left singular vector, gives the same value, since $Du[e_1e_1\T]=0$ and
+$Du[e_1e_2\T]=\tfrac13e_2$ at this $W$.
+
+\emph{Genericity.} For least squares $L(W)=\tfrac12\lVert WX-Y\rVert_F^2$ the normal component of the bracket of two fixed
+frame fields is a real-analytic function of $(W,X,Y)$ on the open set where the gap exists. It does not vanish identically
+on the connected component containing $(W,I_n,0)$ with $W$ as above, where it is the value just computed, so it is nonzero
+on an open dense subset of that component (\auxref{B.10}). The values for cross-entropy and for several samples are the
+numerical checks reported with the proposition.
+
+\emph{Single-sample least squares.} With one sample, $\nabla L(W)=(Wx-y)x\T$ has rank one and, where $Wx\ne y$,
+$U_1=\spanop\{Wx-y\}$. Moving $W$ along $Z=uv\T$ with $u\in U_1$ changes $Wx-y$ by $u(v\T x)\in U_1$, so $U_1$ is constant
+along $D$, and $D$ is involutive by the criterion.
+
+\emph{Time-dependence.} Minibatch GaLore with $T=1$ draws a new minibatch, and MeZO a new $z_t$, at every step, so their
+anchors are functions of $(t,\theta)$ and not of $\theta$ alone.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Observation IV.4}\label{proof:IV.4}
+
+\begin{restate}{Observation}{IV.4}{backward reach and the backprop cone; an upper bound}
+Assume reverse mode in which each box keeps its own residual, with no checkpointing across boxes, and take boxes at the
+granularity where adapters are separate boxes (for LoRA-FA, $A_0$ and $B$ separately). A \emph{VJP residual} is an input,
+an output, a sufficient statistic such as a ReLU mask, or a recipe to recompute one of these inside the box. Then it
+suffices to keep a VJP residual for
+\begin{itemize}
+  \item each trainable box whose parameter-VJP depends on its input: linear and multiplicative boxes such as $W$, $A$, $B$
+  and (IA)$^3$ scales; additive boxes such as biases and prompts need nothing;
+  \item each \emph{nonlinear} box, bilinear boxes such as the attention products included, on a directed path from a
+  trainable box to the loss.
+\end{itemize}
+Deterministic frozen linear boxes, and all boxes off this cone, need nothing; stochastic linear boxes on the cone
+(dropout) need their mask or random-number state. Alternatively, the $k$ coordinates of $P^\top\nabla L$ can be computed
+exactly by $k$ forward-mode JVPs, with no reverse pass and $O(1)$-layer activation memory, each JVP costing a small
+constant multiple (about $1.5$ to $3$) of a forward pass. This always uses less activation memory than un-checkpointed
+reverse mode, but it is time-competitive with one VJP (about $3$ forward passes) only for $k$ of about $1$ or $2$. It also
+needs $P$ before the passes, so it cannot produce GaLore's SVD refresh, where $P$ depends on $\nabla L$, more cheaply than a
+backward pass ($\nabla L$ itself would take $\lvert\theta\rvert$ JVPs).
+\end{restate}
+
+\begin{proof}
+\emph{The computation.} The network is a directed acyclic graph of boxes. A box receives inputs $x$ (activations), may carry
+parameters $p$, and produces an output $y=f(x,p)$; the loss is the output of the last box. Reverse mode propagates
+cotangents backwards. For a box with output cotangent $\bar y$ it computes the input cotangents $\bar x=J_xf(x,p)\T\bar y$
+and, for a trainable box, the parameter cotangent $\bar p=J_pf(x,p)\T\bar y$ (\bgref{B.17}). Call the \emph{cone} the set of
+boxes on a directed path from a trainable box to the loss.
+
+\emph{Pruning.} The parameter gradients are sums over paths from the parameters to the loss of products of Jacobians, so
+only cotangents of wires on such paths contribute. A wire whose value does not depend on any trainable parameter carries a
+cotangent that is never multiplied into a parameter gradient, so its cotangent need not be formed. Hence it suffices to
+compute $\bar y$ for the outputs of boxes on the cone, $\bar x$ for those inputs of cone boxes that are produced on the
+cone, and $\bar p$ for the trainable boxes. Boxes off the cone take no part in the backward sweep and need no residual.
+
+\emph{What each box on the cone needs.} We list, for each kind of box, what the backward sweep reads besides $\bar y$ and
+the weights, which are stored anyway.
+\begin{itemize}
+  \item A deterministic frozen linear or affine box, $y=Wx+b$: $\bar x=W\T\bar y$ does not involve $x$, so no residual.
+  \item A dropout box, $y=\mathsf m\odot x/(1-p)$: $\bar x=\mathsf m\odot\bar y/(1-p)$, so it needs its mask, or the random
+  state that regenerates it.
+  \item A trainable linear box, $y=Wx$: $\bar W=\bar y\,x\T$, summed over tokens, so it needs its input $x$; $\bar x=W\T\bar
+  y$ needs nothing more. A trainable multiplicative box, $y=\ell\odot x$: $\bar\ell=\sum\bar y\odot x$, so it needs $x$,
+  and $\bar x=\ell\odot\bar y$.
+  \item A trainable additive box, $y=x+b$, or a prompt, $y=[P;x]$: $\bar b=\sum\bar y$ and $\bar P$ is the slice of $\bar y$
+  at the prompt positions, and $\bar x$ is $\bar y$ or its slice; no residual.
+  \item A nonlinear box, $y=f(x)$, possibly with frozen parameters: $\bar x=J_f(x)\T\bar y$ depends on $x$ through
+  $J_f(x)$, so it needs something from which $J_f(x)\T\bar y$ can be formed: the input, the output (for tanh, sigmoid or
+  softmax), a mask (for ReLU), or a recipe to recompute one of them. A bilinear box is nonlinear in its joint input; for
+  $y=a\odot b$, $\bar a=\bar y\odot b$ and $\bar b=\bar y\odot a$, and for the attention products $QK\T$ and $PV$ the same
+  holds with matrix products.
+\end{itemize}
+A trainable nonlinear box lies on the cone, being on a path from itself to the loss, so it is covered by the second bullet,
+and also by the first if its parameter-VJP reads its input. Processing the cone in reverse topological order, each box has
+$\bar y$ available (it is a sum of input cotangents of its readers on the cone) together with its residual, so the sweep
+computes every parameter gradient exactly. This proves that the residuals listed suffice. For LoRA-FA, $A_0$ is a frozen
+linear box and needs nothing, while $B$ is a trainable linear box whose input is $A_0x$, so $B$ keeps $A_0x$.
+
+\emph{The forward-mode route.} The $i$-th coordinate of $P\T\nabla L$ is $\langle p_i,\nabla L(\theta)\rangle=DL(\theta)[p_i]$,
+the directional derivative along the $i$-th column of $P$. By \auxref{B.33}(a), forward mode computes it alongside one
+evaluation of $L$ at a small constant multiple of that cost, carrying each tangent with its value and discarding both once
+consumed. In a layered network this keeps the values and tangents of $O(1)$ layers alive at a time, whereas un-checkpointed
+reverse mode keeps the residuals of every box on the cone until the backward sweep reaches it. The $k$ coordinates cost
+$k$ such passes. One reverse pass costs about three forward passes, so with a per-JVP cost of $1.5$ to $3$ forward passes the
+forward route is no slower only when $1.5k$ to $3k$ is at most about $3$, that is, for $k$ of about $1$ or $2$. The
+directions $p_i$ must be fixed before the passes. GaLore's refresh computes $P$ from the SVD of the full gradient $\nabla L$
+of each projected matrix, and $\nabla L$ by forward mode costs one pass per coordinate, $\lvert\theta\rvert$ passes, against
+one reverse pass (\auxref{B.33}(b)).
+
+\emph{MeZO.} The central difference estimates $DL(\theta)[z]$ with error $O(\varepsilon^2)$ when $L$ has a Lipschitz
+Hessian, and is unbiased for the gradient of the Gaussian smoothing of $L$ (\auxref{B.34}).
+\end{proof}
+
+% ====================================================================================================
+\subsection{Definition V.1}\label{proof:V.1}
+
+\begin{restate}{Definition}{V.1}{base change and rebasing}
+\begin{itemize}
+  \item[(a)] A \emph{function-preserving} pointed reparametrisation $\phi:(\Theta',f',\theta_0')\to(\Theta,f,\theta_0)$,
+  with $f\circ(\phi\times\id_X)=f'$, induces by postcomposition
+  \[\phi_!:\Meth(\Theta',\theta_0')\to\Meth(\Theta,\theta_0),\qquad(Q,q_0,\rho)\mapsto(Q,q_0,\phi\circ\rho).\]
+  \item[(b)] A map $\kappa:\Theta\to\Theta$ that does \emph{not} preserve the function, such as a quantiser, moves the
+  base point. Its \textbf{pointing defect} is $e=\kappa\theta_0-\theta_0$.
+  \item[(c)] A \textbf{rebasing scheme} (merge-and-restart) picks $\theta_{k+1}\in\Im M(\theta_k)$. Its reachable sets
+  are $R_K$, the points $\theta_K$ it can reach in $K$ cycles, and $R_\infty=\bigcup_KR_K$.
+\end{itemize}
+\end{restate}
+
+A definition needs no proof. We check that $\phi_!$ is a functor that preserves the realised functions, and record the
+recursion for the reachable sets that the proofs of \thmref{Theorem}{V.3} use.
+
+\begin{proof}[Verification of the claims in Definition V.1]
+(a) Since $\phi(\theta_0')=\theta_0$, the map $\phi\circ\rho$ sends $q_0$ to $\theta_0$, so $\phi_!M$ is an object of
+$\Meth(\Theta,\theta_0)$. A morphism $h:M\to N$ is a pointed smooth map with $\rho_N\circ h=\rho_M$
+(\thmref{Definition}{I.2}); then $(\phi\circ\rho_N)\circ h=\phi\circ\rho_M$, so the same $h$ is a morphism
+$\phi_!M\to\phi_!N$. Setting $\phi_!h=h$ preserves identities and composition, so $\phi_!$ is a functor, the
+postcomposition functor of slice categories (\bgref{A.19}). It changes neither the parameter space nor the realised
+functions: for $q\in Q$,
+\[f\big(\phi(\rho(q)),x\big)=f'\big(\rho(q),x\big)\qquad\text{for all }x\in X,\]
+so $\phi_!M$ computes exactly the functions $M$ computes, and $\Im\phi_!M=\phi(\Im M)$.
+
+(b) is a definition. (c) Put $R_0=\{\theta_0\}$. Each cycle trains the method $M(\theta_k)$ over the current base and
+merges, so the points reachable in $K+1$ cycles are
+\[R_{K+1}=\bigcup_{\theta\in R_K}\Im M(\theta).\]
+When every $M(\theta)$ is pointed at $\theta$, that is $\rho_\theta(q_0)=\theta$, we have $\theta\in\Im M(\theta)$, so
+$R_K\subseteq R_{K+1}$ and $R_\infty$ is an increasing union.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Proposition V.2}\label{proof:V.2}
+
+\begin{restate}{Proposition}{V.2}{quantisation and splitting}
+Write $W$ for the full-precision weight, $\kappa$ for the quantiser, $e=\kappa W-W$, $\delta_0=\delta(q_0)$, and $s$ for the
+LoRA scale $\alpha/r$ ($\alpha/\sqrt r$ under rsLoRA).
+
+(a) Additive families commute with translation, $M(\theta+v)=\tau_v\circ M(\theta)$. Hence QLoRA is LoRA pointed at
+$\kappa\theta_0$, with defect $e$, and it needs no new weight-space structure. Since $-e$ is generically of full rank,
+$\theta_0\notin\Im\mathrm{LoRA}_r(\kappa\theta_0)$ unless $\rk e\le r$.
+
+(b) For splitting families derived from an SVD or from data, the order of operations matters, and three orders occur in
+practice.
+\begin{itemize}
+  \item \emph{Split, then quantise the residual} (QPiSSA; HF's recommended PiSSA and CorDA workflow; the quantisation
+  half-step of LoftQ for $t\ge2$, with $W_{\rm res}=W-\delta(q_{t-1})$). The defect is $\kappa(W_{\rm res})-W_{\rm res}$.
+  \item \emph{Quantise, then fit the error} (LoftQ with one iteration, HF's default \texttt{loftq\_iter=1}; HF
+  \texttt{replace\_\allowbreak lora\_\allowbreak weights\_\allowbreak loftq}). HF sets the factors from
+  $\operatorname{SVD}_r(W-\kappa W)$ without dividing by $s$, unlike its PiSSA and OLoRA initialisations, so
+  $\delta_0=-s\operatorname{SVD}_r(e)$ and the defect is $e-s\operatorname{SVD}_r(e)$, with
+  \[\lVert e-s\operatorname{SVD}_r(e)\rVert^2=\lVert e-\operatorname{SVD}_r(e)\rVert^2+(1-s)^2\lVert\operatorname{SVD}_r(e)\rVert^2.\]
+  The defect is $e$ minus its best rank-$r$ approximation (of rank $\rk e-r$) iff $s=1$, which is HF's bare default
+  $r=\alpha=8$. For $s=2$ its norm equals $\lVert e\rVert$, no better than QLoRA. With a callback,
+  \texttt{replace\_\allowbreak lora\_\allowbreak weights\_\allowbreak loftq} can roll a module back to the zero
+  initialisation, whose defect is $e$.
+  \item \emph{Quantise, split, re-quantise} (HF \texttt{olora\_init} on bitsandbytes weights). The defect is
+  $e+\kappa(r')-r'$ with $r'=\kappa W-\delta_0$.
+\end{itemize}
+Quantise-then-split has defect exactly $e$ iff the frozen part equals $\kappa W-\delta_0$, for instance $\kappa W$ kept
+quantised minus a frozen copy of the rank-$r$ $\delta_0$, at a cost of about $r(m+n)$ extra numbers. Re-quantising the
+residual, as HF \texttt{olora\_init} does, generically adds $\kappa(r')-r'$.
+
+Action families whose pointing does not depend on the base (OFT at $R=I$, BOFT at $R=I$ with unit scale, HiRA at $B=0$),
+evaluated at $\kappa\theta_0$, simply carry the defect $e$. Methods whose pointing is computed from the base have an order
+ambiguity of their own. DoRA's magnitude initialised from $\kappa\theta_0$ gives defect $e$, while initialised from
+$\theta_0$ it gives $\diag\big(\lVert w_{0,i}\rVert/\lVert(\kappa\theta_0)_i\rVert\big)\,\kappa\theta_0-\theta_0$. For
+action families a base change also moves the absolute invariants, along with the base point. NF4's exact zero code
+enlarges the zero set that HiRA must preserve, and exactly orthogonal (exact-Cayley) OFT preserves the Gram matrix of
+$\kappa\theta_0$ rather than that of $\theta_0$; HF's default Cayley--Neumann OFT preserves it only approximately.
+
+(c) LoftQ alternates two updates on $\lVert\theta_0-Q-LR\rVert$, an exact rank-$r$ SVD step and a round-to-nearest
+quantisation step with blockwise scales recomputed from its input. The second is not an exact projection, so the
+objective need not decrease monotonically. With $s=1$ the output is pointed up to the attained residual. It is then an
+\emph{approximate section}, a choice $(Q,q_0)$ with reduced $\lVert\rho(q_0)-\theta_0\rVert$. In general, with $Q_T$ and
+the low-rank fit $L_TR_T$ after $T$ iterations, HF's deployed defect is $(Q_T+L_TR_T-W)+(s-1)L_TR_T$, because HF's internal
+residual also omits $s$. The official LoftQ checkpoints use $r=64$ and $\alpha=16$, so $s=1/4$, and then the deployed
+defect can grow with $T$ while the attained residual falls.
+
+(d) For a generic high-precision adapter $\Delta$, fine-tune-then-quantise and quantise-then-fine-tune do not commute. The
+first lands on the quantisation grid. In the second, the exactly merged weight $\kappa\theta_0+\Delta$ leaves the
+quantised type. For a uniform fixed-scale INT-$k$ grid, $\kappa\theta_0+\Delta$ stays on the grid iff $\Delta$ lies on
+the scale lattice (within range), so there the obstruction is the off-grid update. NF4 is non-uniform and not closed under
+addition, and absmax grids whose scales are recomputed are not closed either, so for QLoRA's NF4 the grid itself is part of
+the obstruction. Type-preserving merges, such as HF PEFT's dequantise--add--requantise for bitsandbytes 4- and 8-bit
+layers, re-quantise with recomputed block scales, so they stay in the quantised type but are lossy. Under affine group
+quantisation QA-LoRA is the structured exception. Its group-pooled adapter is constant on each quantisation group and
+merges into the zero-points, so the merged model stays INT-$k$.
+\end{restate}
+
+\begin{proof}
+\emph{Quantisers.} We use two properties of the blockwise quantisers in practice (NF4 and INT-$k$, with a fixed scale or
+the absmax scale of each block, \citealp{dettmers2023qlora,dettmers20218}). First, $\kappa$ rounds each entry, divided by
+its block's scale, to the nearest point of a finite codebook and multiplies back, so its values, the \emph{representable}
+matrices, form a Lebesgue-null set: a finite set for fixed scales, and for absmax scales a finite union of sets with one
+free scale per block of $\beta\ge2$ entries. Second, $\kappa$ is idempotent, $\kappa(\kappa X)=\kappa X$, and it fixes
+exactly the representable matrices.
+
+(a) An additive family has $\rho_\theta(q)=\theta+\delta(q)$ with $\delta$ independent of the base and $\delta(q_0)=0$
+(\thmref{Definition}{I.2}). Then $\rho_{\theta+v}(q)=v+\rho_\theta(q)=\tau_v(\rho_\theta(q))$, which is the first claim.
+QLoRA trains zero-initialised LoRA over the frozen base $\kappa\theta_0$, so it is $\mathrm{LoRA}_r(\kappa\theta_0)$, with
+$\rho(q_0)=\kappa\theta_0$ and defect $\rho(q_0)-\theta_0=e$. Since every matrix of rank at most $r$ has the form $sBA$
+($s\ne0$), $\theta_0=\kappa\theta_0+sBA$ for some $(B,A)$ iff $\rk(-e)\le r$.
+
+\emph{The word ``generically''.} For a fixed-scale quantiser, $\kappa$ is constant on each open cell of a decomposition of
+$\Theta$ into countably many cells and a null set of boundaries, so on a cell $e=K-W$ with $K$ constant. The rank-deficient
+matrices are the common zeros of the maximal minors, a proper algebraic subset, and $W\mapsto K-W$ is a bijection, so $e$
+has full rank for almost every $W$ in each cell, hence for almost every $W$ (\auxref{B.10}). For an absmax quantiser with
+blocks of $\beta\ge2$ consecutive entries of a row, take the cells on which every code and the position of every block
+maximum are constant. With the scale stored exactly, the block maximum is represented exactly, so $e$ vanishes at those positions, and each other
+entry is $e_{ij}=a\,c_{ij}-W_{ij}$ with $a$ the scale of its block and $c_{ij}$ its code; varying $W_{ij}$ alone moves
+$e_{ij}$ alone. So on each cell $e$ fills an open subset of the space $Z$ of matrices vanishing at the block maxima, and its
+rank is, for almost every $W$ in the cell, the largest rank in $Z$. A row of length $n$ has at most $\lceil n/\beta\rceil+1$
+forced zeros, so $Z$ contains a matrix of rank $r+1$ whenever $r+1\le n-\lceil n/\beta\rceil-1$ and $r<m$ (place $r+1$
+nonzero entries in distinct rows and columns, avoiding the forced zeros, greedily). Hence $\rk e>r$, and
+$\theta_0\notin\Im\mathrm{LoRA}_r(\kappa\theta_0)$, for almost every $W$ in this range. Full rank holds for almost every
+$W$ in each cell whose zero pattern admits a matrix of full rank; the other cells, in which the block maxima of many rows
+fall in a few common columns, have positive but tiny measure (for instance, a column of zeros needs the maximum of its
+block in every row, probability $\beta^{-m}$ per column for weights with independent continuous entries).
+
+(b) In each pipeline the initial weight is $\rho(q_0)=F+\delta_0$, where $F$ is the frozen part and $\delta_0$ the initial
+adapter, and the defect is $F+\delta_0-W$.
+\begin{itemize}
+  \item \emph{Split first.} $F=\kappa(W_{\rm res})$ with $W_{\rm res}=W-\delta_0$, so the defect is
+  $\kappa(W_{\rm res})+\delta_0-W=\kappa(W_{\rm res})-W_{\rm res}$. In LoftQ's quantisation half-step for $t\ge2$ the same
+  computation applies with $\delta_0$ replaced by the current fit $\delta(q_{t-1})=L_{t-1}R_{t-1}$.
+  \item \emph{Quantise, then fit.} $F=\kappa W$ and HF sets $L R=\operatorname{SVD}_r(W-\kappa W)=-\operatorname{SVD}_r(e)$
+  (the best rank-$r$ approximation is odd, $\operatorname{SVD}_r(-X)=-\operatorname{SVD}_r(X)$), and the forward pass
+  multiplies by $s$, so $\delta_0=-s\operatorname{SVD}_r(e)$ and the defect is $e-s\operatorname{SVD}_r(e)$. Write
+  $P=\operatorname{SVD}_r(e)$. By \auxref{B.11}(b), $P$ and $e-P$ are Frobenius-orthogonal, so
+  $\lVert e-sP\rVert^2=\lVert(e-P)+(1-s)P\rVert^2=\lVert e-P\rVert^2+(1-s)^2\lVert P\rVert^2$. For $e\ne0$, $P\ne0$, so the
+  defect equals $e-P$ iff $s=1$; then it has rank $\rk e-r$ when $\rk e\ge r$, being the sum of the singular terms beyond
+  the $r$-th. HF's defaults $r=\alpha=8$ give $s=\alpha/r=1$. For $s=2$, $\lVert e-2P\rVert^2=\lVert e-P\rVert^2+\lVert
+  P\rVert^2=\lVert e\rVert^2$, again by orthogonality; in general $\lVert e-sP\rVert<\lVert e\rVert$ iff $(1-s)^2<1$, that is
+  $0<s<2$. A module rolled back to the zero initialisation has $\delta_0=0$ and defect $\kappa W-W=e$.
+  \item \emph{Quantise, split, re-quantise.} The split is computed from $\kappa W$, the residual $r'=\kappa W-\delta_0$ is
+  re-quantised, and $F=\kappa(r')$. The defect is $\kappa(r')+\delta_0-W=(\kappa(r')-r')+(\kappa W-W)=e+\kappa(r')-r'$.
+\end{itemize}
+For quantise-then-split with frozen part $F$, the defect $F+\delta_0-W$ equals $e=\kappa W-W$ iff $F=\kappa W-\delta_0$.
+Storing $\kappa W$ quantised together with the frozen factors of $\delta_0=sL_0R_0$, which hold $r(m+n)$ numbers, realises
+this $F$ exactly. Re-quantising instead adds $\kappa(r')-r'$, which vanishes iff $r'$ is representable, that is, iff $r'$
+lies in the null set of representable matrices.
+
+\emph{Action families.} OFT at $R=I$ gives $\rho(q_0)=\kappa\theta_0\,I=\kappa\theta_0$, BOFT at $R=I$ with unit scale gives
+$\diag(\mathbf 1)\,\kappa\theta_0\,I=\kappa\theta_0$, and HiRA at $B=0$ gives $\kappa\theta_0+\kappa\theta_0\odot(0\cdot
+A)=\kappa\theta_0$; each has defect $e$. DoRA at $B=0$ computes $\rho(q_0)=\diag\big(\mu_{0,i}/\lVert(\kappa\theta_0)_i\rVert\big)
+\kappa\theta_0$, normalising the rows of its frozen base $\kappa\theta_0$ (assumed nonzero) and rescaling them by the
+magnitude vector $\mu_0$. If $\mu_0$ holds the row norms of $\kappa\theta_0$, then $\rho(q_0)=\kappa\theta_0$ and the defect
+is $e$; if it holds those of $\theta_0$, the defect is the displayed matrix.
+
+\emph{Moved invariants.} HiRA's update $W\mapsto W\odot(\mathbf 1+BA)$ preserves every zero entry of its base
+(\thmref{Proposition}{II.9}(e)). NF4 contains the code $0$, so every entry of $\theta_0$ whose ratio to its block's absmax
+rounds to $0$ becomes an exact zero of $\kappa\theta_0$, while zero entries of $\theta_0$ stay zero; the zero set of
+$\kappa\theta_0$ therefore contains that of $\theta_0$, and generically more. Exact-Cayley OFT has
+$\rho(Q)\rho(Q)\T=\kappa\theta_0\,C(Q)C(Q)\T\kappa\theta_0\T=\kappa\theta_0\kappa\theta_0\T$ (\thmref{Corollary}{II.6}). HF's
+default factor is $R=C(Q)(I-Q^4)$ (\auxref{B.23}(e)), so $\rho\rho\T=\kappa\theta_0(I-Q^4)^2\kappa\theta_0\T=
+\kappa\theta_0\kappa\theta_0\T+O(\lVert Q\rVert^4)$.
+
+(c) LoftQ starts from $L_0R_0=0$ and, for $t\ge1$, sets $Q_t=\kappa(\theta_0-L_{t-1}R_{t-1})$ and
+$L_tR_t=\operatorname{SVD}_r(\theta_0-Q_t)$. By \auxref{B.11}(b) the SVD step minimises $\lVert\theta_0-Q_t-LR\rVert$ over
+rank-$r$ products, so it never increases the objective. The quantisation step returns $\kappa(y)$ for $y=\theta_0-L_{t-1}
+R_{t-1}$, which need not be the representable matrix nearest to $y$, and the objective can increase. An example with blocks
+equal to the rows of a $2\times3$ matrix, absmax scales, the codebook $\{0,\pm\tfrac12,\pm1\}$ and $r=1$:
+\[\theta_0=\begin{pmatrix}1&1&-\tfrac54\\ \tfrac54&1&-1\end{pmatrix},\quad
+Q_1=\kappa(\theta_0)=\tfrac54\begin{pmatrix}1&1&-1\\1&1&-1\end{pmatrix},\quad
+\theta_0-Q_1=\tfrac14\begin{pmatrix}-1&-1&0\\0&-1&1\end{pmatrix}.\]
+Here $(\theta_0-Q_1)(\theta_0-Q_1)\T=\tfrac1{16}\left(\begin{smallmatrix}2&1\\1&2\end{smallmatrix}\right)$ has eigenvalues
+$\tfrac3{16}$ and $\tfrac1{16}$, with top eigenvector $(1,1)/\sqrt2$, so $L_1R_1=\tfrac12\left(\begin{smallmatrix}1&1\\1&1
+\end{smallmatrix}\right)(\theta_0-Q_1)=\tfrac18\left(\begin{smallmatrix}-1&-2&1\\-1&-2&1\end{smallmatrix}\right)$ and the
+objective after the SVD step is $\lVert\theta_0-Q_1-L_1R_1\rVert^2=\tfrac1{16}$. The next quantisation step acts on
+$y=\theta_0-L_1R_1=\tfrac18\left(\begin{smallmatrix}9&10&-11\\11&10&-9\end{smallmatrix}\right)$. Each row has absmax
+$\tfrac{11}8$, and the ratios $\tfrac9{11}$ and $\tfrac{10}{11}$ round to $1$, so $Q_2=\tfrac{11}8\left(\begin{smallmatrix}1&1&-1\\1&1&-1
+\end{smallmatrix}\right)$ and
+\[\lVert\theta_0-Q_2-L_1R_1\rVert^2=\lVert y-Q_2\rVert^2=2\Big(\tfrac1{16}+\tfrac1{64}\Big)=\tfrac5{32}>\tfrac1{16}.\]
+The objective rose, and $Q_1$, which is representable, is closer to $y$ than $\kappa(y)$. The deployed weight after $T$
+iterations is $Q_T+sL_TR_T$, because HF stores the fitted factors and the forward pass multiplies by $s$; its defect is
+\[Q_T+sL_TR_T-W=(Q_T+L_TR_T-W)+(s-1)L_TR_T .\]
+For $s=1$ this is minus the attained residual, so the output is pointed up to that residual. For $s\ne1$ the second term
+$(s-1)L_TR_T$ is proportional to the fit itself and does not shrink with the residual; in the referee simulation of the official configuration ($r=64$, $\alpha=16$, $s=1/4$,
+five iterations, a Gaussian $512\times512$ NF4 weight) the attained residual falls to $0.67\lVert e\rVert$ while the deployed
+defect rises from $0.91\lVert e\rVert$ to $0.96\lVert e\rVert$ (Appendix~\ref{app:repro}).
+
+(d) Fine-tuning and then quantising gives $\kappa(\theta_0+\Delta)$, a value of $\kappa$. Exact merging after quantising gives
+$\kappa\theta_0+\Delta$, which is representable iff $\Delta$ lies in the translate of the representable set by
+$-\kappa\theta_0$, a null set; so for generic $\Delta$ it leaves the quantised type and the two orders differ. For a uniform
+grid with a fixed scale $a$ per block, the representable matrices are $a$ times integer codes in range, so
+$\kappa\theta_0+\Delta$ is representable iff $\Delta=a(c'-c_0)$ with $c'$ in range, that is, iff $\Delta$ lies on the scale
+lattice. NF4 is not closed under addition. Its smallest positive code is $q_1\approx0.0796$, and $2q_1\approx0.1592$ is not a
+code (the next codes are $0.0796$ and $0.1609$). The blocks $(1,q_1,0,\dots)$ and $(0,q_1,0,\dots)$ are representable,
+with absmax scales $1$ and $q_1$, but their sum $(1,2q_1,0,\dots)$ has absmax $1$ and needs the code $2q_1$. Absmax grids
+with uniform codes of step $h$ are not closed either: $(1,h,0,\dots)$ and $(h,0,0,\dots)$ are representable, while their sum
+$(1+h,h,0,\dots)$ would need the code $h/(1+h)$, which is not a multiple of $h$ for $0<h<1$. A type-preserving merge
+returns $\kappa(\kappa\theta_0+\Delta)$, which is representable and differs from $\kappa\theta_0+\Delta$ whenever the latter
+is not, so it is lossy for generic $\Delta$. Finally, affine group quantisation stores each group $g$ as $a_gc_g+\beta_g\mathbf
+1$, with integer codes $c_g$ and a high-precision scale $a_g$ and zero-point $\beta_g$. QA-LoRA pools its input over the
+quantisation groups, so its update is constant on each group, $\Delta_g=\delta_g\mathbf 1$ \citep{xu2023qa}, and
+$a_gc_g+\beta_g\mathbf 1+\delta_g\mathbf 1=a_gc_g+(\beta_g+\delta_g)\mathbf 1$ keeps the codes and moves only the zero-point.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem V.3}\label{proof:V.3}
+
+\begin{restate}{Theorem}{V.3}{rebasing closure}
+(a) \emph{Additive methods with a fixed shape $C\ni0$}, with frames, masks and compression operators frozen at $\theta_0$
+across cycles. Then $R_K=\theta_0+C^{+K}$, the $K$-fold Minkowski sum, and $R_\infty=\theta_0+\operatorname{Mon}(C)$, the
+additive monoid generated by $C$. If $C$ is closed under real scalings, $R_\infty=\theta_0+\spanop C$.
+
+(b) \emph{Action methods}, where one cycle applies an element of a set $S$ with $1\in S\subseteq G$; for scaling methods,
+$S\subseteq\operatorname{End}(\Theta)$ is a subset containing the identity. Then $R_K=S^K\theta_0$, and $R_\infty$ is the
+orbit of the monoid generated by $S$. Suppose $S$ lies in the subgroup generated by connected Lie subgroups
+$H_1,\dots,H_p$ and contains a neighbourhood of $1$ in each. Then the monoid generated by $S$ is the connected Lie subgroup
+$H$ with $\operatorname{Lie}(H)=\operatorname{Lie}\langle\mathfrak h_1,\dots,\mathfrak h_p\rangle$.
+
+(c) \emph{Block-orthogonal factors.} Let the factors have coordinate blocks $I_j\subseteq\{1,\dots,n\}$ (block OFT, BOFT
+factors, Givens planes). Then $\operatorname{Lie}\langle\so(I_j)\rangle_j=\bigoplus_C\so(C)$, summed over the connected
+components $C$ of the hypergraph $(\{1,\dots,n\},\{I_j\})$.
+
+\emph{Corollaries.}
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+  \item \textbf{ReLoRA.} $R_K=W_0+\MM_{\le\min(Kr,m,n)}$. It reaches full fine-tuning iff $K\ge\lceil\min(m,n)/r\rceil$.
+  \item \textbf{Idempotent methods} gain nothing from rebasing. These are the methods whose shape is exactly a subspace,
+  subgroup or submonoid independent of the base, with frames, masks and compression operators frozen across cycles:
+  LoRA-FA with a fixed $A$, LoRA-XS with frozen frames, MoRA with fixed operators, FourierFT with fixed indices, WaveFT,
+  C3A, MiSS (default balance mode; bat mode is base-dependent but still idempotent, since its blockwise maps
+  $W\mapsto(W+I)(I+M)-I$ form a monoid), SHiRA, BitFit, FISH with a fixed mask, LN-tuning, (IA)$^3$, SSF and RoAd. Block OFT
+  with a fixed partition and an exact Cayley map gains only the measure-zero set of block rotations with an eigenvalue
+  $-1$, so $R_\infty=W_0\cdot\prod\SO(b)=\overline{R_1}$. Constrained OFT (COFT, an $\varepsilon$-ball) with an exact Cayley
+  map gains up to $\prod\SO(b)$; HF's \texttt{coft=True} keeps the Cayley--Neumann map by default and so falls under
+  corollary~4. Methods that recompute frames or masks from the merged weight (an SVD-recomputing LoRA-XS, ReMoRA's
+  alternating operators, resampled indices) do gain.
+  \item \textbf{VeRA.} $\mathrm{VeRA}^\infty=\text{LoRA-FA}(A)$ whenever the frozen $B$ has no zero entries.
+  \item \textbf{OFT family.} Block OFT with an exact Cayley map is stuck in $W_0\cdot\prod\SO(b)$. HF's default
+  Cayley--Neumann factor is $R=C(Q)(I-Q^4)$, with $C$ the exact Cayley map, so $R\T R=(I-Q^4)^2$ and $R$ is not orthogonal.
+  Its singular values are $\lvert1-\mu_k^4\rvert$, where $\pm i\mu_k$ are the eigenvalues of $Q$. In the operating regime
+  $\lVert Q\rVert_{\rm op}\le2^{1/4}$, every factor is a contraction. Re-merging then decreases $K_{\rm out}$ in the
+  Loewner order and no singular value grows, so the drift is monotone shrinkage, and the reachable set lies in $W_0$ times
+  the block contraction semigroup. With unconstrained $Q$ the factors include singular ones ($\mu_k=1$), and re-merging
+  generates $\prod\big(\GL^+(b)\cup\MM_{\le b-2}\big)$, or $\prod\big(\CO^+(2)\cup\{0\}\big)$ when $b=2$; this clause is
+  established at the level of a proof sketch. Iterated BOFT (exact Cayley in HF) with $m'$ butterfly factors
+  of block size $b$ reaches $\diag(\R^m)\cdot W_0\cdot P\big(\prod\SO(b\,2^{m'-1})\big)P\T$, because the factor hypergraph
+  has components of size $b\,2^{m'-1}$. For injective $W_0$ this is $\diag(\R^m)\cdot W_0\cdot\SO(n)$ iff
+  $b\,2^{m'-1}=n$, the full-depth butterfly $m'=1+\log_2(n/b)$. HF's default \texttt{boft\_\allowbreak n\_\allowbreak butterfly\_\allowbreak factor=1} is
+  block OFT times $\diag(s)$. A \emph{single} full-depth BOFT has dimension at most $m'\tfrac nb\binom b2$, which is below
+  $\dim\SO(n)$ when $m'(b-1)<n-1$; its matrices are dense, while the set they form has positive codimension.
+  \item \textbf{Re-HRA} (HF \texttt{apply\_GS=False}), with $W_0$ injective and $r$ even. Then
+  $R_K=(W_0+\MM_{\le Kr})\cap W_0\cdot\SO(n)$, so rebasing commutes with the meet of \thmref{Theorem}{II.7}. This
+  multiplicative twin of ReLoRA reaches $W_0\cdot\SO(n)$ in at most $\lceil n/r\rceil$ cycles.
+  \item \textbf{GaLore (with a gradient-SVD or a random projector), LISA and MeZO}, under the optimizer hypotheses of
+  \thmref{Proposition}{IV.2}, are rebasing schemes of \emph{linear} methods whose shape moves. That is why, as a set over
+  the sequences of shapes they can choose, they reach all of $\Theta$, while a fixed linear shape $L$ reaches only
+  $\theta_0+L$ (corollary~2). Low rank is the per-period obstruction only for GaLore; LISA and MeZO already make full-rank
+  per-matrix updates and gain coverage. Flora proper takes full-space steps with a compressed momentum, so it has no
+  per-period low-rank shape.
+  \item \textbf{Merging never rescues an exactly orthogonal method from its absolute invariants.} In exact arithmetic,
+  every exactly orthogonal input-side rebasing preserves $K_{\rm out}$ and the spectrum, and every output-side one
+  preserves $K_{\rm in}$ and the spectrum.
+\end{enumerate}
+\end{restate}
+
+\begin{proof}
+(a) With frames, masks and compression operators frozen, every cycle trains the same additive shape over the current
+base: $\Im M(\theta)=\theta+C$ for every $\theta$. By the recursion of \S\ref{proof:V.1}, $R_1=\theta_0+C$ and
+$R_{K+1}=\bigcup_{\theta\in R_K}(\theta+C)=R_K+C$, so $R_K=\theta_0+C^{+K}$ by induction. Since $0\in C$, the sets $C^{+K}$
+increase, and their union is the additive monoid $\operatorname{Mon}(C)$ generated by $C$ (\bgref{D.10}); hence
+$R_\infty=\theta_0+\operatorname{Mon}(C)$. If $\lambda C\subseteq C$ for every real $\lambda$, then $-C=C$, so
+$\operatorname{Mon}(C)$ is closed under negation and is an additive subgroup, and
+$\lambda(x_1+\dots+x_K)=\lambda x_1+\dots+\lambda x_K$ shows that it is closed under scaling. So it is a linear subspace
+containing $C$ and contained in $\spanop C$, and equals $\spanop C$.
+
+(b) Each cycle applies one element of $S$ to the current point, so $\Im M(\theta)=S\theta$, and the recursion gives
+$R_K=S^K\theta_0$. Since $1\in S$, the sets $S^K$ increase and their union is the monoid $\operatorname{Mon}(S)$ generated
+by $S$, so $R_\infty=\operatorname{Mon}(S)\,\theta_0$, the orbit of $\theta_0$ under that monoid. For the second statement,
+let $U_i\subseteq S$ be a neighbourhood of $1$ in $H_i$. Then $U_i\cap U_i^{-1}$ is a symmetric neighbourhood of $1$ in the
+connected Lie group $H_i$, so it generates $H_i$ as a monoid (\auxref{B.24}(a)), and $H_i\subseteq\operatorname{Mon}(S)$.
+Each $H_i$ is a group, so the monoid generated by $H_1\cup\dots\cup H_p$ is closed under inverses and equals the subgroup
+they generate, which is the connected Lie subgroup $H$ with $\operatorname{Lie}(H)=\operatorname{Lie}\langle\mathfrak
+h_1,\dots,\mathfrak h_p\rangle$ (\auxref{B.24}(d)). So $H\subseteq\operatorname{Mon}(S)$. Conversely $S\subseteq H$ by
+hypothesis, and $H$ is closed under products, so $\operatorname{Mon}(S)\subseteq H$.
+
+(c) Write $L_{ab}=E_{ab}-E_{ba}$, so $\so(I)=\spanop\{L_{ab}:a,b\in I\}$. For distinct $a,b,c$,
+\[L_{ac}L_{cb}=E_{ab},\qquad L_{cb}L_{ac}=E_{ba},\qquad\text{so}\qquad[L_{ac},L_{cb}]=L_{ab},\]
+while $L_{ab}L_{cd}=L_{cd}L_{ab}=0$ when $\{a,b\}\cap\{c,d\}=\emptyset$. Let $\mathfrak g=\operatorname{Lie}\langle\so(I_j)
+\rangle_j$. If $a\ne b$ lie in one component $C$, join them by a shortest chain $a=c_0,c_1,\dots,c_t=b$ of distinct
+coordinates with consecutive ones in a common block. By induction on $t$, $L_{ab}\in\mathfrak g$: for $t=1$,
+$L_{ab}\in\so(I_j)$ for a block containing both; for $t>1$, $L_{ac_{t-1}}\in\mathfrak g$ by induction and $L_{c_{t-1}b}\in
+\mathfrak g$, and their bracket is $L_{ab}$. So $\bigoplus_C\so(C)\subseteq\mathfrak g$. Conversely, $\bigoplus_C\so(C)$ is a
+Lie subalgebra, since each $\so(C)$ is one and elements of different components have disjoint supports and commute, and it
+contains every $\so(I_j)$, because each block lies in one component. Hence $\mathfrak g=\bigoplus_C\so(C)$, of dimension
+$\sum_C\binom{\lvert C\rvert}2$.
+
+\emph{Corollary 1.} LoRA's shape $\{sBA\}$ is $\Mr$, which contains $0$ and is closed under real scalings, so (a) applies.
+By \auxref{B.12}(a), a sum of $K$ matrices of rank at most $r$ has rank at most $\min(Kr,m,n)$. Conversely, a matrix of rank
+$k\le\min(Kr,m,n)$ is a sum of $k$ rank-one terms of its SVD (\auxref{B.11}(a)), which split into $K$ groups of at most $r$
+terms, each in $\Mr$. So $C^{+K}=\MM_{\le\min(Kr,m,n)}$. This is all of $\R^{m\times n}$ iff $Kr\ge\min(m,n)$, that is,
+iff $K\ge\lceil\min(m,n)/r\rceil$.
+
+\emph{Corollary 2.} If the shape is an additive submonoid $C$ independent of the base (in particular a linear subspace),
+then $C^{+K}=C$ and $R_K=R_1$ for all $K$ by (a); if it is a submonoid $S$ of a group or of $\operatorname{End}(\Theta)$,
+then $S^K=S$ and $R_K=R_1$ by (b). The listed methods are of this kind once their frames, masks and operators are frozen:
+the updates of LoRA-FA ($\{XA\}$), LoRA-XS ($\{UMV\T\}$), MoRA (linear in its square matrix), FourierFT and WaveFT (fixed
+coefficient positions), C3A (block-circulant matrices), MiSS in balance mode (linear in its shared block), SHiRA, BitFit,
+FISH and LN-tuning (fixed coordinates) form linear subspaces; the scalings of (IA)$^3$, $W\mapsto\diag(\ell)W$, form a
+monoid in $\operatorname{End}(\Theta)$; SSF's maps $y\mapsto s\odot y+t$ form a monoid under composition,
+$s'\odot(s\odot y+t)+t'=(s's)\odot y+(s't+t')$; RoAd's $2\times2$ blocks range over the scaled rotations or over all
+$2\times2$ matrices, both monoids; and MiSS's bat-mode maps satisfy $(W+I)(I+M)(I+M')-I$ with $(I+M)(I+M')=I+M''$,
+$M''=M+M'+MM'$ again in the class, so they form a monoid.
+
+For block OFT with an exact Cayley map and a fixed partition, $S=\prod\mathrm{Cay}(b)$ with
+$\mathrm{Cay}(b)=C(\so(b))=\{R\in\SO(b):-1\notin\operatorname{spec}R\}$, open and dense in $\SO(b)$ (\auxref{B.23}(c)). Every
+element of $\SO(b)$ is a product of two elements of $\mathrm{Cay}(b)$ (\auxref{B.23}(d)), so $S^2=\prod\SO(b)$, and
+$R_K=W_0\cdot\prod\SO(b)$ for $K\ge2$. By continuity of $g\mapsto W_0g$ and compactness of $\prod\SO(b)$,
+$\overline{R_1}=W_0\cdot\overline{\prod\mathrm{Cay}(b)}=W_0\cdot\prod\SO(b)$, and $R_\infty\setminus R_1$ lies in the image
+of the Haar-null set $\{\prod_j\det(I+R_j)=0\}$. For COFT with an exact Cayley map, $S$ is the image under $C$ of a ball
+about $0$, which contains a neighbourhood of $1$ in $\prod\SO(b)$ because $C$ is a local diffeomorphism at $0$; by (b) with
+the single connected group $\prod\SO(b)$, $\operatorname{Mon}(S)=\prod\SO(b)$.
+
+Methods whose shape changes with the base escape (a). For linear shapes $L_1\ne L_2$ used in two cycles (resampled indices,
+alternating operators), $R_2\supseteq\theta_0+L_1+L_2\supsetneq\theta_0+L_1=R_1$ whenever $L_2\not\subseteq L_1$. For LoRA-XS
+with frames recomputed from the merged weight, take $r=1$ and $W_0=\diag(2,1)$: $R_1=\{\diag(2+t,1)\}$; the point
+$\diag(-\tfrac12,1)\in R_1$ has top singular direction $e_2$, so the second cycle adds $\{te_2e_2\T\}$ and reaches
+$\diag(-\tfrac12,1+t)\notin R_1$.
+
+\emph{Corollary 3.} VeRA's shape is $C=\{\Lambda_bB\Lambda_dA\}$ with $B$, $A$ frozen and $b\in\R^m$, $d\in\R^r$ trainable. It
+contains $0$, is closed under real scalings ($b\mapsto\lambda b$), and lies in $\{XA:X\in\R^{m\times r}\}$. The entries of
+$\Lambda_bB\Lambda_d$ are $b_iB_{ij}d_j$, so $b=e_i$, $d=e_j$ gives $B_{ij}E_{ij}$; if every $B_{ij}\ne0$, the span of the
+matrices $\Lambda_bB\Lambda_d$ is $\R^{m\times r}$, and $\spanop C=\{XA\}$. By (a), $R_\infty=W_0+\{XA\}$, the image of
+LoRA-FA with the same $A$.
+
+\emph{Corollary 4.} \emph{Exact Cayley.} This is corollary~2.
+
+\emph{The Cayley--Neumann factor.} By \auxref{B.23}(e), $R=C(Q)(I-Q^4)$, $R\T R=(I-Q^4)^2$, and the singular values of $R$ are
+$\lvert1-\mu_k^4\rvert$, each twice, and $1$ for a zero eigenvalue of $Q$. So $R$ is orthogonal only when every $\mu_k^4\in
+\{0,2\}$. If $\lVert Q\rVert_{\rm op}\le2^{1/4}$, then $0\le\mu_k^4\le2$ and $\lvert1-\mu_k^4\rvert\le1$, so $R$ is a contraction.
+For an input-side merge $W\mapsto WR$ with block-diagonal $R$,
+\[K_{\rm out}(WR)=WRR\T W\T=W(I-Q^4)^2W\T\preceq WW\T=K_{\rm out}(W),\]
+because $C(Q)$ commutes with $Q^4$ and $(I-Q^4)^2\preceq I$ (\auxref{B.18}(b)); by \auxref{B.18}(c) no singular value of $W$
+grows. Products of block-diagonal contractions are block-diagonal contractions (\auxref{B.18}(a)), so the reachable set lies
+in $W_0$ times that semigroup.
+
+\emph{Unconstrained $Q$.} Fix one block of size $b$ and let $S_b=\{R(Q):Q\in\so(b)\}$; since the blocks are independent and
+$R(0)=I$, the monoid generated by the block-diagonal factors is $\prod\operatorname{Mon}(S_b)$. Write $Q=O(\bigoplus_k\mu_kJ
+\oplus0)O\T$ with $O\in\Ort(b)$, $J=\left(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\right)$ and $\mu_k\ge0$; then
+$I-Q^4=O(\bigoplus_k(1-\mu_k^4)I_2\oplus I)O\T$.
+
+\emph{$\subseteq$.} $\det R=\det C(Q)\det(I-Q^4)=\prod_k(1-\mu_k^4)^2\ge0$, and $\rk R=\rk(I-Q^4)=b-2\#\{k:\mu_k=1\}$. So an
+invertible factor lies in $\GL^+(b)$ and a singular one has rank at most $b-2$. Products of elements of $\GL^+(b)$ stay in
+it, and any product with a factor of rank at most $b-2$ has rank at most $b-2$. Hence $\operatorname{Mon}(S_b)\subseteq\GL^+
+(b)\cup\MM_{\le b-2}$.
+
+\emph{Positive scalings.} $C(-Q)=C(Q)^{-1}$ commutes with $Q^4$, so $R(Q)R(-Q)=(I-Q^4)^2=O(\bigoplus_k(1-\mu_k^4)^2I_2\oplus
+I)O\T$. As $\mu_k$ ranges over $[0,\infty)$, $(1-\mu_k^4)^2$ takes every positive value ($\mu_k^4=1+\sqrt\lambda$ gives
+$\lambda$). Taking $O$ a permutation matrix, $\operatorname{Mon}(S_b)$ contains every positive diagonal matrix that is
+constant on the pairs of a matching of the coordinates and $1$ off it. For $b\ge3$ these generate all positive diagonal
+matrices: their logarithms include every multiple of $e_i+e_j$, $i\ne j$, and $e_i=\tfrac12\big((e_i+e_j)+(e_i+e_k)-(e_j+
+e_k)\big)$, so products of commuting such matrices realise every $\diag(e^x)$. For $b=2$ they are the positive scalars.
+
+\emph{Rotations.} For $\lVert Q\rVert_{\rm op}<1$, $I-Q^4$ is positive definite with eigenvalues $1-\mu_k^4$ on the planes
+of $Q$. Choose $Q'=O(\bigoplus_k\mu_k'J\oplus0)O\T$ with the same $O$ and $(1-\mu_k'^4)^2=(1-\mu_k^4)^{-1}$; then
+$R(Q')R(-Q')=(I-Q^4)^{-1}$, and $C(Q)=R(Q)R(Q')R(-Q')\in\operatorname{Mon}(S_b)$. The set $\{C(Q):\lVert Q\rVert_{\rm op}<1\}$
+is a neighbourhood of $I$ in $\SO(b)$ (\auxref{B.23}(c)), symmetric because $C(-Q)=C(Q)^{-1}$, so it generates $\SO(b)$ as a
+monoid (\auxref{B.24}(a)). With the positive diagonals and the decomposition $\GL^+(b)=\SO(b)\,D^+\SO(b)$
+(\auxref{B.19}(c)), $\GL^+(b)\subseteq\operatorname{Mon}(S_b)$ for $b\ge3$; for $b=2$, $\SO(2)\cdot\R_{>0}=\CO^+(2)$.
+
+\emph{Singular blocks.} Let $V\subseteq\R^b$ have dimension $b-2$ and choose $O$ mapping the last coordinate plane onto
+$V^\perp$, and $Q_V=O(0\oplus J)O\T$. Then $Q_V^4$ is the projector onto $V^\perp$, $C(Q_V)$ acts as $J$ on $V^\perp$ (since
+$(I+J)(I-J)^{-1}=J$) and as the identity on $V$, and $R(Q_V)=C(Q_V)(I-Q_V^4)=P_V$, the orthogonal projector onto $V$. If
+$P_U$ with $\dim U=k$, $1\le k\le b-2$, is in the monoid, choose $U'\subseteq U$ of dimension $k-1$ and $W'\subseteq U^\perp$
+of dimension $b-1-k\le\dim U^\perp$, and put $V=U'\oplus W'$, of dimension $b-2$. Since $W'\perp U$,
+$P_UP_V=P_U(P_{U'}+P_{W'})=P_{U'}$. By downward induction every orthogonal projector of rank at most $b-2$ lies in the
+monoid. A matrix $X$ of rank $k\le b-2$ is $X=U\diag(\sigma_1,\dots,\sigma_k,1,\dots,1)\,P_k\,V\T$ by its SVD, with $P_k$
+the projector onto the first $k$ coordinates. Changing the sign of the last column of $U$, or of the last row of $V\T$,
+leaves this product unchanged, because $P_k$ kills the last coordinate; so both outer factors may be taken in $\GL^+(b)$,
+and $X\in\operatorname{Mon}(S_b)$. For $b=2$, $R(\mu J)=(1-\mu^4)\,C(\mu J)$ is a real multiple of a rotation, so
+$\operatorname{Mon}(S_2)\subseteq\CO^+(2)\cup\{0\}$, and $R(J)=0$. Altogether
+$\operatorname{Mon}(S_b)=\GL^+(b)\cup\MM_{\le b-2}$ for $b\ge3$ and $\CO^+(2)\cup\{0\}$ for $b=2$, which is the clause; the
+steps above complete the sketch recorded in the main text.
+
+\emph{BOFT.} Group the coordinates into runs of $b/2$ consecutive coordinates, indexed by $p=0,1,\dots,2n/b-1$. Up to one fixed
+relabelling of coordinates, the $l$-th butterfly factor of BOFT ($l=1,\dots,m'$) is block-diagonal with one orthogonal
+$b\times b$ block, an exact Cayley image, on each pair of runs whose indices differ exactly in binary digit $l-1$
+\citep{liu2023parameter,dao2019learning}; for $l=1$ these are $n/b$ consecutive blocks of size $b$, block OFT. Two runs lie
+in one component of the factor hypergraph iff their indices agree in all digits from $m'$ on, so the components consist of
+$2^{m'}$ runs, $b\,2^{m'-1}$ coordinates. HF's BOFT multiplies the output by a trainable scale, $W\mapsto\diag(s)\,W\,R$, and
+left and right multiplications commute, so after $K$ cycles the weight is $\diag(s_K\cdots s_1)\,W_0\,R_1\cdots R_K$; the
+products of scale vectors already fill $\R^m$ at $K=1$. The orthogonal part is generated by the set $S$ of products of the
+$m'$ butterfly factors. Let $H_l$ be the group of all block rotations of level $l$, connected; $S$ lies in the group they
+generate, and setting all but one factor to the identity shows that $S$ contains a neighbourhood of $1$ in each $H_l$, the
+exact Cayley image being open. By (b) and (c), $\operatorname{Mon}(S)$ is the connected Lie subgroup with Lie algebra
+$\bigoplus_C\so(C)$, which is the group of block rotations on the components, $P\big(\prod\SO(b\,2^{m'-1})\big)P\T$ for the
+permutation $P$ that makes the components consecutive. This proves the reach. If $b\,2^{m'-1}=n$ there is one component and
+the reach is $\diag(\R^m)\cdot W_0\cdot\SO(n)$. If $c:=b\,2^{m'-1}<n$, the group $G=P\big(\prod\SO(c)\big)P\T$ has dimension
+$n(c-1)/2<n(n-1)/2$; and for $W_0$ of full column rank the reachable sets differ (for $W_0=0$ both are $\{0\}$). Indeed, if
+$\diag(\R^m)W_0G=\diag(\R^m)W_0\SO(n)$, then each $R\in\SO(n)$ satisfies $W_0R=\diag(s)W_0g$ for some $s$ and $g\in G$, so
+$M=Rg^{-1}$ satisfies $W_0M=\diag(s)W_0$: every row $w_i$ of $W_0$ is an eigenvector of $M\T$. These rows span $\R^n$, so $M\T$ is
+diagonalisable with real eigenvalues; being orthogonal, $M$ is an orthogonal involution $I-2P_E$ whose $-1$-eigenspace $E$ is
+spanned by the rows of $W_0$ it contains. So $M$ ranges over a finite set $F_0$, and $\SO(n)\subseteq F_0G$, a finite union
+of submanifolds of lower dimension, which is impossible. With $m'=1$ the single level is block OFT, so HF's default
+\texttt{boft\_n\_butterfly\_factor=1} is block OFT times $\diag(s)$.
+
+\emph{A single BOFT.} Its parameters number $m'\frac nb\binom b2$, so its image has at most this dimension
+(\auxref{B.9}(b)), and $m'\frac nb\frac{b(b-1)}2<\frac{n(n-1)}2$ iff $m'(b-1)<n-1$; the image then has positive codimension
+in $\SO(n)$ and is Haar-null. At full depth, $2^{m'}=2n/b$ runs form one component, and for every pair of coordinates $(i,j)$
+there is a chain $j=c_0,c_1,\dots,c_{m'}=i$ in which $c_{l-1}$ and $c_l$ lie in a common block of the $l$-th factor applied:
+each factor lets the run index flip one binary digit, a different one for each factor, and lets the position inside the run
+be chosen freely. So the entry $(i,j)$ of the product, a polynomial in the block entries, is nonzero at a product of signed
+permutation matrices of determinant $1$ (one per block) that routes $j$ to $i$ along the chain. It is therefore not
+identically zero on the connected group $\prod_lH_l$, and since the Cayley parametrisation is a diffeomorphism onto an open
+subset of that group, the entry is nonzero for parameters outside a nowhere-dense analytic subset (\auxref{B.10}). All
+$n^2$ entries are nonzero for generic parameters, so the matrices are dense.
+
+\emph{Corollary 5.} With \texttt{apply\_GS=False}, one HRA cycle applies $H_{u_1}\cdots H_{u_r}$ on the input side. Let
+$S_k=\{R\in\SO(n):\rk(R-I)\le k\}$ for even $k$. A product of $r$ reflections lies in $\SO(n)$ ($r$ even) and has
+$\rk(R-I)\le r$ (\auxref{B.22}); conversely, if $R\in S_r$ then $j=\rk(R-I)$ is even and $R$ is a product of exactly $j$
+reflections (\auxref{B.22}), which pairs $H_uH_u=I$ pad to $r$. So one cycle applies exactly the elements of $S_r$, and by
+(b) $R_K=W_0\cdot S_r^K$. Next, $S_r^K=S_{Kr}$. For $\subseteq$, $R_1R_2-I=R_1(R_2-I)+(R_1-I)$ gives
+$\rk(R_1R_2-I)\le\rk(R_2-I)+\rk(R_1-I)$ (\auxref{B.12}(a)). For $\supseteq$, write $R\in S_{Kr}$ as a product of
+$j=\rk(R-I)\le Kr$ reflections, $j$ even, split them into $K$ consecutive groups of even size at most $r$, and pad each group
+with pairs to size $r$. Finally, since $W_0$ is injective, $\rk(W_0R-W_0)=\rk(R-I)$, so
+$W_0\cdot S_{Kr}=(W_0+\MM_{\le Kr})\cap W_0\cdot\SO(n)$. When $Kr\ge n$, $S_{Kr}=\SO(n)$, which gives the last sentence.
+
+\emph{Corollary 6.} By \thmref{Proposition}{IV.2} and \S\ref{proof:IV.3}(8), each period of these methods is a period of
+the linear method $\theta_k+\mathcal L_kC$ with shape $L_k=\operatorname{im}\mathcal L_k$, so $R_K=\theta_0+L_1+\dots+L_K$
+for the chosen shapes. For GaLore with left projection, $L_k=\{Z:\operatorname{col}Z\subseteq\operatorname{col}P_k\}$, and
+column spaces that together span $\R^m$ give all of $\R^{m\times n}$ after $\lceil m/r\rceil$ periods; for LISA, layer blocks
+covering every layer do the same; for MeZO, $L_k=\R z_k$, and $z_k$ running through a basis give $\Theta$. A fixed linear
+shape $L$ is its own additive monoid, so it reaches only $\theta_0+L$ (corollary~2). A GaLore period moves a projected matrix
+by an update of rank at most $r$; a LISA period moves each sampled matrix by an unconstrained update, and a MeZO step by a
+multiple of the Gaussian $z_k$, whose restriction to each matrix has full rank almost surely. Flora's steps contain a
+full-rank term (\S\ref{proof:IV.1}).
+
+\emph{Corollary 7.} For orthogonal $R$, $(WR)(WR)\T=WW\T$ and $(RW)\T(RW)=W\T W$; $WR$ and $RW$ have the singular values of $W$.
+By induction over cycles, every input-side rebasing preserves $K_{\rm out}$ and every output-side one $K_{\rm in}$, and both
+preserve the spectrum (\thmref{Corollary}{II.6}).
+\end{proof}
+
+\begin{remark*}{numerical checks}
+The component sizes $4,8,16,32,64$ for $n=64$, $b=4$ and $m'=1,\dots,5$ reported after \thmref{Theorem}{V.3} are the
+$b\,2^{m'-1}$ of the BOFT paragraph; the Loewner-monotone decrease of $K_{\rm out}$ over $200$ default-OFT merges, the
+contraction bound for random skew $Q$ with $\lVert Q\rVert_{\rm op}\le2^{1/4}$, and $R=0$ at $b=2$, $Q=J$, instantiate the
+Cayley--Neumann paragraph (Appendix~\ref{app:repro}).
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Proposition V.4}\label{proof:V.4}
+
+\begin{restate}{Proposition}{V.4}{combination rules: gauge and naturality}
+(a) A rule $\Phi\big((B_i,A_i)_i\big)$ for combining LoRA factors descends to a function of the adapters $(B_iA_i)_i$ iff it
+is constant on the fibres of $(B_i,A_i)\mapsto(B_iA_i)$. On the full-rank locus this is equivalent to
+$\prod_i\GL_r$-invariance. It is also equivalent for $\Phi$ continuous on the whole factor space; this clause rests on the
+unique closed orbit in each fibre, which lies in the closure of every orbit of the fibre.
+\begin{itemize}
+  \item Task arithmetic $\sum_iw_is_iB_iA_i$, with $s_i$ HF's \texttt{scaling} ($\alpha_i/r_i$, or $\alpha_i/\sqrt{r_i}$
+  under rsLoRA), is invariant and lands in $\mathrm{LoRA}_{\sum_ir_i}$. It is HF's \texttt{cat} with merged scale $1$.
+  \item LoraHub's factor-wise rule $\big(\sum_iw_iB_i\big)\big(\sum_jw_jA_j\big)$ is not invariant. Replacing $(B_2,A_2)$ by
+  $(cB_2,A_2/c)$ changes it by
+  \[\sum_{l\ne2}w_lw_2\big[(c-1)B_2A_l+(c^{-1}-1)B_lA_2\big].\]
+  HF's \texttt{add\_\allowbreak weighted\_\allowbreak adapter(..., combination\_\allowbreak type="linear")} is a factor-wise
+  rule of the same type. It weights $A_i$ by $\operatorname{sign}(w_i)\sqrt{\lvert w_is_i\rvert}$ and $B_i$ by
+  $\sqrt{\lvert w_is_i\rvert}$ and sums the factors separately, so it has cross terms. On adapters that share a frozen $A$
+  it is still not exact up to a global factor, since the relative weights become $\sqrt{\lvert w_is_i\rvert}$. HF's non-SVD
+  \texttt{ties}, \texttt{dare\_*} and \texttt{magnitude\_prune} variants also act on factors; the \texttt{*\_svd} variants
+  act on full updates.
+  \item Poly and MHR are different. Their skill inventories are trained jointly through the product-of-sums map, which is
+  invariant under the diagonal $\GL_r$, one common $g$ for every skill. Numerically, for fixed generic routing with fewer
+  skills than tasks and full-rank factors, this is the whole continuous fibre. With at least as many skills as tasks, or
+  once the routing is counted as a parameter, there are further symmetries (skill permutations, and re-mixings
+  $\alpha\mapsto\alpha M$ with $M\mathbf 1=\mathbf 1$). Their cross terms are a design choice of a jointly trained
+  parametrisation, and raise no question of well-definedness.
+\end{itemize}
+
+(b) \emph{Well-definedness versus exactness.} A joint gauge fixing makes a factor-wise rule well defined. For
+rank-preserving product-of-sums rules, exactness (agreement with task arithmetic for all weights $w$) needs degree one in
+$w$, which for injective factors forces a shared factor; \texttt{cat}, which concatenates and raises the rank, is exact
+without one. A frozen shared factor (FFA-LoRA; LoRA-FA) gives $\big(\sum_iw_iB_i\big)A=\sum_iw_iB_iA$ exactly. LoraHub with
+a shared $A$ still returns $\big(\sum_jw_j\big)\sum_iw_iB_iA$, exact only up to the global factor $\sum_jw_j$, since its
+weights are unnormalised. A per-module SVD canonical form leaves a $(\mathbb Z/2)^r$ of sign flips per module, plus
+rotations within repeated singular values, and these change the cross terms. What is needed is a \emph{joint} frame that
+produces a shared factor, as KnOTS's joint re-factorisation of the concatenated updates through a shared $U\Sigma$ does.
+Federated LoRA shows the difference. FedAvg-LoRA clients start each round from the same broadcast $(B,A)$, so their failure,
+$\tfrac12(B_1+B_2)\cdot\tfrac12(A_1+A_2)\ne\tfrac12(B_1A_1+B_2A_2)$, is bilinearity, and it persists in a fully fixed gauge.
+
+(c) \emph{Naturality.} On updates with $N$ coordinates, write $T_N$, $B_N$ and $\mathrm{Mon}_N$ for the invertible diagonal,
+signed permutation and monomial matrices. Task arithmetic is $\GL(\Theta)$-equivariant on updates. DARE is coordinatewise
+and magnitude-free, $D(m\odot\tau)=m\odot(D\tau)$ for every invertible diagonal $D$ and the same mask $m$. So DARE is exactly
+equivariant under the torus $T_N$, sign flips included, for each mask, and under permutations in distribution; its
+distributional group is exactly $\mathrm{Mon}_N$. TIES with global trimming (top-$k$ magnitude, sign election by total mass
+as in the TIES paper and HF's default \texttt{"total"}, disjoint mean) is equivariant under $\R^\times\cdot B_N$,
+homotheties times signed permutations, generically (off magnitude ties at the threshold). With HF's
+\texttt{majority\_\allowbreak sign\_\allowbreak method="frequency"}, count ties are broken to $+1$ and the group drops to
+$\R_{>0}\cdot S_N$. Per-tensor trimming changes the group to $\prod_b\big(\R^\times\cdot B_{N_b}\big)$, extended by
+permutations of equal-size blocks. DARE followed by full TIES (with trimming) is $\R^\times\cdot B_N$-equivariant in
+distribution; HF's and MergeKit's \texttt{dare\_ties} has no magnitude trim, so with \texttt{"total"} election it is exactly
+$T_N$-equivariant per mask, and its group contains $\mathrm{Mon}_N$. None of the sparsifying rules (DARE, TIES, DARE-TIES)
+is $\Ort(N)$-equivariant. Applied to factors and summed across adapters (HF's non-SVD variants), all of them are
+gauge-dependent, and under independent per-adapter gauges even DARE fails, through the cross terms of (a). DARE's masking
+commutes with $T_r$ exactly for each mask and with $\mathrm{Mon}_r$ in distribution, so a single masked adapter, or a
+factor-wise sum under one gauge shared by all adapters, is $T_r$-invariant per mask and $\mathrm{Mon}_r$-invariant in
+distribution.
+\end{restate}
+
+\begin{proof}
+Write $\pi\big((B_i,A_i)_i\big)=(B_iA_i)_i$, and let adapter $i$ have rank $r_i$ (the statement's $r$ when all ranks agree);
+its gauge group $\GL_{r_i}$ acts by $(B_ig_i^{-1},g_iA_i)$, and $\pi$ is invariant under $\prod_i\GL_{r_i}$.
+
+(a) \emph{Descent.} If $\Phi=\varphi\circ\pi$, then $\Phi$ is constant on the fibres of $\pi$. Conversely, if $\Phi$ is constant
+on fibres, $\varphi(\pi(x)):=\Phi(x)$ is a well-defined function on the image of $\pi$.
+
+\emph{Full-rank locus.} Let $\rk B_i=\rk A_i=r_i$ and $B_i'A_i'=B_iA_i$. The product has rank $r_i$, so $\rk B_i'=\rk A_i'=r_i$,
+and the full-rank locus is a union of whole fibres. Moreover $\operatorname{col}B_i'=\operatorname{col}(B_iA_i)=
+\operatorname{col}B_i$, so $B_i'=B_ig_i^{-1}$ for a unique $g_i\in\GL_{r_i}$; then $B_iA_i=B_ig_i^{-1}A_i'$, and injectivity of
+$B_i$ gives $A_i'=g_iA_i$. So each fibre in the full-rank locus is a single $\prod_i\GL_{r_i}$-orbit (as in
+\thmref{Theorem}{II.2}), and there constancy on fibres is the same as invariance.
+
+\emph{Continuous rules.} Let $\Phi$ be continuous on the whole factor space and invariant, and let $x,x'$ lie in the fibre
+over $(W_i)_i$, $\rk W_i=k_i\le r_i$. By \auxref{B.27}(c), in each factor the pairs with product $W_i$ and both factors of rank
+$k_i$ form one $\GL_{r_i}$-orbit $O_{W_i}$, which lies in the closure of every orbit of the fibre. Applying this factor by
+factor, there are gauges $g(t),g'(t)\in\prod_i\GL_{r_i}$ with $g(t)\cdot x\to o$ and $g'(t)\cdot x'\to o'$ as $t\to0$,
+where $o,o'\in\prod_iO_{W_i}$, and $o'=h\cdot o$ for some gauge $h$. By invariance and continuity,
+\[\Phi(x)=\lim_{t\to0}\Phi(g(t)\cdot x)=\Phi(o)=\Phi(h\cdot o)=\Phi(o')=\lim_{t\to0}\Phi(g'(t)\cdot x')=\Phi(x').\]
+So $\Phi$ is constant on fibres; the converse holds because orbits lie in fibres. The review record graded this clause as a
+sketch; with the degeneration of \auxref{B.27}(c), whose reason is given in Appendix~\ref{app:auxiliary}, the steps above
+complete it. Invariance alone does not suffice off the full-rank locus: on the invariant open set $\{\rk A=r\}$ the
+projector $P_{\operatorname{row}A}$ is $\GL_r$-invariant, since $\operatorname{row}(gA)=\operatorname{row}A$, yet $(0,A)$
+and $(0,A')$ with $\operatorname{row}A\ne\operatorname{row}A'$ lie in the fibre over $0$ and receive different values. This
+$\Phi$ has no continuous extension to the whole factor space.
+
+\emph{Task arithmetic.} $\sum_iw_is_iB_iA_i$ depends only on the products, so it is invariant, and
+\[\sum_iw_is_iB_iA_i=\big[\,w_1s_1B_1\ \big|\ \cdots\ \big|\ w_Ns_NB_N\,\big]\begin{bmatrix}A_1\\ \vdots\\ A_N\end{bmatrix}\]
+is a LoRA update of rank at most $\sum_ir_i$ with scale $1$, the concatenation \texttt{cat} of \thmref{Observation}{I.7}.
+
+\emph{LoraHub.} Expanding, $\big(\sum_iw_iB_i\big)\big(\sum_jw_jA_j\big)=\sum_{i,j}w_iw_jB_iA_j$. Under the gauge
+$(B_2,A_2)\mapsto(cB_2,A_2/c)$ the terms with $i,j\ne2$ and the term $w_2^2B_2A_2$ are unchanged, each $w_2w_lB_2A_l$ ($l\ne2$) gains the factor $c$,
+and each $w_lw_2B_lA_2$ gains $c^{-1}$, which gives the displayed change. For $c\ne1$, nonzero weights and factors for which
+the matrices $B_2A_l$, $B_lA_2$ ($l\ne2$) are linearly independent (true for generic factors), the change is nonzero. HF's
+\texttt{linear} combination is $\big(\sum_i\beta_iB_i\big)\big(\sum_j\alpha_jA_j\big)$ with $\beta_i=\sqrt{\lvert w_is_i\rvert}$
+and $\alpha_j=\operatorname{sign}(w_j)\sqrt{\lvert w_js_j\rvert}$ \citep{xmangrulkar2022peft}, a product of sums with the same
+cross terms and the same failure. If all adapters share $A$, it equals $\big(\sum_j\alpha_j\big)\sum_i\beta_iB_iA$, which is a
+fixed multiple of $\sum_iw_is_iB_iA$ for all $B_i$ only if the $\beta_i$ are proportional to the $w_is_i$, that is, only if all
+$\lvert w_is_i\rvert$ with $w_is_i\ne0$ are equal (and the signs agree); for instance $w_1s_1=1$ and $w_2s_2=4$ give relative
+weights $1:2$ instead of $1:4$.
+
+\emph{Poly and MHR.} For task $t$ with routing weights $\alpha_{tj}$ over skills $j$ the update is
+$W_t=\big(\sum_j\alpha_{tj}B_j\big)\big(\sum_j\alpha_{tj}A_j\big)$. A common $g$ gives
+$\big(\sum_j\alpha_{tj}B_jg^{-1}\big)\big(\sum_j\alpha_{tj}gA_j\big)=W_t$, so the diagonal $\GL_r$ preserves the map. Per-skill
+gauges $(g_j)$ that preserve it for all routings in an open set are diagonal on any pair of mixed skills with complementary
+column spaces: $W_t=\sum_{i,j}\alpha_{ti}\alpha_{tj}B_iA_j$ is a polynomial in $\alpha$, and comparing the coefficients of
+$\alpha_{ti}\alpha_{tj}$, $i\ne j$, gives
+\[B_i(g_i^{-1}g_j-I)A_j+B_j(g_j^{-1}g_i-I)A_i=0 .\]
+If $\operatorname{col}B_i\cap\operatorname{col}B_j=0$, the two terms vanish separately, and for injective $B_i$ and surjective
+$A_j$ this forces $g_i=g_j$. That for one fixed generic routing with fewer skills than tasks the continuous fibre is exactly
+the diagonal orbit is the numerical check reported below. With at least as many skills as tasks the fibre is larger. If there
+are more skills than tasks, a vector $v\ne0$ with $\sum_jv_j\alpha_{tj}=0$ for every $t$ exists, and $B_j\mapsto B_j+v_jX$
+leaves every $\sum_j\alpha_{tj}B_j$ unchanged for every $X$. If there are equally many and the routing matrix is invertible,
+the task-wise sums $(C_t,D_t)=\big(\sum_j\alpha_{tj}B_j,\sum_j\alpha_{tj}A_j\big)$ are free coordinates, and each task has its
+own $\GL_r$ gauge. Counting the routing as a parameter, relabelling the skills together with the columns of $\alpha$ preserves
+the map, and so does $(\alpha,B)\mapsto(\alpha M,M^{-1}B)$ for invertible $M$ with $M\mathbf 1=\mathbf 1$, where $B$ stacks the
+skills (and likewise for $A$), since $(\alpha M)(M^{-1}B)=\alpha B$ and $M\mathbf 1=\mathbf 1$ keeps the rows of $\alpha$ summing
+to $1$. Poly and MHR train skills and routing jointly through this map, so it is the method's own $\rho$; the question of
+(a) concerns combining modules that were factorised independently.
+
+(b) \emph{Gauge fixing.} If a section $\sigma$ of $\pi$ chooses the factors from the products, then $\Phi\circ\sigma$ is a
+function of the products. \emph{Exactness.} Task arithmetic $T(w)=\sum_iw_iB_iA_i$ (scales absorbed) is linear in $w$.
+Consider rank-preserving products of sums in which each adapter's factor carries its own weight $w_i$, in one sum or in
+both. If both sums are weighted, as in LoraHub, the rule $P(w)$ is homogeneous of degree two in $w$, and $P(w)=T(w)$ for all
+$w$ would give, replacing $w$ by $\lambda w$, $\lambda^2P(w)=\lambda T(w)$ for all $\lambda$, hence $T\equiv0$. So an exact
+rule of this kind has degree one in $w$: one of its factors does not depend on $w$, say $\big(\sum_iw_iB_i\big)X$. Then exactness for all $w$ means $B_iX=B_iA_i$ for every $i$, and for injective $B_i$ this gives
+$A_i=X$: the $A$-factor is shared. The symmetric case $X\big(\sum_jw_jA_j\big)$ with surjective $A_j$ forces a shared $B$.
+\texttt{cat} realises $T(w)$ exactly, as shown in (a), with inner dimension $\sum_ir_i$. With a frozen shared $A$,
+$\big(\sum_iw_iB_i\big)A=\sum_iw_iB_iA$, and LoraHub's rule gives $\big(\sum_iw_iB_i\big)\big(\sum_jw_j\big)A$.
+
+\emph{SVD canonical forms.} If $B_iA_i=U_i\Sigma_iV_i\T$ and the canonical factors are $B_i=U_i\Sigma_i^{1/2}$,
+$A_i=\Sigma_i^{1/2}V_i\T$ (or any convention built from $U_i,\Sigma_i,V_i$), then changing the signs of the $j$-th column of
+$U_i$ and of $V_i$ gives another SVD and another canonical pair, multiplying column $j$ of $B_i$ and row $j$ of $A_i$ by $-1$.
+The product $B_iA_i$ is unchanged, while a cross term $B_iA_l$ ($l\ne i$) changes by $-2\,b_{ij}a_{lj}\T$, where $b_{ij}$ is
+column $j$ of $B_i$ and $a_{lj}\T$ row $j$ of $A_l$, which is nonzero generically. When $\sigma_j=\sigma_{j+1}$, rotating the
+corresponding columns of $U_i$ and $V_i$ by the same $O\in\Ort(2)$ also preserves the product and changes the cross terms.
+\emph{KnOTS.} Write the horizontal concatenation $[\Delta_1\mid\cdots\mid\Delta_N]=U\Sigma[V_1\T\mid\cdots\mid V_N\T]$ by an
+SVD \citep{stoica2024model}; then $\Delta_i=(U\Sigma)V_i\T$ share the left factor $U\Sigma$, and
+$(U\Sigma)\big(\sum_iw_iV_i\T\big)=\sum_iw_i\Delta_i$ exactly. \emph{FedAvg-LoRA.} Expanding,
+\[\tfrac12(B_1+B_2)\cdot\tfrac12(A_1+A_2)-\tfrac12(B_1A_1+B_2A_2)=-\tfrac14(B_1-B_2)(A_1-A_2),\]
+which is nonzero whenever $(B_1-B_2)(A_1-A_2)\ne0$, whatever gauge the broadcast pair is in.
+
+(c) Write a merge rule as $\Psi(\tau_1,\dots,\tau_K)$ for task vectors $\tau_k\in\R^N$ (or the matrices with $N$ entries,
+flattened). It is $g$-equivariant if $\Psi(g\tau_1,\dots,g\tau_K)=g\Psi(\tau_1,\dots,\tau_K)$, read for random rules either
+for each realisation of the randomness (per mask) or as equality of laws (in distribution).
+
+\emph{Task arithmetic} is linear, hence $\GL(\Theta)$-equivariant.
+
+\emph{DARE.} $\mathrm{DARE}(\tau)=m\odot\tau/(1-p)$, with a mask $m$ of independent Bernoulli$(1-p)$ entries, $0<p<1$,
+drawn independently for each task, followed by a weighted sum. For invertible diagonal $D$, $D(m\odot\tau)=m\odot(D\tau)$, so
+$\mathrm{DARE}(D\tau)=D\,\mathrm{DARE}(\tau)$ for each mask, and the weighted sum preserves this. For a permutation matrix $P$,
+$P(m\odot\tau)=(Pm)\odot(P\tau)$ and $Pm$ has the law of $m$, so $\mathrm{DARE}(P\tau)$ has the law of $P\,\mathrm{DARE}(\tau)$,
+jointly over the tasks. Together, $\mathrm{Mon}_N=S_N\ltimes T_N$ acts equivariantly in distribution. Conversely, suppose
+$\mathrm{DARE}(g\tau)$ and $g\,\mathrm{DARE}(\tau)$ have the same law for every $\tau$, and take $\tau=e_k$. The law of
+$g\,\mathrm{DARE}(e_k)$ is supported on the two points $0$ and $ge_k/(1-p)$, while $\mathrm{DARE}(ge_k)$ takes the $2^q$
+distinct values $m\odot ge_k/(1-p)$, each with positive probability, where $q$ is the number of nonzero entries of $ge_k$. So
+$q=1$: every column of $g$ has a single nonzero entry, and $g\in\mathrm{Mon}_N$.
+
+\emph{TIES with global trimming} \citep{yadav2023ties}. Each $\tau_k$ is trimmed to its $k_0$ entries of largest magnitude,
+giving $\hat\tau_k$; the sign $\gamma_i=\operatorname{sign}\big(\sum_k\hat\tau_{k,i}\big)$ is elected by total mass; and the
+output is $\lambda$ times the disjoint mean, $\frac1{\lvert A_i\rvert}\sum_{k\in A_i}\hat\tau_{k,i}$ over
+$A_i=\{k:\operatorname{sign}\hat\tau_{k,i}=\gamma_i\}$. Let $g=cPS$ with $c\ne0$, $P$ a permutation matrix and $S=\diag(s_1,\dots,s_N)$ a
+diagonal sign matrix, and let $j$ be the coordinate that $P$ moves to $i$. The magnitudes of $g\tau_k$ are $\lvert c\rvert$ times
+the permuted magnitudes of $\tau_k$, so, off ties at the threshold, trimming keeps the corresponding entries and
+$\widehat{g\tau_k}=g\hat\tau_k$. The elected sign at $i$ becomes $\operatorname{sign}(c)s_j\gamma_j$, the set $A_i$ for the
+transformed input is $A_j$, and the mean at $i$ is $cs_j$ times the mean at $j$. So the output is $g$ times the output, and
+TIES is $\R^\times\cdot B_N$-equivariant off ties. A non-scalar positive diagonal fails: with $N=2$, one task, $k_0=1$,
+$\tau=(2,1)$ and $D=\diag(1,3)$, TIES returns $\lambda(2,0)$ on $\tau$ and $\lambda(0,3)\ne D\lambda(2,0)$ on $D\tau$.
+
+\emph{Frequency election.} Here $\gamma_i=\operatorname{sign}\big(\sum_k\operatorname{sign}\hat\tau_{k,i}\big)$, with $0$
+replaced by $+1$. Positive homotheties and permutations leave the counts unchanged or permute them, so the argument above
+gives $\R_{>0}\cdot S_N$-equivariance. Sign changes fail on ties, which have positive probability because the counts are
+integers. With two tasks and $\hat\tau_{1,i}=1$, $\hat\tau_{2,i}=-1$, the tie elects $+1$ and the output at $i$ is $\lambda$;
+after flipping coordinate $i$ the entries are $-1,+1$, the tie again elects $+1$, and the output at $i$ is $\lambda$, not
+$-\lambda$. The same example defeats $-I$.
+
+\emph{Per-tensor trimming.} If coordinates are grouped into tensors $b$ of sizes $N_b$ and each tensor is trimmed to its own
+top entries, an independent homothety $c_b$ and signed permutation inside each tensor preserve the trimmed sets, and
+permuting tensors of equal size (and equal $k_0$) preserves them too; the election and the mean are coordinatewise, so the
+argument above applies blockwise.
+
+\emph{DARE followed by TIES.} For $g\in\R^\times\cdot B_N\subseteq\mathrm{Mon}_N$, the masked inputs
+$(\mathrm{DARE}(g\tau_k))_k$ have the law of $(g\,\mathrm{DARE}(\tau_k))_k$, and TIES commutes with $g$ off magnitude ties
+among nonzero entries (ties among entries zeroed by the mask do not matter, since a kept zero is zero), so the composite is
+equivariant in distribution. HF's and MergeKit's \texttt{dare\_ties} \citep{xmangrulkar2022peft,xgoddard2024mergekit} omit the
+trim: for invertible diagonal $D$ and fixed masks, $\mathrm{DARE}(D\tau_k)=D\,\mathrm{DARE}(\tau_k)$, the elected sign at $i$
+is multiplied by $\operatorname{sign}d_i$, the sets $A_i$ are unchanged and the mean is multiplied by $d_i$; so it is exactly
+$T_N$-equivariant per mask, and with permutations in distribution its group contains $\mathrm{Mon}_N$.
+
+\emph{No rotations.} Let $R$ rotate the plane of $e_1,e_2$ by $30^\circ$, so $Re_1=(\cos30^\circ,\sin30^\circ,0,\dots)$. For DARE,
+$R\,\mathrm{DARE}(e_1)$ takes the values $0$ and $Re_1/(1-p)$, each with two nonzero entries or none, while
+$\mathrm{DARE}(Re_1)$ has exactly one nonzero entry with probability $2p(1-p)>0$; the laws differ. For TIES with one task and
+$k_0=1$, $\mathrm{TIES}(e_1)=\lambda e_1$, so $R\,\mathrm{TIES}(e_1)$ has two nonzero entries, while $\mathrm{TIES}(Re_1)=
+\lambda\cos30^\circ e_1$ has one. With one task, \texttt{dare\_ties} reduces to DARE, and DARE followed by trimmed TIES
+returns, with positive probability, the trimmed vector $\lambda\cos30^\circ e_1/(1-p)$ on $Re_1$, which no value of
+$R\,\mathrm{TIES}(\mathrm{DARE}(e_1))\in\{0,\lambda Re_1/(1-p)\}$ matches.
+
+\emph{Factor-level rules.} HF's non-SVD variants apply the sparsifier to each $B_i$ and each $A_j$ with independent masks and
+then form $\big(\sum_iv_i\,\mathrm{DARE}(B_i)\big)\big(\sum_jv_j\,\mathrm{DARE}(A_j)\big)$ (and the analogues for TIES). The
+$B$-masks and the $A$-masks are independent and DARE is unbiased, $\mathbb E\,\mathrm{DARE}(X)=X$, so the expected output is the
+LoraHub-type rule $\big(\sum_iv_iB_i\big)\big(\sum_jv_jA_j\big)$. A gauge $(cB_2,A_2/c)$ on one adapter changes this expectation
+by the formula of (a), which is nonzero for generic factors, so the output's law changes: even DARE is not invariant under
+independent per-adapter gauges, not even in distribution. On the other hand, let $g\in T_r$ act on all adapters at once,
+$B_i\mapsto B_ig^{-1}$ and $A_j\mapsto gA_j$. Right multiplication by a diagonal matrix scales columns, which commutes with an
+entrywise mask, so $M\odot(B_ig^{-1})=(M\odot B_i)g^{-1}$ and $M'\odot(gA_j)=g(M'\odot A_j)$, and for every choice of masks
+\[\Big(\sum_iv_i\,M_i\odot B_ig^{-1}\Big)\Big(\sum_jv_j\,M_j'\odot gA_j\Big)=\Big(\sum_iv_i\,M_i\odot B_i\Big)g^{-1}g\Big(\sum_jv_j\,
+M_j'\odot A_j\Big).\]
+For a permutation $g=P$, $M\odot(B_iP\T)=\big((MP)\odot B_i\big)P\T$, and $MP$ has the law of $M$; with all masks permuted by the
+same $P$ their joint law is unchanged, so the output's law is invariant. A single masked adapter is the case of one
+summand. This gives $T_r$-invariance per mask and $\mathrm{Mon}_r$-invariance in distribution.
+\end{proof}
+
+\begin{remark*}{numerical checks}
+The checks reported after \thmref{Proposition}{V.4}, namely DARE's per-mask equivariance under a random diagonal to
+$2\times10^{-15}$, TIES's homogeneity and its failure by $5.6$ under a positive diagonal, the LoraHub formula with three
+modules, the order-one change of factor-wise DARE under a one-adapter gauge against $10^{-15}$ under a shared one, and the Poly
+fibre dimensions $32$ (two tasks) and $4=\dim\GL_2$ (four tasks) for three skills, $r=2$ and $6\times6$ weights, instantiate the
+statements proved above; the last one is the numerical part of the Poly bullet (Appendix~\ref{app:repro}).
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Definition VI.1}\label{proof:VI.1}
+
+\begin{restate}{Definition}{VI.1}{extensions; mergeability}
+\begin{itemize}
+  \item An \textbf{extension} is a function-preserving pointed embedding
+  \[\iota:(\Theta,f,\theta_0)\to(\Theta\times\Theta',\tilde f,(\theta_0,\theta_0')),\qquad\iota(\theta)=(\theta,\theta_0'),\]
+  with $\tilde f(\theta,\theta_0',-)=f(\theta,-)$. The point $\theta_0'$ is the \textbf{neutral point} (``identity at
+  initialisation'').
+  \item An \textbf{unpointed extension} has no neutral point.
+  \item A method on an extension is \textbf{mergeable} if there is $\mu:Q\to\Theta$ with
+  $\Phi_{\tilde f}\circ\rho=\Phi_f\circ\mu$: a lift along the realisation.
+  \item It is \textbf{box-locally mergeable} if the modified box function stays in the box's function class: linear maps
+  for a linear box, affine maps when the box has a bias slot. \thmref{Theorem}{VI.3} gives sufficient conditions, with
+  explicit side conditions (position-uniformity, no weight sharing, bias slots), under which this yields a merge into the
+  base network.
+\end{itemize}
+\end{restate}
+
+A definition needs no proof. We check the facts that the definition and the square after it use. Here
+$\Phi_f:\Theta\to C^\infty(X,Y)$, $\theta\mapsto f(\theta,-)$, is the realisation, and a box's function class consists of the
+maps it can compute with some weight, applied identically at every position.
+
+\begin{proof}[Verification of the claims in Definition VI.1]
+\emph{Extensions.} The map $\iota(\theta)=(\theta,\theta_0')$ is smooth, injective and immersive, and a homeomorphism onto the
+closed set $\Theta\times\{\theta_0'\}$, so it is an embedding. It is pointed, $\iota(\theta_0)=(\theta_0,\theta_0')$, and
+function-preserving, $\Phi_{\tilde f}\circ\iota=\Phi_f$, which is the displayed condition.
+
+\emph{Weight-space methods merge.} A method $(Q,q_0,\rho)$ on $\Theta$ itself, read on the trivial extension
+($\Theta'$ a point), satisfies the merge condition with $\mu=\rho$, the arrow to full fine-tuning of
+\thmref{Observation}{I.4}(a). More generally, a method on an extension whose $\rho$ factors as $\iota\circ\mu$ merges by
+$\mu$.
+
+\emph{Merges are lifts, and need not be unique.} The realisation $\Phi_f$ need not be injective. Every function-preserving
+reparametrisation $\phi$ of the base gives another lift $\phi\circ\mu$; permutations of hidden units are examples
+(\thmref{Lemma}{VI.2}).
+Let a pointed method merge, with $\rho(q_0)$ the neutral point $(\theta_0,\theta_0')$. Then
+\[\Phi_f(\mu(q_0))=\Phi_{\tilde f}(\theta_0,\theta_0')=\Phi_f(\theta_0),\]
+so $\mu(q_0)$ realises the pretrained function, without having to equal $\theta_0$.
+
+\emph{Box-local mergeability.} If the edit of a method modifies a single linear (affine) box of the base network, and for
+every $q$ the modified box function is linear (affine), position-independent and computed by an unshared weight $W(q)$ of
+that box, then replacing the box's weight by $W(q)$ and keeping the others gives a $\mu$ with $\Phi_f\circ\mu=\Phi_{\tilde
+f}\circ\rho$. The side conditions are exactly what makes this replacement legitimate, and \thmref{Theorem}{VI.3}(a)
+spells them out.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Lemma VI.2}\label{proof:VI.2}
+
+\begin{restate}{Lemma}{VI.2}{the activation fixes the privileged basis; classical, \citet{xsussmann1992uniqueness},
+\citet{xchen1993geometry}, \citet{xgodfrey2022symmetries}}
+Let $\sigma:\R\to\R$ be an elementwise activation that is not affine, and let $L\in\GL_d$ commute with it as maps on $\R^d$:
+$L\,\sigma^{\times d}=\sigma^{\times d}L$.
+
+(a) If $\sigma\in C^2$, then $L=PD$ is monomial.
+
+(b) If $\sigma$ is ReLU or leaky ReLU with slope $\alpha\ne1$, then $L=PD$ with $D$ a positive diagonal.
+
+(c) If moreover $\sigma$ is real-analytic at $0$ with $\sigma(t)=\sum a_kt^k$, each diagonal entry $c$ of $D$ satisfies
+$ca_k=c^ka_k$ for all $k$. So $c=1$ for GELU and SiLU, since $\sigma''(0)\neq0$, and $c=\pm1$ for tanh.
+\end{restate}
+
+\begin{proof}
+Write $\ell_i$ for row $i$ of $L$; it is nonzero because $L$ is invertible. Row $i$ of the identity
+$L\,\sigma^{\times d}(x)=\sigma^{\times d}(Lx)$ reads
+\begin{equation}\label{eq:C3-commute-row}
+\sum_jL_{ij}\,\sigma(x_j)=\sigma(\ell_i\cdot x)\qquad\text{for all }x\in\R^d .
+\end{equation}
+Once each row has a single nonzero entry, the positions of these entries are distinct, since otherwise a column of $L$
+would vanish; so $L=PD$ with $P$ a permutation matrix and $D$ an invertible diagonal matrix.
+
+(a) For $j\ne k$, the mixed partial $\partial_j\partial_k$ of the left side of \eqref{eq:C3-commute-row} vanishes, since each
+term depends on one coordinate, and the mixed partial of the right side is $L_{ij}L_{ik}\,\sigma''(\ell_i\cdot x)$. Since
+$\sigma$ is $C^2$ and not affine, $\sigma''(t_0)\ne0$ for some $t_0$, and since $\ell_i\ne0$ there is $x$ with $\ell_i\cdot
+x=t_0$. Hence $L_{ij}L_{ik}=0$ for all $j\ne k$: row $i$ has a single nonzero entry.
+
+(b) Let $\sigma(t)=t$ for $t\ge0$ and $\sigma(t)=\alpha t$ for $t<0$, with $\alpha\ne1$ ($\alpha=0$ is ReLU). Then $\sigma$ is
+smooth off $0$, and not differentiable at $0$, where its one-sided derivatives $1$ and $\alpha$ differ. The left side of
+\eqref{eq:C3-commute-row} is a sum of functions of separate coordinates, so it is differentiable at $x$ iff each term with
+$L_{ij}\ne0$ is differentiable in $x_j$; its non-differentiability set is $\bigcup_{j:L_{ij}\ne0}\{x_j=0\}$. The right side is
+smooth where $\ell_i\cdot x\ne0$, and at a point with $\ell_i\cdot x=0$ its one-sided directional derivatives along $\pm\ell_i$
+are $\lVert\ell_i\rVert^2$ and $-\alpha\lVert\ell_i\rVert^2$, which are not negatives of each other, so it is not
+differentiable there; its non-differentiability set is the hyperplane $\{\ell_i\cdot x=0\}$. The two sets are equal. By
+\auxref{B.36}(b) the hyperplane is one of the coordinate hyperplanes $\{x_{j_0}=0\}$, and each $\{x_j=0\}$ with $L_{ij}\ne0$
+is contained in it and so equal to it; hence $L_{ij}\ne0$ only for $j=j_0$. Then \eqref{eq:C3-commute-row} reads
+$L_{ij_0}\sigma(t)=\sigma(L_{ij_0}t)$ for all $t$. At $t=1$ this is $L_{ij_0}=\sigma(L_{ij_0})$; if $L_{ij_0}<0$ the right side
+is $\alpha L_{ij_0}$, which would force $\alpha=1$. So $L_{ij_0}>0$, and $D$ is positive.
+
+(c) A permutation matrix commutes with every elementwise map (rule R2 of \thmref{Theorem}{VI.3}), so
+$D\sigma^{\times d}=P^{-1}L\sigma^{\times d}=P^{-1}\sigma^{\times d}L=\sigma^{\times d}P^{-1}L=\sigma^{\times d}D$, that is,
+$c\,\sigma(t)=\sigma(ct)$ for each diagonal entry $c\ne0$ and all $t$. Near $0$ both sides are power series,
+$\sum_kca_kt^k=\sum_ka_kc^kt^k$, so $ca_k=c^ka_k$ for every $k$ (\auxref{B.10}(c)). For GELU, $\sigma(t)=t\,\Phi_{\mathcal
+N}(t)$ with the standard normal distribution function $\Phi_{\mathcal N}(t)=\tfrac12+t/\sqrt{2\pi}+O(t^3)$, so
+$a_2=1/\sqrt{2\pi}\ne0$; for SiLU, $\sigma(t)=t/(1+e^{-t})=\tfrac t2+\tfrac{t^2}4+O(t^4)$, so $a_2=\tfrac14\ne0$. In both cases
+$c=c^2$, and $c\ne0$ gives $c=1$. For tanh, $a_3=-\tfrac13\ne0$, so $c=c^3$ and $c=\pm1$; both occur, tanh being odd.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem VI.3}\label{proof:VI.3}
+
+\begin{restate}{Theorem}{VI.3}{the merge calculus; known in part}
+Work with activation-side diagrams in a symmetric monoidal category of continuous, piecewise-smooth maps with copy and
+discard nodes. (We call copy and the Hadamard product ``spiders'' by analogy only; in this cartesian setting they do not
+satisfy the Frobenius law.) A \emph{trainable box} is a node whose weight ranges over a stated class: all linear maps, or all
+affine maps when the box has a bias slot. R2 and R4--R7 are identities of maps; R1 is a closure property and R3 a
+characterisation.
+
+\smallskip
+{\upshape\footnotesize\renewcommand{\arraystretch}{1.15}\noindent
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}p{0.33\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule\headrow
+\textbf{Rule} & \textbf{Statement} & \textbf{When it holds}\\
+\midrule
+R1 (fusion) & composites and parallel sums of linear (affine) boxes are linear (affine) & the operators involved are
+position-independent\\
+R2 (permutation slide) & $P\sigma^{\times d}=\sigma^{\times d}P$ & every elementwise $\sigma$\\
+R3 (positive-diagonal slide) & $\diag(\ell)\,\sigma^{\times d}=\sigma^{\times d}\diag(\ell)$ for all $\ell\ge0$ & iff
+$\sigma$ is positively homogeneous (ReLU, leaky ReLU; not GELU, SiLU, tanh); such $\sigma$ are piecewise linear\\
+R4 (spider slide) & $\diag(\ell)(a\odot b)=(\diag(\ell)a)\odot b$ & any $\ell$\\
+R5 (cup slide) & $\langle Mq,k\rangle=\langle q,M^\top k\rangle$ & always. Under RoPE,
+$\langle R_mMq,R_nk\rangle=\langle q,M^\top R_{n-m}k\rangle$ holds for every $M$, but the slide onto the key side,
+$\langle R_mMq,R_nk\rangle=\langle R_mq,R_nM^\top k\rangle$ for all $m,n$, holds iff $M^\top$ commutes with every
+$R_{n-m}$ that occurs; for diagonal $M=\diag(\ell)$ and distinct frequencies, iff $\ell$ is constant on each rotary pair
+(in either pairing convention)\\
+R6 (norm absorption) & $W(\gamma\odot n(x)+\beta)=(W\diag\gamma)\,n(x)+W\beta$ & always; the shift $W\beta$ needs a bias
+slot, and an RMSNorm gain has no $\beta$\\
+R7 (copy slide) & applying $D$ and then copying equals copying and then applying $D$ to every copy & always\\
+\bottomrule
+\end{tabularx}}
+\smallskip
+
+Consequences:
+
+(a) \textbf{Affine edits.} Let a method insert a position-uniform affine edit $E_q$ on a wire $w$ of the base network $f$,
+for every $q\in Q$. Suppose every reader of $w$ is a trainable, unshared box (no weight tying) whose class is closed under
+precomposition with $E_q$; a shift needs a bias slot. Then the method merges, by $W_c\mapsto W_cE_q$ for all readers $c$ at
+once. Dually, it merges into an untied trainable box that writes $w$ whenever $E_q$ composed with that box stays in its
+class. Absorption into a box that the extension itself inserts does not count. Edits that violate these hypotheses fall
+outside (a): on the reader side, R1--R7 do not merge position-selective edits or edits on a wire that is also read by a skip
+connection, a norm or the network output. Whole-network non-mergeability is open. Position-selective edits (ReFT/LoReFT, and
+position-gated LoRA variants such as Activated LoRA) are not box-locally mergeable. Residual-stream edits need case
+analysis: an edit merges into the box that produces the wire when that box can absorb it (an untied embedding table; for a
+fixed-position edit at layer $0$, a learned absolute positional table), a shift folds into a writer's bias when one exists,
+a diagonal edit after a post-LN folds into that LN's affine parameters, and an orthogonal edit in an RMSNorm model merges
+globally, SliceGPT/QuaRot-style. No merge is known for LoReFT's non-orthogonal low-rank edit.
+
+(b) \textbf{Diagonal methods.} A diagonal method merges into a box reached by R1--R7 if all of the following hold: the rules
+move \emph{every} copy of $\diag(\ell)$ into trainable boxes for all $\ell$ in the method's parameter domain (with $\ell\ge0$
+when R3 is used); no position-dependent operator lies on the path (for RoPE, $\ell$ is constant on each rotary pair); the
+target box is unshared, or $\ell$ is constant across the sharing group; and every shift has a bias slot. Conversely, the
+RoPE condition is necessary for sliding a query scaling onto $W_K$ when $W_Q$ and $W_K$ have full rank and at least two
+occurring relative offsets have rotation angles that are not multiples of $\pi$. Without such genericity hypotheses the
+conditions are not necessary: a dead rotary pair, or zero entries of $\ell$ under ReLU, can still merge.
+
+(c) \textbf{Non-affine edits.} For a linear or affine box, an edit whose modified box function is non-affine in the box
+input, for some parameter value, is not box-locally mergeable. For linear and affine boxes this is the definition; for
+non-linear boxes such as attention, see \thmref{Theorem}{VI.5}(f).
+
+(d) \textbf{Type relativity.} A generic high-precision update is off the quantisation grid, so exact merging of a QLoRA or
+LoftQ update leaves the quantised type, a type-preserving merge is lossy, and QA-LoRA's group-constant adapters are the
+exception (\thmref{Proposition}{V.2}(d)).
+\end{restate}
+
+\begin{proof}
+A diagram denotes a map on activations, and two diagrams related by an identity of maps compute the same network function;
+a rewrite that ends with every edit inside trainable boxes of the base network therefore exhibits a merge $\mu$, the new
+weights of those boxes. ``Position-independent'' means that the same map acts at every token position.
+
+\emph{R1.} Composites and sums of linear (affine) maps are linear (affine). If each acts identically at every position, so
+does the result, which is then computed by one weight (and bias) at all positions.
+
+\emph{R2.} For a permutation $\pi$ with matrix $P$, $(P\sigma^{\times d}(x))_i=\sigma(x_{\pi^{-1}(i)})=\sigma((Px)_i)$.
+
+\emph{R3.} Coordinatewise the identity says $\ell_i\sigma(t)=\sigma(\ell_it)$ for all $\ell_i\ge0$ and $t$; with $d=1$ this is
+positive homogeneity of degree one, and conversely positive homogeneity gives the identity in every coordinate. A positively
+homogeneous $\sigma$ satisfies $\sigma(t)=t\,\sigma(1)$ for $t\ge0$ and $\sigma(t)=\lvert t\rvert\,\sigma(-1)$ for $t<0$, so it
+is linear on each half-line. ReLU and leaky ReLU are of this form. GELU, SiLU and tanh are differentiable at $0$ and not
+linear, so by \auxref{B.36}(a) they are not positively homogeneous.
+
+\emph{R4} holds entrywise, $\ell_ia_ib_i=(\ell_ia_i)b_i$.
+
+\emph{R5.} $\langle Mq,k\rangle=q\T M\T k=\langle q,M\T k\rangle$. Under RoPE, $R_m$ is block-diagonal with the planar rotations
+$\rho(m\omega_j)$ on the rotary pairs, in either pairing convention, so $R_m\T=R_{-m}$ and $R_m\T R_n=R_{n-m}$. Hence
+$\langle R_mMq,R_nk\rangle=q\T M\T R_{n-m}k=\langle q,M\T R_{n-m}k\rangle$ for every $M$, while
+$\langle R_mq,R_nM\T k\rangle=\langle q,R_{n-m}M\T k\rangle$. These agree for all $q,k$ iff $M\T R_{n-m}=R_{n-m}M\T$, and for all
+occurring $(m,n)$ iff $M\T$ commutes with every occurring $R_\Delta$. For $M=\diag(\ell)$ the commutation holds pair by pair.
+On a pair with entries $(\ell_a,\ell_b)$ and rotation angle $\varphi$,
+\[\begin{pmatrix}\ell_a&0\\0&\ell_b\end{pmatrix}\begin{pmatrix}\cos\varphi&-\sin\varphi\\ \sin\varphi&\cos\varphi\end{pmatrix}
+-\begin{pmatrix}\cos\varphi&-\sin\varphi\\ \sin\varphi&\cos\varphi\end{pmatrix}\begin{pmatrix}\ell_a&0\\0&\ell_b\end{pmatrix}
+=(\ell_b-\ell_a)\sin\varphi\begin{pmatrix}0&1\\1&0\end{pmatrix},\]
+which vanishes iff $\ell_a=\ell_b$ or $\varphi\in\pi\mathbb Z$. So the slide holds iff $\ell$ is constant on every pair whose
+angle $\Delta\omega_j$ is not a multiple of $\pi$ for some occurring $\Delta$. For RoPE, $0<\omega_j\le1$, so every pair
+qualifies as soon as the offset $\Delta=1$ occurs; distinct frequencies are not needed for diagonal $M$.
+
+\emph{R6.} By linearity, $W(\gamma\odot n(x)+\beta)=W\diag(\gamma)\,n(x)+W\beta$. The first term is a linear box applied to the
+normalised wire, and the constant $W\beta$ is absorbed by a bias slot, $b\mapsto b+W\beta$; an RMSNorm gain has $\beta=0$.
+
+\emph{R7.} With $\Delta(x)=(x,x)$ the copy map, $\Delta\circ D=(D\times D)\circ\Delta$ for every map $D$: the naturality of the
+cartesian diagonal (\bgref{B.4}).
+
+(a) Let $E_q(x)=A_qx+c_q$ act at every position on $w$. By R7 applying $E_q$ before the copy node that feeds the readers
+equals applying it on each reader's input. For a reader $c$ with weight $W_c$ and bias $b_c$,
+$W_c(A_qx+c_q)+b_c=(W_cA_q)x+(W_cc_q+b_c)$, which lies in the class of $c$ by the closure hypothesis (for a linear class this
+requires $c_q=0$, and for a shift a bias slot). The readers are unshared, so their weights can be changed independently; and
+$E_q$ is the same at every position, so one weight serves all positions (R1). Setting $\mu(q)$ to the base weights with
+$W_c\mapsto W_cA_q$ and $b_c\mapsto b_c+W_cc_q$ for every reader gives $\Phi_f\circ\mu=\Phi_{\tilde f}\circ\rho$. Dually, if
+$w$ is the output of an untied box $p(x)=W_px+b_p$ and $E_q\circ p$ lies in its class, replace $p$ by $E_q\circ p$, that is,
+$W_p\mapsto A_qW_p$ and $b_p\mapsto A_qb_p+c_q$ (R1). A merge must land in the base network $\Theta$, so absorption into a box
+that only the extension contains is not a merge. On the reader side the rules have nothing to absorb an edit read by a skip
+connection, a norm or the network output, since those readers carry no trainable weight, and R1 does not fuse a
+position-selective edit into a weight that acts at every position. A position-selective edit modifies the box function at
+some positions only; for parameter values at which it is not the identity, the modified computation is not one map applied
+identically at every position, so it is not in the box's class, and the edit is not box-locally mergeable.
+
+\emph{Residual-stream cases.} (i) If $w$ is the output of an untied embedding table $\mathcal E$, the dual case applies:
+replacing each row $e(v)$ by $A_qe(v)+c_q$ absorbs a position-uniform affine edit. For an additive edit $h\mapsto h+c$ at one
+fixed position $p_0$ of layer $0$ in a model with a learned absolute positional table, replacing row $p_0$ of that table by
+itself plus $c$ absorbs it. (ii) A shift $h\mapsto h+t$ of the stream after a block whose last box has a bias $b$ is absorbed
+by $b\mapsto b+t$, since the block adds its output to the stream. (iii) In a post-LN model the normalised wire is the stream,
+$h=\gamma\odot n(x)+\beta$, and a diagonal edit gives $s\odot h+t=(s\odot\gamma)\odot n(x)+(s\odot\beta+t)$, absorbed by
+$\gamma\mapsto s\odot\gamma$, $\beta\mapsto s\odot\beta+t$. (iv) In an untied pre-RMSNorm model, let block $j$ map the stream by
+$h\mapsto h+F_j(h)$ with $F_j(h)=W^{(j)}_{\rm out}\,G_j\big(W^{(j)}_{\rm in}\diag(\gamma_j)\,n(h)\big)$, where $n(h)=h/\mathrm{rms}(h)$,
+$G_j$ is the internal computation (attention with its positional encoding applied after the input projections, or the gated
+MLP), and $W^{(j)}_{\rm in}$ collects the input projections. Let $Q$ be orthogonal and the edit be $h\mapsto Qh$ after block
+$l$. Replace the embedding rows $e(v)$ by $Qe(v)$, and for $j\le l$ replace $W^{(j)}_{\rm in}$ by $W^{(j)}_{\rm in}\diag(\gamma_j)Q\T$,
+$\gamma_j$ by $\mathbf 1$ and $W^{(j)}_{\rm out}$ by $QW^{(j)}_{\rm out}$ (and any bias $b$ of an output projection by $Qb$). Since
+$\mathrm{rms}(Qh)=\mathrm{rms}(h)$, $n(Qh)=Qn(h)$, and by induction the new streams are $Qh_j$ for $j\le l$:
+$Qh_{j-1}+QW^{(j)}_{\rm out}G_j\big(W^{(j)}_{\rm in}\diag(\gamma_j)Q\T Qn(h_{j-1})\big)=Q\big(h_{j-1}+F_j(h_{j-1})\big)$. After block $l$
+the new network carries $Qh_l$, as the edited one does, and the later blocks are unchanged, so the outputs agree. This is the
+construction of \citet{xashkboos2024slicegpt,xashkboos2024quarot}.
+
+(b) The rules used along the path are identities of maps under their side conditions: R3 needs $\ell\ge0$, the slide of R5
+under RoPE needs $\ell$ constant on the rotary pairs, and R6 needs a bias slot for the shift. Applying them moves every copy of
+$\diag(\ell)$ next to a trainable box, and R1 fuses it; this is (a) applied at the box reached. An unshared target can absorb
+its copy independently, and a target shared across a group absorbs a single matrix, which is possible for every member exactly
+when $\ell$ is constant across the group. For the converse under RoPE, suppose the query scaling $D=\diag(\ell)$ merges into
+some $W_K'$ with $W_Q$ unchanged. Equality of all logits for all inputs gives
+$x\T W_Q\T DR_\Delta W_Kx'=x\T W_Q\T R_\Delta W_K'x'$ for every occurring offset $\Delta=n-m$, so
+$W_Q\T(R_\Delta W_K'-DR_\Delta W_K)=0$. If $W_Q$ has full row rank, $W_Q\T$ is injective and $W_K'=R_{-\Delta}DR_\Delta W_K$ for
+every occurring $\Delta$; if $W_K$ has full row rank too, it has a right inverse, and $R_{-\Delta}DR_\Delta$ is one matrix for
+all occurring $\Delta$. On a rotary pair $j$, let $\Delta$ and $\Delta'$ be occurring offsets with $(\Delta-\Delta')\omega_j\notin\pi
+\mathbb Z$; then $D$ commutes with $R_{\Delta-\Delta'}$ on that pair, and by the computation in R5, $\ell$ is constant on it. In
+causal attention $\Delta'=0$ occurs (a query attends to its own position), so it suffices that one occurring offset has an angle
+on pair $j$ that is not a multiple of $\pi$, which the hypothesis provides pair by pair. The genericity hypotheses are needed.
+If $W_Q$ has a dead pair (both rows zero) and $\ell$ is constant on every other pair, then $W_Q\T DR_\Delta=W_Q\T R_\Delta D$,
+since both sides vanish on the dead pair and $D$ commutes with $R_\Delta$ on the others, so $W_K'=DW_K$ works with $\ell$
+arbitrary on the dead pair. Under ReLU, $\diag(\ell)\mathrm{ReLU}(Wx)=\mathrm{ReLU}(\diag(\ell)Wx)$ holds for every $\ell\ge0$,
+zero entries included.
+
+(c) For a linear or affine box the class is the linear or affine maps, so a non-affine modified box function is outside it,
+which is the definition of failing box-local mergeability.
+
+(d) is \thmref{Proposition}{V.2}(d).
+\end{proof}
+
+\paragraph{The corollaries after \thmref{Theorem}{VI.3}}
+\emph{Weight-space methods} merge by $\mu=\rho$ (\S\ref{proof:VI.1}); their nonlinearities act on the parameters. If an
+embedding and an LM head share one tensor, a merge that changes one side must change the other or break the tie, which is why
+an adapter on one side is not merged faithfully when the tie is not maintained. \emph{(IA)$^3$ on keys and values} is
+$\diag(\ell)W_Kx=(\diag(\ell)W_K)x$ and likewise for $W_V$ (R1). \emph{On the FFN}, applied to the input of $W_{\rm down}$, it is
+$W_{\rm down}\diag(\ell)h=(W_{\rm down}\diag(\ell))h$ (R1); neither step involves $\sigma$. \emph{Into $W_{\rm up}$}: under ReLU,
+R3 gives $\diag(\ell)\mathrm{ReLU}(W_{\rm up}x)=\mathrm{ReLU}(\diag(\ell)W_{\rm up}x)$ for $\ell\ge0$, while an entry $\ell_i<0$
+cannot fuse, since $\ell_i\mathrm{ReLU}(w_i\cdot x)\le0$ and is negative somewhere, whereas $\mathrm{ReLU}(w_i'\cdot x)\ge0$. Under
+SwiGLU or GeGLU, R4 and R1 give \eqref{eq:merge-swiglu} for every $\ell$. \emph{Under GELU}, suppose
+$\ell_i\,\mathrm{GELU}(w_i\cdot x)=\mathrm{GELU}(w_i'\cdot x)$ for all $x$, with $w_i\ne0$ so that the pre-activation ranges over
+$\R$. If $\ell_i=0$, $w_i'=0$ works. If $\ell_i\ne0$, the right side vanishes on the hyperplane $w_i\cdot x=0$, and
+$\mathrm{GELU}(t)=t\,\Phi_{\mathcal N}(t)$ vanishes only at $t=0$, so $w_i'\cdot x=0$ there and $w_i'=cw_i$. Then
+$\ell_i\,\mathrm{GELU}(t)=\mathrm{GELU}(ct)$ for all $t$, and comparing the coefficients $a_1=\tfrac12$ and $a_2=1/\sqrt{2\pi}$
+(\auxref{B.10}(c)) gives $c=\ell_i$ and $\ell_i=\ell_i^2$, so $\ell_i=1$. Hence a fused $W_{\rm up}'$ exists iff every
+$\ell_i\in\{0,1\}$. \emph{A query scaling} fuses into $W_Q$ by R1; onto $W_K$ it needs R5's slide, hence $\ell$ constant on the
+rotary pairs under RoPE (necessary under the genericity hypotheses of (b)), and with grouped-query attention one $W_K$ serves
+several query heads $h$, so the same argument with full-rank $W_Q^{(h)}$ forces $W_K'=D_hW_K$ for every $h$ in the group, hence
+$D_h$ constant across the group when $W_K$ has full row rank. \emph{SSF} after a box $Wx+b$ gives
+$s\odot(Wx+b)+t=(\diag(s)W)x+(s\odot b+t)$, which needs a bias slot when $t\ne0$. \emph{LN-tuning} changes existing parameters, so
+$\mu$ is the new parameter vector. \emph{Folding a LayerNorm} into the following boxes in a pre-LN block, where the norm feeds only
+those boxes, is R7 followed by R6, which needs a bias slot for $W\beta$; an RMSNorm gain has no $\beta$. Folding a gain into a
+tied embedding or head changes the other side of the tie. \emph{Not box-locally mergeable}: for $\sigma$ non-affine and nonzero
+$u$, $d$, the map $y\mapsto y+u\,\sigma(d\T y)$ is non-affine, so a serial Houlsby or Pfeiffer adapter after a box $W$ with
+$d\T W\ne0$, and a parallel adapter $x\mapsto Wx+u\,\sigma(d\T x)$, modify the box function non-affinely for some parameter
+value; a routed mixture $x\mapsto Wx+\sum_eg_e(x)B_eA_ex$ with a softmax gate is real-analytic in its input and parameters and
+non-affine at a witness (two experts with $B_1A_1=I$, $B_2A_2=0$ and gate logits differing by $\gamma\T x$, $\gamma\ne0$, give
+$Wx+g(\gamma\T x)\,x$ with $g$ the logistic function, non-affine along any line on which $\gamma\T x$ varies), hence non-affine for
+generic parameters (\auxref{B.10}), and linear, so mergeable, when the gate is constant; AdapterFusion with a constant gate is a fixed combination of nonlinear adapters,
+still non-affine; LST adds the output of a nonlinear side network; and prefix-type methods are treated in
+\thmref{Theorem}{VI.5}(f). In each case (c) applies. For LLaMA-Adapter with a two-token prompt $p_1,p_2$ and gate $g\ne0$,
+the prompt pairs are $k_i=W_kp_i+b_k$ and $v_i=W_vp_i+b_v$, and a head on a length-one context computes
+$W_o(W_vx+b_v)+g\,W_o\mathrm{Attn}_{q(x)}(P)+b_o$ with
+$\mathrm{Attn}_{q}(P)=v_2+\operatorname{logit}^{-1}\big(\langle q,W_k\delta\rangle/\sqrt d\big)\,W_v\delta$, $\delta=p_1-p_2$.
+If $W_q\T W_k\ne0$ and $W_oW_v\ne0$, choose $u$ and $\delta$ with $\langle W_qu,W_k\delta\rangle\ne0$ and $W_oW_v\delta\ne0$
+(each condition fails only on a proper subspace or a nowhere-dense set). Along $x=tu$ the logistic factor is a bounded,
+non-constant real-analytic function of $t$, hence not affine, so the head is not affine. By \auxref{B.10} the same holds for
+generic prompts with two or more tokens, which is the entry for LLaMA-Adapter in the summary table of
+Exposé~\ref{sec:merge}; with one prompt token, $\mathrm{Attn}_q(P)$ is constant and the head stays affine.
+
+% ====================================================================================================
+\subsection{Proposition VI.4}\label{proof:VI.4}
+
+\begin{restate}{Proposition}{VI.4}{linear insertions, and ReFT}
+(a) A linear adapter in parallel with a single linear box, $W_0x+sUDx$, \emph{is} LoRA: it has the same $\rho$. A linear
+adapter parallel to a whole sublayer (He et al.'s parallel adapter around attention or the FFN) edits the weightless skip
+connection rather than a base box, and is not box-locally mergeable when the sublayer is non-affine.
+
+(b) Let $W_0\in\R^{m\times n}$ be bias-free (as LLaMA-type $W_o$ and $W_{\mathrm{down}}$ are), and $r\ge1$. A serial linear
+adapter after $W_0$, $(I+UD)W_0$ with $U\in\R^{m\times r}$ and $D\in\R^{r\times m}$ (scale absorbed), has image
+$W_0+\{Y\in\Mr:\operatorname{row}Y\subseteq\operatorname{row}W_0\}$. It is expressively equivalent to LoRA iff $\rk W_0=n$,
+and weakly (unpointed) isomorphic to LoRA iff $W_0$ is invertible. The isomorphism $(U,D)\mapsto(U,DW_0)$ sends a base point
+$(U_0,D_0)$ to $(U_0,D_0W_0)$. For a fixed $\mathrm T_A$ pointing $(0,A_0)$ with $\rk A_0=r$ and $1\le r<m=n$, a pointed
+isomorphism exists iff $W_0$ is invertible and $\operatorname{row}A_0=\operatorname{row}(D_0W_0)$, and then $U_0=0$
+automatically. With a bias $b_0$, the serial adapter also moves the bias by $UDb_0$, so on the affine box its image differs
+from weight-only LoRA's. Houlsby's near-identity initialisation (weights from a zero-mean Gaussian with standard
+deviation $10^{-2}$, truncated at two standard deviations) makes practical serial adapters slightly unpointed; the pointed
+statement applies to zero-up initialisations.
+
+(c) LoReFT is $\Phi(h)=h+R^\top(Wh+b-Rh)$, with $R\in\R^{r\times d}$ having orthonormal rows, applied at selected positions.
+On one hidden vector it is the extension by an \textbf{identity box} followed by a rank-$\le r$ affine edit,
+\[\Phi(h)=\big(I+R^\top(W-R)\big)h+R^\top b,\]
+which is LoRA$_r$ on the \emph{affine} identity box $[I_d\mid0]$ in homogeneous coordinates, with $B=R^\top$ constrained to the
+Stiefel manifold and $A=[W-R\mid b]$. Its image is $(I,0)+\MM_{\le r}(d\times(d+1))$, of dimension $r(2d+1-r)$. The bias is
+confined to $\operatorname{col}B$, so for $r<d$ this is not LoRA$_r{}\oplus{}$BitFit, whose dimension is larger by $d-r$. It is
+simulated, through $h(R,W,b)=(R^\top,[W-R\mid b])$, by LoRA$_r$ on that affine box pointed at $(R_0^\top,0)$, a $\mathrm T_B$
+pointing with $\operatorname{col}B_0=\operatorname{row}R_0$; this homogeneous-coordinate LoRA has a bias column in $A$, unlike
+HF LoRA. It is not simulated by $\mathrm T_A$-pointed LoRA$_r$, since its $\dim S_1=r(d+1)$ exceeds $rd$. It is not isomorphic
+to LoRA$_r$: its parameter count is smaller by $r(r+1)/2$, and its residual symmetry is $\Ort(r)$, acting by
+$(R,W,b)\mapsto(OR,OW,Ob)$. It is pointed iff $W=R$ and $b=0$. The reference implementation (pyreft) initialises $W$ and $b$
+by the default \texttt{nn.Linear} init, independently of $R$, so practical LoReFT has a pointing defect
+$R^\top((W_0-R_0)h+b_0)$: at initialisation it replaces the $R$-component of $h$ by a random affine function, and the
+simulation above is then only a weak morphism. pyreft also applies dropout to the whole output, $h$ included, so the
+training-time map is not $\Phi$.
+\end{restate}
+
+\begin{proof}
+(a) The adapted box computes $x\mapsto(W_0+sUD)x$, so $\rho(U,D)=W_0+sUD$ on $\R^{m\times r}\times\R^{r\times n}$, which is
+LoRA's $\rho(B,A)=W_0+sBA$ under $(U,D)=(B,A)$, with the zero-up pointing $U=0$ \citep[Table~1]{he2021unified}. A linear adapter
+around a whole sublayer $F$ gives $x\mapsto x+F(x)+sUDx$; the term $sUDx$ is added to the weightless skip connection, which no
+box of the base network computes, so there is no base box whose function the edit modifies. For a non-affine sublayer such as
+$F(x)=W_2\sigma(W_1x)$ with $\sigma$ non-affine, no base box both reads $x$ and writes linearly into the block's output: $W_1$'s
+output passes through $\sigma$, and $W_2$ reads $\sigma(W_1x)$ rather than $x$. So no box of $F$ can absorb $sUDx$ within its
+class. If $F(x)=Mx+c$ were affine, $x+(M+sUD)x+c$ would fuse into $M$.
+
+(b) \emph{Image.} $\rho(U,D)=(I+UD)W_0=W_0+UDW_0$. Each $UDW_0$ has rank at most $r$ and its rows are combinations of the rows
+of $W_0$. Conversely, if $\rk Y\le r$ and $\operatorname{row}Y\subseteq\operatorname{row}W_0$, then $Y=YW_0^+W_0$, since
+$W_0^+W_0$ is the orthogonal projector onto $\operatorname{row}W_0$; $X=YW_0^+$ has rank at most $r$, so $X=UD$ with
+$U\in\R^{m\times r}$, $D\in\R^{r\times m}$, and $Y=UDW_0$. \emph{Expressive equivalence.} LoRA's image is $W_0+\Mr$. If
+$\operatorname{row}W_0=\R^n$ the two images agree. If not, pick $v\notin\operatorname{row}W_0$; then $e_1v\T\in\MM_{\le1}\subseteq
+\Mr$ (here $r\ge1$) has a row outside $\operatorname{row}W_0$, so it lies in LoRA's image minus $W_0$ but not in the
+adapter's.
+
+\emph{Weak isomorphism.} If $W_0$ is invertible, then $m=n$ and $h(U,D)=(U,DW_0)$ is a linear bijection
+$\R^{m\times r}\times\R^{r\times m}\to\R^{m\times r}\times\R^{r\times n}$ with $W_0+U(DW_0)=\rho(U,D)$ (LoRA with $s=1$, or $U$
+rescaled), so it is an isomorphism over $\Theta$; it sends $(U_0,D_0)$ to $(U_0,D_0W_0)$. Conversely, a weak isomorphism is a
+diffeomorphism $h$ with $\rho_{\mathrm{LoRA}}\circ h=\rho$, so the images agree, which forces $\rk W_0=n$
+(\thmref{Observation}{I.4}(c)), and the dimensions agree, $2mr=r(m+n)$, which forces $m=n$; so $W_0$ is square of full rank.
+
+\emph{Pointed isomorphism.} Let $1\le r<m=n$, $\rk A_0=r$, and let the adapter be pointed at $(U_0,D_0)$, that is,
+$U_0D_0W_0=0$. ``If'': $W_0$ invertible gives $U_0D_0=0$. Since $\operatorname{row}(D_0W_0)=\operatorname{row}A_0$ has dimension
+$r$, $D_0W_0$ and hence $D_0$ have rank $r$, so $D_0$ has a right inverse and $U_0=0$. Two $r\times n$ matrices of rank $r$ with
+the same row space differ by an invertible left factor, so $A_0=gD_0W_0$ for some $g\in\GL_r$. The map
+$(U,D)\mapsto(Ug^{-1},gDW_0)$ is a linear bijection over $\Theta$ that sends $(U_0,D_0)=(0,D_0)$ to $(0,A_0)$. ``Only if'': a
+pointed isomorphism is a weak one, so $W_0$ is invertible, and it preserves $S_1$ (\thmref{Observation}{I.6}). Differentiating,
+\begin{align*}
+S_1(\text{adapter at }(U_0,D_0))&=\{(XD_0+U_0Y)W_0\}=\{XD_0W_0+U_0Y'\},\\
+S_1(\mathrm{LoRA}\text{ at }(0,A_0))&=\{XA_0\},
+\end{align*}
+with $X\in\R^{m\times r}$ and $Y'=YW_0$ ranging over $\R^{r\times n}$ because $W_0$ is invertible; and $\{XA_0\}=\{Z:
+\operatorname{row}Z\subseteq\operatorname{row}A_0\}$. If $(U_0)_{ij}\ne0$, choose $v\notin\operatorname{row}A_0$, possible
+since $r<n$, and $Y'=e_jv\T$: row $i$ of $U_0Y'$ is $(U_0)_{ij}v\T$, outside $\operatorname{row}A_0$, a contradiction. So $U_0=0$,
+and $\{XD_0W_0\}=\{XA_0\}$ gives $\operatorname{row}(D_0W_0)=\operatorname{row}A_0$.
+
+\emph{Bias.} $(I+UD)(W_0x+b_0)=(W_0+UDW_0)x+(b_0+UDb_0)$. On the affine box the adapter's image contains maps with bias
+$b_0+UDb_0\ne b_0$ whenever $b_0\ne0$ (choose $UD$ with $UDb_0\ne0$), while weight-only LoRA keeps the bias $b_0$. \emph{Houlsby
+initialisation.} With both factors drawn at random, $U_0D_0W_0\ne0$ almost surely, so the initial weight misses $W_0$.
+
+(c) \emph{Algebra.} Expanding, $\Phi(h)=h+R\T(W-R)h+R\T b=\big(I+R\T(W-R)\big)h+R\T b$. In homogeneous coordinates $(h,1)$ an
+affine map $h\mapsto Mh+c$ is the matrix $[M\mid c]\in\R^{d\times(d+1)}$, the identity box is $[I_d\mid0]$, and
+\[\big[\,I+R\T(W-R)\ \big|\ R\T b\,\big]=[I_d\mid0]+R\T\,[W-R\mid b]=[I_d\mid0]+BA,\qquad B=R\T,\ A=[W-R\mid b].\]
+\emph{Image.} As $(W,b)$ ranges freely, $V=[W-R\mid b]$ ranges over all of $\R^{r\times(d+1)}$, so the image is
+$[I_d\mid0]+\{R\T V\}$ over Stiefel $R\T$. Every matrix of rank at most $r$ factors as $R\T V$ with $R\T$ having orthonormal
+columns (\auxref{B.11}(a)), so the image is $[I_d\mid0]+\MM_{\le r}(d\times(d+1))$, of dimension $r(d+(d+1)-r)=r(2d+1-r)$
+(\bgref{C.12}). The bias $R\T b$ lies in $\operatorname{col}R\T=\operatorname{col}B$. LoRA$_r{}\oplus{}$BitFit has image
+$\{[I_d+Y\mid c]:\rk Y\le r,\ c\in\R^d\}$, of dimension $r(2d-r)+d$, which exceeds $r(2d+1-r)$ by $d-r$; for $r<d$ the images
+differ. \emph{Simulation.} The map $h(R,W,b)=(R\T,[W-R\mid b])$ is smooth, and LoRA$_r$ on the affine box evaluated at $h(R,W,b)$ is
+$[I_d\mid0]+R\T[W-R\mid b]=\Phi$, so $h$ is a morphism to that LoRA$_r$. It sends the neutral point $(R_0,R_0,0)$ to $(R_0\T,0)$, a pointing in the stratum $\mathrm T_B$
+($A_0=0$, $B_0$ of rank $r$) with $\operatorname{col}B_0=\operatorname{row}R_0$. \emph{$S_1$.} At the neutral point
+$[W-R\mid b]=0$, so the derivative of $R\T[W-R\mid b]$ is $R_0\T[\dot W-\dot R\mid\dot b]$, and as $(\dot W,\dot b)$ range freely
+$S_1=\{R_0\T V\}$, of dimension $r(d+1)$ because $R_0\T$ is injective. LoRA$_r$ pointed at $(0,A_0)$ with $\rk A_0=r$ has
+$S_1=\{XA_0\}$, of dimension $dr$. A pointed morphism would give an inclusion of $S_1$'s (\thmref{Observation}{I.6}), impossible
+since $r(d+1)>rd$.
+
+\emph{Not isomorphic.} The parameter space is the Stiefel manifold of orthonormal $r$-frames in $\R^d$, of dimension
+$rd-r(r+1)/2$, times $\R^{r\times d}\times\R^r$, of total dimension $2rd+r-r(r+1)/2$; LoRA$_r$ on the affine box has dimension
+$r(2d+1)$. The difference $r(r+1)/2$ is positive, so no diffeomorphism, hence no isomorphism, exists. \emph{Symmetry.} For
+$O\in\Ort(r)$, $OR$ has orthonormal rows and $(OR)\T(OW-OR)=R\T(W-R)$, $(OR)\T Ob=R\T b$, so $\Phi$ is unchanged. Conversely, if
+$R\T V=R'^{\top}V'$ with $\rk V=r$, then the column space of the product is $\operatorname{col}R\T=\operatorname{col}R'^{\top}$, so
+$R'=OR$ for some $O\in\Ort(r)$, and injectivity of $R\T$ gives $V'=OV$, that is, $W'=OW$ and $b'=Ob$: the generic fibres are the
+$\Ort(r)$-orbits, of dimension $r(r-1)/2$, against $r^2$ for LoRA. \emph{Pointedness.} $\Phi=\id$ iff $R\T[W-R\mid b]=0$ iff
+$W=R$ and $b=0$, because $R\T$ is injective.
+
+\emph{The pyreft initialisation.} At $(R_0,W_0,b_0)$ with $W_0$, $b_0$ drawn independently of $R_0$, $\Phi_0(h)-h=R_0\T\big((W_0-R_0)
+h+b_0\big)$, which is nonzero almost surely. Since $R_0R_0\T=I_r$, $R_0\Phi_0(h)=R_0h+(W_0h+b_0-R_0h)=W_0h+b_0$, while
+$(I-R_0\T R_0)\Phi_0(h)=(I-R_0\T R_0)h$: the $R_0$-component of $h$ is replaced by the random affine function $W_0h+b_0$ and the
+rest is kept. The map $h$ sends this initial point to $(R_0\T,[W_0-R_0\mid b_0])$, not to the base point $(R_0\T,0)$, so it is a
+weak morphism only. The remark on dropout describes the implementation \citep{wu2024reft}.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem VI.5}\label{proof:VI.5}
+
+\begin{restate}{Theorem}{VI.5}{attention is a homomorphism followed by a perspective map; known in part}
+Fix a query $q$. Multisets of key--value pairs form a commutative monoid under $\uplus$. Define
+\[\Sigma_q(K)=\Big(\sum e^{\langle q,k\rangle/\sqrt d},\ \sum e^{\langle q,k\rangle/\sqrt d}\,v\Big).\]
+
+(a) $\Sigma_q$ is a monoid homomorphism into $(\R_{\ge0}\times\R^{d_v},+)$, landing in $\{Z>0\}\cup\{(0,0)\}$. On nonempty
+multisets, $\mathrm{Attn}_q=\pi\circ\Sigma_q$ with the partial map $\pi(Z,S)=S/Z$, defined for $Z>0$.
+
+(b) \textbf{Prefix is a gated parallel adapter.} For nonempty $P$ and $C$,
+\[\mathrm{Attn}_q(P\uplus C)=(1-\lambda_q)\,\mathrm{Attn}_q(C)+\lambda_q\,\mathrm{Attn}_q(P),\qquad
+\lambda_q=\frac{Z_q(P)}{Z_q(P)+Z_q(C)}.\]
+
+(c) \textbf{Per-layer pattern rigidity.} Within a single layer, for fixed $q$ and a fixed content multiset $C$: the content
+attention weights are multiplied by $1-\lambda_q$, their ratios are unchanged, and the output lies on the segment from
+$\mathrm{Attn}_q(C)$ to $\mathrm{Attn}_q(P)\in\operatorname{conv}V_P$, where $V_P$ is the set of prefix values. This rigidity
+is relative to the same layer's computation without the prefix; it is relative to the pretrained pattern only at the lowest
+prefixed layer. Lower-layer prefixes change the queries and the content keys and values of higher layers, so attention
+patterns at the level of the network are \emph{not} rigid.
+
+(d) \textbf{LLaMA-Adapter} normalises $P$ and $C$ separately and adds a zero-initialised gate. It computes
+$\mathrm{Attn}_q(C)+\tanh(g_l)\,\mathrm{Attn}_q(P)$, with one gate per head in the paper; HF PEFT uses one raw
+zero-initialised scalar per layer, without $\tanh$. It uses two perspective maps, leaves the content weights exactly
+unchanged, and is pointed at $g=0$. Its prompt keys and values are the frozen $W_k,W_v$ applied to one learned prompt per
+adapted layer, and it acts in the top layers only.
+
+(e) \textbf{Prompt $\to$ deep prefix in causal decoders.} Assume that the soft prompt comes first, that attention is causal,
+and that content positions are offset by the prompt length $m$ in both methods (as HF PEFT does via \texttt{cache\_position}).
+Then at every layer the states at prompt positions depend only on $p$, and $h:p\mapsto(K_j(p),V_j(p))_j$ satisfies
+\[\Phi\circ\rho_{\mathrm{prefix}}\circ h=\Phi\circ\rho_{\mathrm{prompt}}\]
+as functions of the content tokens, read at content positions. The two methods live on different extensions, so this is an
+arrow of the unpointed slice over the realisation $C^\infty(X_{\mathrm{content}},Y_{\mathrm{content}})$, not of $\Meth$.
+Under RoPE without the offset, a different $h$ works: rotate each prefix key by $-m$ (positions $-m,\dots,-1$). For additive
+relative biases (ALiBi, T5) the answer depends on how the implementation places the prefix keys. The construction does not
+apply in bidirectional encoders of depth $\ge2$.
+
+(f) \textbf{Obstructions.} Call a head \emph{standard} if it is vanilla softmax attention without torch-style
+\texttt{add\_bias\_kv} (which would absorb a one-token prefix), \texttt{add\_zero\_attn}, learned attention sinks or
+softmax-plus-one. On length-one contexts, every weight setting of a standard head is affine in $x$. Some prefix makes the
+prefixed head non-affine on length-one contexts iff $W_o\ne0$ and ($W_q\ne0$ or $W_k^\top b_q\ne0$); for bias-free heads, iff
+$W_o\ne0$ and $W_q\ne0$. For such frozen weights and generic prefixes the prefixed head is not affine, because the gate
+$\lambda(x)$ is not constant. So prefix tuning and P-tuning v2 are not box-locally mergeable into a standard head. When
+$W_oW_v\ne0$, no prefix is neutral, so prompt and prefix tuning are unpointed.
+\end{restate}
+
+\begin{proof}
+Write $\epsilon_q(k)=e^{\langle q,k\rangle/\sqrt d}>0$, and for a multiset $K$ put $Z_q(K)=\sum_{(k,v)\in K}\epsilon_q(k)$ and
+$S_q(K)=\sum_{(k,v)\in K}\epsilon_q(k)v$, so $\Sigma_q(K)=(Z_q(K),S_q(K))$.
+
+(a) Sums over a multiset union split, $\Sigma_q(K\uplus K')=\Sigma_q(K)+\Sigma_q(K')$, and $\Sigma_q(\emptyset)=(0,0)$, so
+$\Sigma_q$ is a monoid homomorphism. Each term of $Z_q$ is positive, so $Z_q(K)>0$ for nonempty $K$ and $Z_q(\emptyset)=0$. By
+definition, $\mathrm{Attn}_q(K)=S_q(K)/Z_q(K)=\pi(\Sigma_q(K))$ for nonempty $K$; this $\pi$ is the perspective map of
+\bgref{D.34}.
+
+(b) With $\lambda=Z_P/(Z_P+Z_C)$ and $Z_P,Z_C>0$,
+\[\pi(Z_P+Z_C,S_P+S_C)=\frac{S_P+S_C}{Z_P+Z_C}=\frac{Z_P}{Z_P+Z_C}\frac{S_P}{Z_P}+\frac{Z_C}{Z_P+Z_C}\frac{S_C}{Z_C}
+=\lambda\,\mathrm{Attn}_q(P)+(1-\lambda)\,\mathrm{Attn}_q(C).\]
+
+(c) In $P\uplus C$ a content pair $(k,v)\in C$ has weight $\epsilon_q(k)/(Z_P+Z_C)=(1-\lambda)\,\epsilon_q(k)/Z_C$, which is
+$1-\lambda$ times its weight in $C$ alone; so all content weights scale by one factor and their ratios are unchanged. By (b)
+the output lies on the segment from $\mathrm{Attn}_q(C)$ to $\mathrm{Attn}_q(P)$, with $\lambda\in(0,1)$, and
+$\mathrm{Attn}_q(P)=\sum_{(k,v)\in P}(\epsilon_q(k)/Z_P)\,v$ is a convex combination of the prefix values. At the lowest
+prefixed layer the query and the content pairs are computed from inputs that no prefix has touched, so they are those of the
+pretrained model, and the content weights are the pretrained ones times $1-\lambda_q$. At a higher layer the inputs come from
+lower layers whose outputs (b) has changed, so $q$ and $C$ themselves differ from the pretrained ones, and the statement
+compares only with the same layer's computation on those inputs. The failure of network-level rigidity is shown in
+\citet[\S6]{petrov2023prompting}, and universality of prefix-tuning in \citet{petrov2024prompting}.
+
+(d) LLaMA-Adapter \citep{zhang2023llama} computes the two softmaxes separately, so its output is
+$\pi(\Sigma_q(C))+\tanh(g_l)\,\pi(\Sigma_q(P))$, with two perspective maps. A content weight is $\epsilon_q(k)/Z_q(C)$, the same as
+without the adapter. At $g=0$, $\tanh(0)=0$ (and HF's raw gate is $0$), so the output is $\mathrm{Attn}_q(C)$, the pretrained
+one, and the method is pointed there. The remaining clauses describe how the method is built.
+
+(e) Number the positions of the prompt-tuned model $0,\dots,m-1$ for the soft prompt $p=(p_0,\dots,p_{m-1})$ and $m,\dots,m+n-1$
+for the content, and give the content the same positions $m,\dots,m+n-1$ in the prefix-tuned model. Let $K_j(p),V_j(p)$ be the
+keys and values, after the positional encoding, that the prompt-tuned model forms at the prompt positions in layer $j$, as they
+are cached. We show by induction over layers $j$ that (i) the hidden states of the prompt-tuned model at prompt positions
+depend only on $p$, and (ii) the hidden states at content positions agree in the prompt-tuned model and in the prefix-tuned
+model with prefix $h(p)=(K_j(p),V_j(p))_j$. At the input, (i) holds trivially and (ii) holds because both models embed the same
+content tokens at the same positions. Suppose (i) and (ii) hold at the input of layer $j$. Under causal masking a prompt
+position attends only to prompt positions, so its output depends only on prompt states, which gives (i) at the next layer. A
+content position $t$ attends to the prompt positions and to the content positions $u\le t$. Its query, and the content keys
+and values, are computed from equal content states with equal positional encodings, by (ii). Its prompt keys and values are
+$K_j(p),V_j(p)$ in the prompt-tuned model by definition, and they are supplied verbatim by the prefix in the other. With
+rotary encodings, a score is $\langle R_tq,R_sk_s\rangle$ in both models, the cached key $R_sk_s$ being the same object. So the
+query and the multiset of key--value pairs are the same, and the attention outputs agree; the position-wise sublayers then give
+(ii) at the next layer. Reading the content positions at the top gives $\Phi\circ\rho_{\rm prefix}\circ h=\Phi\circ
+\rho_{\rm prompt}$. The prompt-tuned model and the prefix-tuned model are methods on different extensions of the base network
+(input tokens in one, key--value slots in the other), so $h$ is a map over the common realisation as functions of the content,
+an arrow of the slice over $C^\infty(X_{\rm content},Y_{\rm content})$.
+
+Without the offset, the prefix-tuned model places the content at positions $0,\dots,n-1$. For RoPE put
+$h'(p)=\big(R_{-m}K_j(p),V_j(p)\big)_j$, rotating the cached key from prompt position $s$ to $s-m$. A content query at position
+$t-m$ then scores $\langle R_{t-m}q,R_{s-m}k_s\rangle=\langle q,R_{s-t}k_s\rangle=\langle R_tq,R_sk_s\rangle$, content--content
+scores depend only on differences of positions and are unchanged, and values carry no rotation, so the induction goes through
+with $h'$. For additive relative biases the score of a content query against a prefix key depends on the distance the
+implementation assigns to that key, and the induction goes through exactly when these distances equal $t-s$. In a bidirectional
+encoder of depth at least $2$, prompt positions attend to content positions, so already the second layer's prompt states depend on
+the content, and step (i) fails.
+
+(f) \emph{Affine without prefix.} On a context of one token $x$ the softmax has one term, equal to $1$, so a standard head
+computes $W_o(W_vx+b_v)+b_o$, which is affine in $x$ for every weight setting. (With \texttt{add\_zero\_attn}, a sink or
+softmax-plus-one there is a second term, and this fails.)
+
+\emph{With a prefix.} Let the prefix be $P=\{(k_i,v_i)\}$ with $N_P\ge1$ fixed pairs, and write $q(x)=W_qx+b_q$,
+$k(x)=W_kx+b_k$, $v(x)=W_vx+b_v$, the content score $\varsigma(x)=\langle q(x),k(x)\rangle/\sqrt d$ and
+$Z_P(x)=\sum_i\epsilon_{q(x)}(k_i)$. By (b),
+\begin{equation}\label{eq:C3-prefix-head}
+\mathrm{head}_P(x)=W_o\big[(1-\lambda(x))\,v(x)+\lambda(x)\,\mathrm{Attn}_{q(x)}(P)\big]+b_o,\qquad
+\lambda(x)=\frac{Z_P(x)}{Z_P(x)+e^{\varsigma(x)}}\in(0,1).
+\end{equation}
+\emph{Only if.} If $W_o=0$ the output is the constant $b_o$. If $W_q=0$ and $W_k\T b_q=0$, then $q=b_q$ is constant, every prefix
+score $\langle b_q,k_i\rangle/\sqrt d$ is constant, and the content score $\langle b_q,W_kx+b_k\rangle/\sqrt d=\big((W_k\T b_q)\T
+x+\langle b_q,b_k\rangle\big)/\sqrt d$ is constant; so $\lambda$ and $\mathrm{Attn}_q(P)$ are constant and the output is affine.
+
+\emph{If.} Suppose $W_o\ne0$ and ($W_q\ne0$ or $W_k\T b_q\ne0$). Take all $N_P$ prefix pairs equal to $(k_1,v_1)$; then
+$\mathrm{Attn}_{q(x)}(P)=v_1$ and $\lambda(x)=\operatorname{logit}^{-1}\big(\delta(x)\big)$ with
+$\delta(x)=\langle q(x),k_1\rangle/\sqrt d+\log N_P-\varsigma(x)$. Restrict to a line $x=tu$. If $W_q\ne0$, choose $u$ with
+$W_qu\ne0$; $\varsigma(tu)$ is a fixed polynomial of degree at most two in $t$, and $\langle q(tu),k_1\rangle$ has the slope
+$\langle W_qu,k_1\rangle$, which $k_1$ can make any real number, so $k_1$ can be chosen with $\delta(tu)$ non-constant. If $W_q=0$ and
+$W_k\T b_q\ne0$, choose $u$ with $\langle W_k\T b_q,u\rangle\ne0$; then $\varsigma(tu)$ has nonzero slope while the prefix score is
+constant, so $\delta(tu)$ is non-constant for every $k_1$. In both cases $\lambda(t):=\lambda(tu)$ is real-analytic, takes values
+in $(0,1)$ and is non-constant, so $\lambda''(t_0)\ne0$ for some $t_0$; otherwise $\lambda$ would be affine and bounded, hence
+constant. Choose $v_*$ with $W_ov_*\ne0$ and put $v_1=Mv_*$. Since $v(tu)$ is affine in $t$,
+\[\frac{d^2}{dt^2}\mathrm{head}_P(tu)=\lambda''(t)\big(MW_ov_*-W_ov(tu)\big)-2\lambda'(t)\,W_oW_vu ,\]
+and at $t_0$ the term $M\lambda''(t_0)W_ov_*$ dominates for large $M$, so the second derivative is nonzero and the head is not
+affine. For bias-free heads $W_k\T b_q=0$, which gives the second form of the criterion.
+
+\emph{Generic prefixes.} The prefixed output is real-analytic in $(x,P)$ on the connected space of inputs and prefixes with $N_P$
+pairs. It is affine in $x$ for a given $P$ iff all second partial derivatives in $x$ vanish at every $x$; this is the common zero
+set, over $x$ and pairs of coordinates, of real-analytic functions of $P$. The witness above is a prefix at which one of these
+functions is nonzero, so that function is not identically zero, and the prefixes with affine output lie in its zero set, which
+is closed, nowhere dense and null (\auxref{B.10}). The same argument applied to $\lambda$ shows that the gate is non-constant
+for generic prefixes. Box-locally, the class of a standard head is the set of functions it computes with some weights; on
+length-one contexts these are all affine, while for generic prefixes the prefixed head is not, so prefix tuning and P-tuning v2
+are not box-locally mergeable into the head.
+
+\emph{No neutral prefix.} A neutral prefix would leave the head unchanged on every input, in particular on length-one contexts,
+where by \eqref{eq:C3-prefix-head} this means $\lambda(x)\big(W_o\mathrm{Attn}_{q(x)}(P)-W_ov(x)\big)=0$, and since $\lambda(x)>0$,
+$W_o\mathrm{Attn}_{q(x)}(P)=W_o(W_vx+b_v)$ for all $x$. The left side lies in the compact set $W_o\operatorname{conv}V_P$; if
+$W_oW_v\ne0$, choose $x_0$ with $W_oW_vx_0\ne0$, and along $x=tx_0$ the right side is unbounded. So no prefix is neutral. For a
+base network consisting of one such head, the extension by prefixes therefore has no neutral point, and by (e), at the first layer
+of a causal decoder a soft prompt acts through its key--value pairs exactly as a one-layer prefix, so the same base network admits
+no neutral prompt: prompt and prefix tuning are unpointed.
+\end{proof}
+
+\begin{remark*}{numerical checks}
+The values reported after \thmref{Theorem}{VI.5} (prompt-to-prefix agreement $9\times10^{-16}$ with RoPE and the offset, $1.3$
+without it and $2\times10^{-15}$ with keys rotated by $-m$; an affine head with $W_o=0$ although $W_q\T W_k\ne0$, and a non-affine
+one with $W_q\ne0$ and $W_q\T W_k=0$) instantiate parts (e) and (f) as proved above: the criterion of (f) involves $W_o$, $W_q$ and
+$W_k\T b_q$, not $W_q\T W_k$ (Appendix~\ref{app:repro}).
+\end{remark*}

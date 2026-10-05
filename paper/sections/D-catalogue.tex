@@ -1,0 +1,245 @@
+% Appendix D: the catalogue (how it was built and checked; the complete tables).
+\section{The catalogue}\label{app:catalogue}
+
+The atlas of Exposé~\ref{sec:atlas} rests on a catalogue of \nMethods{} methods and \nPapers{} papers. This appendix
+says how the catalogue was assembled and fact-checked, how each method received its seven coordinates, its arrows and
+its obstructions, and how these were checked in turn. It ends with the complete tables: every method with its
+coordinates and its reference (Table~\ref{tab:catalogue}), every recorded arrow with its map $h$
+(Table~\ref{tab:arrows}), and the arrows and obstructions counted by rule and by test
+(Table~\ref{tab:app-rules-tests}).
+
+\paragraph{Data files} The data accompany this paper in machine-readable form, generated from the same source as the tables
+below and as the companion site.
+\begin{description}[leftmargin=1.2em,itemsep=2pt]
+  \item[\texttt{catalogue.json}] Every method (\nMethods{}) and every paper (\nPapers{}), each with its verified
+  metadata (title, full author list, year of the first arXiv version, venue, links to the paper and the code) and its
+  BibTeX record. A method entry adds the formula, the trainable-parameter count, the locus, the modification kind, the
+  merge verdict with its reason, the initialisation, the relations to other methods, the sources consulted, the seven
+  coordinates with a justification for each, the categorical reading, and the method's arrows and obstructions. The
+  file also holds the definitions of the axis values, with the question that decides each axis, and the arrow rules.
+  \item[\texttt{catalogue.csv}] One row per method, with the main fields of \texttt{catalogue.json} and one column per
+  coordinate.
+  \item[\texttt{arrows.csv}] Every recorded arrow $M\to N$ with its rule, its map $h$ and a note that names the instance
+  of $N$ it lands in (rank, pointing or regime).
+  \item[\texttt{obstructions.csv}] Every recorded obstruction $M\not\to N$ with the test that rules the arrow out and
+  the invariant that fails.
+  \item[\texttt{propositions.json}] Every numbered result (\nPropositions{} of them) with its statement, proof, review
+  status, second-round verdict, public statement and referee notes.
+  \item[\texttt{framework\_checks.py}] The numerical checks of Appendix~\ref{app:repro}.
+\end{description}
+
+\subsection{Families and sources}\label{app:catalogue-families}
+
+Every entry was written once and then attacked once, by a separate reader looking for what the first got wrong. The
+literature was split into the thirteen families of Table~\ref{tab:families}, then completed by four gap-filling
+batches, which added the methods a completeness review found missing, and by two addenda on 2 October 2026: methods the authors reported missing, and a sweep of the 2026 literature run in two passes
+(\S\ref{app:catalogue-2026}). The family boundaries owe much to earlier maps of the field: the unified view of
+\citet{he2021unified}, the delta-tuning study of \citet{ding2022parameter}, the guide of \citet{lialin2023scaling}, the
+survey of \citet{han2024parameter} and the modular view of \citet{pfeiffer2023modular}.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{How the catalogue was assembled. Each family was written by one reader and attacked by another; the last column
+(Corr.) counts the logged corrections. The families overlap, so the records were merged into the catalogue on a canonical
+identifier.}\label{tab:families}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{4.1cm}>{\raggedright\arraybackslash}Xrrr@{}}
+\toprule\headrow
+\textbf{Family} & \textbf{What it covers} & \textbf{Methods} & \textbf{Papers} & \textbf{Corr.}\\\midrule
+LoRA core & LoRA and its variants & 20 & 12 & 21\\
+Initialisation and rank & Base-point splits; rank allocation & 25 & 6 & 46\\
+Shape & Kronecker, Hadamard, tensor and sparse shapes & 29 & 9 & 49\\
+Multiplicative & Group and monoid actions on $W_0$ & 32 & 9 & 54\\
+Sharing & Shared or random bases & 28 & 4 & 46\\
+Selective & Subsets of existing weights & 26 & 7 & 37\\
+Adapters & Inserted modules and side networks & 31 & 10 & 30\\
+Prompts & Soft prompts, prefixes and learned states & 27 & 13 & 39\\
+Quantisation and memory & Quantised bases, gradient memory & 24 & 5 & 44\\
+Composition & Merging, routing, mixtures & 42 & 8 & 61\\
+HF PEFT & The library's tuners and utilities & 74 & 10 & 53\\
+Frontier & 2025--2026: RL, reasoning, diffusion & 21 & 5 & 48\\
+Theory & Theory and foundations & 0 & 50 & 23\\
+Gap-filling (4 batches) & Methods a completeness review found missing & 36 & 18 & 62\\
+Addendum (2 Oct 2026) & Methods the authors reported missing & 1 & 0 & 2\\
+Addendum (2026 sweep, pass 1) & arXiv, January to September 2026; ICLR and ICML 2026 & 29 & 8 & 126\\
+Addendum (2026 sweep, pass 2) & Further candidates, mostly ICLR, ICML and NeurIPS 2026 & 32 & 6 & 164\\\midrule
+\textbf{All records} & Before merging & \textbf{477} & \textbf{180} & \textbf{905}\\
+\textbf{Catalogue} & After merging duplicates & \textbf{\nMethods} & \textbf{\nPapers} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Merging}
+The families overlap, so the $477$ method records and $180$ paper records were merged into \nMethods{} methods and
+\nPapers{} papers. Records were matched on a canonical identifier and a table of aliases, because matching by name would
+fold LoRA+ \citep{hayou2024lora} into LoRA \citep{hu2021lora} and O-LoRA \citep{wang2023orthogonal} into OLoRA
+\citep{buyukakyuz2024olora}. Of the \nMethods{} entries, $358$ are methods proper; the others are $17$ training recipes,
+$4$ software systems, $2$ analyses and $1$ baseline (linear probing).
+The first arXiv versions of the methods run from 2013 to 2026, and $47$ methods were first posted in 2026.
+
+\paragraph{The bibliography}
+The BibTeX record of each entry comes from the arXiv metadata of its identifier, with the full author list, for $493$
+identifiers, and was written by hand for the nine entries without one. These $502$ records
+form the catalogue part of this paper's bibliography, and the citation keys of Table~\ref{tab:catalogue} point into it.
+
+\subsection{Fact-checking}\label{app:catalogue-verification}
+
+Each field was checked against a primary source.
+\begin{itemize}
+  \item Titles, authors and first-version years were checked against the arXiv metadata.
+  \item Venues were checked against the official records: OpenReview, the ACL Anthology, PMLR and CVF open access, with
+  Crossref, Semantic Scholar and DBLP for the remaining cases.
+  \item Formulas and parameter counts were checked against the papers, and against the official code where an
+  initialisation was in doubt.
+  \item Every claim about Hugging Face PEFT \citep{xmangrulkar2022peft} was checked against its source at commit
+  \texttt{85be3f3} (\texttt{85be3f3a1a58c4d153ffc4631c57196430af87a4}) of 30 September 2026. The library's code
+  settled many questions of convention, such as the side of $W$ on which a rotation acts, the default initialisation of
+  each factor, and whether a scale such as $\alpha/r$ is applied. The column ``HF'' of Table~\ref{tab:catalogue} marks
+  the \nHF{} methods available at that commit.
+\end{itemize}
+Every change was logged with its reason, $905$ in all (Table~\ref{tab:families}). The merge verdict of each method is
+recorded beside its reason: $250$ methods fold back into the frozen weights always, $41$ under stated conditions and $91$
+not at all. This verdict concerns the deployed method; the merge coordinate of Exposé~\ref{sec:atlas} refines it by the
+rewrite rules of \thmref{Theorem}{VI.3}.
+
+\subsection{The 2026 sweep and the authors' addendum}\label{app:catalogue-2026}
+
+On 2 October 2026 the authors pointed out methods missing from the catalogue. LOFT \citep{zhao2026loft} was added at once as an addendum of its own,
+checked against arXiv and the paper (two corrections logged), and classified like every other method.
+Its coordinates are R, Orb, regular, none, $\CO\times\CO$, M1 and idempotent; it has arrows into OFT, LoRA-XS, PSOFT
+and LoRA, and for $r\ge4$ its first-order image rules out a smooth pointed arrow into HRA at HF's paired
+initialisation (test O3). Two
+independent referees checked these coordinates, arrows and the obstruction, numerically and against the paper and the
+code. \S\ref{sec:erlangen-loft} reads LOFT as a fixed leaf of HRA's meet.
+
+The other gaps were sought by a sweep of the 2026 literature, run in two passes on the same day. A pool of $265$ candidates was
+drawn from six slices:
+\begin{itemize}
+  \item three quarterly arXiv slices, for first versions posted from January to March, April to June and July to
+  September 2026, with $60$ candidates each;
+  \item the accepted papers of ICLR 2026, $5{,}468$ of them screened through their abstracts, with $48$ candidates;
+  \item the accepted papers of ICML 2026, $6{,}797$ screened, with a second pass over ACL, EACL and CVPR 2026, together
+  giving $31$ candidates;
+  \item the 2026 papers citing anchor methods (LoRA, DoRA, PiSSA, QLoRA, OFT, VeRA, HRA, GaLore, PSOFT and LoRA-GA),
+  ranked by citations, recency and acceptance, with the 2026 release notes and pull requests of Hugging Face PEFT,
+  giving $6$ candidates.
+\end{itemize}
+Acceptance at ICLR and ICML 2026 was confirmed by an exact title match against the official lists of accepted papers
+or by the authors' own arXiv comment. Candidates were matched against the catalogue by arXiv identifier and by name, so that near-homonyms stay
+apart: the entropy-guided FlexLoRA of 2026 \citep{liu2026flexlora} is not the federated FlexLoRA of 2024
+(arXiv:2402.11505), and the per-token MoLoRA of 2026 (arXiv:2603.15965) is not the MoLoRA of \citet{zadouri2023pushing}.
+The first pass admitted $29$ methods and $8$ papers. The second re-screened the rest of the pool and admitted $32$ methods
+and $6$ papers, mostly from ICLR, ICML and NeurIPS 2026. Each admitted entry went through the same fact-checking as the
+families, with $126$ and $164$ logged corrections, and each of the $61$ new methods received an independent check of its
+coordinates and arrows on the same day. The arXiv queries searched abstracts for LoRA, PEFT, adapter,
+parameter-efficient and prompt tuning, so a 2026 method paper whose abstract uses none of these terms lies outside the
+sweep's reach.
+
+\subsection{Coordinates, arrows and obstructions}\label{app:catalogue-classification}
+
+\paragraph{Assignment}
+Each method was classified from its formula, in thirteen batches: ten of $32$ methods for the catalogue as it stood
+on 1 October 2026, one for the authors' addendum, and one for each pass of the 2026 sweep ($29$ and $32$ methods). A first reader answered the
+seven questions of \S\ref{sec:atlas-axes}, which fix the kind, the shape of the image germ, the base point, the gauge,
+the covariance group, the merge type and the rebasing closure, following the decision procedures of
+\S\ref{sec:atlas-decide} and the conventions of \S\ref{sec:atlas-conventions}. Each answer carries a short
+justification, kept in \texttt{catalogue.json}. A null coordinate, printed ``--'', means that the axis does not apply,
+for instance the shape of a method with no germ at $\theta_0$. Where an answer turns on the dimension of an image or a
+fibre, or on the first-order image at the initialisation, it was confirmed by a float64 Jacobian rank at a random point
+and at the base point (\bgref{C.3}).
+
+Each arrow $M\to N$ comes with an explicit pointed smooth map $h$ satisfying $\rho_N\circ h=\rho_M$, obtained by one of
+the rules A2--A5 of \S\ref{sec:atlas-rules}, and with the instance of $N$ it lands in: a rank, a pointing or a
+hyperparameter regime. Each obstruction $M\not\to N$ names the test O1--O3 of \S\ref{sec:atlas-tests} that rules the
+arrow out and the invariant that fails. The interval arrows $\text{Frozen}\to M\to\text{Full FT}$ of rule A1 hold for
+every weight-space method and are not recorded. The \nCore{} core methods are those named in the periodic table
+(Table~\ref{tab:periodic}) together with a curated set of others; the flag is not a coordinate.
+
+\paragraph{Independent check}
+A second reader re-derived every coordinate from the formula and re-checked every arrow, by recomputing
+$\rho_N\circ h$ and the pointing $h(q_0^M)$, and every obstruction, by recomputing the failing invariant. Each method
+carries a check note with the outcome. More than half of the notes record no change; the others record each change with
+its reason, and $47$ record a numerical Jacobian computation (a rank, a fibre dimension or a deficiency).
+
+A consolidation pass on 1 October 2026, over the $320$ methods classified by then, unified the data and touched $135$
+methods, each change logged in its check note.
+\begin{enumerate}[label=(\arabic*)]
+  \item $137$ coordinates used a value ``n/a'' that the axis definitions do not contain. $136$ became null, matching
+  the ``--'' of the tables, and the base point of GenKnowSub became ``unpointed'', as for the other parameterless
+  post-hoc operations. The merge axis keeps its legacy key \texttt{na}, read as null.
+  \item The row labels of the periodic table were unified across batches.
+  \item The covariance of LISA and BAdam changed from $\Pi$ to $\GL\times\GL$, matching HiFT, surgical fine-tuning and
+  BitFit: each stage frees whole boxes, and the layer partition breaks no neuron permutation.
+  \item Four obstruction reasons now say which instance of the target they concern (DSEE, GaLore, Spectral Adapter$^A$
+  and MoV, each against LoRA).
+\end{enumerate}
+Where a formula disagreed with an earlier draft of the periodic table, the value the formula supports was kept and the
+table of Exposé~\ref{sec:atlas} was revised to agree, in thirteen places. For example, LST, UniPELT
+and MAM are unpointed extensions, MPT and Compacter have torus gauges, the Houlsby adapter's GELU or swish leaves only the
+permutations of hidden units, and the gauges of DeLoRA and AdaLoRA are non-linear. The $62$ later entries, LOFT and the
+$61$ methods of the 2026 sweep, were classified and checked in the same way.
+
+\paragraph{Structural checks on the final data}
+For this appendix the structural checks were re-run on the ancillary files. Every arrow and every obstruction joins two
+catalogued methods and names a valid rule or test; every arrow has a map $h$ and every obstruction a reason; every
+coordinate is a value defined for its axis; and no arrow or obstruction is recorded twice. A check at the level of method
+identifiers flags four kinds of pattern, and each was resolved by the instance it concerns.
+\begin{itemize}
+  \item \emph{Pairs with both an arrow and an obstruction} ($26$). In every case the two concern different instances of
+  the target: a different rank, pointing, regime or variant (\S\ref{sec:atlas-checks}). For example, ABBA is isomorphic
+  to LoHa pointed at the factors of $[W_0]_{r_1}$, while the O3 obstruction concerns LoHa at HF's random default
+  pointing.
+  \item \emph{Arrows from a method to itself} ($8$). Each is an inclusion between instances of one family, such as
+  LoRA$_r\hookrightarrow{}$LoRA$_{r+1}$ or ReLoRA$^K\hookrightarrow{}$ReLoRA$^{K+1}$.
+  \item \emph{Cycles} ($13$ groups of mutually reachable methods). The cycles in these groups are of four kinds.
+  Eight are isomorphisms: DoRA and BiDoRA, ReLoRA and COLA, AsyLoRA and LoRA-FA, AdaptFormer and the parallel adapter,
+  S-LoRA and Punica, EFT and proxy tuning, LoRAMoE and MoLoRA, and AdaMerging and LoRA soups (CAT), which differ only in
+  pointing. Three join methods with equal images that are not isomorphic: prompt tuning with MPT and with P-tuning, and
+  QLoRA with IR-QLoRA. Five go up in rank or in the number of stages and are not isomorphisms: LoRA with ReLoRA, LoRA
+  with PEANuT, LoRA-FA with Flora, surgical fine-tuning with HiFT, and KronA with LoKr. Initial-state tuning and prefix
+  tuning simulate each other on S4 state-space layers only.
+  \item \emph{Obstructions $M\not\to N$ with no direct arrow but a path of arrows from $M$ to $N$} ($20$). In each,
+  the obstruction concerns a fixed rank or
+  pointing of the target and the path ends in another instance. FourierFT with $n_c$ frequencies, for example, maps
+  into LoRA-FA$_{2n_c}$ and so into LoRA$_{2n_c}$, while the O2 obstruction concerns LoRA$_r$ at a matched budget.
+\end{itemize}
+No arrow contradicts an obstruction once the stated rank or pointing is taken into account. The eight places where the
+data depart from the conventions of \S\ref{sec:atlas-conventions} are listed in \S\ref{sec:atlas-checks}, and
+Table~\ref{tab:atlas-counts} counts the methods per coordinate value.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{The \nArrows{} recorded arrows by rule (top) and the \nObstructions{} recorded obstructions by test (bottom).
+The rules and tests are those of \S\ref{sec:atlas-arrows}; $161$ of the arrows join two core methods. Every arrow is
+listed in Table~\ref{tab:arrows}, and every obstruction, with its failing invariant, in the ancillary file
+\texttt{obstructions.csv}.}\label{tab:app-rules-tests}
+\begin{tabularx}{\linewidth}{@{}lrX@{}}\toprule\headrow
+\textbf{Rule} & \textbf{Count} & \textbf{How $h$ arises}\\\midrule
+A2 & 61 & freezing a block of coordinates at its base value, $h(q')=(q',q_0'')$\\
+A3 & 329 & an explicit smooth pointed factorisation $\rho_M=\rho_N\circ h$\\
+A4 & 2 & a projection out of a fibre product\\
+A5 & 11 & a sum or an added stage, $h(q)=(q,q_0^N)$\\
+\bottomrule\end{tabularx}
+
+\medskip
+\input{tables/obstructions}
+\end{table}
+
+\subsection{The complete tables}\label{app:catalogue-tables}
+
+Table~\ref{tab:catalogue} lists every method with its reference, the year of its first arXiv version and its seven
+coordinates. A method without an arXiv version carries the year it first became public. The year in a citation is that
+of the version cited, so the two can differ: LoRA-S, for instance, first appeared in 2025 and is cited as
+\citet{zheng2025lora}, its ICLR 2026 version. The rows are grouped by kind, with the reparametrisations split as in the periodic table (additive, action,
+Hadamard and selective), and sorted by name within each group. The abbreviations are those of
+Table~\ref{tab:atlas-counts}, with ``unpt.''\ for unpointed, ``nonlin.''\ for a non-linear gauge, GL$\times$T for
+$\GL$ times a Hadamard torus, O$\times$O for the spectral-frame value $\CO\times\CO$, ``idemp.''\ for idempotent and
+``sched.''\ for a scheme that is itself a rebasing schedule. The merge value \texttt{na} is the legacy key for
+backward methods, read as ``--''.
+
+Table~\ref{tab:arrows} lists every recorded arrow, sorted by source, with its rule and its map $h$. Each $h$ is stated
+in the notation of the target's formula in \texttt{catalogue.json}, and the instance of the target (its rank, its
+pointing or its regime) is in the note column of \texttt{arrows.csv}.
+
+\input{tables/catalogue}
+
+\input{tables/arrows}

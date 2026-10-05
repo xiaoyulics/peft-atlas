@@ -1,0 +1,1439 @@
+{
+ "family": "selective",
+ "family_title": "Selective and sparse fine-tuning (train a chosen subset of the existing parameters)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "bitfit",
+   "name": "BitFit",
+   "full_name": "Bias-terms Fine-tuning",
+   "paper_title": "BitFit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models",
+   "authors": "Ben Zaken et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2106.10199",
+   "url": "https://aclanthology.org/2022.acl-short.1/",
+   "code_url": "https://github.com/benzakenelad/BitFit",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h = W_0 x + (b_0 + \\Delta b),\\quad W_0,\\ g_{LN}\\ \\text{frozen};\\ \\text{trainable: every bias vector } \\Delta b\\in\\mathbb{R}^{d_{out}} \\text{ (Q/K/V/O, MLP and LayerNorm biases) plus the task head}",
+   "trainable_params": "d_{out}\\ \\text{per linear layer (its bias)};\\ \\approx 0.08\\text{--}0.09\\%\\ \\text{of BERT parameters}",
+   "locus": "bias vectors only (attention Q/K/V/O, MLP, LayerNorm biases); LayerNorm gains and all weight matrices frozen",
+   "modification_kind": "selective",
+   "structure": "\\Delta W = 0; only the translation part of each affine map h = Wx + b moves, i.e. a fixed, hand-specified coordinate mask on \\theta that selects exactly the bias coordinates",
+   "mergeable": "yes",
+   "mergeable_reason": "The tuned biases are the model's own bias parameters, so the fine-tuned model has exactly the original architecture and cost.",
+   "identity_at_init": "Biases start at their pretrained values (\\Delta b = 0), so the function is unchanged at initialization.",
+   "key_idea": "Freezing all weights and fine-tuning only the additive bias terms (plus the classifier) of a pretrained Transformer is competitive with full fine-tuning on small and medium datasets; tuning only the query and middle-MLP biases (0.04% of parameters) loses little.",
+   "results_note": "On GLUE with BERT-base/large, bias-only tuning is comparable to full fine-tuning and to Diff Pruning/Adapters while training under 0.1% of parameters; it is strongest in small-to-medium data regimes.",
+   "relations": [
+    {
+     "target": "beft",
+     "type": "generalizes",
+     "note": "BEFT restricts bias tuning further, to the value-projection bias only."
+    },
+    {
+     "target": "ln-tuning",
+     "type": "competes-with",
+     "note": "Both tune only per-channel affine parameters already present in the network (shift vs. LayerNorm scale/shift)."
+    },
+    {
+     "target": "ia3",
+     "type": "dual-to",
+     "note": "(IA)^3 learns new multiplicative per-channel scalings, BitFit tunes the existing additive per-channel shifts."
+    },
+    {
+     "target": "diff-pruning",
+     "type": "competes-with",
+     "note": "Both are sparse difference vectors; BitFit fixes the support a priori, Diff Pruning learns it."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.10199",
+    "https://arxiv.org/html/2106.10199",
+    "https://aclanthology.org/2022.acl-short.1/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2106.10199 (Ben-Zaken, 2021-06; comment 'ACL 2022 main') and ACL Anthology 2022.acl-short.1 confirmed. Bias set (incl. LayerNorm biases, gains g frozen), 0.09%/0.08% of BERT-base/large and the 0.04% b_q+b_m2 ablation match Sec. 2-4. HF PEFT main (v0.21.1, tuners dir listed via GitHub API) has no BitFit tuner; LoraConfig(bias='all') only co-trains biases with LoRA.",
+   "corrections": []
+  },
+  {
+   "id": "diff-pruning",
+   "name": "Diff Pruning",
+   "full_name": "Diff Pruning (sparse task-specific difference vectors)",
+   "paper_title": "Parameter-Efficient Transfer Learning with Diff Pruning",
+   "authors": "Guo et al.",
+   "year": 2020,
+   "venue": "ACL 2021",
+   "arxiv": "2012.07463",
+   "url": "https://aclanthology.org/2021.acl-long.378/",
+   "code_url": "https://github.com/dguo98/DiffPruning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta_\\tau = \\theta_0 + \\delta_\\tau,\\quad \\delta_\\tau = z_\\tau\\odot w_\\tau,\\quad \\min_{\\alpha_\\tau,w_\\tau}\\ \\mathbb{E}_{z_\\tau\\sim p(z;\\alpha_\\tau)}\\big[\\mathcal{L}(\\theta_0+\\delta_\\tau)\\big] + \\lambda\\sum_i \\sigma\\!\\big(\\alpha_{\\tau,i}-\\log\\tfrac{-l}{r}\\big);\\ \\text{then keep the top } t\\% \\text{ of } |\\delta_\\tau| \\text{ and re-train with the mask fixed; } \\theta_0 \\text{ frozen}",
+   "trainable_params": "2\\,d_{out}d_{in}\\ \\text{during training } (w,\\alpha);\\ \\ \\|\\Delta W\\|_0\\approx 0.005\\,d_{out}d_{in}\\ \\text{stored (0.5\\% target)}",
+   "locus": "all pretrained parameters (embeddings, weight matrices, biases); structured variant groups gates per weight matrix / bias vector",
+   "modification_kind": "selective",
+   "structure": "learned sparse coordinate mask: \\Delta W = Z\\odot V with Z a stretched Hard-Concrete relaxation of a binary gate (differentiable L_0 penalty), projected onto an L_0 ball by magnitude pruning of the diff; optional group gates z^{g} shared within each weight matrix/bias vector",
+   "mergeable": "yes",
+   "mergeable_reason": "The final diff vector is added to the pretrained parameters, giving an ordinary model of the original architecture.",
+   "identity_at_init": "w_\\tau initialized to 0 so \\delta_\\tau = 0; gate logits \\alpha_\\tau initialized to 5 so that z \\approx 1 at the start.",
+   "key_idea": "Treat fine-tuning as learning a task-specific diff vector added to frozen pretrained weights and make it sparse with a relaxed L0 penalty, so each new task costs only a small sparse vector.",
+   "results_note": "Structured Diff Pruning matches full fine-tuning of BERT-large on GLUE while modifying only 0.5% of parameters per task.",
+   "relations": [
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "FISH Mask precomputes the support from Fisher information instead of learning it, avoiding Diff Pruning's dense training memory."
+    },
+    {
+     "target": "lt-sft",
+     "type": "competes-with",
+     "note": "LT-SFT obtains the support from the largest changes of a dense fine-tuning pass instead of a relaxed L0 gate."
+    },
+    {
+     "target": "masking",
+     "type": "dual-to",
+     "note": "Masking learns a binary mask on the weights themselves (W_0 \\odot M); Diff Pruning learns a masked additive update W_0 + Z \\odot V."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2012.07463",
+    "https://arxiv.org/html/2012.07463",
+    "https://aclanthology.org/2021.acl-long.378/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2012.07463 (Guo, 2020-12) and ACL 2021 (2021.acl-long.378) confirmed. Objective, stretched Hard-Concrete gate, expected-L0 term sigma(alpha - log(-l/r)) with l=-1.5, r=1.5, init w=0 / alpha=5, L0-ball magnitude projection and fixed-mask re-finetuning all match Sec. 3; structured groups are per matrix/bias vector (393 groups for BERT-large).",
+   "corrections": []
+  },
+  {
+   "id": "fish-mask",
+   "name": "FISH Mask",
+   "full_name": "Fisher-Induced Sparse uncHanging Mask",
+   "paper_title": "Training Neural Networks with Fixed Sparse Masks",
+   "authors": "Sung et al.",
+   "year": 2021,
+   "venue": "NeurIPS 2021",
+   "arxiv": "2111.09839",
+   "url": "https://arxiv.org/abs/2111.09839",
+   "code_url": "https://github.com/varunnair18/FISH",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat F_i = \\tfrac1N\\sum_{n=1}^{N}\\mathbb{E}_{y\\sim p_\\theta(y|x_n)}\\big(\\partial_{\\theta_i}\\log p_\\theta(y|x_n)\\big)^2,\\quad M = \\mathbb{1}\\big[\\hat F \\ge \\mathrm{sort}(\\hat F)_k\\big],\\quad W = W_0 + M\\odot\\Delta W,\\ \\ \\Delta W_{t+1} = \\Delta W_t - \\eta\\,(M\\odot\\nabla_W\\mathcal{L})",
+   "trainable_params": "k\\ \\text{in total (one global top-}k\\text{ over all parameters, e.g. } k = 0.005\\,|\\theta|\\text{)};\\ \\text{per-matrix counts vary because the mask concentrates in some layers}",
+   "locus": "any parameter; top-k diagonal-Fisher coordinates selected globally across the network (classifier always included)",
+   "modification_kind": "selective",
+   "structure": "fixed sparse coordinate mask chosen once before training as the top-k entries of the diagonal (empirical) Fisher information, then reused for all iterations",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing parameters change, so the result is a standard dense model of the original architecture.",
+   "identity_at_init": "Training starts at the pretrained weights (\\Delta W = 0); the Fisher is computed through the randomly initialized classifier before any training.",
+   "key_idea": "Estimate each parameter's importance by its diagonal Fisher information on a few samples, pick the top-k, and train only those with a mask that never changes.",
+   "results_note": "On GLUE with BERT, updating 0.5% of parameters with a FISH Mask matches standard training and outperforms Diff Pruning, Adapters and random/bias masks; also reduces communication in distributed training.",
+   "relations": [
+    {
+     "target": "diff-pruning",
+     "type": "competes-with",
+     "note": "Precomputed Fisher mask vs. learned L0-relaxed mask; FISH avoids Diff Pruning's extra training memory."
+    },
+    {
+     "target": "child-tuning",
+     "type": "equivalent-to",
+     "note": "Child-Tuning_D (the task-driven variant) uses the same rule: a fixed mask of the top empirical-Fisher entries; the two papers are concurrent (2021)."
+    },
+    {
+     "target": "pafi",
+     "type": "competes-with",
+     "note": "PaFi replaces the Fisher criterion by a data-free, task-agnostic smallest-magnitude rule."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2111.09839",
+    "https://arxiv.org/html/2111.09839"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2111.09839 (Sung, 2021-11); NeurIPS 2021 confirmed in the proceedings listing. Eq. 3 (diagonal Fisher averaged over N samples, expectation over y ~ p_theta), the top-k rule {theta_i : F_i >= sort(F)_k}, classifier always included and Fisher computed through the random head all match Sec. 2. Selection is a single global top-k.",
+   "corrections": [
+    "trainable_params: k is one global top-k over all parameters, so the per-matrix figure rho*d_out*d_in was not accurate; rewritten as a global count.",
+    "relations: restricted the equivalent-to note on child-tuning to its task-driven variant Child-Tuning_D (Child-Tuning_F is a random per-step mask)."
+   ]
+  },
+  {
+   "id": "child-tuning",
+   "name": "Child-Tuning",
+   "full_name": "Child-Tuning (task-free Child-Tuning_F / task-driven Child-Tuning_D)",
+   "paper_title": "Raise a Child in Large Language Model: Towards Effective and Generalizable Fine-tuning",
+   "authors": "Xu et al.",
+   "year": 2021,
+   "venue": "EMNLP 2021",
+   "arxiv": "2109.05687",
+   "url": "https://aclanthology.org/2021.emnlp-main.749/",
+   "code_url": "https://github.com/alibaba/AliceMind/tree/main/ChildTuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "w_{t+1} = w_t - \\eta\\,\\frac{\\partial\\mathcal{L}(w_t)}{\\partial w_t}\\odot M_t;\\quad \\text{Child-Tuning}_F:\\ M_t\\sim\\mathrm{Bernoulli}(p_F)\\ \\text{(kept gradients scaled by } 1/p_F);\\quad \\text{Child-Tuning}_D:\\ M = \\mathbb{1}\\big[F^{(i)} \\in \\text{top-}p_D\\big],\\ F^{(i)} = \\tfrac{1}{|D|}\\sum_j\\big(\\partial_{w^{(i)}}\\log p(y_j|x_j;w)\\big)^2,\\ \\text{fixed for all } t",
+   "trainable_params": "\\text{Child-Tuning}_D:\\ p_D\\,|\\theta|\\ \\text{in total (one global top-}p_D\\text{ Fisher threshold; per-matrix counts vary)};\\ \\ \\text{Child-Tuning}_F:\\ \\text{expected } p_F\\,|\\theta|\\ \\text{per step, every entry can change over training}",
+   "locus": "all pretrained parameters (masks applied to gradients inside the optimizer, e.g. AdamW)",
+   "modification_kind": "selective",
+   "structure": "Hadamard gradient mask: a fixed top-p_D diagonal-Fisher mask (task-driven, genuinely selective) or a fresh Bernoulli(p_F) mask every step (task-free); the task-free variant accumulates a dense update and acts as a gradient-noise regularizer rather than a parameter-efficient method",
+   "mergeable": "yes",
+   "mergeable_reason": "It only changes which existing parameters are updated; the fine-tuned network has the original architecture.",
+   "identity_at_init": "Starts from the pretrained weights; no new parameters.",
+   "key_idea": "Update only a 'child network' of the pretrained model: a random Bernoulli subset each step acts as a variance-increasing regularizer favouring flat minima, while a Fisher-selected fixed subset targets task-relevant parameters.",
+   "results_note": "On GLUE, Child-Tuning outperforms vanilla fine-tuning by 1.5-8.6 average points across four PLMs (BERT, XLNet, RoBERTa, ELECTRA) and improves out-of-domain generalization.",
+   "relations": [
+    {
+     "target": "fish-mask",
+     "type": "equivalent-to",
+     "note": "Child-Tuning_D's fixed top empirical-Fisher mask is the FISH Mask rule; concurrent 2021 works."
+    },
+    {
+     "target": "lt-sft",
+     "type": "competes-with",
+     "note": "LT-SFT selects by largest change after dense fine-tuning rather than by Fisher information."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2109.05687",
+    "https://arxiv.org/html/2109.05687",
+    "https://aclanthology.org/2021.emnlp-main.749/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2109.05687 (Xu, 2021-09) and EMNLP 2021 (2021.emnlp-main.749) confirmed. Eq. 3 masked update, Bernoulli(p_F) mask with 1/p_F rescaling, empirical-Fisher Eq. 10 and the fixed C_0 = ... = C_T child network for the D variant all match Sec. 2. The official ChildTuningD.py takes one percentile over all parameters, so selection is global.",
+   "corrections": [
+    "trainable_params: Child-Tuning_D thresholds the Fisher scores of all parameters at one global percentile (official ChildTuningD.py), so the count is p_D*|theta| overall, not p_D*d_out*d_in per matrix.",
+    "structure: added that Child-Tuning_F's per-step random mask accumulates a dense update (a training-procedure regularizer), so only Child-Tuning_D is selective in the sense of this family."
+   ]
+  },
+  {
+   "id": "lt-sft",
+   "name": "LT-SFT",
+   "full_name": "Lottery Ticket Sparse Fine-Tuning",
+   "paper_title": "Composable Sparse Fine-Tuning for Cross-Lingual Transfer",
+   "authors": "Ansell et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2110.07560",
+   "url": "https://aclanthology.org/2022.acl-long.125/",
+   "code_url": "https://github.com/cambridgeltl/composable-sft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{Phase 1: } \\theta^{(1)} = \\mathrm{FT}(\\theta^{(0)}),\\ \\mu = \\mathbb{1}\\big[\\,|\\theta^{(1)}-\\theta^{(0)}| \\in \\text{top-}K\\big];\\ \\ \\text{Phase 2: reset to } \\theta^{(0)},\\ \\text{train with } \\mu\\odot\\nabla_\\theta\\mathcal{L},\\ \\phi = \\theta^{(2)}-\\theta^{(0)};\\ \\ \\text{composition: } F(\\cdot;\\theta^{(0)}+\\phi_T+\\phi_L)",
+   "trainable_params": "K\\ \\text{in total (one global top-}K\\text{; e.g. } K \\approx 7.6\\text{M} = 4.3\\%\\ \\text{of mBERT for language SFTs, 0.25--8\\% for task SFTs);\\ per-matrix counts vary}",
+   "locus": "all Transformer parameters, including the input embeddings; for language SFTs the output embedding matrix is decoupled and frozen and LayerNorm parameters are frozen; the task classifier head is trained densely in both phases",
+   "modification_kind": "selective",
+   "structure": "sparse difference vector \\phi supported on a lottery-ticket mask (top-K largest absolute change after a dense fine-tuning pass); SFTs act on the parameter space by translation, so they compose additively: S_L \\circ S_T = translation by \\phi_T + \\phi_L",
+   "mergeable": "yes",
+   "mergeable_reason": "Each SFT is a sparse vector added to the pretrained weights; any sum of SFTs is again a standard dense model.",
+   "identity_at_init": "Phase 2 restarts from the pretrained values (\\phi = 0); optional L1 penalty \\tfrac{\\lambda}{N}\\sum_i|\\theta_i-\\theta_i^{(0)}| keeps the deltas small.",
+   "key_idea": "Borrow the lottery-ticket recipe (train, select, rewind, retrain) to find a sparse set of parameters per language and per task; because the resulting deltas are sparse they can be added together with little interference, giving adapter-like modularity with full expressivity.",
+   "results_note": "In zero-shot cross-lingual transfer (POS, dependency parsing, NER, NLI) with mBERT/XLM-R, LT-SFT outperforms MAD-X adapters, e.g. +2.5 POS accuracy and +3.7 LAS.",
+   "relations": [
+    {
+     "target": "mad-x",
+     "type": "competes-with",
+     "note": "Same language-adapter/task-adapter composition scheme, but realised by adding sparse deltas instead of stacking adapters."
+    },
+    {
+     "target": "diff-pruning",
+     "type": "builds-on",
+     "note": "Same sparse-difference-vector formulation; the support is chosen by lottery-ticket selection."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.07560",
+    "https://arxiv.org/html/2110.07560",
+    "https://aclanthology.org/2022.acl-long.125/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2110.07560 (Ansell, 2021-10) and ACL 2022 (2022.acl-long.125) confirmed. Two-phase procedure, top-K |theta1-theta0| mask, masked-gradient phase 2, optional L1 term lambda/N sum|theta-theta0| and additive composition S_L o S_T all match Sec. 3. Selection is a global top-K.",
+   "corrections": [
+    "locus: the paper does not exclude embeddings; it freezes the decoupled output embedding and LayerNorm parameters during language SFT (Sec. 4) and trains the classifier head densely.",
+    "trainable_params: K is a global top-K, so the per-matrix rho*d_out*d_in figure was replaced by the global count and the paper's K values.",
+    "relations: removed 'generalizes spiel' (wrong direction: SpIEL is the later method that scales sparse fine-tuning to LLMs; the lineage is already recorded as spiel builds-on lt-sft)."
+   ]
+  },
+  {
+   "id": "spt",
+   "name": "SPT",
+   "full_name": "Sensitivity-aware visual Parameter-efficient fine-Tuning",
+   "paper_title": "Sensitivity-Aware Visual Parameter-Efficient Fine-Tuning",
+   "authors": "He et al.",
+   "year": 2023,
+   "venue": "ICCV 2023",
+   "arxiv": "2303.08566",
+   "url": "https://arxiv.org/abs/2303.08566",
+   "code_url": "https://github.com/ziplab/SPT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "s_n = \\textstyle\\sum_{c=1}^{C} g_{n,c}^2\\ \\ (g_{n,c} = \\partial E/\\partial w_n \\text{ on sample } c;\\ \\text{one-step Taylor estimate of the loss reduction}),\\ \\ \\mathcal{T} = \\text{top-}\\tau(s),\\ M_{ij}=\\mathbb{1}[W_{ij}\\in\\mathcal{T}];\\quad W = \\begin{cases} W_0 + BA, & \\|M\\|_0 \\ge \\sigma_{opt}\\ \\text{(structured tuning)}\\\\ W_0 + M\\odot\\Delta W, & \\text{otherwise (unstructured tuning)}\\end{cases}",
+   "trainable_params": "\\|M\\|_0\\ \\text{(unstructured) or } r(d_{in}+d_{out})\\ \\text{(LoRA on sensitive matrices)},\\ \\text{under a global budget } \\tau",
+   "locus": "ViT weight matrices; positions chosen per task by gradient-squared sensitivity",
+   "modification_kind": "hybrid",
+   "structure": "per-matrix choice between a sparse coordinate mask (top-\\tau gradient-squared sensitivity) and a low-rank (LoRA) or adapter update on matrices that contain many sensitive entries",
+   "mergeable": "conditional",
+   "mergeable_reason": "SPT-LoRA and the unstructured part merge into W_0; the SPT-Adapter variant keeps inserted adapter modules.",
+   "identity_at_init": "Unstructured part starts at Delta W = 0; structured part uses the zero-initialized LoRA/adapter of the host method. Sensitivity is accumulated in one pass over C = 800 training samples before training (400 are shown to suffice).",
+   "key_idea": "Measure, per task and before training, how much tuning each pretrained weight would reduce the loss (approximated by its squared gradient), then spend the parameter budget there, upgrading heavily sensitive matrices to low-rank or adapter tuning.",
+   "results_note": "With ViT-B/16, SPT-Adapter/SPT-LoRA reach state of the art on FGVC and VTAB-1k (e.g. +4.2% and +1.4% mean top-1 over Adapter) and transfer to MAE/MoCo v3 backbones and segmentation.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Structured branch is LoRA (or an adapter) applied only to the sensitive matrices."
+    },
+    {
+     "target": "gps",
+     "type": "competes-with",
+     "note": "GPS also selects by gradient magnitude on ViT but enforces K entries per neuron and stays purely sparse."
+    },
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "SPT's unstructured criterion (sum of squared gradients) is the empirical-Fisher diagonal that FISH Mask ranks by, derived independently via a Taylor argument; SPT does not cite FISH."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.08566",
+    "https://arxiv.org/html/2303.08566"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2303.08566 (He, Haoyu; 2023-03; comment 'ICCV 2023 Oral') and Crossref (ICCV 2023) confirmed. Sensitivity s_n = sum of squared per-sample gradients (Alg. 1, one-step Taylor argument, Eq. 1-3), top-tau budget, Eq. 5 switch to LoRA/adapter when the count of sensitive entries in a matrix reaches sigma_opt all match Sec. 3. Main experiments use C = 800 samples.",
+   "corrections": [
+    "formula_latex: the sensitivity sums squared gradients over C samples (s_n = sum_c g_{n,c}^2); the old notation sum_c g_n^2 had no sample index.",
+    "identity_at_init: main experiments use C = 800 samples for the sensitivity (400 is the ablation showing it suffices), not ~400.",
+    "relations: fish-mask builds-on -> competes-with; SPT does not cite FISH Mask, it only arrives at the same squared-gradient score."
+   ]
+  },
+  {
+   "id": "pafi",
+   "name": "PaFi",
+   "full_name": "PaFi (task-agnostic sparse fine-tuning of smallest-magnitude weights)",
+   "paper_title": "Parameter-Efficient Fine-Tuning without Introducing New Latency",
+   "authors": "Liao et al.",
+   "year": 2023,
+   "venue": "ACL 2023",
+   "arxiv": "2305.16742",
+   "url": "https://aclanthology.org/2023.acl-long.233/",
+   "code_url": "https://github.com/BaohaoLiao/pafi_hiwi",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "M = \\mathbb{1}\\big[\\,|W_0| \\le \\mathrm{sort}(|W_0|)_k\\big]\\ \\text{(per matrix, data-free, shared by all tasks)},\\quad W = W_0 + M\\odot\\Delta W;\\ \\text{norm-layer parameters fully trained, embeddings frozen}",
+   "trainable_params": "k\\ \\text{per matrix};\\ \\text{default } k = 0.005\\,d_{out}d_{in}",
+   "locus": "every weight matrix and bias vector (group-wise bottom-k), plus all normalization parameters",
+   "modification_kind": "selective",
+   "structure": "fixed sparse coordinate mask on the k smallest-magnitude pretrained entries of each matrix; one universal mask for every downstream task",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing entries are changed in place, so inference uses the original dense model with no latency overhead.",
+   "identity_at_init": "\\Delta W = 0 at the start; the mask needs no data or training.",
+   "key_idea": "The least important pretrained weights (smallest magnitude) are the safest to repurpose, so one data-free mask can be reused for every task, removing the task-specific mask-generation stage of sparse fine-tuning.",
+   "results_note": "On GLUE with RoBERTa-large, PaFi reaches 89.3 average (equal to full fine-tuning) with 0.5% trainable parameters, at least 1.3 points above Diff Pruning and FISH Mask.",
+   "relations": [
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "Replaces task-specific Fisher selection with a task-agnostic magnitude rule."
+    },
+    {
+     "target": "super-tuning",
+     "type": "special-case-of",
+     "note": "Super-Tuning's magnitude-only BottomK support is exactly a PaFi-style mask; its Wanda variant reweights |W| by activation norms."
+    },
+    {
+     "target": "diff-pruning",
+     "type": "competes-with",
+     "note": "Both store sparse deltas; PaFi needs only one mask for all tasks."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.16742",
+    "https://arxiv.org/html/2305.16742",
+    "https://aclanthology.org/2023.acl-long.233/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2305.16742 (Liao, 2023-05; comment 'ACL2023 camera-ready') and ACL 2023 (2023.acl-long.233) confirmed. Bottom-k |theta| mask chosen group-wise (each weight matrix or bias vector is a group), normalization layers fully trained, token/position embeddings frozen, 0.5% budget and GLUE 89.3 avg (= Full FT, vs 87.9 Diff Pruning / 88.0 FISH) all match Sec. 3-4.",
+   "corrections": [
+    "code_url: canonical GitHub owner casing is BaohaoLiao/pafi_hiwi."
+   ]
+  },
+  {
+   "id": "smt",
+   "name": "SMT",
+   "full_name": "Sparse Matrix Tuning",
+   "paper_title": "SMT: Fine-Tuning Large Language Models with Sparse Matrices",
+   "authors": "He et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2405.15525",
+   "url": "https://openreview.net/forum?id=GbgCRJedQ7",
+   "code_url": "https://github.com/HectorHHZ/Sparse_Matrix_Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\Delta W_M,\\quad \\mathrm{supp}(\\Delta W_M) = \\bigcup_{b\\in\\mathcal{B}} \\text{block}_b,\\ \\ \\mathcal{B} = \\text{top-}m\\ \\text{of } \\operatorname{mean}_{(i,j)\\in b}\\Big|\\sum_{t\\le T_w}\\nabla_W\\mathcal{L}_t\\Big|_{ij}\\ \\text{over } l\\times l \\text{ blocks } (l=256)",
+   "trainable_params": "m_W\\, l^2\\ \\text{per selected matrix } (m_W \\text{ selected } l\\times l \\text{ blocks, } l=256;\\ \\text{blocks ranked jointly over all Q/K/V matrices});\\ 0.84\\%\\text{--}4.91\\%\\ \\text{of parameters in the experiments}",
+   "locus": "attention W_q, W_k, W_v (mainly W_v); MLP layers frozen",
+   "modification_kind": "selective",
+   "structure": "block-sparse mask: \\Delta W is nonzero only on a set of selected l\\times l sub-matrices (tiles), gathered into a dense m\\times l\\times l tensor so compute stays dense",
+   "mergeable": "yes",
+   "mergeable_reason": "Updated sub-matrices are slices of the original weights; the fine-tuned model is a standard dense model.",
+   "identity_at_init": "Starts from the pretrained weights; blocks are chosen after a short gradient warm-up (about 25-100 iterations).",
+   "key_idea": "Select whole sub-matrices with the largest accumulated gradients during a short warm-up and update only those blocks, which keeps the sparsity hardware-friendly and avoids the rank plateau of low-rank methods.",
+   "results_note": "On commonsense and arithmetic reasoning with LLaMA-7B/13B, LLaMA2-7B and LLaMA3-8B, SMT outperforms DoRA (e.g. +3.0/+2.8 on commonsense for LLaMA-7B/13B) and does not plateau as the trainable budget grows.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Block-sparse instead of low-rank update at matched budget; avoids LoRA's performance plateau at large rank."
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "Main baseline; SMT reports consistent gains over DoRA."
+    },
+    {
+     "target": "sift",
+     "type": "competes-with",
+     "note": "Both select by gradient magnitude; SMT selects contiguous blocks, SIFT individual entries."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.15525",
+    "https://arxiv.org/html/2405.15525",
+    "https://openreview.net/forum?id=GbgCRJedQ7",
+    "https://github.com/HectorHHZ/Sparse_Matrix_Tuning"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.15525 (He, Haoze; 2024-05) exists under the title 'Sparse Matrix in Large Language Model Fine-tuning'; the ICLR 2025 camera-ready title used here is confirmed on the ICLR 2025 virtual site (poster 30274), which links OpenReview GbgCRJedQ7. Block score (mean |summed warm-up gradient| over 256x256 tiles), Q/K/V-only with MLP frozen, 100 (commonsense) / 25 (Math10K) warm-up steps match Sec. 3-4.",
+   "corrections": [
+    "trainable_params: replaced 'typically <5%' with the budgets actually reported (0.84%-4.91%) and noted that blocks are ranked jointly across Q/K/V matrices."
+   ]
+  },
+  {
+   "id": "spiel",
+   "name": "SpIEL",
+   "full_name": "Sparse Iterative Efficient Learning (sparse fine-tuning with drop-and-grow)",
+   "paper_title": "Scaling Sparse Fine-Tuning to Large Language Models",
+   "authors": "Ansell et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2401.16405",
+   "url": "https://arxiv.org/abs/2401.16405",
+   "code_url": "https://github.com/AlanAnsell/peft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta' = \\theta + \\mathrm{scatter}(\\eta,\\phi,d_\\theta),\\ \\ \\Delta W = \\mathrm{reshape}(\\mathrm{scatter}(\\eta,\\phi));\\ \\text{every } S \\text{ steps: drop } \\arg\\mathrm{top}k(-|\\phi|),\\ \\text{grow } \\arg\\mathrm{top}k\\,\\big|\\hat{\\mathbb{E}}_{x}[\\nabla_\\theta\\mathcal{L}(x;\\theta')]\\big|\\ \\text{(SpIEL-AG) or by SM3 momenta (SpIEL-MA)}",
+   "trainable_params": "d_\\phi = \\rho\\,d_{out}d_{in}\\ \\text{per matrix (same density for every tensor) plus } d_\\phi \\text{ indices}",
+   "locus": "all linear-layer weight tensors of an LLM (embeddings excluded)",
+   "modification_kind": "selective",
+   "structure": "dynamic sparse coordinate set: an index vector \\eta and value vector \\phi, updated by RigL-style drop (smallest |\\phi|) and grow (largest accumulated gradient or approximate momentum); memory O(d_\\phi)",
+   "mergeable": "yes",
+   "mergeable_reason": "The final delta is scatter-added into the pretrained weights, producing a standard dense model.",
+   "identity_at_init": "\\phi = 0 and \\eta a random index subset (all of it is replaced at the first update).",
+   "key_idea": "Make sparse fine-tuning memory-efficient for LLMs by storing only indices and deltas and letting the support evolve during training through drop-and-grow, instead of computing a dense mask up front.",
+   "results_note": "Instruction-tuning LLaMA 2 7B/13B on Flan v2, GPT4-Alpaca and Tulu v2, SpIEL is often better than LoRA and (IA)^3 at comparable run time and is compatible with 4-bit quantization and SM3.",
+   "relations": [
+    {
+     "target": "lt-sft",
+     "type": "builds-on",
+     "note": "Same group and sparse-delta formulation; removes the need for a dense first fine-tuning phase."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Main LLM-scale baseline."
+    },
+    {
+     "target": "shira",
+     "type": "competes-with",
+     "note": "SHiRA is concurrent; it uses a static mask whereas SpIEL's mask is dynamic."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.16405",
+    "https://arxiv.org/html/2401.16405",
+    "https://github.com/ducdauge/sft-llm"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2401.16405 (Ansell, 2024-01) confirmed. No venue found (not in ICML 2024/2025, NeurIPS 2024, ICLR 2024/2025 listings; Semantic Scholar lists arXiv), so venue stays arXiv. scatter-add parametrization (Eq. 5), equal density per parameter tensor, drop argtopk(-|phi|), grow by gamma-step accumulated gradients (AG) or SM3 momenta (MA), random initial eta fully replaced at the first update match Sec. 3. Embeddings are not adapted (listed as future work).",
+   "corrections": []
+  },
+  {
+   "id": "ln-tuning",
+   "name": "LN Tuning",
+   "full_name": "LayerNorm Tuning",
+   "paper_title": "Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning",
+   "authors": "Zhao et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2312.11420",
+   "url": "https://openreview.net/forum?id=YR3ETaElNK",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LNTuningConfig",
+   "formula_latex": "\\mathrm{LN}(x) = \\gamma\\odot\\frac{x-\\mu}{\\sigma}+\\beta\\ \\ \\big(\\mathrm{RMSNorm}: \\gamma\\odot x/\\mathrm{RMS}(x)\\big);\\ \\text{train only } \\gamma,\\beta \\text{ of the input and post-attention norms of every block; all } W_0 \\text{ frozen}",
+   "trainable_params": "4dL\\ \\text{(two LayerNorms with gain and bias per block) or } 2dL\\ \\text{(RMSNorm gains only), plus } d \\text{ for the final norm};\\ \\text{LLaMA-2-7B: } 2\\cdot 4096\\cdot 32 \\approx 0.26\\text{M} \\approx 0.004\\%",
+   "locus": "LayerNorm / RMSNorm gains (and biases) inside each Transformer block; in the paper's default the vision-language connector, embeddings and LM head are also trainable ('LayerNorm-simp.' freezes them)",
+   "modification_kind": "selective",
+   "structure": "diagonal per-channel scaling (and shift) of normalized hidden states; since diag(\\gamma) precedes a linear map, it is equivalent to rescaling the input columns of the next W: W\\,\\mathrm{diag}(\\gamma)",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing normalization parameters change, so the architecture and inference cost are unchanged.",
+   "identity_at_init": "\\gamma and \\beta start from their pretrained values.",
+   "key_idea": "Turning an LLM into a multimodal LLM behaves like domain adaptation, and within each attention block tuning only the LayerNorm parameters suffices, rivalling LoRA and full fine-tuning at a fraction of the parameters.",
+   "results_note": "On a 13B MLLM, LayerNorm tuning improves over LoRA by more than 20% on average across five multimodal tasks while cutting trainable parameters by 41.9% and GPU memory by 17.6%.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "competes-with",
+     "note": "Both tune per-channel affine parameters that already exist (norm scale/shift vs. linear biases)."
+    },
+    {
+     "target": "ia3",
+     "type": "dual-to",
+     "note": "Changing a pre-norm gain gamma is a right multiplication of the next projection, W diag(gamma) (input-channel scaling); (IA)^3 scales outputs, diag(l) W (left multiplication). The two are transposes of each other."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Main baseline in the MLLM setting."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.11420",
+    "https://arxiv.org/html/2312.11420",
+    "https://huggingface.co/docs/peft/package_reference/layernorm_tuning",
+    "https://arxiv.org/abs/2211.08682"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.11420 (Zhao, Bingchen; 2023-12) confirmed; ICLR 2024 confirmed on the ICLR 2024 virtual site (OpenReview YR3ETaElNK). LayerNorm-only tuning inside attention blocks, LayerNorm-simp. (0.004% of a 7B MLLM) and the 41.9% / 17.6% savings match the paper. HF PEFT LNTuningConfig confirmed (tuners/ln_tuning, docstring cites 2312.11420); default targets for llama are input_layernorm, post_attention_layernorm and the final norm.",
+   "corrections": [
+    "url: pointed to the ICLR 2024 OpenReview forum (YR3ETaElNK) instead of the arXiv abstract.",
+    "trainable_params: added the final norm and a check against the paper's 0.004% figure for the 7B RMSNorm model.",
+    "relations: made the dual-to note on ia3 precise (right vs left diagonal multiplication)."
+   ]
+  },
+  {
+   "id": "lisa",
+   "name": "LISA",
+   "full_name": "Layerwise Importance Sampled AdamW",
+   "paper_title": "LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning",
+   "authors": "Pan et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2403.17919",
+   "url": "https://arxiv.org/abs/2403.17919",
+   "code_url": "https://github.com/OptimalScale/LMFlow",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{every } K \\text{ steps: } \\mathcal{S}_t = \\{\\text{embedding}, \\text{LM head}\\}\\cup\\{\\gamma \\text{ layers sampled from } N_L \\text{ with } p_\\ell = \\gamma/N_L\\};\\ \\ \\theta_{\\mathcal{S}_t}\\leftarrow\\mathrm{AdamW}(\\theta_{\\mathcal{S}_t}),\\ \\theta_{\\overline{\\mathcal{S}_t}} \\text{ frozen};\\ \\ \\{p_\\ell\\} = \\{1,\\gamma/N_L,\\dots,\\gamma/N_L,1\\}",
+   "trainable_params": "\\text{per period: } |\\theta_E| + |\\theta_H| + \\gamma\\cdot|\\theta_{\\text{layer}}|;\\ \\text{all parameters can change over training}",
+   "locus": "whole Transformer layers (embedding and LM head always active; gamma intermediate layers resampled every K steps)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "time-varying layer-block coordinate mask (randomized block-coordinate AdamW); the accumulated \\Delta W is dense and full-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "It performs full-parameter updates on the original architecture; the result is an ordinary model.",
+   "identity_at_init": "Starts from the pretrained weights; no new parameters. Optimizer states exist only for the currently active layers.",
+   "key_idea": "LoRA's layer-wise weight-norm profile is dominated by the embedding and head layers, so emulate it in full-parameter training by always training those and randomly unfreezing a few middle layers at a time, giving LoRA-level memory with full-rank updates.",
+   "results_note": "On instruction tuning (7B-70B models), LISA outperforms LoRA by 10%-35% on MT-Bench and can match or beat full fine-tuning, with memory comparable to LoRA.",
+   "relations": [
+    {
+     "target": "hift",
+     "type": "competes-with",
+     "note": "Both update one block of layers at a time; HiFT cycles deterministically, LISA samples randomly with E+H always on."
+    },
+    {
+     "target": "badam",
+     "type": "competes-with",
+     "note": "BAdam is block coordinate descent with Adam and a convergence analysis; LISA is its randomized, importance-sampled counterpart."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Designed as a memory-equivalent but full-rank alternative to LoRA."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Alternative memory-efficient full-parameter optimizer (low-rank gradient projection instead of layer sampling)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2403.17919",
+    "https://arxiv.org/html/2403.17919"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2403.17919 (Pan, 2024-03) confirmed; NeurIPS 2024 confirmed in the proceedings listing. Algorithm 1 (embedding + LM head always active, gamma middle layers resampled every K steps, p = {1, gamma/N_L, ..., 1}) matches Sec. 3.2. Code is in LMFlow.",
+   "corrections": []
+  },
+  {
+   "id": "gps",
+   "name": "GPS",
+   "full_name": "Gradient-based Parameter Selection",
+   "paper_title": "Gradient-based Parameter Selection for Efficient Fine-Tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "CVPR 2024",
+   "arxiv": "2312.10136",
+   "url": "https://arxiv.org/abs/2312.10136",
+   "code_url": "https://github.com/FightingFighting/GPS",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "M_{ij} = \\mathbb{1}\\Big[j\\in\\text{top-}K_{j'}\\ \\big|\\partial\\mathcal{L}_{SCL}/\\partial W_{0,ij'}\\big|\\Big]\\ \\text{for every output neuron (row) } i,\\qquad W = W_0 + M\\odot\\Delta W,\\ \\ \\Delta W_{t+1} = \\Delta W_t - \\epsilon\\,\\nabla_W\\mathcal{L}\\odot M",
+   "trainable_params": "K\\,d_{out}\\ \\text{per matrix (K input connections per neuron; } \\approx 0.36\\%\\ \\text{on average)}",
+   "locus": "every weight matrix of the backbone (ViT, Swin, ConvNeXt), all layers; gradients computed with a supervised contrastive loss",
+   "modification_kind": "selective",
+   "structure": "row-balanced sparse mask: exactly K nonzeros in every row of \\Delta W, so each neuron's activation can be adjusted through its K most gradient-relevant input connections",
+   "mergeable": "yes",
+   "mergeable_reason": "Only selected entries of existing weights change; inference uses the unchanged architecture.",
+   "identity_at_init": "Starts from the pretrained weights (\\Delta W = 0); selection uses a supervised contrastive loss so that no randomly initialized head biases the gradients.",
+   "key_idea": "Pick, for every neuron, the few incoming weights with the largest task gradient, which spreads the budget over all layers instead of concentrating it at the top, and train only those.",
+   "results_note": "On FGVC and VTAB-1k with ViT-B/16, GPS improves over full fine-tuning by 3.33% and 9.61% mean accuracy while tuning 0.36% of parameters on average.",
+   "relations": [
+    {
+     "target": "spt",
+     "type": "competes-with",
+     "note": "Both are gradient-based selections for vision transformers; GPS stays purely sparse with per-neuron balancing."
+    },
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "FISH selects globally by squared gradients; GPS selects per neuron by gradient magnitude."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.10136",
+    "https://arxiv.org/html/2312.10136"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.10136 (Zhang, Zhi; 2023-12; journal-ref CVPR2024) and Crossref (CVPR 2024) confirmed. Per-neuron top-K input connections by |gradient| from a supervised contrastive loss (no random head), 0.36% average and +3.33 / +9.61 over full FT match Sec. 3-4.",
+   "corrections": []
+  },
+  {
+   "id": "s2ft",
+   "name": "S²FT",
+   "full_name": "Structured Sparse Fine-Tuning",
+   "paper_title": "S²FT: Efficient, Scalable and Generalizable LLM Fine-tuning by Structured Sparsity",
+   "authors": "Yang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2412.06289",
+   "url": "https://arxiv.org/abs/2412.06289",
+   "code_url": "https://github.com/Infini-AI-Lab/S2FT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W = U_S V^{\\top},\\ \\ U_S = [e_{a_1},\\dots,e_{a_s}]\\ \\text{a frozen one-hot channel selector},\\ V \\text{ trainable};\\ \\text{in practice: the slices of } W_O \\text{ belonging to selected heads } S_{MHA} \\text{ and of } W_{down} \\text{ belonging to selected FFN channels } S_{FFN}, \\text{ co-permuted to be contiguous}",
+   "trainable_params": "s\\cdot d\\ \\text{per adapted matrix (s selected channels, i.e. selected heads}\\times d_h\\text{ or FFN channels)}",
+   "locus": "output projection W_O (rows of the selected attention heads) and FFN down projection (selected channels) in every block; for LLaMA3-8B and Mistral-7B only the down projection is tuned because of grouped-query attention",
+   "modification_kind": "selective",
+   "structure": "structured (row/column-block) sparsity: \\Delta W = U_S V^\\top with U_S a fixed coordinate projection, i.e. a LoRA whose one factor is a frozen selection matrix; permutation invariance of coupled head/channel structures makes the trainable slice a dense block",
+   "mergeable": "yes",
+   "mergeable_reason": "Updates are in-place on existing weight slices; alternatively the sparse delta can be kept as an unmerged adapter for fast switching and fusion.",
+   "identity_at_init": "Selected slices start at their pretrained values (\\Delta W = 0); selection is random by default (S²FT-R) or by weight, activation, weight×activation or gradient magnitude.",
+   "key_idea": "Select sparsely but compute densely: choose a few attention heads and FFN channels, permute coupled weight matrices so they are contiguous, and back-propagate only through that dense slice.",
+   "results_note": "On LLaMA and Mistral models S²FT improves over other PEFT methods by 1.2-4.1% on commonsense and 0.6-1.9% on arithmetic reasoning, while saving up to 3x training memory and running 1.5-2.7x faster than full fine-tuning.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "Formally S²FT is rank-s adaptation \\Delta W = U V^\\top with U fixed to a coordinate selector instead of being learned."
+    },
+    {
+     "target": "smt",
+     "type": "competes-with",
+     "note": "Both are hardware-friendly structured sparse updates; SMT uses gradient-selected l\\times l tiles, S²FT whole head/channel slices."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Reports better OOD generalization and serving scalability than LoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2412.06289",
+    "https://arxiv.org/html/2412.06289",
+    "https://github.com/Infini-AI-Lab/S2FT"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2412.06289 (Yang, Xinyu; 2024-12) confirmed; NeurIPS 2024 confirmed in the proceedings listing. Delta W = U_S V^T with a frozen one-hot U_S (Sec. 4, 'a LoRA variant that fixes U_S'), random selection by default (S2FT-R), co-permutation of coupled structures, and the choice of the output and down projections all match the paper.",
+   "corrections": [
+    "locus: added that for LLaMA3-8B and Mistral-7B the paper tunes only the down projection (multi-query/GQA attention)."
+   ]
+  },
+  {
+   "id": "sift",
+   "name": "SIFT",
+   "full_name": "Sparse Increment Fine-Tuning",
+   "paper_title": "Sparse is Enough in Fine-tuning Pre-trained Large Language Models",
+   "authors": "Song et al.",
+   "year": 2023,
+   "venue": "ICML 2024",
+   "arxiv": "2312.11875",
+   "url": "https://arxiv.org/abs/2312.11875",
+   "code_url": "https://github.com/song-wx/SIFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathcal{S} = \\text{top-}x\\%\\ \\text{coordinates of } |g_1|\\ (\\text{gradient of the first batch(es)}),\\quad W = W_0 + \\Delta W,\\ \\ \\mathrm{supp}(\\Delta W)\\subseteq\\mathcal{S},\\ \\ \\Delta W_{t+1} = \\Delta W_t - \\eta\\,P_{\\mathcal{S}}(\\nabla_W\\mathcal{L}_t)",
+   "trainable_params": "x\\%\\cdot d_{out}d_{in}\\ \\text{per adapted matrix (stored as values + indices)}",
+   "locus": "attention W_q, W_k, W_v, W_o by default",
+   "modification_kind": "selective",
+   "structure": "coordinate-subspace update: the gradient is projected onto the span of the top-|g| standard basis directions, and the increment is stored as a sparse (value, index) tensor filled via backward hooks",
+   "mergeable": "yes",
+   "mergeable_reason": "The sparse increment is added into the existing weights.",
+   "identity_at_init": "\\Delta W = 0; support fixed after the first batch.",
+   "key_idea": "Pre-training shifts the PAC-Bayes prior so that fine-tuning gradients become quasi-sparse (a few components carry most of the norm); hence updating only the top-gradient components is enough, implemented memory-efficiently with gradient hooks.",
+   "results_note": "With RoBERTa-large on GLUE (0.8% sparsity on Q/K/V/O) SIFT is competitive with LoRA and adapters, and when instruction-tuning LLaMA on Alpaca it is competitive with full fine-tuning and LoRA on MMLU and HumanEval.",
+   "relations": [
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "Both fix a gradient-statistics mask early; SIFT uses raw gradient magnitude from the first batch."
+    },
+    {
+     "target": "smt",
+     "type": "competes-with",
+     "note": "Entry-level vs. block-level gradient selection."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.11875",
+    "https://arxiv.org/html/2312.11875"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.11875 (Song, Weixi; 2023-12; comment 'ICML 2024 Spotlight') confirmed; PMLR v235 (song24e). Top-x% |gradient| support from the first batch(es), subspace update, hook-based (value, index) storage and Q/K/V/O targets at 0.8% on GLUE match Sec. 4-5.",
+   "corrections": []
+  },
+  {
+   "id": "hift",
+   "name": "HiFT",
+   "full_name": "Hierarchical Full-parameter Fine-Tuning",
+   "paper_title": "HiFT: A Hierarchical Full Parameter Fine-Tuning Strategy",
+   "authors": "Liu et al.",
+   "year": 2024,
+   "venue": "EMNLP 2024",
+   "arxiv": "2401.15207",
+   "url": "https://aclanthology.org/2024.emnlp-main.1015/",
+   "code_url": "https://github.com/misonsky/HiFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta = (\\theta_{G_1},\\dots,\\theta_{G_k})\\ \\text{(k groups of m layers)};\\ \\text{at step } t \\text{ update only } \\theta_{G_{\\pi(t \\bmod k)}} \\text{ with any optimizer (others frozen, their optimizer states offloaded)};\\ \\text{learning rate advanced once per full cycle}",
+   "trainable_params": "\\approx|\\theta|/k\\ \\text{per step};\\ \\text{all parameters over one cycle}",
+   "locus": "groups of consecutive layers (embedding = bottom, head = top), iterated bottom2up, top2down or in a fixed random order",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "cyclic block-coordinate update over layer groups with delayed learning-rate schedule; accumulated \\Delta W is dense",
+   "mergeable": "yes",
+   "mergeable_reason": "It is full-parameter fine-tuning of the original architecture.",
+   "identity_at_init": "Starts from the pretrained weights; no new parameters.",
+   "key_idea": "Achieve full-parameter fine-tuning with PEFT-like memory by updating one group of layers per step in a fixed cyclic order, keeping only that group's gradients and optimizer states on the GPU.",
+   "results_note": "HiFT matches PEFT and standard full fine-tuning across six models, reduces per-step trainable parameters by about 89% on average and fits full fine-tuning of 7B models in 24GB.",
+   "relations": [
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "Deterministic cyclic vs. randomized layer selection."
+    },
+    {
+     "target": "badam",
+     "type": "competes-with",
+     "note": "Both are block-coordinate full-parameter methods, but HiFT switches group every step and keeps the inactive groups' optimizer states (offloaded to CPU), whereas BAdam runs K Adam steps per block and discards the states when it switches."
+    },
+    {
+     "target": "mezo",
+     "type": "competes-with",
+     "note": "Alternative memory-saving route (zeroth-order) that HiFT argues converges worse."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.15207",
+    "https://arxiv.org/html/2401.15207"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2401.15207 (Liu, Yongkang; 2024-01; arXiv comment still 'under progress') and EMNLP 2024 (2024.emnlp-main.1015) confirmed. One group per step, bottom2up/top2down/random orders, delayed learning-rate update, optimizer states moved to CPU, 89.18% fewer trainable parameters per step and 7B on 24 GB (mixed precision) match the ACL Anthology abstract and Sec. 3.",
+   "corrections": [
+    "relations: badam equivalent-to -> competes-with; the update schedules and optimizer-state handling differ (1 step per group with offloaded states vs K Adam steps per block with states cleared)."
+   ]
+  },
+  {
+   "id": "shira",
+   "name": "SHiRA",
+   "full_name": "Sparse High Rank Adapters",
+   "paper_title": "Sparse High Rank Adapters",
+   "authors": "Bhardwaj et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.13175",
+   "url": "https://arxiv.org/abs/2406.13175",
+   "code_url": "https://github.com/Qualcomm-AI-research/SHiRA",
+   "hf_peft": true,
+   "hf_peft_config": "ShiraConfig",
+   "formula_latex": "W = W_0 + M\\odot\\Delta W,\\quad \\|M\\|_0 \\approx 1\\text{--}2\\%\\ \\text{of } d_{out}d_{in}\\ \\big(\\text{HF PEFT: } r(d_{in}+d_{out})\\big),\\quad M\\in\\{\\text{Struct (rows/cols + diagonal)},\\ \\text{Rand},\\ \\text{WM: top-}|W_0|,\\ \\text{Grad: top-}|g|,\\ \\text{SNIP: top-}|g\\odot W_0|\\}",
+   "trainable_params": "\\text{paper: } 1\\text{--}2\\%\\ \\text{of each adapted matrix};\\ \\text{HF PEFT: } r(d_{in}+d_{out})\\ \\text{(budget matched to LoRA; the update itself is high-rank)}",
+   "locus": "any nn.Linear (e.g. attention projections of LLMs, UNet layers of SDXL)",
+   "modification_kind": "selective",
+   "structure": "fixed sparse, generally high-rank coordinate mask; SHiRA-Struct = diagonal (high-rank) plus a few full rows/columns (rank-1 part); non-overlapping SHiRA-Struct adapters are nearly orthogonal",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter overwrites only the masked entries of W_0 (scatter), so it runs in fused mode at original cost while still allowing rapid switching.",
+   "identity_at_init": "\\Delta W initialized to 0 (HF PEFT init_weights=True).",
+   "key_idea": "Directly fine-tune 1-2% of the base weights through a static sparse mask; the update is high-rank, can be switched by overwriting a few entries, and multiple sparse adapters interfere less when fused.",
+   "results_note": "On LLaMA-7B and LLaMA2-7B commonsense reasoning SHiRA is up to 2.7% better than LoRA, and on SDXL style adapters it reduces concept loss in multi-adapter fusion; loading is 5x-16x faster than LoRA fusion on CPU.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Same parameter budget r(d_{in}+d_{out}) but sparse/high-rank instead of dense/low-rank."
+    },
+    {
+     "target": "spiel",
+     "type": "competes-with",
+     "note": "Concurrent sparse fine-tuning; static mask versus SpIEL's dynamic mask."
+    },
+    {
+     "target": "fish-mask",
+     "type": "builds-on",
+     "note": "SHiRA revisits fixed-sparse-mask partial fine-tuning and cites FISH Mask for it; SHiRA-Grad is a FISH-like gradient mask."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.13175",
+    "https://arxiv.org/html/2406.13175",
+    "https://huggingface.co/docs/peft/package_reference/shira"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2406.13175 (Bhardwaj, 2024-06) confirmed; NeurIPS 2024 confirmed in the proceedings listing. Mask families (Struct = rows/columns + diagonal, Rand, WM, Grad, SNIP), 1-2% budget, 5x-16x faster CPU loading match the paper. HF PEFT ShiraConfig confirmed (added in v0.17.0): r(m+n) budget, only the random mask built in (custom mask_fn allowed), zero init.",
+   "corrections": [
+    "trainable_params: added the paper's 1-2% budget; r(d_in+d_out) is the HF PEFT sizing rule.",
+    "relations: fish-mask generalizes -> builds-on (SHiRA cites FISH as prior fixed-mask work; neither method's mask family contains the other)."
+   ]
+  },
+  {
+   "id": "surgical-fine-tuning",
+   "name": "Surgical FT",
+   "full_name": "Surgical Fine-Tuning",
+   "paper_title": "Surgical Fine-Tuning Improves Adaptation to Distribution Shifts",
+   "authors": "Lee et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2210.11466",
+   "url": "https://arxiv.org/abs/2210.11466",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta = (\\theta_{B_1},\\dots,\\theta_{B_n});\\ \\text{fine-tune only } \\theta_{B_j} \\text{ (one contiguous block), others frozen};\\ \\text{Auto-RGN: per-tensor learning rate } \\propto \\mathrm{RGN} = \\|g\\|_2/\\|\\theta\\|_2 \\text{ normalized to } [0,1]",
+   "trainable_params": "|\\theta_{B_j}|\\ \\text{(one block of layers)}",
+   "locus": "one contiguous block of layers: first block for input-level shift, middle blocks for feature-level shift, last layer for output-level shift",
+   "modification_kind": "selective",
+   "structure": "layer-block coordinate mask: \\Delta W nonzero only on the weights of one contiguous block (soft version: per-tensor learning rates from relative gradient norms)",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing layers are fine-tuned; architecture unchanged.",
+   "identity_at_init": "Starts from the pretrained (source) model; no new parameters.",
+   "key_idea": "Which layers to fine-tune should depend on where the distribution shift lives: tuning only early layers fixes input-level shifts, middle layers feature-level shifts, and the head output-level shifts, often beating full fine-tuning.",
+   "results_note": "Across seven real distribution shifts (e.g. CIFAR-C, ImageNet-C, Living-17, Entity-30, Waterbirds, CelebA) tuning a single block outperforms full fine-tuning, and Auto-RGN beats full fine-tuning without per-block search.",
+   "relations": [
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "Both choose layers to train; surgical FT fixes one block by shift type, LISA resamples layers during training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2210.11466",
+    "https://arxiv.org/html/2210.11466"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2210.11466 (Lee, Yoonho; 2022-10; comment 'ICLR 2023') confirmed; listed on the ICLR 2023 virtual site. Single-block tuning, Auto-RGN (per-tensor RGN normalized to [0,1] times the base learning rate) and the input/feature/output-shift findings match Sec. 2-4. No official code link in the paper.",
+   "corrections": [
+    "relations: removed competes-with bitfit; the paper targets distribution shift, never compares with BitFit, and the two share only 'tune a hand-picked subset'."
+   ]
+  },
+  {
+   "id": "badam",
+   "name": "BAdam",
+   "full_name": "Block coordinate descent with Adam",
+   "paper_title": "BAdam: A Memory Efficient Full Parameter Optimization Method for Large Language Models",
+   "authors": "Luo et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2404.02827",
+   "url": "https://arxiv.org/abs/2404.02827",
+   "code_url": "https://github.com/Ledzy/BAdam",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta = (\\theta_{\\pi_1},\\dots,\\theta_{\\pi_D});\\ \\ \\theta_{\\pi_i}^{t+1} \\approx \\arg\\min_{\\theta_{\\pi_i}}\\ \\tfrac1n\\sum_{j=1}^{n}\\ell_j\\big(\\theta_{\\pi_1}^{t+1},\\dots,\\theta_{\\pi_{i-1}}^{t+1},\\theta_{\\pi_i},\\theta_{\\pi_{i+1}}^{t},\\dots,\\theta_{\\pi_D}^{t}\\big)\\ \\text{via } K \\text{ Adam steps from } \\theta_{\\pi_i}^{t}",
+   "trainable_params": "\\approx|\\theta|/D\\ \\text{active per block (e.g. one Transformer layer)};\\ \\text{all parameters over one block-epoch (} K\\cdot D \\text{ batches)}",
+   "locus": "D blocks, typically consecutive Transformer layers, visited in a (random or fixed) order",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "block coordinate descent: the parameter space is a product of D blocks and only one factor moves at a time; accumulated update is dense and high-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "It is a full-parameter optimizer for the original architecture.",
+   "identity_at_init": "Starts from the pretrained weights; Adam states kept only for the active block.",
+   "key_idea": "Apply classical block coordinate descent to LLM fine-tuning, solving each block subproblem with a few Adam steps, so only one block's gradients and optimizer states are in memory while still optimizing all parameters, with a convergence guarantee in the deterministic case.",
+   "results_note": "Fine-tunes Llama 3-8B on a single RTX3090-24GB and Llama 3-70B on 4xA100-80GB, outperforming LoRA on MT-Bench and math benchmarks and matching Adam.",
+   "relations": [
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "Randomized layer sampling vs. block coordinate descent."
+    },
+    {
+     "target": "hift",
+     "type": "competes-with",
+     "note": "Both are block-coordinate full-parameter methods; BAdam runs K Adam steps per block and discards optimizer states, HiFT updates one group per step and offloads states."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Memory-efficient full-parameter alternative via gradient low-rank projection."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.02827",
+    "https://arxiv.org/html/2404.02827"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2404.02827 (Luo, Qijun; 2024-04; comment 'NeurIPS 2024') confirmed in the NeurIPS 2024 proceedings listing. Block subproblem (Eq. 1) solved by K Adam steps, ascending/descending/random-reshuffling block orders, optimizer states cleared on switching, Llama 3-8B on one RTX3090 and Llama 3-70B on 4xA100-80GB match Sec. 2-3.",
+   "corrections": [
+    "trainable_params: 'over an epoch' -> 'over one block-epoch (K*D batches)', the paper's unit.",
+    "relations: hift equivalent-to -> competes-with (different schedule and optimizer-state handling)."
+   ]
+  },
+  {
+   "id": "masking",
+   "name": "Masking",
+   "full_name": "Learning binary weight masks instead of fine-tuning",
+   "paper_title": "Masking as an Efficient Alternative to Finetuning for Pretrained Language Models",
+   "authors": "Zhao et al.",
+   "year": 2020,
+   "venue": "EMNLP 2020",
+   "arxiv": "2004.12406",
+   "url": "https://aclanthology.org/2020.emnlp-main.174/",
+   "code_url": "https://github.com/ptlmasking/maskbert",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0\\odot M_{bin},\\quad (M_{bin})_{ij} = \\mathbb{1}[m_{ij}\\ge\\tau],\\quad m\\in\\mathbb{R}^{d_{out}\\times d_{in}} \\text{ trained with the straight-through estimator};\\ W_0 \\text{ frozen}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{real-valued scores during training};\\ d_{out}d_{in}\\ \\text{bits stored}",
+   "locus": "linear layers of selected Transformer blocks (top-down masking works best); biases and the classifier handled separately",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Hadamard product with a learned binary mask, i.e. selection of a sub-network of pretrained connections; equivalently the additive update \\Delta W = -(\\mathbf{1}-M_{bin})\\odot W_0 is constrained to zeroing coordinates",
+   "mergeable": "yes",
+   "mergeable_reason": "The masked weight W_0 \\odot M_{bin} is an ordinary dense (or sparse) matrix with the original shape.",
+   "identity_at_init": "No: scores are drawn from a uniform distribution tuned so that a target fraction of weights starts masked (5% for BERT/RoBERTa/DistilBERT; 3-10% works well), so the initial function differs from the pretrained one.",
+   "key_idea": "Instead of changing pretrained weights, learn which ones to switch off for each task; a 1-bit mask per weight suffices to reach fine-tuning-level accuracy.",
+   "results_note": "Masking BERT, RoBERTa and DistilBERT on eleven NLP tasks performs comparably to fine-tuning, and masked and fine-tuned solutions are linearly connected with nearly constant accuracy.",
+   "relations": [
+    {
+     "target": "piggyback",
+     "type": "builds-on",
+     "note": "Transfers Piggyback's thresholded real-valued mask training from CNNs to pretrained Transformers."
+    },
+    {
+     "target": "diff-pruning",
+     "type": "dual-to",
+     "note": "Masks the weights themselves rather than an additive update."
+    },
+    {
+     "target": "lt-sft",
+     "type": "dual-to",
+     "note": "Lottery-ticket selection of a sparse update vs. selection of a sparse sub-network of weights."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2004.12406",
+    "https://arxiv.org/html/2004.12406",
+    "https://aclanthology.org/2020.emnlp-main.174/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2004.12406 (Zhao, Mengjie; 2020-04; comment 'EMNLP 2020') and EMNLP 2020 (2020.emnlp-main.174) confirmed. Real-valued scores, hard threshold tau, straight-through estimator, W_0 frozen, embeddings unmasked and top-down masking best match Sec. 3-5.",
+   "corrections": [
+    "identity_at_init: made the default initial sparsity explicit (5%, Appendix) instead of 'a few %'."
+   ]
+  },
+  {
+   "id": "piggyback",
+   "name": "Piggyback",
+   "full_name": "Piggyback (learning to mask weights of a fixed backbone)",
+   "paper_title": "Piggyback: Adapting a Single Network to Multiple Tasks by Learning to Mask Weights",
+   "authors": "Mallya et al.",
+   "year": 2018,
+   "venue": "ECCV 2018",
+   "arxiv": "1801.06519",
+   "url": "https://arxiv.org/abs/1801.06519",
+   "code_url": "https://github.com/arunmallya/piggyback",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = (W_0\\odot m)\\,x,\\quad m_{ji} = \\mathbb{1}[m^{r}_{ji}\\ge\\tau],\\quad \\partial E/\\partial m = (\\delta y\\,x^{\\top})\\odot W_0 \\text{ used as straight-through gradient for } m^{r};\\ W_0 \\text{ frozen}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{real-valued mask weights during training};\\ 1\\ \\text{bit per weight stored}",
+   "locus": "all convolutional and fully-connected layers of a fixed ImageNet backbone (VGG-16, ResNet, DenseNet)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Hadamard product with a learned binary mask (task-specific sub-network of a fixed backbone)",
+   "mergeable": "yes",
+   "mergeable_reason": "The masked weights form an ordinary network of the original architecture.",
+   "identity_at_init": "m^r initialized to 1e-2 with threshold \\tau = 5e-3, so the mask starts as all ones and the network equals the backbone.",
+   "key_idea": "Add new tasks to one frozen network by learning only a binary mask over its weights, at 1 bit per parameter per task.",
+   "results_note": "With ImageNet-pretrained VGG-16/ResNet-50 backbones, Piggyback approaches individually fine-tuned networks on fine-grained and large-shift classification tasks (e.g. within 0.36% top-1 error on Places365).",
+   "relations": [],
+   "sources": [
+    "https://arxiv.org/abs/1801.06519",
+    "https://arxiv.org/html/1801.06519"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1801.06519 (Mallya, 2018-01) confirmed; ECCV 2018 confirmed via Crossref (LNCS, doi 10.1007/978-3-030-01225-0_5) and the CVF open-access page. Thresholded real-valued mask m^r (init 1e-2, tau = 5e-3 so the mask starts all ones), gradient (delta y x^T) . W used as straight-through, 1 bit per weight match Sec. 3.",
+   "corrections": [
+    "relations: removed 'generalizes masking'. Masking is the same thresholded-score mechanism carried over to Transformers (recorded as masking builds-on piggyback), not a special case of Piggyback."
+   ]
+  },
+  {
+   "id": "sam-sparse",
+   "name": "SAM (sparse)",
+   "full_name": "Second-order Approximation Method for parameter selection",
+   "paper_title": "On the Effectiveness of Parameter-Efficient Fine-Tuning",
+   "authors": "Fu et al.",
+   "year": 2022,
+   "venue": "AAAI 2023",
+   "arxiv": "2211.15583",
+   "url": "https://arxiv.org/abs/2211.15583",
+   "code_url": "https://github.com/fuzihaofzh/AnalyzeParameterEfficientFinetune",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta = \\theta^0 + M\\Delta\\theta,\\ \\ \\min_{\\Delta\\theta}\\ \\nabla\\mathcal{L}(\\theta^0)^{\\top}M\\Delta\\theta + \\tfrac12(M\\Delta\\theta)^{\\top}H(M\\Delta\\theta)\\ \\ \\text{s.t.}\\ \\|M\\|_0 = \\lfloor mp\\rfloor;\\ \\ H\\preceq|\\lambda_{max}|I \\Rightarrow \\hat M_{ii} = \\mathbb{1}\\big[\\nabla\\mathcal{L}(\\theta^0)_i^2 \\in \\text{top-}\\lfloor mp\\rfloor\\big],\\ \\nabla\\mathcal{L}(\\theta^0) \\text{ summed over burn-in steps};\\ \\text{mask fixed during training}",
+   "trainable_params": "\\lfloor mp \\rfloor\\ \\text{in total over all } m \\text{ parameters (global selection; } p = 0.005 \\text{ in experiments);\\ per-matrix counts vary}",
+   "locus": "all parameters; gradients accumulated over a burn-in period",
+   "modification_kind": "selective",
+   "structure": "fixed diagonal 0/1 mask matrix M on parameter space, chosen as the analytic optimum of a second-order (upper-bounded) surrogate, which reduces to top squared-gradient selection",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing parameters change.",
+   "identity_at_init": "\\Delta\\theta = 0; mask computed from the gradient accumulated over 500-2000 burn-in steps (tuned per task) before training.",
+   "key_idea": "Casting every PEFT method as a sparse fine-tuned model, choose the sparse support that optimally decreases a second-order approximation of the loss, which under an isotropic Hessian bound means keeping the coordinates with the largest squared gradient.",
+   "results_note": "With RoBERTa on GLUE/SuperGLUE tasks (CoLA, STS-B, MRPC, RTE, CB, COPA, WSC) at 0.5% sparsity, SAM outperforms random, rule-based and projection-based PEFT baselines.",
+   "relations": [
+    {
+     "target": "fish-mask",
+     "type": "competes-with",
+     "note": "Both fix a mask from gradient statistics before training, but SAM squares the accumulated gradient while FISH sums squared per-sample gradients (diagonal Fisher), so the rankings differ."
+    },
+    {
+     "target": "diff-pruning",
+     "type": "competes-with",
+     "note": "SAM avoids the 'projection discontinuity' of methods that re-select the support during training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2211.15583",
+    "https://arxiv.org/html/2211.15583"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2211.15583 (Fu, Zihao; 2022-11) confirmed; AAAI 2023 confirmed via Crossref (doi 10.1609/aaai.v37i11.26505). Problem (8), Theorem 3 (rank by grad_i^2/h_i), replacement of the Hessian by |lambda_max| I, sparsity 0.005 and burn-in steps 500-2000 match Sec. 4-5. The gradient is accumulated (summed) over burn-in steps and then squared, so the score ranks |E[g]|, not E[g^2].",
+   "corrections": [
+    "formula_latex: stated that grad L(theta^0) is the gradient summed over burn-in steps before squaring, which separates SAM's score from a Fisher (sum of squared gradients) score.",
+    "trainable_params: the mask M is chosen over all m parameters at once, so the count is floor(mp) overall, not p*d_out*d_in per matrix.",
+    "identity_at_init: burn-in is 500-2000 steps (chosen per task), not 'a few hundred'.",
+    "relations: fish-mask equivalent-to -> competes-with; the scores differ ((sum g)^2 vs sum g^2)."
+   ]
+  },
+  {
+   "id": "lift",
+   "name": "LIFT",
+   "full_name": "Low-rank Informed Sparse Fine-Tuning",
+   "paper_title": "LIFT the Veil for the Truth: Principal Weights Emerge after Rank Reduction for Reasoning-Focused Supervised Fine-Tuning",
+   "authors": "Liu et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2506.00772",
+   "url": "https://arxiv.org/abs/2506.00772",
+   "code_url": "https://github.com/zihanghliu/LIFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_t' = \\mathrm{SVD}_r(W_t)\\ \\text{(best rank-}r\\text{ approximation of the current weight; } W_0 \\text{ at the start)},\\quad M_t = \\mathbb{1}\\big[\\,|W'_t| \\in \\text{top-}k\\big],\\quad W_{t+1} = W_t - \\eta\\,(M_t\\odot \\hat g_t);\\ M_t \\text{ recomputed every } \\texttt{update\\_mask\\_interval} \\text{ steps}",
+   "trainable_params": "k\\ \\text{per matrix active at any time (top } 5\\%\\text{ Principal Weights)};\\ \\text{the accumulated } \\Delta W \\text{ is supported on the union of successive masks}",
+   "locus": "LLM linear layers (attention and MLP)",
+   "modification_kind": "selective",
+   "structure": "sparse coordinate mask given by the largest-magnitude entries of the rank-r truncation of W_0 ('Principal Weights'), refreshed at fixed intervals; the resulting update is high-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing entries are updated in place.",
+   "identity_at_init": "\\Delta W = 0; the mask is data-free (SVD of the pretrained weight).",
+   "key_idea": "Plain magnitude selection works poorly for LLM sparse fine-tuning, but after discarding small singular directions the largest remaining entries identify the weights that carry reasoning-relevant knowledge, so tuning only those beats full fine-tuning.",
+   "results_note": "Updating the top 5% Principal Weights, LIFT outperforms full fine-tuning on reasoning tasks (arithmetic and commonsense) with LoRA-level memory, and retains up to 20% more source-domain knowledge than full fine-tuning and LoRA.",
+   "relations": [
+    {
+     "target": "pafi",
+     "type": "competes-with",
+     "note": "Opposite magnitude rules for a static-structure sparse mask: PaFi tunes the smallest |W_0|, LIFT the largest entries of a rank-r truncation."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Memory comparable to LoRA but high-rank sparse updates."
+    },
+    {
+     "target": "spiel",
+     "type": "competes-with",
+     "note": "Both refresh the mask during training; LIFT uses a spectral criterion."
+    },
+    {
+     "target": "sift",
+     "type": "competes-with",
+     "note": "LIFT compares against SIFT (and SpIEL) as sparse fine-tuning baselines (App. F)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.00772",
+    "https://arxiv.org/html/2506.00772"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2506.00772 (Liu, Zihang; 2025-06; comment 'ICML 2025') confirmed; PMLR v267 (liu25ba). Rank-r SVD truncation, top-k magnitude mask per matrix, top 5% Principal Weights, periodic mask refresh from the current weights (Alg. 1 calc_mask(theta_t)) match Sec. 4 and App. B.",
+   "corrections": [
+    "formula_latex: the mask is recomputed from the rank-r approximation of the current weights theta_t (Alg. 1), not from W_0 only.",
+    "trainable_params: noted that with periodic mask refresh the final delta lives on the union of masks, so it can exceed k nonzeros.",
+    "relations: added competes-with sift (direct comparison in App. F)."
+   ]
+  },
+  {
+   "id": "rosa",
+   "name": "RoSA",
+   "full_name": "Robust Adaptation (sparse plus low-rank)",
+   "paper_title": "RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation",
+   "authors": "Nikdan et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2401.04679",
+   "url": "https://arxiv.org/abs/2401.04679",
+   "code_url": "https://github.com/IST-DASLab/RoSA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + BA + S,\\quad \\mathrm{supp}(S)\\subseteq M,\\ \\ M = \\mathrm{TopK}\\Big(\\textstyle\\sum_{s\\in\\mathcal{D}_M}(\\nabla_W\\mathcal{L}_s)^{\\alpha}\\big|_{W_0+\\tilde B\\tilde A},\\ d\\cdot d_{out}d_{in}\\Big),\\ \\alpha\\in\\{1,2\\},\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ W_0 \\text{ frozen};\\ \\tilde B\\tilde A = \\text{LoRA after a 64-batch warm-up}",
+   "trainable_params": "r(d_{in}+d_{out}) + d\\cdot d_{out}d_{in}\\ \\ (d = \\text{mask density})",
+   "locus": "all fully connected layers of the LLM",
+   "modification_kind": "hybrid",
+   "structure": "robust-PCA-style decomposition of the update: low-rank BA plus a sparse S on a fixed gradient-statistics mask (accumulated squared gradients, i.e. a diagonal-Fisher mask for alpha=2)",
+   "mergeable": "yes",
+   "mergeable_reason": "Both the low-rank and the sparse components are additive and can be folded into W_0.",
+   "identity_at_init": "LoRA is first trained alone for 64 batches to compute the mask, then training restarts with both adapters at BA = 0 (B = 0) and S = 0; the mask is fixed from then on.",
+   "key_idea": "Full fine-tuning updates are not low-rank but are well approximated by low-rank plus sparse, so train both components jointly with system support for sparse adapters.",
+   "results_note": "Fine-tuning LLaMA2-7B on GSM8K, ViGGO and SQL generation, RoSA outperforms LoRA and pure sparse adaptation at equal budget and can match full fine-tuning.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Adds a sparse component to LoRA."
+    },
+    {
+     "target": "fish-mask",
+     "type": "combines",
+     "note": "Sparse component uses a FISH-like accumulated-gradient mask."
+    },
+    {
+     "target": "spt",
+     "type": "competes-with",
+     "note": "SPT chooses sparse or low-rank per matrix; RoSA uses both on every matrix."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.04679",
+    "https://arxiv.org/html/2401.04679"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2401.04679 (Nikdan, 2024-01) confirmed; ICML 2024 confirmed in PMLR v235 (nikdan24a). Eq. 5 (rank <= r plus ||S||_0 <= d m n), Alg. 1 mask (32 samples, alpha in {1,2}, per-matrix TopK), 64-batch LoRA-only warm-up, then restart with LoRA + sparse adapter, densities 0.15-2.4% match Sec. 3 and 5.",
+   "corrections": [
+    "formula_latex: mask gradients are taken at W_0 plus a briefly warmed-up LoRA (64 batches) and alpha is in {1,2}; both were missing.",
+    "identity_at_init: described the LoRA-only warm-up used for mask generation and the restart of training with both adapters at zero."
+   ]
+  },
+  {
+   "id": "beft",
+   "name": "BEFT",
+   "full_name": "Bias-Efficient Fine-Tuning",
+   "paper_title": "BEFT: Bias-Efficient Fine-Tuning of Language Models in Low-Data Regimes",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ACL 2026",
+   "arxiv": "2509.15974",
+   "url": "https://aclanthology.org/2026.acl-long.1799/",
+   "code_url": "https://github.com/whubaichuan/BEFT",
+   "hf_peft": true,
+   "hf_peft_config": "BeftConfig",
+   "formula_latex": "h_v = W_v x + (b_v + \\Delta b_v),\\quad \\text{only } \\Delta b_v\\in\\mathbb{R}^{d_{out}} \\text{ (value-projection bias) is trained; for bias-free LLMs a zero-initialized } \\Delta b_v \\text{ is added}",
+   "trainable_params": "d_{v}\\ \\text{per value projection (its output width)};\\ d_{v}L\\ \\text{per model} = dL \\text{ without grouped-query attention}\\ (\\approx 0.01\\%\\ \\text{of BERT-base})",
+   "locus": "value-projection bias b_v in every attention layer",
+   "modification_kind": "selective",
+   "structure": "translation of the value vectors only: a single per-channel additive shift of W_v x in each layer",
+   "mergeable": "conditional",
+   "mergeable_reason": "Merges into the existing value bias. Because softmax rows sum to 1, Delta b_v is also equivalent to an output-projection bias W_o Delta b_v (paper App. B.2), but bias-free models such as LLaMA have neither bias, so a bias must be added to fold it (HF PEFT refuses to merge then).",
+   "identity_at_init": "\\Delta b_v initialized to 0.",
+   "key_idea": "Among bias terms, the value bias is the one whose fine-tuning best predicts downstream gains (once angular as well as magnitude changes are considered), so tuning b_v alone gives extreme parameter efficiency in low-data regimes.",
+   "results_note": "Across BERT-base, OPT-1.3B and LLaMA2-7B (up to 6.7B parameters) on classification, multiple-choice and generation tasks, tuning b_v beats tuning b_q or b_k in low-data regimes with about 0.01% of parameters.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "special-case-of",
+     "note": "A one-bias-type restriction of BitFit."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "The paper also applies LoRA/VeRA/DoRA-style reparameterizations to the bias terms."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.15974",
+    "https://arxiv.org/html/2509.15974",
+    "https://aclanthology.org/2026.acl-long.1799/",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/beft"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2509.15974 (Huang, Baichuan; 2025-09) and ACL 2026 (2026.acl-long.1799) confirmed. b_v-only tuning, zero-initialized b_v added to bias-free LLMs (Sec. 3.6), ~0.01% of BERT-base parameters, combination with LoRA/VeRA/DoRA (App. C.4) match the paper. HF PEFT BeftConfig confirmed (added in v0.20.0): one zero-initialized vector per targeted Linear, default targets v_proj/value, merge raises if the base layer has no bias.",
+   "corrections": [
+    "trainable_params: the count is the value projection's output width d_v, which is smaller than d under grouped-query attention (e.g. LLaMA-3), so dL was replaced by d_v L.",
+    "mergeable_reason: added the paper's equivalence Delta b_v ~ output bias W_o Delta b_v, which is why folding still needs a bias somewhere."
+   ]
+  },
+  {
+   "id": "super-tuning",
+   "name": "Super-Tuning",
+   "full_name": "Super / Supra: activation-aware sparse fine-tuning (and its LoRA hybrid)",
+   "paper_title": "Super-Tuning: From Activation-Aware Pruning to Sparse Fine-Tuning",
+   "authors": "Ilin et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2607.09287",
+   "url": "https://arxiv.org/abs/2607.09287",
+   "code_url": "https://github.com/vectozavr/SuperTuning",
+   "hf_peft": true,
+   "hf_peft_config": "SupertuningConfig",
+   "formula_latex": "A_{ij} = |W_{0,ij}|\\,\\|X_{j:}\\|_2\\ (\\text{Wanda score from a calibration pass}),\\ \\ M = \\mathrm{TopK}_s(A)\\ \\text{or}\\ \\mathrm{BottomK}_s(A),\\quad \\text{Super: } W = W_0 + M\\odot U;\\ \\ \\text{Supra: } W = W_0 + M\\odot U + \\gamma\\,LR",
+   "trainable_params": "s\\ \\text{per matrix (Super)};\\ s + r(d_{in}+d_{out})\\ \\text{(Supra)}",
+   "locus": "LLM linear layers. HF PEFT: default targets copy LoRA's; scores are |W_0| only (no Wanda); defaults are sparsity = 0.99 (1% trainable) and select_top = True (TopK), whereas the paper's strongest rows use BottomK",
+   "modification_kind": "selective",
+   "structure": "fixed sparse coordinate mask from a pruning saliency score (activation-weighted magnitude), optionally summed with a LoRA term",
+   "mergeable": "yes",
+   "mergeable_reason": "Both the sparse values and the optional LoRA term are additive and foldable into W_0.",
+   "identity_at_init": "Sparse values U initialized to 0 and LoRA B = 0 (HF PEFT init_weights=True).",
+   "key_idea": "Reuse pruning saliency (Wanda) to decide where to adapt: the scores that say which weights can be removed also identify a good fixed support for sparse fine-tuning, with no gradient-based selection.",
+   "results_note": "On Llama-family models fine-tuned on Math17K, Supra (BottomK) gives the best average arithmetic accuracy among tested adapters (62.23% vs 61.07% for LoRA on the 1B model) in single-seed comparisons.",
+   "relations": [
+    {
+     "target": "pafi",
+     "type": "generalizes",
+     "note": "The magnitude-only BottomK support is PaFi's rule; Wanda reweights magnitudes by input activation norms."
+    },
+    {
+     "target": "rosa",
+     "type": "competes-with",
+     "note": "Supra is a sparse plus low-rank hybrid like RoSA but with a training-free support."
+    },
+    {
+     "target": "sift",
+     "type": "competes-with",
+     "note": "Gradient-based (SIFT) vs. activation-aware magnitude (Super) supports."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2607.09287",
+    "https://arxiv.org/html/2607.09287",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/supertuning"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2607.09287 (Ilin, 2026-07-10, v1) confirmed; no venue, so arXiv. Wanda score A_ij = |W_ij| ||X_j:||_2 (App. B), TopK/BottomK per-layer support, Super = W + M.U and Supra = W + M.U + gamma L R match Sec. 3. HF PEFT SupertuningConfig (added in v0.21.0) uses |W| scores only (no Wanda), sparsity = 0.99 and select_top = True by default, and lora_alpha = 2r. The paper's best sparse-only Llama-3-8B row is Magnitude (BottomK) at 79.02 vs Supra-Wanda 78.66, while the HF docstring describes it as 'magnitude-topk'. The HF default direction is therefore not the paper's best one.",
+   "corrections": [
+    "locus: recorded the HF PEFT defaults (magnitude score only, sparsity 0.99, select_top=True), which differ from the paper's Wanda score and its best BottomK direction."
+   ]
+  },
+  {
+   "id": "trainable-tokens",
+   "name": "Trainable Tokens",
+   "full_name": "Trainable Tokens (selective embedding-row fine-tuning)",
+   "paper_title": "",
+   "authors": "Hugging Face PEFT team",
+   "year": 2025,
+   "venue": "HF PEFT library (no paper)",
+   "arxiv": "",
+   "url": "https://huggingface.co/docs/peft/package_reference/trainable_tokens",
+   "code_url": "https://github.com/huggingface/peft/tree/main/src/peft/tuners/trainable_tokens",
+   "hf_peft": true,
+   "hf_peft_config": "TrainableTokensConfig (or LoraConfig(trainable_token_indices=...))",
+   "formula_latex": "E = E_0 + P_{\\mathcal{I}}\\,\\Delta E_{\\mathcal{I}},\\quad \\text{only the rows } \\{E_i : i\\in\\mathcal{I}\\} \\text{ of the embedding matrix (selected token ids) are trainable; } E_0 \\text{ otherwise frozen};\\ \\text{HF stores the trained rows themselves (init } = E_{0,\\mathcal{I}}\\text{) and writes them back with index\\_copy}",
+   "trainable_params": "|\\mathcal{I}|\\cdot d",
+   "locus": "input embedding matrix rows for chosen token indices (optionally tied output embedding)",
+   "modification_kind": "selective",
+   "structure": "row-selection mask on the embedding matrix: \\Delta E is supported on the rows indexed by \\mathcal{I}",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained rows are written back into the embedding matrix.",
+   "identity_at_init": "New rows initialized to the current embeddings of those tokens, so the method is a no-op before training.",
+   "key_idea": "To add or retrain a few tokens, update only their embedding rows rather than the whole embedding matrix or a LoRA on it, saving memory and storage and leaving other tokens untouched.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Can be used together with LoRA via trainable_token_indices."
+    }
+   ],
+   "sources": [
+    "https://huggingface.co/docs/peft/package_reference/trainable_tokens",
+    "https://github.com/huggingface/peft/releases/tag/v0.15.0"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "No paper or arXiv id; it exists as an HF PEFT tuner (tuners/trainable_tokens, TrainableTokensConfig, introduced in v0.15.0 released 2025-03-19, weight tying in PR #2399) and through LoraConfig(trainable_token_indices=...). Docs page package_reference/trainable_tokens confirmed.",
+   "corrections": [
+    "formula_latex: noted that HF PEFT stores and overwrites the selected rows (index_copy) rather than storing deltas; this is equivalent to the row-supported delta."
+   ]
+  }
+ ],
+ "papers": [
+  {
+   "id": "lottery-ticket-hypothesis",
+   "title": "The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks",
+   "authors": "Frankle & Carbin",
+   "year": 2018,
+   "venue": "ICLR 2019",
+   "arxiv": "1803.03635",
+   "url": "https://arxiv.org/abs/1803.03635",
+   "claim": "Dense randomly initialized networks contain sparse subnetworks ('winning tickets') that, trained in isolation from their original initialization, match the full network's accuracy; iterative magnitude pruning finds them.",
+   "relevance": "Supplies the train-select-rewind-retrain recipe behind LT-SFT and the general idea that a sparse sub-object of parameter space suffices, i.e. selection as a subobject/mask functor on parameter spaces.",
+   "sources": [
+    "https://arxiv.org/abs/1803.03635"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1803.03635 (Frankle, 2018-03; journal-ref ICLR 2019) confirmed; claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "batchnorm-only",
+   "title": "Training BatchNorm and Only BatchNorm: On the Expressive Power of Random Features in CNNs",
+   "authors": "Frankle et al.",
+   "year": 2020,
+   "venue": "ICLR 2021",
+   "arxiv": "2003.00152",
+   "url": "https://arxiv.org/abs/2003.00152",
+   "claim": "Training only BatchNorm's affine parameters on top of frozen random weights reaches surprisingly high accuracy (e.g. 82% on CIFAR-10 for deep ResNets), far above training an equal number of random other parameters.",
+   "relevance": "Evidence that per-channel affine (diagonal scale/shift) parameters are disproportionately expressive, the foundation for BitFit, LN Tuning and (IA)^3-style diagonal methods.",
+   "sources": [
+    "https://arxiv.org/abs/2003.00152",
+    "https://arxiv.org/html/2003.00152"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2003.00152 (Frankle, 2020-02; comment 'Published in ICLR 2021') confirmed; 82% CIFAR-10 / 32% ImageNet top-5 matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "delta-tuning",
+   "title": "Delta Tuning: A Comprehensive Study of Parameter Efficient Methods for Pre-trained Language Models",
+   "authors": "Ding et al.",
+   "year": 2022,
+   "venue": "Nature Machine Intelligence 2023",
+   "arxiv": "2203.06904",
+   "url": "https://arxiv.org/abs/2203.06904",
+   "claim": "Unifies PEFT as 'delta tuning' and classifies methods into addition-based, specification-based (selective) and reparameterization-based, with optimization and optimal-control perspectives and large-scale experiments.",
+   "relevance": "Its 'specification-based' class is exactly this family; the delta-on-parameters view is the starting point for treating PEFT methods as morphisms acting on parameter spaces.",
+   "sources": [
+    "https://arxiv.org/abs/2203.06904",
+    "https://arxiv.org/html/2203.06904"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2203.06904 (Ding, 2022-03) confirmed; the published version appeared in Nature Machine Intelligence 5 (2023) under the title 'Parameter-efficient fine-tuning of large-scale pre-trained language models' (doi 10.1038/s42256-023-00626-4, Crossref). The addition / specification / reparameterization taxonomy matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "scaling-down-to-scale-up",
+   "title": "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning",
+   "authors": "Lialin et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2303.15647",
+   "url": "https://arxiv.org/abs/2303.15647",
+   "claim": "Surveys 50+ PEFT papers with a taxonomy of additive, selective, reparametrization-based and hybrid methods and benchmarks 15 methods, noting that sparse selective methods are of limited practicality on current hardware.",
+   "relevance": "Gives the standard 'selective' category (layer-depth, layer-type and individual-parameter selection) and the hardware critique that motivates structured selective methods (S2FT, SMT).",
+   "sources": [
+    "https://arxiv.org/abs/2303.15647",
+    "https://arxiv.org/html/2303.15647"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2303.15647 (Lialin, 2023-03; v2 2024) confirmed; no venue found, so arXiv. Over 50 papers, 15 benchmarked methods, depth/type/individual-parameter selective taxonomy and 'unrestricted unstructured sparsity is still impractical on contemporary hardware' all appear in v2.",
+   "corrections": []
+  },
+  {
+   "id": "effectiveness-of-peft-sparse-view",
+   "title": "On the Effectiveness of Parameter-Efficient Fine-Tuning",
+   "authors": "Fu et al.",
+   "year": 2022,
+   "venue": "AAAI 2023",
+   "arxiv": "2211.15583",
+   "url": "https://arxiv.org/abs/2211.15583",
+   "claim": "Shows that random, rule-based and projection-based PEFT methods are all p-sparse fine-tuned models (with respect to an equivalent model for structure-changing methods) and proves that sparsity regularizes by bounding stability, which yields generalization bounds.",
+   "relevance": "A theorem-level unification of PEFT under the selective view (theta = theta_0 + M Delta theta), directly usable as the 'mask' object in a categorical account; also motivates the SAM selection method.",
+   "sources": [
+    "https://arxiv.org/abs/2211.15583",
+    "https://arxiv.org/html/2211.15583"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2211.15583 (Fu, 2022-11) confirmed; AAAI 2023 via Crossref (doi 10.1609/aaai.v37i11.26505); random/rule-based/projection-based categorization and stability-based generalization bound match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "skill-localization-grafting",
+   "title": "Task-Specific Skill Localization in Fine-tuned Language Models",
+   "authors": "Panigrahi et al.",
+   "year": 2023,
+   "venue": "ICML 2023",
+   "arxiv": "2302.06600",
+   "url": "https://arxiv.org/abs/2302.06600",
+   "claim": "Grafting the fine-tuned values of a tiny subset (~0.01%) of parameters onto the pretrained model recovers over 95% of the fine-tuned model's performance; such grafted regions localize task skills and help continual learning.",
+   "relevance": "Empirical evidence that fine-tuning deltas are effectively sparse, supporting selective PEFT and composition of sparse deltas (as in LT-SFT).",
+   "sources": [
+    "https://arxiv.org/abs/2302.06600",
+    "https://arxiv.org/html/2302.06600"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2302.06600 (Panigrahi, 2023-02; comment 'ICML 2023') confirmed in PMLR v202 (panigrahi23a); ~0.01% of parameters, >95% performance matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "elsa-freezing-layers",
+   "title": "What Would Elsa Do? Freezing Layers During Transformer Fine-Tuning",
+   "authors": "Lee et al.",
+   "year": 2019,
+   "venue": "arXiv",
+   "arxiv": "1911.03090",
+   "url": "https://arxiv.org/abs/1911.03090",
+   "claim": "Fine-tuning only the final quarter of BERT/RoBERTa layers (3-5 of 12 in base models) retains about 90% of full fine-tuning quality.",
+   "relevance": "Early quantification of layer-depth selection, the coarse end of the selective family (top-k layer tuning, surgical fine-tuning, LISA).",
+   "sources": [
+    "https://arxiv.org/abs/1911.03090",
+    "https://arxiv.org/html/1911.03090"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1911.03090 (Lee, Jaejun; 2019-11; 5-page arXiv note) confirmed; no venue found, so arXiv. 'Only a fourth of the final layers ... 90% of the original quality' matches the abstract.",
+   "corrections": []
+  }
+ ],
+ "notes": "Scope: methods whose trainable object is a subset of the pretrained parameters, W = W_0 + M ⊙ ΔW with a 0/1 support M, including hand-specified supports (BitFit, BEFT, LN Tuning, Trainable Tokens, surgical/top-layer tuning), data-driven fixed masks (FISH Mask, Child-Tuning_D, SAM, SIFT, GPS, SPT, SHiRA, PaFi, LIFT, Super-Tuning), learned or dynamic supports (Diff Pruning, LT-SFT, SpIEL), structured supports (S2FT head/channel slices, SMT tiles, GPS row-balanced) and time-varying layer selection (LISA, HiFT, BAdam, Child-Tuning_F) which are tagged optimizer-or-training-procedure because their accumulated update is dense. Masking/Piggyback learn a multiplicative 0/1 mask on W_0 and are tagged multiplicative-weight (dual of selective deltas). SPT and RoSA are sparse+low-rank hybrids. Seed check: all 16 seeds exist and are included; 'SMT' is the ICLR 2025 paper whose arXiv title is 'Sparse Matrix in Large Language Model Fine-tuning'. HF PEFT (main branch, checked 2026-10-01) contains four selective tuners: LNTuningConfig, ShiraConfig, BeftConfig, TrainableTokensConfig, plus SupertuningConfig (2026). BitFit has no dedicated config (LoraConfig(bias='all') only trains biases alongside LoRA), so hf_peft=false. Cross-family relation targets used: lora, dora, ia3, galore, mezo, mad-x (these ids should exist in other family files; mad-x may be named differently). Uncertainties: Super-Tuning (arXiv 2607.09287, July 2026) is very recent with negligible citations, included because it ships in HF PEFT; its HF implementation uses magnitude scoring while the paper's headline uses Wanda scores. Trainable Tokens has no paper; year 2025 inferred from PEFT v0.15.0 release notes. SpIEL appears to remain arXiv-only. S2FT's exact sliced matrices (rows vs columns) depend on weight-layout convention, so the formula states them generically. Omitted as lower-uptake or out of scope: SparseGrad (EMNLP 2024), GMT gradient-mask tuning (AAAI 2025), Partial Fine-Tuning for ViTs (2023), SpaRTA random sparse adaptation (2025), NeFT neuron-level tuning, TinyTL (bias + lite residual, hybrid), DiffFit, LN-tuning of Qi et al. 2022 (arXiv 2211.08682, cited inside the ln-tuning entry), FRoD (HF PEFT, not selective).",
+ "verification_summary": "Adversarial check on 2026-10-01 of all 26 methods and 7 papers. Metadata: all 31 arXiv ids were fetched in one export-API batch; titles, first authors and first-version years all match. SMT's arXiv title differs from its ICLR 2025 title. Venues were confirmed through arXiv comments/journal-refs, ACL Anthology (8 pages), the NeurIPS 2021/2024 proceedings listings (FISH, LISA, S2FT, SHiRA, BAdam), the ICLR 2023/2024/2025 virtual sites (Surgical, LN Tuning, SMT, which also give the OpenReview ids), PMLR v202/v235/v267 (Panigrahi, SIFT, RoSA, LIFT) and Crossref (Piggyback ECCV 2018, SAM AAAI 2023, GPS CVPR 2024, SPT ICCV 2023, Delta Tuning NMI 2023 under a different title). SpIEL, Super-Tuning, Lialin et al. and Elsa stay arXiv. Formulas were checked against the arXiv HTML full text of every method paper. Fixes: SPT sensitivity sums g^2 over C = 800 samples. SAM squares the gradient summed over 500-2000 burn-in steps, so it differs from a Fisher score. LIFT refreshes its mask from SVD_r of the current weights. RoSA builds its mask after a 64-batch LoRA warm-up and alpha is in {1,2}. LT-SFT freezes the output embedding and LayerNorm, not the embeddings. Global-vs-per-matrix parameter counts were corrected for FISH, Child-Tuning_D, LT-SFT and SAM; d_v replaces d for BEFT under GQA; LN Tuning's 0.004% was checked. HF PEFT (main, v0.21.1, tuners dir via GitHub API, docs pages checked): LNTuningConfig, ShiraConfig (v0.17.0), BeftConfig (v0.20.0), SupertuningConfig (v0.21.0) and TrainableTokensConfig (v0.15.0, also LoraConfig(trainable_token_indices)) are confirmed; no other method here is supported, including BitFit. HF Super-Tuning defaults to |W| TopK, while the paper's best sparse rows are BottomK. Mergeability and identity flags were unchanged apart from wording; Masking's 5% initial sparsity is now explicit. Relations: retyped 5 (spt->fish-mask, hift<->badam, shira->fish-mask, sam-sparse->fish-mask), removed 3 (lt-sft->spiel wrong direction, piggyback->masking wrong direction, surgical->bitfit unjustified) and added lift->sift. All targets are kebab-case slugs that exist in some family file. Nothing was dropped. 37 field-level corrections in total."
+}

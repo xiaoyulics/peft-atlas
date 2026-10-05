@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>A Categorical Atlas of Parameter-Efficient Fine-Tuning card</title>
+<!-- Social card for X / Open Graph. Render: Chrome --headless=new --screenshot=card.png --window-size=1200,630 card.html
+     Geometry follows the hero chart: θ₀ lies on the circle about 0 (the orbit of θ₀ under rotations, OFT),
+     the line through 0 and θ₀ is the closure of its scaling orbit ((IA)³), and LoRA's image is a cone with apex θ₀. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=block">
+<style>
+  :root {
+    --paper: #0a121c; --paper-2: #101b28; --paper-3: #172435;
+    --ink: #e3e9ee; --ink-2: #a3b0bd; --ink-3: #7d8b99; --rule: #24344a;
+    --tide: #4cc3cf; --ochre: #e2b04c; --seal: #ec7a66; --moss: #7cc276;
+    --f-display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --f-body: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --f-mono: "IBM Plex Mono", Menlo, monospace;
+    --f-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--paper); }
+  body { position: relative; color: var(--ink); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-optical-sizing: auto; }
+  svg.chart { position: absolute; inset: 0; width: 1200px; height: 630px; display: block; }
+  .copy { position: absolute; left: 80px; top: 78px; width: 600px; }
+  .kicker { margin: 0; font-family: var(--f-ui); font-weight: 500; font-size: 15px; letter-spacing: 0.06em; white-space: nowrap; text-transform: uppercase; color: var(--tide); }
+  h1 { margin: 26px 0 0; max-width: 680px; font-family: var(--f-display); font-weight: 600; font-variation-settings: "opsz" 32; font-size: 56px; line-height: 1.06; letter-spacing: -0.012em; color: var(--ink); }
+  .subtitle { margin: 18px 0 0; font-family: var(--f-display); font-style: italic; font-weight: 400; font-variation-settings: "opsz" 32; font-size: 38px; line-height: 1.1; color: var(--tide); }
+  h1 em { display: block; font-style: normal; color: var(--tide); } h1 em span { display: block; white-space: nowrap; }
+  .thesis { margin: 22px 0 0; max-width: 520px; font-family: var(--f-body); font-style: italic; font-weight: 400; font-size: 24px; line-height: 1.3; color: var(--ink-2); }
+  .counts { position: absolute; left: 80px; bottom: 66px; margin: 0; font-family: var(--f-ui); font-size: 17px; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .counts b { font-weight: 600; color: var(--ink); }
+  .counts i { font-style: normal; color: var(--ink-3); padding: 0 0.55em; }
+  svg text { font-family: var(--f-ui); font-size: 14.5px; letter-spacing: 0.01em; fill: var(--ink-2); }
+  svg text .k { font-weight: 600; letter-spacing: 0.02em; }
+  svg text.theta { font-family: var(--f-body); font-style: italic; font-size: 30px; letter-spacing: 0; fill: var(--ink); }
+  svg text.theta tspan.sub { font-style: normal; font-size: 18px; }
+</style>
+</head>
+<body>
+<svg class="chart" viewBox="0 0 1200 630" aria-hidden="true">
+  <defs>
+    <linearGradient id="fadeL" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.18"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="0.72" stop-color="#fff" stop-opacity="1"/>
+    </linearGradient>
+    <mask id="seaMask"><rect x="0" y="0" width="1200" height="630" fill="url(#fadeL)"/></mask>
+    <radialGradient id="glow" cx="0.76" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#12233a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0a121c" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="inside"><rect x="30" y="30" width="1140" height="570"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#glow)"/>
+  <g id="sea" mask="url(#seaMask)" clip-path="url(#inside)"></g>
+  <g id="neat"></g>
+  <g id="germ" clip-path="url(#inside)"></g>
+</svg>
+
+<div class="copy">
+  <p class="kicker">Xiaoyu Li · Zhizhou Sha · Chiwun Yang · Dai Shi</p>
+  <h1><span style="white-space:nowrap">A Categorical Atlas of</span> <em><span>Parameter-Efficient</span><span>Fine-Tuning</span></em></h1>
+  <p class="subtitle">Cones, Orbits, and Gauges</p>
+  <p class="thesis">Read a PEFT method as a morphism into the pretrained point.</p>
+</div>
+<p class="counts"><b>382</b> methods<i>·</i><b>41</b> results<i>·</i><b>20</b> interactive figures</p>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg', D = Math.PI / 180;
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function f(n) { return Math.round(n * 10) / 10; }
+  function path(pts, close) { return pts.map(function (p, i) { return (i ? 'L' : 'M') + f(p[0]) + ' ' + f(p[1]); }).join('') + (close ? 'Z' : ''); }
+
+  // ---- chart geometry (screen coordinates, y down) ----
+  var O = [1074, 488];                       // the zero weight 0 ∈ Θ
+  var R = 236;                                // |θ₀|: radius of the rotation orbit
+  var GAM = 222 * D;                          // bearing of θ₀ seen from 0
+  var T = [O[0] + R * Math.cos(GAM), O[1] + R * Math.sin(GAM)];   // θ₀
+  var radial = [Math.cos(GAM), Math.sin(GAM)];                     // direction 0 → θ₀
+  var tangent = [-radial[1], radial[0]];
+
+  var sea = document.getElementById('sea'), neat = document.getElementById('neat'), germ = document.getElementById('germ');
+
+  // graticule through 0 (the quantiser grid of the hero chart), every 78px
+  var step = 78;
+  for (var x = O[0] - step * 16; x < 1200; x += step) if (x > 30) el('line', { x1: x, y1: 30, x2: x, y2: 600, stroke: '#16253a', 'stroke-width': 1 }, sea);
+  for (var y = O[1] - step * 8; y < 630; y += step) if (y > 30) el('line', { x1: 30, y1: y, x2: 1170, y2: y, stroke: '#16253a', 'stroke-width': 1 }, sea);
+
+  // isobaths: smooth closed curves around a deep point, the loss landscape of the hero
+  var deep = [960, 250];
+  for (var k = 0; k < 11; k++) {
+    var r0 = 46 + k * 52, pts = [];
+    for (var i = 0; i <= 160; i++) {
+      var a = i / 160 * 2 * Math.PI;
+      var r = r0 * (1 + 0.09 * Math.sin(2 * a + 0.6 + k * 0.13) + 0.05 * Math.sin(3 * a + 1.7 - k * 0.21) + 0.025 * Math.sin(5 * a + k));
+      pts.push([deep[0] + 1.35 * r * Math.cos(a), deep[1] + 0.82 * r * Math.sin(a)]);
+    }
+    el('path', { d: path(pts, true), fill: 'none', stroke: k % 5 === 4 ? '#2a3d55' : '#1d2e44', 'stroke-width': k % 5 === 4 ? 1.1 : 0.9 }, sea);
+  }
+
+  // graduated neatline, as on a printed chart
+  el('rect', { x: 24.5, y: 24.5, width: 1151, height: 581, fill: 'none', stroke: '#2a3d55', 'stroke-width': 1 }, neat);
+  el('rect', { x: 30.5, y: 30.5, width: 1139, height: 569, fill: 'none', stroke: '#2a3d55', 'stroke-width': 1 }, neat);
+  var seg = 38;
+  for (var s = 0, xx = 31; xx < 1169; xx += seg, s++) if (s % 2 === 0) {
+    var w = Math.min(seg, 1169 - xx);
+    el('rect', { x: xx, y: 25, width: w, height: 5, fill: '#1f3149' }, neat);
+    el('rect', { x: xx, y: 600, width: w, height: 5, fill: '#1f3149' }, neat);
+  }
+  for (var s2 = 0, yy = 31; yy < 599; yy += seg, s2++) if (s2 % 2 === 0) {
+    var h2 = Math.min(seg, 599 - yy);
+    el('rect', { x: 25, y: yy, width: 5, height: h2, fill: '#1f3149' }, neat);
+    el('rect', { x: 1170, y: yy, width: 5, height: h2, fill: '#1f3149' }, neat);
+  }
+
+  // ---- OFT: the orbit of θ₀ under rotations, a circle about 0 ----
+  el('circle', { cx: O[0], cy: O[1], r: R, fill: 'none', stroke: 'var(--ochre)', 'stroke-width': 1.5, opacity: 0.95 }, germ);
+  // a small arrow on the orbit showing the group acting
+  (function () {
+    var a = GAM + 0.36, p = [O[0] + R * Math.cos(a), O[1] + R * Math.sin(a)], t = [-Math.sin(a), Math.cos(a)];
+    var n = [Math.cos(a), Math.sin(a)], L = 9;
+    el('path', { d: path([[p[0] - t[0] * L + n[0] * 5, p[1] - t[1] * L + n[1] * 5], p, [p[0] - t[0] * L - n[0] * 5, p[1] - t[1] * L - n[1] * 5]]), fill: 'none', stroke: 'var(--ochre)', 'stroke-width': 1.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, germ);
+  })();
+
+  // ---- (IA)³: the scaling orbit of θ₀, whose closure is the line through 0 and θ₀ ----
+  var lineA = [T[0] + radial[0] * 170, T[1] + radial[1] * 170], lineB = [O[0] - radial[0] * 70, O[1] - radial[1] * 70];
+  el('line', { x1: f(lineA[0]), y1: f(lineA[1]), x2: f(lineB[0]), y2: f(lineB[1]), stroke: 'var(--ink-2)', 'stroke-width': 1.25, 'stroke-dasharray': '1 0' }, germ);
+  // the zero weight: a small cross
+  el('path', { d: 'M' + (O[0] - 6) + ' ' + O[1] + 'H' + (O[0] + 6) + 'M' + O[0] + ' ' + (O[1] - 6) + 'V' + (O[1] + 6), stroke: 'var(--ink-2)', 'stroke-width': 1.25 }, germ);
+  var z = el('text', { x: O[0] + 10, y: O[1] + 20, class: 'theta', style: 'font-size:22px;fill:var(--ink-2)' }, germ); z.textContent = '0';
+
+  // ---- LoRA: the cone of low-rank updates, apex at θ₀ (orthographic, axis tipped toward the viewer) ----
+  var AX = -97 * D, h = 128, a = 84, b = 22;       // axis bearing, nappe height, rim semi-axes
+  var u = [Math.cos(AX), Math.sin(AX)], v = [-u[1], u[0]];
+  function rim(sign, phi) {
+    var c = [T[0] + sign * h * u[0], T[1] + sign * h * u[1]];
+    return [c[0] + a * Math.cos(phi) * v[0] + b * Math.sin(phi) * u[0], c[1] + a * Math.cos(phi) * v[1] + b * Math.sin(phi) * u[1]];
+  }
+  // silhouette: tangents from the apex to each rim (polar of the apex: sin φ = -sign·b/h in rim coordinates)
+  var phiT = Math.asin(b / h);
+  var cone = el('g', {}, germ);
+  [1, -1].forEach(function (sg) {
+    var ring = [];
+    for (var j = 0; j <= 96; j++) ring.push(rim(sg, j / 96 * 2 * Math.PI));
+    // tangent points of the silhouette on this rim
+    var tA = rim(sg, -sg * phiT), tB = rim(sg, Math.PI + sg * phiT);
+    // faint fill: the triangle apex-tangents plus the rim disc
+    el('path', { d: path(ring, true), fill: 'rgba(76,195,207,0.07)', stroke: 'none' }, cone);
+    el('path', { d: path([tA, T, tB], true), fill: 'rgba(76,195,207,0.06)', stroke: 'none' }, cone);
+    // rulings
+    for (var q = 0; q < 14; q++) {
+      var P = rim(sg, q / 14 * 2 * Math.PI + 0.11);
+      el('line', { x1: f(T[0]), y1: f(T[1]), x2: f(P[0]), y2: f(P[1]), stroke: 'var(--tide)', 'stroke-width': 0.7, opacity: 0.32 }, cone);
+    }
+    // silhouette generators
+    el('path', { d: path([tA, T, tB]), fill: 'none', stroke: 'var(--tide)', 'stroke-width': 1.4, 'stroke-linejoin': 'round' }, cone);
+    if (sg > 0) {
+      // the upper rim faces the viewer and is seen whole
+      el('path', { d: path(ring, true), fill: 'none', stroke: 'var(--tide)', 'stroke-width': 1.4 }, cone);
+    } else {
+      // the lower rim: near half solid, far half hidden behind the nappe
+      var near = [], far = [];
+      for (var n3 = 0; n3 <= 64; n3++) near.push(rim(sg, phiT - n3 / 64 * (Math.PI + 2 * phiT)));
+      for (var n4 = 0; n4 <= 48; n4++) far.push(rim(sg, phiT + n4 / 48 * (Math.PI - 2 * phiT)));
+      el('path', { d: path(near), fill: 'none', stroke: 'var(--tide)', 'stroke-width': 1.4 }, cone);
+      el('path', { d: path(far), fill: 'none', stroke: 'var(--tide)', 'stroke-width': 1, 'stroke-dasharray': '3 4', opacity: 0.6 }, cone);
+    }
+  });
+
+  // ---- θ₀ ----
+  el('circle', { cx: f(T[0]), cy: f(T[1]), r: 9, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1, opacity: 0.55 }, germ);
+  el('circle', { cx: f(T[0]), cy: f(T[1]), r: 4.2, fill: 'var(--ink)' }, germ);
+  var th = el('text', { x: f(T[0] - 52), y: f(T[1] + 9), class: 'theta' }, germ);
+  th.textContent = 'θ'; var sub = el('tspan', { class: 'sub', dy: 6 }, th); sub.textContent = '0';
+
+  // ---- labels ----
+  function label(x, y, key, rest, color, anchor) {
+    var t = el('text', { x: x, y: y, 'text-anchor': anchor || 'start' }, germ);
+    var k1 = el('tspan', { class: 'k', style: 'fill:' + color }, t); k1.textContent = key;
+    var r1 = el('tspan', { dx: 6 }, t); r1.textContent = rest;
+    return t;
+  }
+  var top = [T[0] + h * u[0], T[1] + h * u[1]];
+  label(f(top[0]) - 2, f(top[1] - b - 18), 'LoRA', 'cone, apex at θ₀', 'var(--tide)', 'middle');
+  var oa = GAM + 0.66, op = [O[0] + R * Math.cos(oa), O[1] + R * Math.sin(oa)];
+  label(f(op[0] - 22), f(op[1] - 17), 'OFT', 'orbit of θ₀', 'var(--ochre)', 'start');
+  label(f(lineA[0] - 10), f(lineA[1] + 4), '(IA)³', 'line through θ₀', 'var(--ink-2)', 'end');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+% Exposé X. Falsifiable predictions.
+% Sources: theory/framework.md (Exposé X), site/sections/12-predictions.html (first half, "Predictions"),
+% theory/propositions.json (public statements of the results each prediction rests on). Conjecture D is stated here, in
+% the falsifiable form of the site; Conjectures A and C are stated in Exposé II.C and restated inside X.4 and X.11.
+\section{Falsifiable predictions}\label{sec:predictions}
+
+\begin{flushright}
+\small\itshape Say what you proved, say what you only named,\\
+and say what would show you wrong.\\[2pt]
+{\upshape\footnotesize a working maxim}
+\end{flushright}
+
+This exposé states eleven experiments that could show the framework wrong, each for a named optimizer.
+
+\paragraph{In brief}
+\begin{itemize}
+  \item A fair LoRA+ baseline multiplies $\alpha$ by the ratio $\lambda$. Under Adam, with $\varepsilon$, decay and
+    per-block clipping thresholds rescaled and one shared schedule, the two runs give identical weights (after
+    \citealp{schulman2025lora}).
+  \item LoRA's charge $\Phi=B\T B/\eta_B-AA\T/\eta_A$ is constant under gradient flow and, when a step size $\eta$
+    multiplies fixed block rates, moves by $O(\eta^2)$ per SGD step, a cheap diagnostic of what the optimizer adds.
+  \item Some claims need no training run. Generic rank-one targets separate LoRA from Kronecker adapters, exact block
+    OFT re-merged on a fixed partition never leaves $W_0\cdot\prod\SO(b)$, and LoraHub's merge depends on gauge choices
+    unless the modules share a factor.
+\end{itemize}
+
+% Layout of the fields under each prediction (local to this exposé).
+\newenvironment{predmeta}{\par\small\begin{description}[font=\normalfont,leftmargin=0pt,labelindent=0pt,
+  itemsep=2pt,topsep=5pt,parsep=0pt,labelsep=0.6em]}{\end{description}}
+\newcommand{\predfield}[1]{\item[\labelsf{#1}]}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Why the theory should risk something}\label{sec:predictions-why}
+
+A framework that only re-describes known methods cannot be wrong, and so it earns little trust. The claims below say what
+a training run will do. Each prediction carries the optimizer scope of the result it rests on; a claim about images
+needs none, because no run can leave the image. Table~\ref{tab:predictions} lists them. Each keeps the number it carries on
+the companion site, and the subsections group them by subject (optimizers, images, symmetry, base change and merging),
+so the numbers do not run in order.
+
+\begin{table}[t]
+\centering\small
+\caption{The eleven predictions, the optimizer scope each inherits, the results it rests on, and its kind.}
+\label{tab:predictions}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.7cm}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{1.9cm}@{}}
+  \toprule
+  \headrow \textbf{No.} & \textbf{Prediction} & \textbf{Optimizer scope} & \textbf{Rests on} & \textbf{Kind}\\
+  \midrule
+  \hyperref[res:X.1]{X.1} & LoRA+ against $\alpha$ re-tuned by $\lambda$ & Adam, AdamW & \thmref{Thm}{III.10},
+    \thmref{Cor.}{III.11} & theorem\\
+  \hyperref[res:X.2]{X.2} & DoRA against LoRA + output gain & AdamW, shared by all arms & \thmref{Prop.}{II.8},
+    \thmref{Conj.}{D} & conjecture\\
+  \hyperref[res:X.3]{X.3} & Hidden-unit permutations & coordinatewise (SGD, Adam) & \thmref{Lemma}{VI.2},
+    \thmref{Obs.}{II.15} & theorem + data\\
+  \hyperref[res:X.4]{X.4} & Residual-stream rotations & reach: any; outcomes: depend on optimizer and init &
+    \thmref{Obs.}{II.15},
+    \thmref{Conj.}{A} & conjecture\\
+  \hyperref[res:X.5]{X.5} & Rank-one targets & any (image claim) & \thmref{Thm}{II.11} & theorem\\
+  \hyperref[res:X.6]{X.6} & Re-based OFT & any (reach); exact Cayley map & \thmref{Thm}{V.3} & theorem\\
+  \hyperref[res:X.7]{X.7} & The crossover scale $\sigma^*$ & gradient flow, SGD & \thmref{Thm}{III.9} & theorem + data\\
+  \hyperref[res:X.8]{X.8} & Drift of the charge $\Phi$ & gradient flow, SGD, Adam & \thmref{Thm}{III.5} & theorem +
+    data\\
+  \hyperref[res:X.9]{X.9} & LoraHub with shared or independent seeds & post hoc; regime set by training &
+    \thmref{Prop.}{V.4} & theorem + data\\
+  \hyperref[res:X.10]{X.10} & Rankings at equal effective dimension & any (bookkeeping) & \thmref{Prop.}{II.12} &
+    theorem + data\\
+  \hyperref[res:X.11]{X.11} & Whitened data-aware splits & split: any; training is not covariant &
+    \thmref{Prop.}{II.16}, \thmref{Conj.}{C} & conjecture\\
+  \bottomrule
+\end{tabularx}
+\end{table}
+
+Read the kind column as a warning label. \emph{Theorem} means the sharp half cannot fail inside its hypotheses.
+\emph{Theorem + data} pairs a proved mechanism with an empirical claim about its size. \emph{Conjecture} means we
+expect it and have not proved it. The toys check mechanisms in float64 on small matrices, and the experiments on real
+models are still to be run. Each prediction below lists its scope, the results that support it, a test, the outcome
+that would refute it, and the toy or figure that shows its mechanism.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Predictions about optimizers}\label{sec:predictions-optimizers}
+
+LoRA has four knobs: the scale $s=\alpha/r$, the rates $\eta_A,\eta_B$ and the initial size $\sigma_A$ of $A$. A
+two-dimensional torus of rescalings moves all four without changing any weight. LoRA+ turns one knob, the ratio
+$\lambda=\eta_B/\eta_A$, and under Adam that turn lands on the orbit of plain LoRA with a larger $\alpha$.
+
+\begin{prediction}{X.1}{LoRA+ against a re-tuned $\alpha$}
+Any gain of LoRA+ with ratio $\lambda$ over plain LoRA with $\alpha$ multiplied by $\lambda$ (same $\eta_A$, same $A_0$)
+comes from the ingredients that break the extended torus: global-norm clipping, an $\varepsilon$ or weight decay shared
+by the two parameter groups, and schedules that differ between the groups. With all of them off, or rescaled per block,
+the two runs produce the same weights at every step in exact arithmetic.
+\begin{predmeta}
+  \predfield{Scope} Adam and AdamW ($\beta_1\in[0,1)$, $\beta_2\in(0,1)$, bias correction allowed); linear LoRA modules
+    from $B_0=0$; no regulariser on the factors; common data order and dropout masks. A shared schedule, warm-up
+    included, preserves the torus. HF PEFT's LoRA+ optimizer treats embeddings and 1-D parameters separately, so only
+    linear modules are covered.
+  \predfield{Support} \thmref{Theorem}{III.10} and \thmref{Corollary}{III.11}(b), both verified. For $\varepsilon>0$
+    the LoRA run needs $\varepsilon_B=\lambda\varepsilon$ on $B$, and with AdamW a decay $\lambda\cdot\mathrm{wd}$ on
+    $B$. Under SGD the matching scale is $\sqrt\lambda\,s$.
+  \predfield{Test} Train LoRA+ with $\lambda=16$ against LoRA with $\alpha$ multiplied by 16, $\varepsilon$ on $A$ and
+    $16\varepsilon$ on $B$, no decay and no clipping; the weights agree bit for bit, since 16 is a power of two. Then
+    switch on one torus breaker at a time (shared $\varepsilon$, shared AdamW decay, \texttt{max\_grad\_norm=1.0},
+    group-specific schedules) and record the gap each opens.
+  \predfield{Would fail if} a gap beyond rounding appeared with every hypothesis met. A standard HF run clips by default
+    and its LoRA+ optimizer shares $\varepsilon$ and decay, so there the experiment measures how much of the gain each
+    breaker carries.
+  \predfield{Toy} Figure~\ref{fig:orbit} runs LoRA+ with ratio $\lambda$ against LoRA with $\alpha\cdot\lambda$ under
+    Adam with $\varepsilon=0$. The loss curves coincide and the weight gap is exactly zero, and the gap jumps when a
+    shared $\varepsilon>0$, decoupled weight decay or global-norm clipping is switched on.
+\end{predmeta}
+\end{prediction}
+
+\begin{remark*}{why the test avoids $\varepsilon=0$}
+Literal $\varepsilon=0$ needs the convention $0/0=0$. At $B_0=0$ the gradient of $A$ vanishes, and a stock Adam divides
+zero by zero there.
+\end{remark*}
+
+\paragraph{Credit}
+The LoRA and Adam case, its extension to $\varepsilon>0$ and the two effective hyperparameters are due to
+\citet{schulman2025lora}, for the method of \citet{hayou2024lora}. The torus for any multihomogeneous method, and the
+$c^2$ law for SGD, are added here.
+
+Under gradient flow LoRA conserves the charge $\Phi=B\T B/\eta_B-AA\T/\eta_A$, and when $\Phi$ is isotropic the
+dynamics have a closed form. Small singular values of the update grow through $B$ alone, as in LoRA-FA; large ones grow
+through both factors in balance.
+
+\begin{prediction}{X.7}{the crossover scale}
+Under SGD, the singular values of $\Delta W$ switch from one-sided to two-sided growth as they cross
+$\sigma^*=\mu\lvert\kappa\rvert/2$, where $\mu=s\sqrt{\eta_A\eta_B}$ and $\Phi=-\kappa I_r$. For default LoRA with
+$B_0=0$ and $A_0A_0\T=cI$, $\kappa=c/\eta_A$ and
+\begin{equation}\label{eq:pred-crossover}
+  \sigma^*=\frac{sc}{2}\sqrt{\frac{\eta_B}{\eta_A}}.
+\end{equation}
+LoRA+ with ratio $\lambda$ multiplies $\sigma^*$ by $\sqrt\lambda$.
+\begin{predmeta}
+  \predfield{Scope} Gradient flow exactly; SGD without momentum up to the $O(\eta^2)$ drift of the charge per step. For
+    Kaiming initialisations $A_0A_0\T$ is only close to $cI$ (HF's default has $c\approx1/3$), and the crossover becomes
+    a band of relative width $O(\sqrt{r/n})$. Adam is not covered.
+  \predfield{Support} \thmref{Theorem}{III.9}, verified; known from the linear-network literature, with the PEFT
+    reading ours.
+  \predfield{Test} Train with SGD from orthonormal rows of $A_0$ scaled by $\sqrt c$, so that the charge is exactly
+    isotropic. Take the SVD $\Delta W=U\Sigma V\T$ at intervals and read off $f_i=u_i\T(BB\T/\eta_B)u_i$ and
+    $g_i=v_i\T(A\T A/\eta_A)v_i$. Below $\sigma^*$, $f_i\approx0$ and $g_i\approx\kappa$; above it,
+    $f_i\approx g_i\approx\sigma_i/\mu$. Repeat at ratio $\lambda$.
+  \predfield{Would fail if} the gains departed from the closed-form values $f_i=f_\kappa(\sigma_i^2/\mu^2)$ and
+    $g_i=g_\kappa(\sigma_i^2/\mu^2)$ of \thmref{Theorem}{III.9}, with $f_\kappa(x)=\sqrt{x+\kappa^2/4}-\kappa/2$ and
+    $g_\kappa=f_\kappa+\kappa$, while $\Phi$ stayed isotropic. If $\Phi$ has drifted, the test says nothing.
+  \predfield{Toy} Figure~\ref{fig:noether}(b) plots the closed-form isotropic-charge singular-value dynamics and the
+    crossover $\sigma^*$.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+The closed form is due to \citet{xtarmoun2021understanding}, who call the charge ``$\lambda$-balanced'', and to
+\citet{xmin2021explicit}; see also \citet{xdomine2025lazy} and \citet{xkunin2024get}. The balanced regime above
+$\sigma^*$ is the dynamics of \citet{arora2018optimization}.
+
+\begin{explains}
+LoRA+ moves $\sigma^*$ up by $\sqrt\lambda$, so more of the update spends longer in the LoRA-FA regime. PiSSA at equal
+rates has $\kappa=0$, and under gradient flow it is balanced from the first step.
+\end{explains}
+
+Part of LoRA's gauge is a symmetry of $\rho$, and gradient flow conserves its charge whatever signal drives it. A
+discrete step conserves it up to second order in the step size, and nothing forces Adam's sign-like step to conserve it.
+
+\begin{prediction}{X.8}{drift of the charge}
+$\Phi$ is constant under gradient flow, moves by $O(\eta^2)$ per SGD step at fixed block rates $\eta_A,\eta_B$, and
+drifts under Adam. We expect its drift under Adam to track other measures of how far Adam breaks LoRA's gauge.
+\begin{predmeta}
+  \predfield{Scope} Gradient flow driven by any signal $\Lambda D\rho\T\gamma$, which covers minibatches, LoRA dropout,
+    global-norm clipping and DoRA's detached norm; SGD without momentum or weight decay. Momentum, Adam and AdamW fall
+    outside \thmref{Theorem}{III.5}.
+  \predfield{Support} \thmref{Theorem}{III.5} (repaired; known after \citealp{zhao2022symmetries}); weight decay moves
+    the charge on purpose (\thmref{Corollary}{III.6}). With a step size $\eta$ multiplying the block rates, a step
+    $B\leftarrow B-\eta\eta_B\nabla_B$, $A\leftarrow A-\eta\eta_A\nabla_A$ changes the charge by exactly
+    \begin{equation}\label{eq:pred-drift}
+      \Delta\Phi=\eta^2\big(\eta_B\,\nabla_B\T\nabla_B-\eta_A\,\nabla_A\nabla_A\T\big).
+    \end{equation}
+    The identity uses only that both factor gradients come from one weight-space gradient $G$, so it covers
+    minibatches, LoRA dropout on the input of $A$, and global clipping when $\nabla_A,\nabla_B$ denote the gradients
+    actually applied.
+  \predfield{Test} Log $\Phi$ during training. Under SGD at step sizes $\eta$, $\eta/2$, $\eta/4$, the per-step change
+    should match \eqref{eq:pred-drift} to rounding and shrink about fourfold each time. Under Adam, compare
+    $\lVert\Phi_t-\Phi_0\rVert$ (our suggestion) with the gap between runs started at $A_0$ and $gA_0$, $g\notin B_r$,
+    which by \thmref{Corollary}{III.13} can differ.
+  \predfield{Would fail if} the SGD drift departed from \eqref{eq:pred-drift}, so that the update was not a plain
+    gradient step, or $\Phi$-drift under Adam showed no relation to any other measure of gauge breaking.
+  \predfield{Toy} Figure~\ref{fig:noether}(a): scalar LoRA rides its hyperbola $b^2/\eta_B-a^2/\eta_A=\Phi$ under
+    gradient flow, and the charge drifts under discrete GD and under Adam.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+The conservation law, with its symmetric and antisymmetric halves, is Prop.~5.1 of \citet{zhao2022symmetries}; laws
+independent of loss and data are in \citet{marcotte2023abide}. The principle goes back to \citet{du2018algorithmic},
+\citet{arora2018optimization} and \citet{kunin2020neural}.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Predictions about images}\label{sec:predictions-images}
+
+DoRA splits each output neuron into a length and a direction. At the level of images that adds exactly one free gain per
+output neuron to LoRA, so anything else that separates the two happens in training, where Adam notices the coordinates a
+parameter is written in.
+
+\begin{prediction}{X.2}{DoRA against LoRA + output gain}
+\phantomsection\label{res:D}{\bfseries\scshape Conjecture D}\ (DoRA against a gain in DoRA's
+coordinates). Started from the same weights and trained with AdamW at the same settings, LoRA followed by a trainable
+output gain matches DoRA \citep{liu2024dora} once the gain is trained in DoRA's coordinates ($\mu_i$ starting at
+$\lVert w_{0,i}\rVert$ in place of $\ell_i$ starting at $1$).
+\begin{predmeta}
+  \predfield{Scope} AdamW, as in the DoRA paper and HF PEFT, with one learning rate, decay and data order for every arm.
+    Images refer to the merged weight, with $r\le\min(m,n)$ and $W_0$ free of zero rows. Every arm trains $r(m+n)+m$
+    parameters.
+  \predfield{Support} \thmref{Proposition}{II.8} (repaired):
+    $\Im\mathrm{DoRA}_r=\mathrm{Diag}_m\cdot(W_0+\Mr)$, the image of $\mathrm{LoRA}_r$ followed by an output gain. The
+    first form of Conjecture~D, that any gap comes from the parametrisation, followed from this equality and could not
+    fail; the form above can.
+  \predfield{Test} Start four arms at $W_0$ with the same $A_0$, as in Experiment~D of Exposé~\ref{sec:erlangen}:
+    (i) LoRA with an output gain, $\ell_0=\mathbf 1$; (ii) the gain in DoRA's coordinates,
+    $W=\diag(\mu_i/\lVert w_{0,i}\rVert)(W_0+sBA)$, $\mu_{0,i}=\lVert w_{0,i}\rVert$; (iii) DoRA with the exact gradient
+    of its normalisation; (iv) DoRA with the detached norm of the DoRA paper (Sec.~4.3) and HF PEFT
+    (\texttt{weight\_norm.detach()}). Since the images are equal, any gap between arms comes from the parametrisation,
+    the backward rule or the optimizer coordinates, and the four arms separate these. This design is ours.
+  \predfield{Would fail if} arm (ii) stayed clearly behind arm (iv). Comparing (iii) with (iv) then shows how much of
+    the gap the detached backward carries.
+  \predfield{Toy} None for training. The companion site's Gram lab shows the image-level half: at $B=0$ DoRA acts as an
+    output torus, and its update escapes rank $r$.
+\end{predmeta}
+\end{prediction}
+
+A rank-one update writes one new feature into many neurons, and LoRA does this with a single rank. A Kronecker sum
+measures rank across a different cut of the same four-leg tensor, where, for the splits HF PEFT uses, a generic rank-one
+update is as complex as any matrix can be.
+
+\begin{prediction}{X.5}{rank-one targets}
+Split $m=m_1m_2$ and $n=n_1n_2$. On targets $W_0+uv\T$ with generic $u,v$, and a loss whose only minimiser is the
+target, $\mathrm{LoRA}_1$ can reach zero loss while no sum of fewer than
+\begin{equation}\label{eq:pred-kappa}
+  \kappa_1=\min(m_1,m_2)\min(n_1,n_2)
+\end{equation}
+Kronecker products can. For HF PEFT's splits $\kappa_1$ is the largest possible Kronecker rank: $d$ for its square
+splits of $d=1024$ or $4096$ (for instance the $64\times64$ split of $4096$), and $576$ for its $24\times32$ split of
+$768$. For LoRA ranks below $\min(m_1,n_1)\min(m_2,n_2)$ and fewer than $\kappa_1$ terms, neither image contains the
+other.
+\begin{predmeta}
+  \predfield{Scope} The negative half concerns images and holds for every optimizer; the positive half asks the
+    optimizer to find a point that exists.
+  \predfield{Support} \thmref{Theorem}{II.11} (repaired), for unconstrained Kronecker sums and for LoKr, since $C\otimes
+    BA$ is one Kronecker term. With Schmidt decompositions $u=\sum_i\sigma_ix_i\otimes y_i$ and
+    $v=\sum_j\tau_jz_j\otimes w_j$, the best $k$-term sum leaves the squared error $\sum\sigma_i^2\tau_j^2$ over all but
+    the $k$ largest products $\sigma_i\tau_j$.
+  \predfield{Test} On one linear layer with whitened inputs and more samples than parameters (or with the loss
+    $\tfrac12\lVert W-W_0-uv\T\rVert_F^2$), train $\mathrm{LoRA}_1$ and sums of $k=1,\dots,\kappa_1$ unconstrained
+    Kronecker products, each with its own learning-rate sweep, and plot the final loss against $k$ beside the floor.
+  \predfield{Would fail if} a sum of fewer than $\kappa_1$ terms went below the floor. $\mathrm{LoRA}_1$ stalling above
+    zero would be an optimization failure, against which the framework claims nothing.
+  \predfield{Toy} Figure~\ref{fig:cut}: for a random rank-one update the operator-Schmidt spectrum has one nonzero value
+    across the ordinary cut and $\kappa_1$ across the Kronecker cut.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+The rearrangement and the nearest-Kronecker-product problem are due to \citet{loan1993approximation} (\bgref{B.11}). The
+PEFT reading, that Kronecker sums are LoRA across another cut, is ours. Kronecker adapters in practice are KronA
+\citep{edalati2022krona} and LoKr \citep{yeh2023navigating}.
+
+Parameter count measures what a method pays, expressive dimension what it can reach. The difference is gauge, parameters
+that move without moving the weights. It ranges from one parameter for VeRA through $r^2$ for $\mathrm{LoRA}_r$ to at
+least $2r^2+m+n-1$ for $\mathrm{LoHa}_{r,r}$, which has the budget of $\mathrm{LoRA}_{2r}$.
+
+\begin{prediction}{X.10}{effective dimension}
+Benchmarks should report the expressive dimension $d(M)$ beside the budget $\lvert M\rvert$. At budgets of a few thousand
+parameters, rankings at equal effective dimension can differ from rankings at equal parameter count.
+\begin{predmeta}
+  \predfield{Scope} Optimizer-free bookkeeping; the change of ranking is the empirical claim.
+  \predfield{Support} \thmref{Proposition}{II.12} (repaired). $\mathrm{LoRA}_r$ wastes $r^2$ parameters, VeRA
+    \citep{kopiczko2023vera} one (numerically, Appendix~\ref{app:repro}; for $r\le n$ and generic frozen factors also
+    by \bgref{C.14}) and FourierFT one per sampled conjugate pair. At the budget of $\mathrm{LoRA}_{2r}$, with
+    $2r\le\min(m,n)$, $r^2\le\min(m,n)$ and $2r^2<m+n-1$, $\mathrm{LoHa}_{r,r}$ reaches at least $(m+n-1)-2r^2$ fewer
+    dimensions, and is strictly dominated for $r\le2$. When $2r^2\ge m+n-1$, as for $r=64$ on $4096\times4096$ or $r=32$
+    on 320- to 640-wide layers, LoHa matches or beats $\mathrm{LoRA}_{2r}$ in dimension too, by its numerically checked
+    dimension formula.
+  \predfield{Test} On a small-budget benchmark, compare methods at matched $\lvert M\rvert$ and at matched $d(M)$,
+    computing $d$ by a float64 Jacobian rank where no formula is proved. Report the maximum rank too, and name its cut.
+  \predfield{Would fail if} the two rankings agreed at every budget tested, so that gauge is too small a share of the
+    budget to matter there.
+  \predfield{Toy} Figure~\ref{fig:rankvol} places LoRA, LoHa, GraLoRA, HiRA, KronA, MoRA, FourierFT and C3A at one
+    budget on a $4096\times4096$ layer by maximum rank and by $d(M)/(mn)$. The companion site's budget calculator sets
+    $\lvert M\rvert$ beside $d(M)$ on real base models.
+\end{predmeta}
+\end{prediction}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Predictions about symmetry}\label{sec:predictions-symmetry}
+
+The hidden units of a feed-forward block carry no order. Permute them with the matching rows and columns, and the network
+computes the same function. A method that never looks at unit order should not notice. A method built on a frame, a
+reshape or a block partition of the hidden coordinates should.
+
+\begin{prediction}{X.3}{the permutation test}
+Over random function-preserving permutations of hidden units, LoRA's outcome variance equals its seed variance.
+FourierFT, LoKr and MoRA show larger variance, and so do BOFT and OFT on modules whose input side is the hidden layer
+(\texttt{down\_proj}). On \texttt{up\_proj} and \texttt{gate\_proj} the permutation only reorders BOFT's output rows, so
+BOFT is exactly equivariant there.
+\begin{predmeta}
+  \predfield{Scope} The LoRA half holds for any coordinatewise optimizer (SGD, Adam, AdamW), which commutes with
+    coordinate permutations of $Q$ (the third item of \thmref{Proposition}{II.13}), and an initialisation of $A$ with i.i.d.\ entries. The
+    rest is empirical.
+  \predfield{Support} \thmref{Lemma}{VI.2} (classical): the linear maps that commute with GELU or SiLU are the
+    permutations, and with ReLU the positive monomials. Gated SwiGLU or GeGLU blocks admit the full monomial group
+    through their linear branch (rule R4 of \thmref{Theorem}{VI.3}). \thmref{Observation}{II.15} turns covariance under
+    those maps into equal reachable function sets.
+  \predfield{Test} Apply $K$ random permutations to the rows of \texttt{up\_proj} and \texttt{gate\_proj} and the
+    columns of \texttt{down\_proj}, and confirm that outputs agree to rounding. Fine-tune each method once per permuted
+    copy with a fresh seed, and $K$ times on the original with $K$ seeds; compare the two variances, method by method.
+  \predfield{Would fail if} LoRA's permutation variance exceeded its seed variance, pointing to an implementation tied
+    to unit order, or the listed methods showed no excess.
+  \predfield{Toy} No variance test. The companion site's merge game runs the rule behind the lemma: a positive diagonal
+    slides through ReLU and stops at GELU.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+Lemma VI.2 is classical \citep{xsussmann1992uniqueness,xchen1993geometry,xgodfrey2022symmetries}. The methods under
+test are FourierFT \citep{gao2024parameter}, LoKr \citep{yeh2023navigating}, MoRA \citep{jiang2024mora}, BOFT
+\citep{liu2023parameter} and OFT \citep{qiu2023controlling}.
+
+\begin{explains}
+If the prediction holds, seed variance understates the variance of methods tied to unit order across equally good
+checkpoints.
+\end{explains}
+
+SliceGPT rotates the residual stream of a model without changing what it computes. A method whose image rotates with the
+weights reaches the same functions afterwards; a method built on the stream's coordinates may lose or gain reach.
+
+\begin{prediction}{X.4}{the rotation test}
+Take a pre-norm transformer with its norm gains fused into the linear maps they feed and LayerNorm converted to RMSNorm,
+and rotate its residual stream by one global orthogonal matrix. This provably leaves unchanged the reachable function
+sets of LoRA, of (IA)$^3$ with HF defaults, and of DoRA on the input-rotated boxes ($q$, $k$, $v$, gate, up).
+\thmref{Conjecture}{A}, restated: against the gain-fused, unrotated model, the rotation measurably changes the
+fine-tuning results of block OFT/BOFT on residual-input projections, LoHa ($r\ge2$), HiRA and coordinate masks, because
+LLM residual streams have a privileged basis.
+\begin{predmeta}
+  \predfield{Scope} The proved half concerns reachable function sets, for every optimizer and for box-wise methods with
+    no shared parameters or random frames. Training outcomes are exactly unchanged only for (IA)$^3$, and in law for
+    LoRA and DoRA under SGD with an isotropic initialisation. HF's Kaiming-uniform $A$ is not rotation-invariant in law,
+    and Adam is only $B_r$-equivariant (\thmref{Theorem}{III.12}), so both break this. Sandwich and post-norm models
+    (Gemma-2/3, OLMo-2) and SliceGPT's per-block rotations are excluded.
+  \predfield{Support} \thmref{Observation}{II.15} (repaired), a sufficient condition. The conjectured methods fail it,
+    which by itself proves nothing.
+  \predfield{Test} Keep the gain-fused model as control, rotate a copy, and confirm that outputs agree to rounding.
+    Fine-tune every method on both over several seeds. LoRA's reach provably does not change, so its change in results
+    measures the share of the optimizer and the initialisation.
+  \predfield{Would fail if} the listed methods changed no more than LoRA does.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+The rotation is that of SliceGPT \citep{xashkboos2024slicegpt}. In QuaRot \citep{xashkboos2024quarot}, the per-head
+Hadamard fused offline into $W_v$ and $W_{\mathrm{out}}$ is a value--output head gauge, which
+\thmref{Observation}{II.15} covers; the online Hadamards preserve the function but insert new operations, outside its
+hypothesis.
+
+PiSSA and CorDA choose their split from a truncated SVD, which follows the coordinates under rotations and uniform
+scalings and changes when they are stretched unevenly. Whitening the input first removes that dependence from the split.
+
+\begin{prediction}{X.11}{whitened splits}
+\thmref{Conjecture}{C}, restated: whitened CorDA or PiSSA is more robust to function-preserving input
+reparametrisations, and no worse otherwise.
+\begin{predmeta}
+  \predfield{Scope} The covariance of the split is optimizer-free; the robustness of trained results is the empirical
+    part. Absolute damping $C+\lambda I$ cuts the covariance to $\Ort(n)$, while CorDA's trace-relative damping keeps
+    $\CO(n)$. The released CorDA code divides each calibration sample by its largest entry, which breaks even rotations,
+    so only the published formulas are covered.
+  \predfield{Support} \thmref{Proposition}{II.16} (repaired), for $C=\mathbb E[xx\T]\succ0$, $1\le r<\min(m,n)$ and
+    spectral gaps. The whitened split $\Pi_rW_0$, with $\Pi_r$ the top-$r$ eigenprojector of $W_0CW_0\T$, is
+    $\GL_n$-covariant on the input side. The PiSSA and MiLoRA splits and the paper-form CorDA splits have input-side
+    group exactly $\CO(n)$, so norm-gain folding or SmoothQuant rescalings change them.
+  \predfield{Test} Prepare function-preserving versions of one checkpoint that differ by non-conformal input maps
+    (folded RMSNorm gains, or a per-channel rescaling with its inverse folded into the producer). Initialise PiSSA,
+    paper-form CorDA and the whitened split on each, fine-tune with one optimizer, and compare the spread across
+    versions; compare all three on the unmodified checkpoint for the ``no worse'' half.
+  \predfield{Would fail if} PiSSA and CorDA varied no more than the whitened split across versions, or the whitened
+    split did worse on the unmodified checkpoint.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+The splits are PiSSA \citep{meng2024pissa}, MiLoRA \citep{wang2024milora} and CorDA \citep{yang2024corda}; the whitened
+form is the truncation-aware whitening of SVD-LLM \citep{xwang2025svdllm}. EVA \citep{paischer2024parameter} starts at
+$B_0=0$ and splits nothing.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Predictions about base change and merging}\label{sec:predictions-base}
+
+Merging and restarting lets a method compose its own moves. For an additive cone such as ReLoRA's, composition keeps
+buying rank. For block OFT with a fixed partition, a product of block rotations is again a block rotation.
+
+\begin{prediction}{X.6}{re-based OFT}
+With an exact Cayley map and a fixed partition, merge-and-restart OFT reaches nothing beyond the closure of one cycle,
+$W_0\cdot\prod\SO(b)$, so fixed blocks gain nothing. Partitions whose hypergraph is connected generate $\SO(n)$, so re-based
+exact OFT gains reach only if its partition changes between cycles or its butterflies reach full depth. LoRA-type cones
+gain from rebasing with a fixed shape; fixed linear shapes (masks, BitFit, (IA)$^3$) gain nothing.
+\begin{predmeta}
+  \predfield{Scope} Reachable sets, hence optimizer-free, and silent on trained performance. HF PEFT's default
+    Cayley--Neumann OFT is not orthogonal; with small generators ($\lVert Q\rVert_{\mathrm{op}}\le2^{1/4}$) each merge
+    is a contraction, so repeated merging can only shrink neuron norms and singular values. Iterated exact BOFT with
+    $m'$ butterfly factors reaches $W_0\cdot\SO(n)$, up to its output scale, only at full depth $b\,2^{m'-1}=n$.
+  \predfield{Support} \thmref{Theorem}{V.3}(c) (repaired) and its corollaries 2 and 4.
+  \predfield{Test} Run $K$ cycles of merge-and-restart OFT with \texttt{use\_cayley\_neumann=False} and a fixed
+    partition, logging the partial Grams $W_{:,J}W_{:,J}\T$ and the loss. Repeat with a fresh random partition each
+    cycle, and with ReLoRA at the same per-cycle budget. Only the fixed-partition run keeps its partial Grams fixed to
+    rounding.
+  \predfield{Would fail if} a partial Gram moved beyond rounding under the fixed partition, so that the map was not
+    exactly orthogonal. Gains in loss from restarts alone are outside the claim.
+  \predfield{Toy} Figure~\ref{fig:rebase}(b) shows the components of the hypergraph generated by block-OFT, butterfly
+    and Givens factors on 16 coordinates and the dimension of the Lie algebra they generate against
+    $\dim\so(16)=120$; a fixed block partition never connects the hypergraph.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+OFT \citep{qiu2023controlling} and BOFT \citep{liu2023parameter} introduced the block and butterfly parametrisations;
+ReLoRA \citep{lialin2023relora} introduced merge-and-restart for LoRA.
+
+LoraHub mixes adapters factor by factor. A factor belongs to no adapter in particular, since $(B,A)$ and $(cB,A/c)$ give
+the same update, so the mix depends on choices the adapters do not record unless the modules share a factor.
+
+\begin{prediction}{X.9}{LoraHub seeds}
+LoraHub's factor-wise merge $(\sum_iw_iB_i)(\sum_jw_jA_j)$ behaves like update arithmetic, up to the factor
+$\sum_jw_j$, when its modules share the $A$-seed and $A$ stays close to its initialisation. It degrades when the modules
+come from independent seeds.
+\begin{predmeta}
+  \predfield{Scope} The algebra is post hoc and optimizer-free. Whether $A$ stays near $A_0$ is empirical; a large
+    $\eta_B/\eta_A$, as in LoRA+, favours it.
+  \predfield{Support} \thmref{Proposition}{V.4} (repaired). Replacing $(B_2,A_2)$ by $(cB_2,A_2/c)$ changes the merge by
+    \begin{equation}\label{eq:pred-lorahub}
+      \sum_{l\ne2}w_lw_2\big[(c-1)B_2A_l+(c^{-1}-1)B_lA_2\big],
+    \end{equation}
+    so it is not a function of the adapters. With one shared frozen $A$ it returns $(\sum_jw_j)\sum_iw_iB_iA$ exactly.
+    HF's \texttt{add\_weighted\_adapter} with \texttt{linear}, and its non-SVD \texttt{ties} and \texttt{dare\_*}
+    variants, are factor-wise rules of the same kind.
+  \predfield{Test} Train $N$ modules on $N$ tasks from a shared $A$-seed and from independent seeds. Merge each set by
+    LoraHub's rule at fixed weights and compare with $(\sum_jw_j)\sum_iw_iB_iA_i$, as matrices and on the downstream
+    metric, logging $\lVert A_i-A_0\rVert/\lVert A_0\rVert$.
+  \predfield{Would fail if} independent seeds merged as well as shared ones, so that the cross terms $B_iA_j$, $i\ne j$,
+    cost nothing in practice.
+  \predfield{Toy} Figure~\ref{fig:gauge}, merge panel: a gauge of one module moves the LoraHub merge and leaves task
+    arithmetic unchanged.
+\end{predmeta}
+\end{prediction}
+
+\paragraph{Credit}
+LoraHub is due to \citet{huang2023lorahub}. FFA-LoRA \citep{sun2024improving} freezes a shared factor, and KnOTS
+\citep{stoica2024model} re-factorises the modules jointly through a shared $U\Sigma$. Task arithmetic
+\citep{ilharco2022editing} combines updates and has no gauge to break.
+
+\begin{explains}
+A safe rule combines LoRAs on the products $B_iA_i$, or on factors only when the modules share one.
+\end{explains}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{One more expectation, and how to read a failure}\label{sec:predictions-failure}
+
+One expectation is not on the list. By \thmref{Proposition}{II.13}, unconstrained Kronecker sums are LoRA after a
+rearrangement of entries, and FourierFT (with no sampled conjugate pair), WaveFT (when HF's pad--IDWT--crop map is
+invertible) and C3A are coordinate masks in a fixed frame. An optimizer that sees the loss only through the trainable
+parameters runs each exactly as its source on a transported loss. At matched learning-rate sweeps we therefore expect the
+gap between a transported method and its source to follow how well each image aligns with the task's update, measured by
+projecting a full fine-tuning $\Delta W$ onto each image.
+
+A failure inside the hypotheses of \hyperref[res:X.1]{X.1}, \hyperref[res:X.5]{X.5} or \hyperref[res:X.6]{X.6}, or of a
+proved half, would mean an error in a proof, and we would mark that result refuted; a failure outside them shows which
+hypothesis matters. A failure of \hyperref[res:X.2]{X.2}, \hyperref[res:X.4]{X.4} or \hyperref[res:X.11]{X.11} would
+refute \thmref{Conjecture}{D}, \thmref{Conjecture}{A} or \thmref{Conjecture}{C}, respectively.

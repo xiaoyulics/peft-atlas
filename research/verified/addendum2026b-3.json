@@ -1,0 +1,405 @@
+{
+ "family": "addendum2026b-3",
+ "family_title": "2026 sweep pass 2, batch 3",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "rotmole",
+   "name": "RotMoLE",
+   "full_name": "RotMoLE: Rotatable Mixture of Low-rank Experts (MoE-LoRA with a rotation gate)",
+   "paper_title": "RotMoLE: Enhancing Mixture of Low-Rank Experts through Rotational Gating Mechanism",
+   "authors": "Sun et al.",
+   "year": 2026,
+   "venue": "NeurIPS 2026 (poster)",
+   "arxiv": "2605.25565",
+   "url": "https://arxiv.org/abs/2605.25565",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\sum_{i\\in\\mathrm{TopK}(g(x))}g_i(x)\\,B_i\\,R_i(x)\\,A_i\\,x,\\quad g(x)=\\mathrm{softmax}(W_gx),\\ \\ \\theta(x)=2\\pi\\,\\sigma(W_\\theta x)-\\pi\\in(-\\pi,\\pi)^{n};\\ \\ r=2:\\ R_i=\\begin{pmatrix}\\cos\\theta_i&-\\sin\\theta_i\\\\ \\sin\\theta_i&\\cos\\theta_i\\end{pmatrix};\\ \\ r>2:\\ e_{1,i}=\\frac{A_ix}{\\|A_ix\\|},\\ e_{2,i}=\\frac{q_i-(q_i^{\\top}e_{1,i})e_{1,i}}{\\|q_i-(q_i^{\\top}e_{1,i})e_{1,i}\\|},\\ R_i=[e_{1,i}\\ e_{2,i}]\\begin{pmatrix}\\cos\\theta_i&-\\sin\\theta_i\\\\ \\sin\\theta_i&\\cos\\theta_i\\end{pmatrix}[e_{1,i}\\ e_{2,i}]^{\\top},\\ \\text{so } R_iA_ix=\\cos\\theta_i\\,A_ix+\\sin\\theta_i\\,\\|A_ix\\|\\,e_{2,i};\\ \\ B_i\\in\\mathbb{R}^{d_{out}\\times r},\\ A_i\\in\\mathbb{R}^{r\\times d_{in}},\\ W_g,W_\\theta\\in\\mathbb{R}^{n\\times d_{in}},\\ q_i\\in\\mathbb{R}^{r};\\ \\text{frozen: } W_0;\\ \\text{trained: } \\{A_i,B_i,q_i\\}_{i=1}^{n},\\ W_g,\\ W_\\theta",
+   "trainable_params": "n\\,r(d_{in}+d_{out})+2n\\,d_{in}+n\\,r\\ \\text{per adapted matrix } (n \\text{ experts, scaling gate } W_g,\\ \\text{rotation gate } W_\\theta,\\ \\text{centres } q_i;\\ \\text{the } nr \\text{ term is absent when } r=2);\\ \\text{overhead over a plain MoE-LoRA: } n\\,d_{in}\\,(+\\,n\\,r)",
+   "locus": "The query, key, value and output projections of only the first quarter of the layers (layers 0-6 of the 28-layer Llama-3.2-3B, 0-8 of the 36-layer Qwen-2.5-3B, 0-9 of the 40-layer GLM-4-9B); experiments use \\(r\\in\\{2,3,4,6\\}\\), \\(n\\in\\{2,3,4,5\\}\\) experts and top-\\(k\\) with \\(k\\in\\{2,3\\}\\), trained with SGD (learning rate \\(3\\times10^{-4}\\), linear decay)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Per-token mixture of \\(n\\) LoRA experts in which the router returns, for each selected expert, a scale \\(g_i(x)\\) and a rotation \\(R_i(x)\\in SO(r)\\) that acts in that expert's rank space, between \\(A_i\\) and \\(B_i\\). For \\(r>2\\) the rotation is a single planar (Givens-type) rotation by \\(\\theta_i(x)\\) in \\(\\mathrm{span}(A_ix,q_i)\\). It turns the code \\(A_ix\\) towards or away from a learned per-expert centre \\(q_i\\) and preserves \\(\\|A_ix\\|\\). The printed \\(R_i=[e_1\\,e_2]\\,\\mathrm{Rot}(\\theta_i)\\,[e_1\\,e_2]^{\\top}\\) is a rank-2 matrix. Because \\(A_ix\\) lies in that plane, it acts on \\(A_ix\\) exactly like the full rotation \\(I_r+(\\cos\\theta_i-1)(e_1e_1^{\\top}+e_2e_2^{\\top})+\\sin\\theta_i(e_2e_1^{\\top}-e_1e_2^{\\top})\\). Gauge reading (derived here): a constant \\(R\\) placed between \\(B\\) and \\(A\\) would be absorbed by the LoRA gauge, \\((B,A)\\mapsto(BR,A)\\), and add nothing. RotMoLE's \\(R_i\\) depends on \\(x\\), both through \\(\\theta_i(x)\\) and through the plane, which contains \\(A_ix\\). The expert map \\(x\\mapsto B_iR_i(x)A_ix\\) is therefore a nonlinear, norm-preserving reshaping of each expert's code, and it enlarges the function class. The construction uses the Euclidean norm and Gram-Schmidt in rank space. Each expert is therefore invariant under \\((B_i,A_i,q_i)\\mapsto(cB_iO,\\,c^{-1}O^{\\top}A_i,\\,O^{\\top}q_i)\\) for \\(O\\in O(r)\\) and \\(c>0\\), with \\(R_i\\mapsto O^{\\top}R_iO\\) (the unit vector \\(e_1\\) does not see the scale \\(c\\)), but not under a general \\(G\\in GL(r)\\): the residual gauge group of each expert shrinks from \\(GL(r)\\) to the similarity group \\(\\mathbb{R}_{>0}\\times O(r)\\). For \\(r=2\\) the fixed-basis rotation commutes with \\(\\mathbb{R}_{>0}\\times SO(2)\\); a reflection additionally needs \\(W_\\theta\\mapsto-W_\\theta\\). Top-\\(k\\) selection uses only \\(g\\). The paper does not treat the degenerate case \\(q_i\\parallel A_ix\\).",
+   "mergeable": "no",
+   "mergeable_reason": "The scales \\(g_i(x)\\), the angles \\(\\theta_i(x)\\) and the plane \\(\\mathrm{span}(A_ix,q_i)\\) all depend on the token. \\(\\sum_i g_iB_iR_i(x)A_i\\) is therefore not a fixed matrix and cannot be folded into \\(W_0\\).",
+   "identity_at_init": "Yes. \\(B_i=0\\) (the LoRA convention, stated in Appendix B) gives \\(\\Delta W x=0\\). \\(W_\\theta=0\\) gives \\(\\theta_i=0\\), so \\(R_iA_ix=A_ix\\) and the model starts as a conventional MoE-LoRA. The centres \\(q_i\\) are Kaiming-uniform initialised.",
+   "key_idea": "A scalar gate can only rescale an expert's output along a fixed direction. LoRA experts have an \\(r\\)-dimensional bottleneck, so an input-dependent rotation of the code \\(A_ix\\) costs only \\(n\\,d_{in}+n\\,r\\) extra parameters. Each selected expert can then also be turned, which lets a few shared experts serve several tasks differently.",
+   "results_note": "On a jointly trained CSQA/OBQA/SIQA mixture with Qwen-2.5-3B (\\(r=6\\), \\(n=4\\), \\(k=2\\)), RotMoLE averages 45.82% accuracy, against 41.42 for AdaMoLE, 35.66 for MoLA and 34.57 for MoCLE; AdaMoLE is better on CSQA (49.39 vs 43.00). Against the plain MoE-LoRA baseline on the QA mixture, RotMoLE has the higher average in all 8 configurations and the higher accuracy on every task in 7 of them (the exception is OBQA with Llama-3.2-3B, \\(r=3\\), \\(n=4\\), \\(k=2\\)). On the SST-2/MRPC/QNLI mixture the gains are small (75.87 to 76.03 and 73.19 to 73.42 average).",
+   "relations": [
+    {
+     "target": "loramoe",
+     "type": "builds-on",
+     "note": "Cited (Dou et al., 2024) as a canonical MoE-LoRA, \\(h=W_0x+\\sum_i g_iB_iA_ix\\) with a scalar softmax gate. RotMoLE adds a rotation gate inside each expert's rank space."
+    },
+    {
+     "target": "mixlora",
+     "type": "builds-on",
+     "note": "Cited (Li et al., 2024) as the top-\\(k\\) MoE-LoRA form. RotMoLE keeps top-\\(k\\) selection on the scalar gate values and adds per-expert rotations."
+    },
+    {
+     "target": "moslora",
+     "type": "competes-with",
+     "note": "Both put an \\(r\\times r\\) map between \\(B\\) and \\(A\\). MoSLoRA's mixer is input-independent, so the LoRA gauge absorbs it and LoRA's function class is unchanged. RotMoLE's rotation is token-dependent and does change it. MoSLoRA is not cited."
+    },
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "Another way to diversify LoRA experts under a router: HydraLoRA shares \\(A\\) and routes over several \\(B\\) heads, while RotMoLE keeps full experts and rotates their codes. HydraLoRA is not cited."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.25565",
+    "https://arxiv.org/html/2605.25565",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json",
+    "https://neurips.cc/virtual/2026/poster/148910",
+    "https://openreview.net/forum?id=uGtHLqoW8K"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, all eight authors (first author Mengyang Sun) and the only version (v1 2026-05-25) confirmed with the arXiv export API; Semantic Scholar agrees (2026). NeurIPS 2026 acceptance confirmed in the official neurips.cc orals-posters JSON: 'Accept (poster)', poster 148910, OpenReview uGtHLqoW8K. The OpenReview page itself was behind a bot check. Formula checked against Sections 2.2-2.4: scaling gate \\(\\mathrm{Softmax}(xW_g)\\), rotation gate \\(2\\pi\\,\\mathrm{Sigmoid}(xW_\\theta)-\\pi\\), the \\(2\\times2\\) rotation for \\(r=2\\), \\(e_1=A_ix/\\|A_ix\\|\\) and \\(e_2\\) from Gram-Schmidt on \\(q_i\\). Appendix B confirms \\(B=0\\), \\(W_\\theta=0\\), Kaiming-uniform \\(q\\), SGD with learning rate \\(3\\times10^{-4}\\) and adapters on the first quarter of the layers. The extra-parameter count \\(2dn+rn\\) (\\(dn\\) for \\(r=2\\)) is the paper's. The paper's row-vector \\(xW_g\\) is written here as \\(W_gx\\). The paper does not say whether the softmax is renormalised over the top-\\(k\\) set; its introduction says only that top-\\(k\\) gate values are typically normalised to sum to 1. The gauge claim was re-derived and checked numerically: positive rescalings \\((cB_i,c^{-1}A_i)\\) are also symmetries, so the residual group is \\(\\mathbb{R}_{>0}\\times O(r)\\), not \\(O(r)\\). Tables 1, 2 and 5 re-read. The paper gives no code link. Not in Hugging Face PEFT (tuners directory at main, release v0.21.2 of 2026-10-01). All relation targets are catalogue ids; LoRAMoE and MixLoRA are cited, MoSLoRA and HydraLoRA are not.",
+   "corrections": [
+    "structure: residual gauge group corrected from \\(O(r)\\) to the similarity group \\(\\mathbb{R}_{>0}\\times O(r)\\). Positive rescalings \\((B_i,A_i)\\mapsto(cB_i,c^{-1}A_i)\\) leave \\(e_1\\), \\(e_2\\) and \\(R_i\\) unchanged (checked numerically). For \\(r=2\\) the commuting group is \\(\\mathbb{R}_{>0}\\times SO(2)\\), not \\(SO(2)\\).",
+    "results_note: 'better in 7 of 8 QA configurations' made precise: higher average in all 8, higher on every task in 7. AdaMoLE's CSQA win in Table 5 and the small GLUE gains added.",
+    "locus: layer counts and the SGD optimiser added; module names written out; inline math wrapped.",
+    "relations: inline math wrapped in the LoRAMoE, MixLoRA, MoSLoRA and HydraLoRA notes.",
+    "sources: NeurIPS virtual-site poster page and OpenReview forum added."
+   ]
+  },
+  {
+   "id": "scalora",
+   "name": "ScaLoRA",
+   "full_name": "ScaLoRA: Optimally Scaled Low-Rank Adaptation (with the intermittent variant ScaLoRA-I)",
+   "paper_title": "ScaLoRA: Optimally Scaled Low-Rank Adaptation for Efficient High-Rank Fine-Tuning",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "ICML 2026 (poster)",
+   "arxiv": "2510.23818",
+   "url": "https://arxiv.org/abs/2510.23818",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_t=W_0^{(t)}+B_tA_t,\\ B_t\\in\\mathbb{R}^{d_{out}\\times r},\\ A_t\\in\\mathbb{R}^{r\\times d_{in}}\\ (\\text{paper: } \\mathbf A=B,\\ \\mathbf B^{\\top}=A);\\ \\text{every step (ScaLoRA) or every } I \\text{ steps (ScaLoRA-I)}:\\ \\tilde B_t=B_t\\,\\mathrm{diag}(\\alpha_t),\\ \\tilde A_t=\\mathrm{diag}(\\beta_t)\\,A_t,\\ \\ W_0^{(t)}\\leftarrow W_0^{(t)}+B_tA_t-\\tilde B_t\\tilde A_t\\ (\\text{merge and freeze; } W_t \\text{ unchanged}),\\ \\ (B_{t+1},A_{t+1})=\\mathrm{AdamW}(\\tilde B_t,\\tilde A_t)\\ \\text{with moments carried over as } m(\\nabla_{\\tilde B})=m(\\nabla_B)\\mathrm{diag}(\\beta_t),\\ v(\\nabla_{\\tilde B})=v(\\nabla_B)\\mathrm{diag}(\\beta_t)^{2},\\ m(\\nabla_{\\tilde A})=\\mathrm{diag}(\\alpha_t)m(\\nabla_A),\\ v(\\nabla_{\\tilde A})=\\mathrm{diag}(\\alpha_t)^{2}v(\\nabla_A);\\ \\ (\\alpha_t,\\beta_t)=\\arg\\min_{\\alpha,\\beta\\in\\mathbb{R}^{r}}\\Big\\|\\tfrac{1}{L}G_t-\\eta\\,B_t\\mathrm{diag}(\\alpha)^{2}B_t^{\\top}G_t-\\eta\\,G_tA_t^{\\top}\\mathrm{diag}(\\beta)^{2}A_t\\Big\\|_F^{2},\\ G_t=\\nabla\\ell(W_t);\\ \\text{if } \\big[(S_{out}^{\\top}S_{out})\\odot(S_{in}^{\\top}S_{in})\\big]v=\\lambda,\\ S_{out}=[B_t,\\ G_tA_t^{\\top}],\\ S_{in}=[G_t^{\\top}B_t,\\ A_t^{\\top}],\\ \\lambda=\\big[\\|(B_t^{\\top}G_t)_{i,:}\\|^{2};\\ \\|(A_tG_t^{\\top})_{i,:}\\|^{2}\\big]_{i=1}^{r},\\ \\text{has a solution } v\\ge0:\\ [\\alpha_t;\\beta_t]=\\pm(L\\eta)^{-1/2}v^{\\circ1/2},\\ \\text{else the closed-form scalar scaling } (\\alpha_t\\mathbf 1,\\beta_t\\mathbf 1);\\ \\text{frozen between re-splits: } W_0^{(t)};\\ \\text{trained: } B,A;\\ L \\text{ (Lipschitz constant) is a tuned hyperparameter}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix, as in LoRA, with AdamW moments for the factors only. The base matrix is rewritten at every re-split, so the deliverable is the dense merged } W_T \\text{, not a detachable adapter}",
+   "locus": "LoRA on the query, key and value projections, output.dense and intermediate.dense of DeBERTaV3-base (GLUE, \\(r=4\\), scaling 8, AdaLoRA protocol); on the q, k, v, up and down projections of LLaMA2-7B and LLaMA3-8B (commonsense reasoning, \\(r=8\\), scaling 16, setup of Lion et al. 2025) and of Gemma-3-12B-pt (MetaMathQA, \\(r=8\\)). ScaLoRA-I uses \\(I=10\\) in the commonsense runs",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Rebasing inside a single LoRA run. Before each step the current product is re-split as \\(W_t=\\tilde W_0^{(t)}+\\tilde B_t\\tilde A_t\\) with column- and row-scaled factors. The difference \\(B_t\\,\\mathrm{diag}(\\mathbf 1-\\alpha_t\\circ\\beta_t)\\,A_t\\) is merged into the frozen weight. The summed increments therefore no longer telescope to \\(B_TA_T\\), and \\(W_T-W_0\\) can reach high rank: average rank 54 at \\(r=4\\) on RTE, and 1,347 to 3,703 singular values above 0.005 at \\(r=8\\) on LLaMA2-7B across the eight commonsense tasks (ScaLoRA-I falls to 20 on ARC-e and ARC-c). Gauge reading (derived here): where \\(\\alpha\\circ\\beta>0\\), write \\(\\alpha=c\\circ s\\) and \\(\\beta=c^{-1}\\circ s\\) elementwise. The move is then a diagonal (maximal-torus) gauge transformation \\((B,A)\\mapsto(B\\,\\mathrm{diag}(c),\\mathrm{diag}(c)^{-1}A)\\), which leaves \\(W\\) fixed but changes the next step because LoRA's gradient descent is not gauge-invariant. It is followed by a per-direction rescaling \\(\\mathrm{diag}(s^{\\circ2})\\) of the adapter, whose complement is merged. Only diagonal scalings are used, because they are the transformations under which Adam's moment estimates transform in closed form (Lemmas 3.3 and 3.6); a full-matrix or row-wise transform is intractable. The unrestricted optimum of the same surrogate (Theorem 3.2) takes \\(\\tilde B\\) and \\(\\tilde A^{\\top}\\) from \\(2r\\) top singular vectors of \\(G_t\\), split into two sets of \\(r\\), each up to an \\(O(r)\\) factor. LoRA-GA's initialisation is the \\(t=0\\), identity-rotation case. In the paper's printed Theorem 3.7, the second block matrix lists \\(\\mathbf B_t\\) before \\(\\mathbf A_t^{\\top}\\nabla\\ell\\) and needs a transpose. The pairing given in formula_latex, \\(S_{in}=[G^{\\top}B,\\ A^{\\top}]\\), is the one consistent with the stated \\(\\lambda\\) and objective (re-derived here). The paper's 'fixed subspace' remark is the telescoping identity \\(\\sum_t\\Delta W_t=B_TA_T\\), i.e. a rank-\\(r\\) bound on vanilla LoRA's cumulative update.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter is merged into the base at every re-split, and the final model is the dense \\(W_T\\). Because \\(W_0^{(t)}\\) itself changes, \\(W_T-W_0\\) is high-rank and cannot be shipped as a rank-\\(r\\) adapter. The paper states this as a limitation: ScaLoRA stores the entire merged matrix.",
+   "identity_at_init": "Yes. Standard LoRA initialisation has one zero factor; the paper puts the Gaussian on the \\(d_{out}\\times r\\) factor and zeros on the \\(d_{in}\\) side. This gives \\(W_0^{(0)}+B_0A_0=W_0\\), and every later re-split preserves \\(W_t\\) exactly.",
+   "key_idea": "Vanilla LoRA's increments telescope, \\(\\sum_t\\Delta W_t=B_TA_T\\), so the cumulative update never exceeds rank \\(r\\). ScaLoRA merges and re-factors at every step and rescales Adam's moments to match, so it accumulates a high-rank update with no restarts. The column scaling of the current factors is chosen in closed form to minimise a smoothness upper bound on the next loss, which is the same as best matching the full fine-tuning step \\(-G_t/L\\).",
+   "results_note": "With \\(r=8\\), ScaLoRA-I averages 74.75 on eight commonsense tasks with LLaMA2-7B and ScaLoRA averages 77.85 with LLaMA3-8B. Both are above LoRA (73.63/76.83), ReLoRA, LoRA-GA, MoRA and HiRA, and above rank-32 LoRA (74.52/77.54). On GLUE with DeBERTaV3-base (\\(r=4\\)) ScaLoRA averages 88.98 against 88.13 for LoRA. On LLaMA3-8B it needs about 0.01 GB more memory than LoRA (MoRA 1.08 GB, HiRA 7.83 GB), but ScaLoRA, like MoRA and HiRA, takes 50% or more extra fine-tuning time; ScaLoRA-I is close to LoRA.",
+   "relations": [
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "Baseline. ReLoRA also merges low-rank increments into the base, but only rarely, with re-initialised factors, reset optimizer state and LR re-warm-up. ScaLoRA re-splits at every step, keeps scaled factors and transforms their moments."
+    },
+    {
+     "target": "lora-ga",
+     "type": "generalizes",
+     "note": "The paper states that LoRA-GA's gradient-SVD initialisation is the \\(t=0\\), identity-rotation case (\\(P_0=Q_0=I_r\\)) of Theorem 3.2's optimal-adapter condition. LoRA-GA is also a commonsense baseline."
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "High-rank baseline. The paper reports that HiRA's Hadamard update has high Euclidean rank but intrinsic rank \\(r\\), and needs \\(O(d_{out}d_{in})\\) extra memory, against ScaLoRA's \\(O((d_{out}+d_{in}+r)r)\\)."
+    },
+    {
+     "target": "mora",
+     "type": "competes-with",
+     "note": "High-rank baseline (square-matrix compress/decompress); 1.08 GB of extra memory over LoRA on LLaMA3-8B."
+    },
+    {
+     "target": "cola",
+     "type": "competes-with",
+     "note": "Another rebasing scheme: tune a LoRA, merge it, start a new one and reset optimizer state. ScaLoRA avoids such restarts. COLA is not cited."
+    },
+    {
+     "target": "delta-lora",
+     "type": "competes-with",
+     "note": "Also feeds low-rank increments into the base weight without restarts, but by adding the product's per-step change rather than by an optimal re-split. Delta-LoRA is not cited."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.23818",
+    "https://arxiv.org/html/2510.23818",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/poster/63892"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, all four authors (first author Yilang Zhang) and first version (v1 2025-10-27; v2 2026-05-14 with the comment 'Accepted to ICML 2026') confirmed with the arXiv export API. ICML 2026 acceptance confirmed in the official icml.cc orals-posters JSON: 'Accept (regular)', i.e. poster, poster 63892, OpenReview Skxb4UgTWU. Formula checked against Eqs. 3-11, Lemmas 3.3 and 3.6 with their proofs (Appendix A.4) and Algorithm 1 (Appendix B), after mapping the paper's \\(\\mathbf W^{\\mathrm{ft}}=\\mathbf A\\mathbf B^{\\top}\\) (\\(\\mathbf A\\in\\mathbb R^{m\\times r}\\) on the output side) to the catalogue's \\(BA\\). The Theorem 3.7 typo was re-derived: the normal equations of objective (10) in \\((\\alpha^{\\circ2},\\beta^{\\circ2})\\) have Gram matrix \\((S_{out}^{\\top}S_{out})\\odot(S_{in}^{\\top}S_{in})\\) with \\(S_{in}=[G^{\\top}B,\\ A^{\\top}]\\). The printed \\(\\mathbf S^B=[\\mathbf B,\\ \\mathbf A^{\\top}\\nabla\\ell]\\) is not even dimensionally consistent. A numerical least-squares check reproduced the pairing in formula_latex. Tables 1-4 and the Figure 3 text re-read. The paper itself says ScaLoRA stores the full merged matrix. The paper gives no code link. Not in Hugging Face PEFT. All relation targets are catalogue ids; COLA and Delta-LoRA are not cited.",
+   "corrections": [
+    "locus: per-model target modules, LoRA scaling factors and the ScaLoRA-I interval \\(I=10\\) added.",
+    "structure: the per-task rank range from Table 3 added, including ScaLoRA-I's drop to rank 20 on ARC-e and ARC-c.",
+    "results_note: 'level with or above rank-32 LoRA' sharpened to 'above' (74.75 vs 74.52, 77.85 vs 77.54); the 50%-plus wall-clock overhead (Figure 3) and the GLUE averages added.",
+    "mergeable_reason: tied to the paper's own storage statement.",
+    "relations: MoRA memory figure made exact (1.08 GB); inline math wrapped.",
+    "sources: ICML virtual-site poster page added."
+   ]
+  },
+  {
+   "id": "lora-s",
+   "name": "LoRA-S (AdamS, LRACS)",
+   "full_name": "LoRA-S: Sylvester-equation horizontal-lift scheme for LoRA optimizers (Adam-Sylvester and LRACS)",
+   "paper_title": "LoRA-S: An Efficient Low Rank Adaptation scheme via Sylvester equation",
+   "authors": "Zheng et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "",
+   "url": "https://openreview.net/forum?id=Guo2XGgxZA",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+BA,\\ B\\in\\mathbb{R}_*^{d_{out}\\times r},\\ A\\in\\mathbb{R}_*^{r\\times d_{in}}\\ (\\text{paper: } M=B,\\ N=A^{\\top},\\ X=MN^{\\top});\\ G_t=\\nabla_W\\mathcal L;\\ \\text{matrix-space direction } \\dot X_t=-\\eta\\,\\tilde X_t:\\ \\text{AdamS: } m_t=\\beta_1m_{t-1}+(1-\\beta_1)G_t,\\ v_t=\\beta_2v_{t-1}+(1-\\beta_2)G_t^{\\odot2},\\ \\tilde X_t=m_t/\\sqrt{v_t};\\ \\text{LRACS: } \\tilde X_t=\\mathrm{Diag}(m_q^{t})^{-1/2}\\,G_t\\,\\mathrm{Diag}(m_s^{t})^{-1/2}\\ (\\text{row and column statistics, as in RACS});\\ \\text{Sylvester: } (B^{\\top}B)(AA^{\\top})K_t+K_t(B^{\\top}B)(AA^{\\top})=B^{\\top}\\dot X_tA^{\\top};\\ \\text{lift: } \\dot B=(\\dot X_tA^{\\top}-BAA^{\\top}K_t)(AA^{\\top})^{-1},\\ \\ \\dot A=(B^{\\top}B)^{-1}(B^{\\top}\\dot X_t-K_tB^{\\top}BA);\\ \\ (B,A)\\leftarrow(B+\\dot B,\\ A+\\dot A);\\ \\text{frozen: } W_0;\\ \\text{trained: } B,A\\ (\\text{no weight decay})",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix (plain LoRA factors). Optimizer state: } O(d_{out}d_{in}) \\text{ matrix-space Adam moments for AdamS (the poster mentions a low-memory variant) and } O(d_{out}+d_{in}+1) \\text{ for LRACS}",
+   "locus": "LoRA-adapted weights of transformer-based models. The poster reports Mix-of-Show image generation with LoRA ranks \\(r=4,8,16\\) and GPT-2 medium on E2E NLG (\\(r=4\\)); the poster does not name the base diffusion model.",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Optimizer for plain LoRA factors, built on the quotient \\((\\mathbb R_*^{d_{out}\\times r}\\times\\mathbb R_*^{r\\times d_{in}})/GL(r)\\cong\\mathcal M_r\\). The base optimizer (Adam or RACS) preconditions the full-matrix gradient in matrix space. An \\(r\\times r\\) Sylvester equation and a horizontal lift then map the resulting direction \\(\\dot X\\) to factor updates. Derived here from the poster's formulas: \\(\\dot BA+B\\dot A=P_B\\dot X+\\dot XP_A-P_B\\dot XP_A\\), with \\(P_B=B(B^{\\top}B)^{-1}B^{\\top}\\) and \\(P_A=A^{\\top}(AA^{\\top})^{-1}A\\). So the first-order change of \\(W\\) is the orthogonal projection of \\(\\dot X\\) onto the tangent space \\(T_{BA}\\mathcal M_r\\). The Sylvester matrix \\(K\\) is exactly what removes the double-counted term \\(P_B\\dot XP_A\\), which the \\(K=0\\) lift contains; that lift is scaled GD, i.e. Riemannian-preconditioned LoRA. Setting \\(K=\\epsilon I\\) instead turns the \\(K\\) terms into \\(-\\epsilon B\\) and \\(-\\epsilon A\\), i.e. decoupled weight decay on both factors. This is the paper's reading of weight decay as a crude approximation of \\(K\\), and the reason it removes the decay hyperparameter. The update is equivariant under \\((B,A)\\mapsto(BR,R^{-1}A)\\), with \\(K\\mapsto R^{\\top}KR^{-\\top}\\), so the induced \\(W\\) update depends only on \\(BA\\). This is the poster's Theorem 1: transformation invariance plus the paper's 'efficient feature learning' condition. Each step costs \\(\\Omega(d_{out}d_{in}r)+O(r^{3}+(d_{out}+d_{in})r^{2})\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the optimizer changes. The trained adapter is a standard \\(BA\\) that folds into \\(W_0\\).",
+   "identity_at_init": "Not specified in the material available. The lift needs \\((AA^{\\top})^{-1}\\) and \\((B^{\\top}B)^{-1}\\), i.e. full-rank factors in \\(\\mathbb R_*\\), so LoRA's usual \\(B=0\\) start lies outside its domain. The paper presumably uses a nonzero or damped start, which the poster does not show.",
+   "key_idea": "Precondition in matrix space, then lift. Any matrix-space optimizer becomes a gauge-invariant LoRA optimizer once its direction is lifted to the factors through the quotient geometry, with an \\(r\\times r\\) Sylvester solve fixing the correction term. The \\(\\epsilon I\\) weight-decay term of factor optimizers is reinterpreted as a crude approximation of that Sylvester matrix and dropped.",
+   "results_note": "According to the official ICLR poster, with rank-4 LoRA on GPT-2 medium (E2E NLG) LRACS reaches BLEU 70.4, against 69.3 for LoRA-RITE and 68.6 for AdamW. On Mix-of-Show image customisation, AdamS at rank 16 reaches CLIP 32.64 / FID 46.32, against 31.90 / 55.68 for LoRA-RITE.",
+   "relations": [
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "generalizes",
+     "note": "With \\(K=0\\) and \\(\\dot X=-\\eta G\\), the lift is exactly the scaled-GD step \\(\\dot B=-\\eta GA^{\\top}(AA^{\\top})^{-1}\\), \\(\\dot A=-\\eta(B^{\\top}B)^{-1}B^{\\top}G\\) of Riemannian-preconditioned LoRA, which appears as the 'Scaled GD' baseline on the poster (ScaledAdamW is cited as Zhang and Pilanci, 2024). LoRA-S adds the Sylvester correction and allows arbitrary matrix-space preconditioners (derived here)."
+    },
+    {
+     "target": "lora-rite",
+     "type": "competes-with",
+     "note": "Main transformation-invariant baseline on the poster. LoRA-RITE preconditions in orthonormal factor bases; LoRA-S preconditions in matrix space and then lifts."
+    },
+    {
+     "target": "lora-pro",
+     "type": "competes-with",
+     "note": "Citation not checked (full paper unavailable). LoRA-Pro's equivalent gradient is also the tangent-space projection \\(P_BG+GP_A-P_BGP_A\\), and it fixes its free \\(r\\times r\\) matrix with a Sylvester equation. LoRA-S applies the same projection to a preconditioned matrix-space direction (derived here)."
+    },
+    {
+     "target": "fixed-rank-riemannian-quotient",
+     "type": "builds-on",
+     "note": "Conceptual relation: the abstract's quotient manifold \\(\\mathbb R_*^{m\\times r}\\times\\mathbb R_*^{n\\times r}/\\sim\\) and its horizontal lifts are the fixed-rank quotient geometry developed there, which LoRA-S instantiates for LoRA. Whether the paper cites it could not be checked because the paper PDF was unavailable."
+    }
+   ],
+   "sources": [
+    "https://openreview.net/forum?id=Guo2XGgxZA",
+    "https://iclr.cc/virtual/2026/poster/10010449",
+    "https://iclr.cc/media/PosterPDFs/ICLR%202026/10010449.png",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://mlanthology.org/iclr/2026/zheng2026iclr-loras/",
+    "https://github.com/CleverWing/lora_s"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "No arXiv version exists: arXiv API searches on the title terms and on the first author returned nothing. Title and both authors (Jinyang Zheng, Tong Wu) confirmed in the official ICLR 2026 orals-posters JSON ('Accept (Poster)', poster 10010449, OpenReview Guo2XGgxZA) and on ML Anthology (zheng2026iclr-loras), whose abstract matches. OpenReview (forum, API v1 and v2, PDF and the hashed PDF link) answered every request with a challenge page, which was not bypassed, and the Internet Archive was offline. The formula was therefore re-checked against the official ICLR poster image: \\(X=MN^{\\top}\\) with \\(M\\in\\mathbb R_*^{m\\times r}\\), \\(N\\in\\mathbb R_*^{n\\times r}\\); Sylvester equation \\(M^{\\top}\\dot XN=M^{\\top}MN^{\\top}NK+KM^{\\top}MN^{\\top}N\\); lifts \\(\\dot M=(\\dot XN-MN^{\\top}NK)(N^{\\top}N)^{-1}\\) and \\(\\dot N=(\\dot X^{\\top}M-NM^{\\top}MK^{\\top})(M^{\\top}M)^{-1}\\); the AdamS and LRACS preconditioners; cost \\(\\Omega(mnr)+O(r^3+mr^2+nr^2)\\); optimizer memory \\(O(mn)\\) and \\(O(m+n+1)\\). With \\(M=B\\) and \\(N=A^{\\top}\\) these are exactly the entry's equations. The poster writes the Adam moments in terms of \\(\\dot X_t\\), the matrix-space gradient, which the entry calls \\(G_t\\). The three 'derived here' claims were checked numerically: the tangent-space projection, \\(K=\\epsilon I\\) as decoupled weight decay, and equivariance with \\(K\\mapsto R^{\\top}KR^{-\\top}\\), \\(\\dot B\\mapsto\\dot BR\\), \\(\\dot A\\mapsto R^{-1}\\dot A\\). Poster tables re-read. Year 2025 follows the catalogue convention for public ICLR 2026 submissions, which opened in October 2025; the exact date for this forum could not be read. The ICLR JSON has only Poster and Oral decisions, so the 'Spotlight' label of the empty GitHub repository CleverWing/lora_s (created 2026-02-23, size 0) can be neither confirmed nor excluded; venue stays 'ICLR 2026 (poster)' and code_url stays empty. Not in Hugging Face PEFT: there is no tuner for it, the riemannian optimizer there is scaled GD, and the adamss tuner is AdaMSS, an unrelated SVD-subspace method. Confidence stays medium because the paper body was unreadable.",
+   "corrections": [
+    "locus: 'with Stable Diffusion LoRAs' removed; the poster names Mix-of-Show image generation but not the base diffusion model.",
+    "relations: inline math wrapped; the fixed-rank quotient relation marked as conceptual, with the citation unverified; the poster's citation of ScaledAdamW (Zhang and Pilanci, 2024) recorded on the Riemannian-preconditioned LoRA relation.",
+    "verification: the poster's AdamS moments are written in \\(\\dot X_t\\) (matrix-space gradient); the entry's \\(G_t\\) is the same object, so formula_latex is unchanged.",
+    "identity_at_init: 'must use a nonzero or damped start' softened to 'presumably'; the poster shows no initialisation."
+   ]
+  },
+  {
+   "id": "diablo",
+   "name": "DiaBlo",
+   "full_name": "DiaBlo: fine-tuning only the diagonal blocks of weight matrices",
+   "paper_title": "DiaBlo: Diagonal Blocks Are Sufficient For Finetuning",
+   "authors": "Gurses et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2506.03230",
+   "url": "https://arxiv.org/abs/2506.03230",
+   "code_url": "https://github.com/ziyangjoy/DiaBlo",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=(W_0+D)\\,x,\\quad D=\\mathrm{blockdiag}(D_1,\\dots,D_N)=\\bigoplus_{i=1}^{N}D_i,\\ \\ D_i\\in\\mathbb{R}^{\\frac{d_{out}}{N}\\times\\frac{d_{in}}{N}};\\ \\ (Dx)_i=D_ix_i\\ (\\text{one batched matmul over the } N \\text{ input and output slices});\\ \\ \\nabla_{D_i}\\mathcal L=\\big(\\nabla_W\\mathcal L\\big)_{ii};\\ \\ D=0 \\text{ at init};\\ \\text{frozen: } W_0 \\text{ (in particular every off-diagonal block)};\\ \\text{trained: } D_1,\\dots,D_N",
+   "trainable_params": "\\frac{d_{in}d_{out}}{N}\\ \\text{per adapted matrix (typically } N\\in\\{32,64,128\\}\\text{; } N=64 \\text{ is about 1.04\\% of Llama2-7B with } q,k,v,\\mathrm{up},\\mathrm{down}\\text{ adapted)}",
+   "locus": "Linear projections of the LLM: q, k, v, up and down (FP16 commonsense and MetaMathQA runs), or q, k, v, o, gate, up and down (BF16 commonsense, code, safety, MT-Bench and, according to Appendix A.4.5, the quantized runs), on Llama2-7B/13B, Llama3-8B, LLaMA-13B, Mistral-7B and Llama-3.2-3B (block-count ablation); all linear layers except embeddings and the LM head for T5-base (GLUE). Table 4's 70M trainable parameters for Llama2-7B at \\(N=64\\) match q, k, v, up and down rather than all seven projections, so the paper is internally inconsistent about the quantized runs' modules",
+   "modification_kind": "selective",
+   "structure": "A fixed block-diagonal sparsity pattern on \\(\\Delta W\\): \\(N\\) independent dense blocks on the diagonal. Block \\(i\\) maps the \\(i\\)-th slice of \\(d_{in}/N\\) input coordinates to the \\(i\\)-th slice of \\(d_{out}/N\\) output coordinates, so \\(\\mathrm{rank}(\\Delta W)\\) can reach \\(\\min(d_{in},d_{out})\\) with \\(d_{in}d_{out}/N\\) parameters. The update set is a linear subspace, not a product manifold. There is therefore no \\(GL(r)\\) gauge, the loss restricted to it is the original loss (convex in \\(D\\) whenever it is convex in \\(W\\)), and Adam on \\(D\\) is Adam on the masked entries of \\(W\\). With decoupled weight decay (the quantized runs use decay 1.0) AdamW shrinks \\(D\\), i.e. pulls \\(W_{ii}\\) towards \\(W_{0,ii}\\) rather than towards 0. The block structure is tied to the coordinate basis of the hidden units: it is not invariant to permuting or rotating them. Relative to neighbouring shapes, factoring each block at rank \\(r/N\\) gives MELoRA, a full \\(N\\times N\\) grid of low-rank blocks gives GraLoRA, and choosing the blocks by gradient magnitude gives SMT. Linear least squares (Theorem 1): if the inputs \\(X\\) are generic of rank \\(r\\) and \\(N\\le d_{in}/r\\), every DiaBlo minimiser is a full fine-tuning minimiser. This uses \\(d_{in}d_{out}/N\\ge d_{out}r\\) parameters, against LoRA's \\((d_{in}+d_{out})r\\). Nonlinear case (Theorem 2): if \\(X\\) and \\(g_Y\\) are generic of ranks \\(r_1\\) and \\(r_2\\) and \\(N\\ge\\lceil r_1N/d_{in}\\rceil\\lceil r_2N/d_{out}\\rceil\\), DiaBlo's stationary points are stationary for full fine-tuning. Sizes that \\(N\\) does not divide use blocks of \\(\\lceil d/N\\rceil\\) with zero padding.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(D\\) is a \\(d_{out}\\times d_{in}\\) block-diagonal matrix added to \\(W_0\\). It can be folded in, or stored compactly as an \\(N\\times\\frac{d_{out}}{N}\\times\\frac{d_{in}}{N}\\) tensor. On a quantized base (the GPTQ-DiaBlo and MagR-DiaBlo runs), merging needs re-quantization.",
+   "identity_at_init": "Yes. \\(D=0\\), and since there is no product the gradient \\(\\nabla_{D_i}\\mathcal L=(\\nabla_W\\mathcal L)_{ii}\\) is nonzero from the first step. There is no LoRA-style zero-factor stall and no special initialisation.",
+   "key_idea": "Update a structured subset of the weights directly instead of a low-rank product. Training only the diagonal blocks keeps LoRA-like memory and speed, since the forward pass is one batched matmul. It removes the bilinear factorisation's sensitivity to initialisation and optimizer. Under low-rank activations and gradients it provably reaches full fine-tuning minimisers in the linear case, and full fine-tuning stationary points in general.",
+   "results_note": "On commonsense reasoning DiaBlo reaches an 87.3 average with Llama3-8B (\\(N=64\\)), against 85.2 for DoRA \\(r=32\\) and 80.8 for LoRA \\(r=32\\). The paper lists this run as 1.04% of parameters, but q, k, v, up and down blocks at \\(N=64\\) come to about 0.89% of Llama3-8B by our count. On MetaMathQA with Llama2-7B (\\(N=32\\), 2.09%) it averages 43.4 on GSM8K/MATH, against 43.2 for full fine-tuning. Training speed matches LoRA \\(r=32\\): 170 minutes per epoch on Commonsense-170k, against 480 for DoRA.",
+   "relations": [
+    {
+     "target": "melora",
+     "type": "generalizes",
+     "note": "MELoRA factors each diagonal block as \\(B_iA_i\\) of rank \\(r/N\\), while DiaBlo trains the same blocks at full block rank. For equal \\(N\\), MELoRA's update set is a subset of DiaBlo's. MELoRA is not cited."
+    },
+    {
+     "target": "smt",
+     "type": "competes-with",
+     "note": "Cited baseline. SMT selects the sub-matrices with the largest warm-up gradients; DiaBlo fixes the pattern to the diagonal blocks. DiaBlo beats SMT on commonsense reasoning with fewer parameters (83.5 at 0.52% vs 81.8 at 0.84% on Llama2-7B)."
+    },
+    {
+     "target": "gralora",
+     "type": "competes-with",
+     "note": "GraLoRA tiles the full \\(N\\times N\\) block grid with low-rank adapters; DiaBlo keeps only the diagonal tiles but makes them dense. GraLoRA is not cited."
+    },
+    {
+     "target": "miss",
+     "type": "competes-with",
+     "note": "Another structured, non-product shape: MiSS replicates one small trainable shard across the matrix (rank at most \\(r\\)), while DiaBlo gives each diagonal block its own dense parameters. MiSS is not cited."
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "Strongest LoRA-family baseline on commonsense reasoning. DiaBlo exceeds it on Llama2-7B, Llama3-8B and LLaMA-13B."
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "Quantized-base baseline. DiaBlo fine-tunes GPTQ/MagR-quantized Llama2 models with no joint quantization and initialisation procedure, and MagR-DiaBlo matches or exceeds LoftQ and ApiQ at 4 and 2 bits."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.03230",
+    "https://arxiv.org/html/2506.03230",
+    "https://github.com/ziyangjoy/DiaBlo",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, all eight authors (first author Selcuk Gurses) and first version (v1 2025-06-03; v2 2026-03-02, 'Accepted by ICLR 2026') confirmed with the arXiv export API; Semantic Scholar agrees (2025). ICLR 2026 acceptance confirmed in the official ICLR orals-posters JSON ('Accept (Poster)', poster 10008490, OpenReview cZaI6GmjBm). Formula checked against Section 3.1 (row-vector convention \\(Y=XW\\) with \\(W\\in\\mathbb R^{m_1\\times m_2}\\), written here in column convention), Eq. 2 (\\(g_{D_i}=X_i^{\\top}g_{Y_i}\\)), the zero initialisation, and Theorems 1-2 with their proofs. Parameter share re-derived: q, k, v, up and down of Llama2-7B at \\(N=64\\) give 70.3M, 1.04% of 6.74B, matching Table 4's 70M. Tables 1-4 and Appendix A.4 re-read. The code repository ziyangjoy/DiaBlo exists and holds the source. Not in Hugging Face PEFT. All relation targets are catalogue ids; MELoRA, GraLoRA and MiSS are not cited.",
+   "corrections": [
+    "structure: 'AdamW on \\(D\\) is AdamW on the masked entries of \\(W\\)' holds only without weight decay; decoupled decay shrinks \\(D\\), pulling \\(W_{ii}\\) towards \\(W_{0,ii}\\).",
+    "locus: module sets completed (MT-Bench, Llama-3.2-3B ablation), and the paper's inconsistency about the quantized runs recorded (Table 4 parameter count vs the Appendix A.4.5 module list).",
+    "results_note: the paper's 1.04% for Llama3-8B flagged (about 0.89% by our count); training-speed figures added; inline math wrapped.",
+    "relations: SMT parameter shares added; inline math wrapped."
+   ]
+  },
+  {
+   "id": "qzo",
+   "name": "QZO",
+   "full_name": "QZO: Quantized Zeroth-order Optimization (Q-SPSA with directional-derivative clipping)",
+   "paper_title": "Fine-tuning Quantized Neural Networks with Zeroth-order Optimization",
+   "authors": "Shang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2505.13430",
+   "url": "https://arxiv.org/abs/2505.13430",
+   "code_url": "https://github.com/maifoundations/QZO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat W=\\Delta\\odot\\overline W,\\ \\ \\overline W\\ \\text{frozen low-bit codes (GPTQ int4 with group size } g=128\\text{, or AQLM 2-bit codebooks)},\\ \\ \\Delta=S\\otimes\\mathbf 1_{1\\times g},\\ S\\in\\mathbb{R}_{\\ge0}^{d_{out}\\times d_{in}/g}\\ (\\text{channel-wise } S\\in\\mathbb{R}^{d_{out}} \\text{ for AQLM});\\ \\ d=\\frac{\\mathcal L((\\Delta+\\epsilon z)\\odot\\overline W;\\mathcal B)-\\mathcal L((\\Delta-\\epsilon z)\\odot\\overline W;\\mathcal B)}{2\\epsilon},\\ z\\sim\\mathcal N(0,I)\\ \\text{on the scale entries, regenerated from a seed};\\ \\ d'=\\mathrm{clip}(d,-C,C);\\ \\ S\\leftarrow\\max(S-\\eta\\,d'z,\\ 0);\\ \\text{frozen: the integer codes};\\ \\text{trained: the quantization scales (in the AQLM runs, non-quantized parameters are also updated by plain SPSA)};\\ \\text{no backward pass and no optimizer state}",
+   "trainable_params": "\\frac{d_{out}d_{in}}{g}\\ \\text{scales per quantized matrix } (g=128;\\ 5.03\\times10^{7}\\ \\text{for OPT-6.7B, about } 0.76\\%);\\ d_{out}\\ \\text{for channel-wise AQLM scales};\\ \\text{optimizer memory } O(1) \\text{ (a seed and a scalar)}",
+   "locus": "Quantization scales of all quantized linear layers: GPTQ 4-bit (group size 128) OPT-6.7B, Llama-2-7B and Llama-3.1-8B; AQLM 2-bit (one 16-bit codebook) Llama-2-13B, with channel-wise scales plus the non-quantized parts trained by plain SPSA; the NF4-quantized (bitsandbytes) DiT of Stable Diffusion 3.5 Large",
+   "modification_kind": "hybrid",
+   "structure": "PEQA-type parametrisation trained with MeZO-style SPSA. The parametrisation is a group-wise multiplicative rescaling of frozen integer codes, \\(\\hat W=(S\\otimes\\mathbf 1_{1\\times g})\\odot\\overline W\\); per channel it is the left diagonal action \\(\\hat W=\\mathrm{diag}(s)\\,\\overline W\\). The gradient estimate is a rank-one random projection \\(zz^{\\top}\\nabla_S\\mathcal L\\) of the scale gradient, computed from two forward passes of the quantized model. Weights are never de-quantized or re-quantized, and activations are not stored. Directional-derivative clipping caps the scalar \\(d\\) at \\(C\\) (100 in the paper), and the projection \\(\\max(\\cdot,0)\\) keeps the scales non-negative. Every code stays fixed, so the reachable set is \\(\\{(S\\otimes\\mathbf 1)\\odot\\overline W\\}\\), of dimension \\(d_{out}d_{in}/g\\). The paper's Theorem 1 states that the clipped estimate is unbiased. Its proof (Appendix A) passes from the clipped to the unclipped sum with only the remark that the two agree as \\(\\epsilon\\to0\\), which ignores that the clipping event depends on \\(z\\). In general a clipped SPSA estimate is biased. In the idealised case of a fixed batch, \\(\\epsilon\\to0\\) and Gaussian \\(z\\), \\(\\mathbb E[\\mathrm{clip}(d)\\,z]=c\\,\\nabla_S\\mathcal L\\) with \\(c\\in(0,1]\\), a shrinkage along the true gradient (derived here). The second-moment bound \\(\\mathbb E\\|d'z\\|^{2}\\le\\mathbb E\\|dz\\|^{2}\\) holds unconditionally. The paper's per-coordinate variance inequality is derived through Theorem 1 and is therefore not established in general.",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained parameters are the quantization scales themselves. The result is an ordinary GPTQ or AQLM model with the same codes and inference kernels.",
+   "identity_at_init": "No adapter is added. Training starts from the post-training-quantized model, whose GPTQ/AQLM scales approximate but do not equal \\(W_0\\).",
+   "key_idea": "Zeroth-order training removes gradients and optimizer states, and quantization shrinks the weights. The two meet in the continuous quantization scales, which SPSA can perturb and update while the discrete codes stay fixed. Clipping the directional derivative keeps the noisy estimate stable.",
+   "results_note": "On 4-bit GPTQ Llama-2-7B, QZO needs 5.0 GB, against 14.8 GB for 16-bit MeZO and 26.0 GB for 16-bit SGD fine-tuning, and beats MeZO on four of five tasks (for example SST-2 90.0 vs 83.5). On OPT-6.7B it trails MeZO on most tasks.",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "builds-on",
+     "note": "Uses MeZO's seed-regenerated SPSA and ZO-SGD, applied to the quantization scales of a 4- or 2-bit model instead of 16-bit weights. MeZO is the main baseline."
+    },
+    {
+     "target": "peqa",
+     "type": "combines",
+     "note": "Trains the same object as PEQA, group-wise quantization scales over frozen integer codes, but without backpropagation, by combining it with MeZO-style estimation. PEQA is not cited."
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "Appendix comparison on OPT-6.7B: first-order QLoRA (5.6 GB) is more accurate than QZO (4.8 GB). A two-phase QZO+QLoRA variant (zeroth-order LoRA training, then QZO on the remaining scales) closes part of the gap at 4.9 GB."
+    },
+    {
+     "target": "agzo",
+     "type": "competes-with",
+     "note": "Both are zeroth-order fine-tuning methods; AGZO is not cited. AGZO reduces estimator variance by perturbing 16-bit weights only along activation subspaces; QZO perturbs quantization scales and clips the directional derivative."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.13430",
+    "https://arxiv.org/html/2505.13430",
+    "https://github.com/maifoundations/QZO",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, all five authors (first author Sifeng Shang) and first version (v1 2025-05-19; v3 2026-02-12, 'Accepted by ICLR 2026') confirmed with the arXiv export API; Semantic Scholar agrees (2025). ICLR 2026 acceptance confirmed in the official ICLR orals-posters JSON ('Accept (Poster)', poster 10007599, OpenReview mGeeRFToaW). Formula checked against Definition 3.3, Eq. 6 and Algorithm 1 (seeded perturbation, clipping, update \\(\\max(\\Delta_i-\\eta_t d'z,0)\\)) and the implementation details: GPTQ group size 128, AQLM 1x16 with channel-wise scales, \\(C=100\\), \\(\\epsilon=10^{-3}\\), learning rate \\(10^{-7}\\). trainable_params re-derived: the OPT-6.7B linear weights total about 6.44B, and dividing by 128 gives \\(5.03\\times10^{7}\\), matching Table 2 (0.76% of 6.65B). Table 1 and Appendix D re-read: QZO beats MeZO on 4 of 5 Llama-2-7B tasks and trails or ties it on all five OPT-6.7B tasks. The Theorem 1 critique was re-checked against Appendix A and numerically (the clipped estimate shrinks along the gradient). GPTQ zero-points are left implicit in the paper's \\(\\Delta\\odot\\bar\\theta\\) decomposition. The code repository maifoundations/QZO exists. Not in Hugging Face PEFT. All relation targets are catalogue ids; PEQA and AGZO are not cited (QuZO is).",
+   "corrections": [
+    "structure: 'the variance reduction does hold' narrowed to the unconditional second-moment bound; the paper's per-coordinate variance step depends on Theorem 1. The shrinkage form of the bias in the idealised Gaussian case added, and the description of the proof's gap made exact.",
+    "locus: GPTQ group size, AQLM codebook and the NF4 quantization of the Stable Diffusion 3.5 Large DiT added."
+   ]
+  },
+  {
+   "id": "perk",
+   "name": "PERK",
+   "full_name": "PERK: Parameter Efficient Reasoning over Knowledge (meta-learned test-time LoRA memory)",
+   "paper_title": "PERK: Long-Context Reasoning as Parameter-Efficient Test-Time Learning",
+   "authors": "Chen et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2507.06415",
+   "url": "https://arxiv.org/abs/2507.06415",
+   "code_url": "https://github.com/eric11eca/perk",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\phi^{(0)}=\\theta_{\\mathrm{adapter}}=\\{(B_l,A_l)\\},\\ \\ \\phi^{(n+1)}=\\mathrm{AdamW}_{\\alpha_{l,n}}\\big(\\phi^{(n)},\\ \\nabla_{\\phi}\\mathcal L^{\\psi}_{\\mathrm{NLL}}(\\phi^{(n)};\\mathcal K)\\big),\\ n=0,\\dots,N-1\\ (N=4,\\ \\text{differentiable AdamW}),\\ \\ \\mathcal L^{\\psi}_{\\mathrm{NLL}}(\\phi;\\mathcal K)=-\\sum_{c\\in\\mathrm{chunks}(\\mathcal K)}\\sum_{t}w_\\psi(c)_t\\,\\log p_{W_0,\\phi}(c_t\\mid c_{<t})\\ (\\approx256\\text{-token chunks processed as one batch; } w_\\psi \\text{ a two-layer MLP token weighter}),\\ \\ \\text{answer } q \\text{ with } h=(W_0+B^{(N)}A^{(N)})x\\ \\text{and no context in the prompt};\\ \\ \\min_{\\theta_{\\mathrm{adapter}},\\{\\alpha_{l,n}\\},\\psi}\\ \\mathbb{E}_{(\\mathcal K,q,y)}\\,\\mathcal L_{\\mathrm{reason}}\\big(W_0,\\phi^{(N)}(\\theta_{\\mathrm{adapter}},\\mathcal K);q,y\\big),\\ \\ \\nabla_{\\theta_{\\mathrm{adapter}}}\\mathcal L_{\\mathrm{reason}}\\approx\\frac{\\partial\\mathcal L_{\\mathrm{reason}}}{\\partial\\phi^{(N)}}\\prod_{n=N-T}^{N-1}J^{(n)},\\ J^{(n)}=\\frac{\\partial\\phi^{(n+1)}}{\\partial\\phi^{(n)}}\\ (=I-\\alpha H^{(n)}\\text{ for plain GD}),\\ \\ T\\in\\{1,2\\}\\ (\\text{truncated unrolling});\\ \\text{frozen: } W_0;\\ \\text{meta-trained: the LoRA initialisation, per-layer-per-step inner learning rates } \\alpha_{l,n},\\ \\text{token weighter } \\psi;\\ \\text{test-time trained: the LoRA, once per context}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix with } r=256\\ (\\text{rsLoRA}),\\ \\text{on all linear modules of every layer for models up to 1B and of the top 4 layers for 7B/8B models};\\ \\text{plus } L\\times N \\text{ meta-learned inner learning rates and a two-layer MLP token weighter. The same adapter is re-trained for every new context}",
+   "locus": "All linear modules (attention and MLP): every layer of GPT-2, Qwen-2.5-0.5B and LLaMA-3.2-1B; only the top 4 layers of Qwen-2.5-7B and LLaMA-3.1-8B",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Bi-level, MAML-style meta-learning over a LoRA. The inner loop is test-time training of \\(\\Delta W=BA\\) by \\(N=4\\) differentiable AdamW steps on the token-weighted NLL of the context. The context is chunked into a parallel batch, which decouples its length from the native window; chunk order is kept only through 'Document i:' tags in the text. The outer loop optimises the adapter's initial state \\((B_0,A_0)\\), the inner learning rates and the token-weighting network, so that the post-adaptation model answers questions without seeing the context. Meta-gradients are truncated to the last \\(T\\in\\{1,2\\}\\) inner steps, so meta-training on 8K-token contexts fits on one GPU. The LoRA serves as a fast-weight memory: the context is written into parameters by gradient descent, not by a hypernetwork forward pass. Gauge remark (derived here): the inner loop is plain adaptive gradient descent on the factors, which is not invariant under \\((B,A)\\mapsto(BR,R^{-1}A)\\). The outer loop therefore selects a particular representative of the initial adapter's orbit, and its conditioning decides what four inner steps can write. The learned object is that representative, not just the product \\(B_0A_0\\).",
+   "mergeable": "conditional",
+   "mergeable_reason": "After adaptation \\(B^{(N)}A^{(N)}\\) is an ordinary low-rank delta and could be folded into \\(W_0\\). It is specific to one context, however, and is regenerated by test-time training for each new one, so it is kept as a swappable module.",
+   "identity_at_init": "Not identity by design. Inference starts from the meta-learned adapter \\(\\theta_{\\mathrm{adapter}}\\), which is generally nonzero, so the model differs from the base even before test-time training. The base weights stay frozen, so dropping the adapter recovers the base model. The LoRA initialisation at the start of meta-training is not stated beyond 'default' PEFT settings.",
+   "key_idea": "Treat a LoRA as a fast-weight memory written by a few gradient steps on the context at test time. Meta-learn the adapter's starting point, step sizes and token weights, MAML-style with truncated unrolling to fit 8K-token contexts, so that the written adapter supports reasoning over long inputs rather than in-context retrieval.",
+   "results_note": "Trained on 8K-token contexts, PERK beats standard long-context fine-tuning (FT-ICR) on HotpotQA/TriviaQA by about 20 absolute points at the 0.5B scale and 15 at 7B. On BabiLong, PERK (Qwen-2.5-7B) leads FT-ICR by 23 points on average when extrapolating to 32K tokens.",
+   "relations": [
+    {
+     "target": "doc-to-lora",
+     "type": "competes-with",
+     "note": "Same goal of internalising a context into a LoRA. Doc-to-LoRA amortises the write into one hypernetwork forward pass trained by context distillation; PERK writes it with meta-learned gradient steps at test time. D2L appeared later and is not cited."
+    },
+    {
+     "target": "shine",
+     "type": "competes-with",
+     "note": "SHINE is a single-pass in-context hypernetwork from context to LoRA; PERK is the gradient-based, test-time-training counterpart. SHINE is not cited."
+    },
+    {
+     "target": "generative-adapter",
+     "type": "competes-with",
+     "note": "Also maps a context to a parameter delta, but with a forward-pass generator instead of inner-loop optimisation. Not cited."
+    },
+    {
+     "target": "cartridges",
+     "type": "competes-with",
+     "note": "Cartridges compresses a corpus offline into a trained KV cache by self-study distillation, once per corpus. PERK trains a LoRA per context in four meta-learned steps. Not cited."
+    },
+    {
+     "target": "rslora",
+     "type": "builds-on",
+     "note": "Uses rank-stabilised scaling for its rank-256 adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2507.06415",
+    "https://arxiv.org/html/2507.06415",
+    "https://perk-long-context.web.app",
+    "https://github.com/eric11eca/perk",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "All four authors (first author Zeming Chen) and first version (v1 2025-07-08) confirmed with the arXiv export API. v1 and v2 are titled 'PERK: Long-Context Reasoning as Parameter-Efficient Test-Time Learning', the same as the ICLR listing; v3 (2026-08-31) shortened it to 'PERK: Long-Context Reasoning as Test-Time Learning'. paper_title keeps the v1/ICLR title. ICLR 2026 acceptance confirmed in the official ICLR orals-posters JSON ('Accept (Poster)', poster 10007196, OpenReview qxDTe8fIyA) and in the arXiv journal reference. Formula checked against Section 3 (Eqs. 3-5) and Appendix B: rank-256 rsLoRA on all modules (all layers up to 1B, top 4 layers for 7B/8B); 4 inner steps of differentiable AdamW (Higher library); per-layer-per-step learned inner learning rates (initial value \\(5\\times10^{-5}\\)); a two-layer MLP token weighter as in CaMeLS; about 256-token chunks with 'Document i:' tags; steps 1-2 truncated for contexts up to 4K and steps 1-3 beyond 8K, i.e. \\(T=2\\) or \\(T=1\\) retained. The paper does not say what the token weighter takes as input, so \\(w_\\psi(c)_t\\) replaces the raw entry's \\(w_\\psi(c_{\\le t})\\). \\(J^{(n)}=I-\\alpha H^{(n)}\\) is the paper's plain-GD illustration. Section 4.2 results re-read. The code repository eric11eca/perk exists. Not in Hugging Face PEFT. All relation targets are catalogue ids; none of Doc-to-LoRA, SHINE, Generative Adapter or Cartridges is cited.",
+   "corrections": [
+    "formula_latex: token-weight argument changed from \\(w_\\psi(c_{\\le t})\\), which the paper does not state, to \\(w_\\psi(c)_t\\). The Jacobian is written generically, with \\(I-\\alpha H^{(n)}\\) marked as the plain-GD case, and the inner optimiser is named as differentiable AdamW.",
+    "verification: the arXiv v1/v2 title equals the ICLR title and only v3 was renamed; the raw notes implied that the arXiv title differs.",
+    "results_note: the BabiLong 23-point gap attributed to the Qwen-2.5-7B models, as in the paper."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "All six requested methods exist, all six are PEFT methods, and none duplicates a catalogued id; ids and arXiv numbers were checked against existing_index.json, which has no entry for any of them. Methods were read from their arXiv HTML method sections, except LoRA-S. Venues were verified as follows. RotMoLE is a NeurIPS 2026 poster in the official neurips.cc orals-posters JSON (OpenReview uGtHLqoW8K). ScaLoRA is in the ICML 2026 JSON ('Accept (regular)', OpenReview Skxb4UgTWU) and its arXiv comment says 'Accepted to ICML 2026'. LoRA-S (Guo2XGgxZA), DiaBlo (cZaI6GmjBm), PERK (qxDTe8fIyA) and QZO (mGeeRFToaW) are all 'Accept (Poster)' in the ICLR 2026 JSON. LoRA-S has no arXiv version, and OpenReview (forum, PDF and API) answered every request with a bot-verification challenge, which was not bypassed. Its formula was therefore transcribed from the official ICLR poster image (iclr.cc/media/PosterPDFs/ICLR 2026/10010449.png), which shows the Sylvester equation, the lift and the AdamS/LRACS updates, together with the ICLR abstract. Confidence for LoRA-S is medium. From those poster formulas I derived three things: the lift's first-order W update is the tangent-space projection of the matrix-space direction; K = eps*I reproduces decoupled weight decay; and the update is equivariant with K -> R^T K R^{-T}. These are marked 'derived here'. LoRA-S's year is 2025 because the ICLR 2026 submission was public on OpenReview in autumn 2025; the exact open date could not be read through the challenge. An empty GitHub repository, CleverWing/lora_s, describes itself as the official implementation and calls the paper an ICLR 2026 Spotlight, but the ICLR data says Poster. code_url is left empty. Year follows the first public version: ScaLoRA arXiv v1 2025-10-27, DiaBlo 2025-06-03, QZO 2025-05-19, PERK 2025-07-08, RotMoLE 2026-05-25. The PERK paper_title is the ICLR title; the arXiv title is 'PERK: Long-Context Reasoning as Test-Time Learning' [corrected in verification: arXiv v1 and v2 carry the ICLR title; only v3 of 2026-08-31 was renamed]. Corrections and caveats recorded in the entries: (i) ScaLoRA's 'fixed subspace' claim is the telescoping identity sum_t dW_t = B_T A_T, i.e. a rank-r bound. The printed Theorem 3.7 has a block-order/transpose typo in its second matrix; the pairing given in formula_latex was re-derived from the stated objective and lambda. (ii) QZO's Theorem 1 claims the clipped SPSA estimate is unbiased, but the proof ignores the dependence of the clipping event on z; only the variance bound holds in general [corrected in verification: only the second-moment bound holds unconditionally]. (iii) RotMoLE's printed R_i is a rank-2 planar block that acts as a full SO(r) rotation on A_i x. My gauge analysis found that the rotation gate reduces each expert's residual gauge group from GL(r) to O(r), with q_i -> O^T q_i [corrected in verification: the residual group is R_{>0} x O(r), since positive rescalings of (B_i, A_i) are also symmetries]. None of the six is in Hugging Face PEFT (tuners directory and releases up to v0.21.2, 2026-10-01). Semantic Scholar was not queried. Not-yet-catalogued neighbours seen in these papers: AdaMoLE, MoLA, MoCLE and CoMoL (RotMoLE baselines and related work); QuZO (cited by QZO); RACS (the base optimizer lifted by LRACS); RECKONING and CaMeLS (PERK's predecessors for meta-learned knowledge encoding and token weighting). No standalone theory papers were added. The theorems of ScaLoRA (optimal low-rank step and scaling), DiaBlo (expressivity and stationarity) and LoRA-S (invariance) are recorded inside the method entries.",
+ "verification_summary": "Adversarial check on 2026-10-02 of all 6 methods (0 papers); nothing dropped, all 6 verified (LoRA-S at medium confidence). Metadata: titles, authors and first-version dates from the arXiv export API for the five arXiv papers; Semantic Scholar answered for RotMoLE, DiaBlo and QZO and agreed, and rate-limited the rest. LoRA-S has no arXiv version; its metadata come from the ICLR 2026 JSON and ML Anthology. Venues confirmed in the official virtual-site JSON files: NeurIPS 2026 (RotMoLE, 'Accept (poster)'), ICML 2026 (ScaLoRA, 'Accept (regular)', poster) and ICLR 2026 (LoRA-S, DiaBlo, QZO and PERK, all 'Accept (Poster)'). OpenReview was behind a bot check and the Internet Archive was offline. LoRA-S's formulas were therefore re-checked against the official ICLR poster image, and every derived identity (tangent-space projection, \\(K=\\epsilon I\\) as weight decay, equivariance) was confirmed numerically. Main fixes: RotMoLE's residual gauge group is \\(\\mathbb R_{>0}\\times O(r)\\), not \\(O(r)\\), and its baseline comparison was made precise; DiaBlo's 'AdamW on \\(D\\) equals AdamW on masked \\(W\\)' holds only without weight decay, the paper's quantized-run module list conflicts with its own parameter count, and its 1.04% for Llama3-8B is about 0.89% by our count; QZO's clipping critique was sharpened (biased in general, a shrinkage in the idealised Gaussian case, only the second-moment bound unconditional); PERK's token-weight argument and Jacobian were de-specified to what the paper states, and its arXiv v1 title equals the ICLR title; LoRA-S's 'Stable Diffusion' locus claim was removed; ScaLoRA's 50%-plus time overhead was added. ScaLoRA's corrected Theorem 3.7 pairing was re-derived and confirmed by a least-squares check. trainable_params re-derived (DiaBlo 70.3M on Llama2-7B at \\(N=64\\); QZO \\(5.03\\times10^{7}\\) on OPT-6.7B). None of the six is in Hugging Face PEFT (tuners and optimizers at main, release v0.21.2 of 2026-10-01). All relation targets exist in existing_index.json, and no id or arXiv number collides with the index or with other raw or verified files. Inline math in prose fields wrapped in \\( \\)."
+}

@@ -1,0 +1,574 @@
+{
+ "family": "gap-2",
+ "family_title": "Gap fill batch 2: Bayesian LoRA, pruning+LoRA, modular-quantizer LoRA, sparse+low-rank training, reversible memory-efficient adapters, SNR layer selection, task-specific directions, and acceleration-LoRA arithmetic",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "blob",
+   "name": "BLoB",
+   "full_name": "Bayesian Low-Rank Adaptation by Backpropagation",
+   "paper_title": "BLoB: Bayesian Low-Rank Adaptation by Backpropagation for Large Language Models",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.11675",
+   "url": "https://arxiv.org/abs/2406.11675",
+   "code_url": "https://github.com/Wang-ML-Lab/bayesian-peft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h = W_0x + B A x,\\quad A\\sim q(A\\mid M,\\Omega)=\\prod_{ij}\\mathcal{N}(A_{ij}\\mid M_{ij},\\Omega_{ij}^2),\\ \\Omega_{ij}=G_{ij}^2,\\ B\\ \\text{deterministic};\\quad \\min_{M,G,B}\\ -\\mathbb{E}_{q(A)}\\big[\\log P(\\mathcal{D}\\mid A,B)\\big]+\\mathrm{KL}\\big[q(A)\\,\\Vert\\,\\mathcal{N}(0,\\sigma_p^2 I)\\big];\\quad \\text{equivalently } q(\\mathrm{vec}\\,W)=\\mathcal{N}\\big(\\mathrm{vec}(W_0+BM),\\,(I_{d_{in}}\\otimes B)\\,\\mathrm{diag}(\\mathrm{vec}\\,\\Omega)^2\\,(I_{d_{in}}\\otimes B^{\\top})\\big);\\ W_0\\ \\text{frozen}; M,G,B\\ \\text{trained}",
+   "trainable_params": "r\\,d_{out} + 2\\,r\\,d_{in}",
+   "locus": "LoRA-targeted linear layers (paper: W_q, W_v of every attention layer plus the output layer of Llama2-7B; RoBERTa for classification)",
+   "modification_kind": "additive-weight",
+   "structure": "Stochastic low-rank update \\Delta W = BA in which only the down-projection A is a random matrix with a mean-field Gaussian posterior (mean M, std \\Omega = G^{\\circ 2}); B is a point estimate. The induced full-weight posterior is a degenerate Gaussian centred at W_0 + BM whose covariance (I\\otimes B)\\,\\mathrm{diag}(\\Omega)^2(I\\otimes B^\\top) has rank at most r\\,d_{in}. The prior is a matching low-rank Gaussian, so the full-weight KL reduces exactly to the KL on A. Sampling uses Flipout restricted to A.",
+   "mergeable": "conditional",
+   "mergeable_reason": "The posterior mean W_0 + BM can be merged into W_0 (BLoB with N=0 samples), but the Bayesian predictive that gives the calibration gains averages N (default 10) sampled A matrices, and this cannot be folded into one weight.",
+   "identity_at_init": "B = 0, as in LoRA. The mean M of A is uniform-Kaiming and G \\sim \\mathcal{U}(\\epsilon/\\sqrt2,\\epsilon). The sampled update B A is therefore exactly zero at initialization. The authors fix the variance of B to 0 for this reason: a stochastic B would make the early forward passes noisy.",
+   "key_idea": "BLoB does variational Bayes inside the LoRA subspace and trains the posterior mean and variance jointly during fine-tuning, instead of adding a Laplace approximation afterwards. Only A is made stochastic (asymmetric Bayesianization), and the prior is designed so that the full-weight ELBO equals a cheap ELBO on A. The posterior std is parameterized as G squared for fast KL convergence, and LoRA-Flipout decorrelates the samples within a mini-batch.",
+   "results_note": "On Llama2-7B over six commonsense tasks, BLoB (N=10 samples) keeps accuracy close to MLE-LoRA while cutting ECE sharply (e.g. WG-S 29.8% to 9.4%, ARC-C 29.0% to 9.6%); it also improves NLL over MC-dropout, ensembles, BBB and Laplace-LoRA on most datasets, and the gains extend to OOD shifts.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "same W_0 + BA parameterization; the A factor is replaced by a Gaussian variational distribution"
+    },
+    {
+     "target": "laplace-lora",
+     "type": "competes-with",
+     "note": "Laplace-LoRA (Yang et al., ICLR 2024) fits a post-hoc Kronecker-factored Laplace posterior over LoRA weights; BLoB learns the mean and covariance jointly during training"
+    },
+    {
+     "target": "monteclora",
+     "type": "competes-with",
+     "note": "both put distributions on low-rank adapter parameters; MonteCLoRA targets robustness to hyperparameters, BLoB targets calibrated uncertainty"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.11675",
+    "https://arxiv.org/html/2406.11675",
+    "https://openreview.net/forum?id=MaDykgj4Ru",
+    "https://github.com/Wang-ML-Lab/bayesian-peft"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "Removed relation blob -> asylora (builds-on): BLoB does not cite AsyLoRA (Zhu et al., 2402.16842); its asymmetry argument is about LoRA's B=0 init making a stochastic B noisy early in training, not AsyLoRA's finding that B matters more than A."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Yibin Wang, v1 2024-06-17 match; NeurIPS 2024 confirmed by arXiv comment and Semantic Scholar. Checked against arXiv HTML (v5): Thm 3.1 covariance [I_n⊗B]diag(vec Ω)^2[I_n⊗B^T], Thm 3.2 low-rank prior, KL (1/2σ_p^2)(||M||^2+||Ω||^2)-Σlog Ω, Ω=G^2, Alg. 1 init G~U(ε/√2,ε), M Kaiming-uniform, B=0, LoRA-Flipout on A only, N=10 at test. Trainable count r d_out + 2 r d_in (M, G, B) re-derived. Table 1 ECE values (MLE 29.83/29.00 -> BLoB N=10 9.35/9.59 on WG-S/ARC-C) confirmed. Not in HF PEFT v0.21.1 (PEFT has MonteCLoRA, not BLoB)."
+  },
+  {
+   "id": "loraprune",
+   "name": "LoRAPrune",
+   "full_name": "LoRAPrune: LoRA-guided structured pruning",
+   "paper_title": "LoRAPrune: Structured Pruning Meets Low-Rank Parameter-Efficient Fine-Tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "Findings of ACL 2024",
+   "arxiv": "2305.18403",
+   "url": "https://arxiv.org/abs/2305.18403",
+   "code_url": "https://github.com/aim-uofa/LoRAPrune",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h = \\big((W_0 + BA)\\,x\\big)\\odot m,\\quad m\\in\\{0,1\\}^{G}\\ \\text{(one bit per channel/head group, broadcast)};\\quad \\hat I_{ij}=\\Big[\\big(\\nabla_{B_{i:}}\\mathcal{L}\\,A_{:j}+B_{i:}\\nabla_{A_{:j}}\\mathcal{L}-\\nabla_{B_{i:}}\\mathcal{L}\\,\\nabla_{A_{:j}}\\mathcal{L}\\big)\\big(W_{0,ij}+(BA)_{ij}\\big)\\Big]^2,\\ \\ \\hat{\\mathcal{G}}_g=\\sum_{(i,j)\\in g}\\hat I_{ij},\\ \\ \\bar{\\mathcal{G}}_t=\\lambda\\bar{\\mathcal{G}}_{t-1}+(1-\\lambda)\\hat{\\mathcal{G}}_t,\\ \\ m_g=\\mathbb{1}[\\bar{\\mathcal{G}}_g>p];\\ W_0\\ \\text{frozen (optionally 8-bit)}, A,B\\ \\text{trained}, m\\ \\text{set progressively}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all LoRA-adapted linear layers of LLaMA-family LLMs; pruning acts on dependency groups (attention heads, MLP channels) across coupled layers",
+   "modification_kind": "hybrid",
+   "structure": "Additive rank-r update \\Delta W = BA composed with a structured 0/1 mask on output channels or heads (a coordinate projection onto a sub-network). Mask importance is a first-order Taylor score in which the full-weight gradient \\partial\\mathcal{L}/\\partial W is replaced by the LoRA proxy \\partial\\mathcal{L}/\\partial(BA) \\approx \\nabla_B\\mathcal{L}\\,A + B\\,\\nabla_A\\mathcal{L} - \\nabla_B\\mathcal{L}\\,\\nabla_A\\mathcal{L}, which is derived from one SGD step on B and A.",
+   "mergeable": "yes",
+   "mergeable_reason": "Because the pruning is structured, BA folds into W_0 and the masked heads and channels are removed, which leaves a smaller dense model with no extra modules. The mask is the point of the method: the result is cheaper than the original architecture.",
+   "identity_at_init": "LoRA init (B = 0 in the official code; Alg. 1 only says 'randomly initialized A and B') and an all-ones mask make the function exactly the pretrained one at step 0. Pruning then removes groups progressively and on purpose, while LoRA recovers the lost accuracy at the same time.",
+   "key_idea": "LoRAPrune estimates the importance of the frozen weights using only LoRA's gradients. It treats pruning W_{ij} as setting (BA)_{ij} = -W_{ij} and approximates the needed full gradient from the gradients of A and B. Pruning and LoRA fine-tuning then run in one memory-light loop with no backward pass through W_0.",
+   "results_note": "At 50% structured compression of LLaMA-7B, LoRAPrune lowers perplexity versus LLM-Pruner by 4.81 on WikiText2 and 3.46 on PTB; the LoRA-guided criterion cuts pruning memory by 52.6% versus the vanilla full-gradient criterion (64.2% with an 8-bit base), and the method scales to LLaMA-65B on one GPU.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "uses the LoRA factors both as the recovery adapter and as the gradient proxy for pruning importance"
+    },
+    {
+     "target": "llm-pruner",
+     "type": "competes-with",
+     "note": "LLM-Pruner (Ma et al., NeurIPS 2023) uses the same dependency groups but needs gradients of W_0; LoRAPrune replaces them with LoRA gradients"
+    },
+    {
+     "target": "qlora",
+     "type": "combines",
+     "note": "both run LoRA on a quantized frozen base: because no gradient of W_0 is needed, LoRAPrune-8bit stores W_0 in 8 bits (used for LLaMA-30B/65B); this is 8-bit LLM.int8-style quantization, not QLoRA's 4-bit NF4, which the paper only cites as a compatible LoRA variant"
+    },
+    {
+     "target": "diff-pruning",
+     "type": "dual-to",
+     "note": "diff-pruning sparsifies the update \\Delta W; LoRAPrune keeps a dense low-rank update and sparsifies the backbone W_0 instead"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.18403",
+    "https://arxiv.org/html/2305.18403",
+    "https://openreview.net/forum?id=ox7ChEaLdP",
+    "https://github.com/aim-uofa/LoRAPrune"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "Rewrote the qlora 'combines' note: LoRAPrune's quantized variant is 8-bit, not QLoRA's 4-bit NF4; the paper only cites QLoRA as a LoRA variant it is compatible with.",
+    "identity_at_init: noted that B = 0 comes from the official code (loraprune/lora.py zeros_(lora_B)); the paper's Algorithm 1 says only that A and B are randomly initialized.",
+    "results_note: attributed the 52.6% memory saving to the comparison the paper measures (Table 4: LoRA-guided vs vanilla gradient criterion) and added the 8-bit figure."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Mingyang Zhang, v1 2023-05-28 match; Findings of ACL 2024 confirmed in ACL Anthology (2024.findings-acl.178, DOI 10.18653/v1/2024.findings-acl.178). Formula checked against arXiv HTML: Eq. 10 importance with η=1, Eq. 4 group sum, Eq. 11 moving average, Eq. 12 binary mask, z=(xW_0+xBA)⊙M (paper uses row-vector convention; indices map unchanged to h=Wx). Official code applies the mask on output features and zero-initializes lora_B. Not in HF PEFT."
+  },
+  {
+   "id": "modulora",
+   "name": "ModuLoRA",
+   "full_name": "Modular Low-Rank Adaptation",
+   "paper_title": "ModuLoRA: Finetuning 2-Bit LLMs on Consumer GPUs by Integrating with Modular Quantizers",
+   "authors": "Yin et al.",
+   "year": 2023,
+   "venue": "TMLR 2024",
+   "arxiv": "2309.16119",
+   "url": "https://arxiv.org/abs/2309.16119",
+   "code_url": "https://github.com/kuleshov-group/llmtools",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "(\\hat W_q, z, s)=\\mathcal{Q}(W_0)\\ \\text{(any black-box quantizer: OPTQ/GPTQ 3-4 bit, QuIP\\# 2 bit)},\\quad h=\\hat W x + B A x,\\ \\ \\hat W=\\mathcal{D}(\\hat W_q,z,s)=s\\odot\\hat W_q+z;\\quad \\nabla_x\\mathcal{L}=\\hat W^{\\top}\\nabla_h\\mathcal{L}+A^{\\top}B^{\\top}\\nabla_h\\mathcal{L}\\ \\text{with }\\hat W\\ \\text{re-dequantized in the backward pass (never cached)};\\ \\hat W_q\\ \\text{frozen}, A,B\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "every linear layer of the quantized LLM (LLaMA, OPT, BLOOM up to 65B)",
+   "modification_kind": "additive-weight",
+   "structure": "Low-rank additive update \\Delta W = BA on top of a frozen, quantizer-agnostic low-precision weight \\hat W = \\mathcal{D}(\\mathcal{Q}(W_0)). The quantizer is a black-box module that only has to expose dequantization (or a vector-by-quantized-matrix product). Memory is saved by recomputing \\hat W row by row or layer by layer in both the forward and the backward pass, so only one dequantized matrix is ever resident.",
+   "mergeable": "conditional",
+   "mergeable_reason": "BA can be added exactly to a high-precision copy of \\hat W. Keeping the 2-4-bit format would require re-running the quantizer on \\hat W + BA, which is lossy.",
+   "identity_at_init": "A and B use the LoRA initialization of Hu et al. (B = 0), so at step 0 the model equals the quantized model \\hat W. That is the original W_0 only up to quantization error, and ModuLoRA, unlike LoftQ, does not try to compensate for that error.",
+   "key_idea": "The quantizer is decoupled from the adapter. The forward and backward passes need only dequantization, which is recomputed on the fly and never stored, so LoRA runs on top of any state-of-the-art PTQ method. This made LoRA fine-tuning of 2-bit (QuIP#) and 3-bit (OPTQ) 65B LLMs possible on a single 24-48 GB GPU.",
+   "results_note": "A 4-bit LLaMA-65B fine-tuned with ModuLoRA set a then state-of-the-art ROUGE on SAMSum. 3-bit and 4-bit ModuLoRA models outperform 8-bit bitsandbytes LoRA and 4-bit QLoRA across the 7B-65B range, and 2-bit QuIP# models match them.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "same frozen-quantized-base-plus-LoRA forward, but QLoRA hard-wires NF4 with double quantization, whereas ModuLoRA plugs in any PTQ quantizer (OPTQ, QuIP#) and reaches 2-3 bits"
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "LoftQ initializes BA to cancel the quantization residual; ModuLoRA keeps B = 0 and relies on a stronger quantizer instead"
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "QA-LoRA restructures the adapter so it merges into the quantized weights; ModuLoRA leaves merging aside"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "unchanged LoRA parameterization; the contribution is the quantizer-agnostic mixed-precision backward pass"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.16119",
+    "https://arxiv.org/html/2309.16119",
+    "https://openreview.net/forum?id=r9p9CV52MV",
+    "https://github.com/kuleshov-group/llmtools"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Junjie Yin, v1 2023-09-28 match; TMLR 2024 confirmed by arXiv comment ('accepted to TMLR') and DBLP key journals/tmlr/YinDWSK24 (Semantic Scholar: TMLR vol. 2024). Checked against arXiv HTML: black-box (Ŵ_q,z,s)=Q(W), Ŵ=s⊙Ŵ_q+z, ModuLoRALinear x Ŵ^T + x B A^T (paper writes W_0+AB^T with A,B∈R^{d×r}; rewritten as BA in shared notation), re-dequantization in backward, row materialization, OPTQ 3/4-bit and QuIP# 2-bit, LoRA init of Hu et al. Results (SAMSum SOTA for 4-bit 65B; 3/4-bit beat 8-bit BnB and 4-bit QLoRA; 2-bit matches) match Sec. 4. HF PEFT has LoRA on GPTQ/AQLM/HQQ/AWQ/EETQ/torchao bases but no ModuLoRA tuner. No corrections needed."
+  },
+  {
+   "id": "sltrain",
+   "name": "SLTrain",
+   "full_name": "Sparse plus Low-rank Training",
+   "paper_title": "SLTrain: a sparse plus low-rank approach for parameter and memory efficient pretraining",
+   "authors": "Han et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.02214",
+   "url": "https://arxiv.org/abs/2406.02214",
+   "code_url": "https://github.com/andyjm3/SLTrain",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{pretraining: } W=\\tfrac{\\alpha}{r}BA+S;\\quad \\text{fine-tuning (SLTrain-FT): } W=W_0+\\tfrac{\\alpha}{r}BA+S;\\quad S=\\mathrm{scatter}_{\\mathcal{I}}(\\mathcal{V}),\\ \\mathcal{I}\\ \\text{uniformly random and fixed},\\ |\\mathcal{I}|=\\delta\\,d_{out}d_{in};\\quad h=\\big(\\tfrac{\\alpha}{r}BA\\oplus_{\\mathcal{I}}\\mathcal{V}\\big)x,\\ \\nabla_{\\mathcal{V}}\\mathcal{L}=(\\nabla_h\\mathcal{L}\\,x^{\\top})_{\\mathcal{I}};\\ B,A,\\mathcal{V}\\ \\text{trained}, \\mathcal{I}\\ \\text{and (FT) } W_0\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})+\\delta\\,d_{in}d_{out}",
+   "locus": "all attention and MLP linear layers (LLaMA 60M-7B pretraining; RoBERTa-base GLUE for SLTrain-FT)",
+   "modification_kind": "additive-weight",
+   "structure": "Sum of a rank-r factorization and a sparse matrix whose support is a uniformly random index set fixed before training; only the values on that support are learned. Stored as (B, A, \\mathcal{I}, \\mathcal{V}); the dense BA \\oplus_{\\mathcal{I}} \\mathcal{V} is formed transiently in each forward/backward and never saved. With \\delta = \\Omega(\\log n/n), BA+S is full rank w.h.p. (Prop. 1), so the low-rank bottleneck is lifted at negligible cost.",
+   "mergeable": "yes",
+   "mergeable_reason": "In the fine-tuning form, both BA and S are dense additive terms that fold into W_0. In pretraining the factors are kept on purpose to save memory, although they can also be densified into a single W for standard inference.",
+   "identity_at_init": "The low-rank part uses the LoRA init (A Kaiming, B = 0), and the sparse values are drawn uniformly from [-1/\\sqrt{d_{in}}, 1/\\sqrt{d_{in}}], which suits pretraining from scratch. For SLTrain-FT, Appendix G only says B, A and S are learned 'as in Section 3.2', which implies the same non-zero uniform init for S; the paper never states a zero init, so exact identity at init is not guaranteed. The public code supports pretraining only (SpLoRaLinear 'cannot be used for fine-tune').",
+   "key_idea": "Low-rank and sparse are complementary parsimonies: low rank keeps the top subspace, and a random-support sparse matrix captures the small, evenly spread residual. A fixed random support needs no stored mask, so the memory cost is only O(nnz), and a low-rank model gains near-full-rank capacity for pretraining.",
+   "results_note": "SLTrain pretrains LLaMA 60M-7B on C4 with perplexity close to full-rank training and far better than pure low-rank and ReLoRA at the same rank, while using fewer parameters; it is slightly behind GaLore at 130M-1B (e.g. 1B: 16.14 vs 15.64 PPL, full-rank 15.56) and slightly ahead at 60M (34.15 vs 34.88). With 8-bit optimizer states and per-layer updates it uses 51/58/73% less memory than full-rank Adam for 350M/1B/7B and 29/34/17% less than GaLore.",
+   "relations": [
+    {
+     "target": "rosa",
+     "type": "competes-with",
+     "note": "RoSA uses the same low-rank-plus-sparse adapter W_0+BA+S for fine-tuning but picks the support from gradient/Fisher information; SLTrain fixes it uniformly at random and targets pretraining"
+    },
+    {
+     "target": "dsee",
+     "type": "competes-with",
+     "note": "DSEE also combines a low-rank update with a sparse update; its sparse support is taken from the largest entries of a robust-PCA (GreBsmo) residual of W_0 rather than chosen at random"
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "GaLore projects gradients to low rank while training full weights; SLTrain reparameterizes the weights, so it saves parameters as well as optimizer states"
+    },
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "ReLoRA reaches high rank by merging sequential low-rank updates into a stored full W; SLTrain reaches it with one persistent sparse factor and no full matrix"
+    },
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "SLTrain-FT with \\delta = 0 is LoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.02214",
+    "https://arxiv.org/html/2406.02214",
+    "https://openreview.net/forum?id=MXze4H7opg",
+    "https://github.com/andyjm3/SLTrain"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "results_note: removed the claim that SLTrain beats GaLore; Table 2 shows SLTrain is worse than GaLore at 130M, 350M and 1B and better only at 60M. Added the exact memory figures.",
+    "dsee relation note: DSEE's support comes from a robust-PCA (GreBsmo) residual of W_0, not plain magnitude selection.",
+    "identity_at_init: made explicit that Appendix G points back to the Sec. 3.2 init (uniform, non-zero sparse values) and that the released code is pretraining-only."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Andi Han, v1 2024-06-04 match; NeurIPS 2024 confirmed by DBLP key conf/nips/HanLH0TJM24 (Semantic Scholar venue NeurIPS). Checked against arXiv HTML: W=BA+S, nnz(S)=δdp, params (d+p)r+δdp, scatter-add BA⊕_I V, gradients Eq. 3, α/r scaling, LoRA init, uniform sparse init, Prop. 1 (δ=Ω(log n/n) ⇒ full rank w.h.p.), Appendix G W=W_0+BA+S. Official splora_linear.py confirmed (Kaiming A, zero B, uniform values, randperm support, scale α/r). Not in HF PEFT."
+  },
+  {
+   "id": "meft",
+   "name": "MEFT",
+   "full_name": "Memory-Efficient Fine-Tuning (reversible PLM via adapters)",
+   "paper_title": "Make Pre-trained Model Reversible: From Parameter to Memory Efficient Fine-Tuning",
+   "authors": "Liao et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.00477",
+   "url": "https://arxiv.org/abs/2306.00477",
+   "code_url": "https://github.com/BaohaoLiao/mefts",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h^1_n=\\lambda h^1_{n-1}+\\mathcal{F}_n(h^2_{n-1}),\\quad h^2_n=\\beta h^2_{n-1}+\\mathcal{G}_n(h^1_n);\\qquad h^2_{n-1}=\\big(h^2_n-\\mathcal{G}_n(h^1_n)\\big)/\\beta,\\quad h^1_{n-1}=\\big(h^1_n-\\mathcal{F}_n(h^2_{n-1})\\big)/\\lambda;\\ \\ \\text{MEFT}_1:\\ \\mathcal{F}_n=f_n\\!+\\!\\text{adapter},\\ \\mathcal{G}_n=\\text{adapter},\\ \\lambda\\!\\to\\!0\\ (\\beta=1),\\ \\text{swap streams};\\ \\ \\text{MEFT}_2:\\ \\mathcal{F}_n=\\text{adapter},\\ \\mathcal{G}_n=f_n\\!+\\!\\text{adapter},\\ \\lambda=1,\\ \\beta\\!\\to\\!0,\\ \\text{swap};\\ \\ \\text{MEFT}_3:\\ \\mathcal{F}_n=\\text{Attn}_n\\!+\\!\\text{adapter},\\ \\mathcal{G}_n=\\text{MLP}_n\\!+\\!\\text{adapter},\\ \\lambda=\\beta\\!\\to\\!0,\\ \\text{no swap};\\ \\ (\\text{scaling sent to }0\\text{ set to }0.1);\\ h^1_0=h^2_0=h_0,\\ \\text{head on }(h^1_L+h^2_L)/2;\\ \\text{PLM frozen, only adapters } W_{down}\\in\\mathbb{R}^{d\\times r},W_{up}\\in\\mathbb{R}^{r\\times d}\\ \\text{trained}",
+   "trainable_params": "\\approx 4\\,d\\,r\\ \\text{per Transformer layer (two bottleneck adapters)},\\ \\text{i.e. }\\approx 4\\,d\\,r\\,L\\ \\text{per model plus the task head}",
+   "locus": "every Transformer layer, which is recast as a two-stream reversible coupling block; adapters sit parallel to the FFN inside the pretrained sub-block and stand alone as the other coupling function",
+   "modification_kind": "architectural-insertion",
+   "structure": "Bottleneck adapters inserted so that each pretrained layer becomes the \\mathcal{F} or \\mathcal{G} of an additive RevNet coupling with scalings \\lambda, \\beta (0.1 for the coupling scaled toward 0) and an optional stream swap. The layer map is then a bijection (h^1,h^2)\\mapsto(h^1',h^2') with an explicit inverse, so activations are recomputed backwards from the outputs and activation memory is O(1) in depth instead of O(L).",
+   "mergeable": "no",
+   "mergeable_reason": "Inference keeps the two-stream reversible topology, the \\lambda/\\beta scalings and the nonlinear bottleneck adapters, so the result cannot be folded back into the original single-stream PLM weights.",
+   "identity_at_init": "Approximate only. Adapters are initialized with W_{down}, W_{up} \\sim \\mathcal{N}(0, 0.02^2) rather than zero, and the scaling of the coupling sent toward 0 is 0.1 rather than exactly 0, so one stream reproduces the PLM's hidden state h_n up to a small perturbation (the 'starting point hypothesis'). The stream swap keeps the input of each pretrained block continuous with the original network.",
+   "key_idea": "MEFT turns a pretrained, non-reversible Transformer into a reversible one without re-pretraining. Each pretrained layer becomes one coupling function and an adapter becomes the other. The coupling scalars and the stream order are chosen so the network starts out computing what the PLM computed. Backpropagation then recomputes activations instead of caching them, which reduces activation memory as well as parameter count.",
+   "results_note": "On GLUE with BERT-base, RoBERTa-large and BART-large, MEFT matches full fine-tuning while training about 0.2% of the parameters and saving up to 84% of activation memory. On OPT-1.3B question answering, MEFT1 is within 0.3 points of full fine-tuning at about half its activation memory (0.64% trainable parameters) and comparable to LoRA at 65% of LoRA's activation memory.",
+   "relations": [
+    {
+     "target": "ladder-side-tuning",
+     "type": "competes-with",
+     "note": "both reduce activation memory; LST avoids backprop through the PLM with a side network, MEFT backprops through the PLM but recomputes activations by reversibility, which avoids LST's accuracy gap"
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "builds-on",
+     "note": "the adapter placement (in parallel to the FFN) follows He et al.'s unified view"
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "uses down/up bottleneck adapters as the trainable coupling functions"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "LoRA saves optimizer memory but still caches >75% of full-FT activations; MEFT targets the activation term"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.00477",
+    "https://arxiv.org/html/2306.00477",
+    "https://openreview.net/forum?id=J8McuwS3zY",
+    "https://github.com/BaohaoLiao/mefts"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "formula_latex: added the fixed scalings used in the paper (MEFT1 β=1, MEFT2 λ=1, value 0.1 for the factor sent to 0) and that MEFT3 does not swap streams (Sec. 3.3, Table 1, Sec. 4.1).",
+    "results_note: replaced 'comparable to full fine-tuning at 50% of the activation memory on OPT 1.3B/6.7B' with the paper's actual OPT-1.3B statement (-0.3 vs full FT, half the activation memory, 65% of LoRA's)."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Baohao Liao, v1 2023-06-01 match; NeurIPS 2023 confirmed by arXiv comment, DBLP conf/nips/LiaoTM23 and the NeurIPS 36 DOI. Checked against arXiv HTML: coupling Eq. 2 and its inverse, MEFT1/2/3 designs (Secs. 3.1-3.3), adapter init N(0,0.02^2), scaling 0.1, mean of the two streams fed to the head, >75% activation memory for existing PEFT. trainable_params ≈4dr per layer re-derived from two d×r/r×d bottlenecks per reversible layer (biases ignored); consistent with ~0.2% on RoBERTa-large at r=8. Not in HF PEFT."
+  },
+  {
+   "id": "spectrum",
+   "name": "Spectrum",
+   "full_name": "Spectrum: SNR-targeted layer-selective training",
+   "paper_title": "Spectrum: Targeted Training on Signal to Noise Ratio",
+   "authors": "Hartford et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2406.06623",
+   "url": "https://arxiv.org/abs/2406.06623",
+   "code_url": "https://github.com/QuixiAI/spectrum",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0=U\\Sigma V^{\\top},\\ \\ \\hat\\sigma=\\mathrm{IQR}(\\{\\sigma_k\\})/1.349,\\ \\ \\varepsilon=\\hat\\sigma\\big(1+\\sqrt{\\beta}\\big),\\ \\beta=\\tfrac{\\min(d_{out},d_{in})}{\\max(d_{out},d_{in})}\\ \\text{(Marchenko-Pastur edge)};\\quad \\mathrm{SNR}(W_0)=\\frac{1}{\\sigma_{\\max}}\\,\\frac{\\sum_{\\sigma_k>\\varepsilon}\\sigma_k}{\\sum_{\\sigma_k\\le\\varepsilon}\\sigma_k};\\quad \\mathcal{S}=\\text{top-}p\\%\\ \\text{matrices by SNR within each module type};\\ \\ W=W_0+\\Delta W\\cdot\\mathbb{1}[W\\in\\mathcal{S}]\\ \\text{(selected matrices fully trained, the rest frozen)}",
+   "trainable_params": "\\sum_{W\\in\\mathcal{S}} d_{out}d_{in}\\ +\\ |\\mathcal{V}|\\,d_{model}\\,(\\text{embed\\_tokens})\\ +\\ d_{model}|\\mathcal{V}|\\,(\\text{lm\\_head})\\ \\ (\\mathcal{S}=\\text{top-}p\\%\\ \\text{of each module type; default } p=25\\text{ in the paper, 50 in the script; the official script always unfreezes embeddings and lm\\_head})",
+   "locus": "whole weight matrices of a chosen subset of layers, ranked separately within each module type (q/k/v/o projections, MLP gate/up/down); the official script additionally always unfreezes model.embed_tokens and lm_head (not SNR-ranked)",
+   "modification_kind": "selective",
+   "structure": "Coordinate projection onto a union of whole weight matrices chosen before training by a data-free spectral score: the Marchenko-Pastur bulk edge of each W_0 splits its singular values into signal and noise, and matrices with the highest normalized signal/noise mass are unfrozen. Updates inside a selected matrix are dense and full-rank.",
+   "mergeable": "yes",
+   "mergeable_reason": "Selected weights are fine-tuned in place, so the result is an ordinary checkpoint with the original architecture and cost.",
+   "identity_at_init": "Exact: no parameters are added, and training starts from the pretrained weights. The selection only decides which matrices may move.",
+   "key_idea": "Spectrum chooses which layers to fine-tune from the pretrained weights alone. Random-matrix theory gives a noise threshold for each matrix's singular values, and only the matrices with the highest signal-to-noise ratio, about the top 25-50% per module type, are trained in full precision. This keeps much of full fine-tuning's quality at reduced memory and time, especially under ZeRO-3/FSDP sharding.",
+   "results_note": "On Llama-3-8B and Mistral-7B (airoboros-3.1), Spectrum-50/25 are competitive with full fine-tuning (sometimes better) and above QLoRA on most reported benchmarks. For Llama-3-8B under DeepSpeed ZeRO-3 they use 17.72%/23.05% less per-GPU memory than full fine-tuning (QLoRA: 14.73%) and train 15.48%/36.78% faster; on a single GPU QLoRA uses less memory.",
+   "relations": [
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "both train a subset of full layers; LISA re-samples layers randomly during training, Spectrum fixes them up front by SNR"
+    },
+    {
+     "target": "surgical-fine-tuning",
+     "type": "competes-with",
+     "note": "layer-subset fine-tuning; surgical FT selects by the depth at which the distribution shift lives, Spectrum by a data-free spectral SNR"
+    },
+    {
+     "target": "qlora",
+     "type": "combines",
+     "note": "Spectrum-25 + QLoRA (adapters only on SNR-selected modules) gave the lowest VRAM in the paper"
+    },
+    {
+     "target": "badam",
+     "type": "competes-with",
+     "note": "BAdam also trains full blocks one at a time to save memory, cycling through all blocks rather than selecting a fixed subset"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.06623",
+    "https://arxiv.org/html/2406.06623",
+    "https://github.com/QuixiAI/spectrum",
+    "https://raw.githubusercontent.com/QuixiAI/spectrum/main/spectrum.py",
+    "https://github.com/axolotl-ai-cloud/axolotl/tree/main/src/axolotl/integrations/spectrum"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "code_url: github.com/cognitivecomputations/spectrum now redirects to github.com/QuixiAI/spectrum (GitHub API); updated to the canonical repository.",
+    "trainable_params: added embed_tokens and lm_head, which the official spectrum.py always writes into unfrozen_parameters regardless of SNR.",
+    "locus: embeddings and lm_head are unconditionally unfrozen by the script, not selected by SNR.",
+    "results_note: softened 'match or exceed full fine-tuning and QLoRA' to the paper's own wording ('in some cases outperforms'), restricted memory/time numbers to Llama-3-8B where they were measured, and added the single-GPU caveat."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Eric Hartford, 2024-06-07 match; no peer-reviewed venue found (Semantic Scholar: arXiv), so venue stays 'arXiv'. Formula checked against Sec. 3.5-4.1 and the official spectrum.py: σ̂=IQR(singular values)/1.349, ε=σ̂(1+√β) with β=min/max aspect ratio, SNR=(Σ_{σ>ε}σ)/(Σ_{σ≤ε}σ)/σ_max, top p% per module type. Tables 1-3 numbers confirmed. Axolotl integration src/axolotl/integrations/spectrum exists. Not in HF PEFT."
+  },
+  {
+   "id": "lora-dash",
+   "name": "LoRA-Dash",
+   "full_name": "LoRA-Dash (task-specific direction amplification)",
+   "paper_title": "Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning",
+   "authors": "Si et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2409.01035",
+   "url": "https://openreview.net/forum?id=RYrJqz44p4",
+   "code_url": "https://github.com/Chongjie-Si/Subspace-Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{pre-launch } (t=100\\text{ LoRA steps}):\\ W_0=\\textstyle\\sum_i\\sigma_i u_i v_i^{\\top},\\ \\ \\delta_i=\\Big|\\frac{u_i^{\\top}\\Delta W\\,v_i}{\\sigma_i+\\epsilon}\\Big|,\\ \\Delta W=BA,\\ \\ \\{\\bar u_k\\bar v_k^{\\top}\\}_{k=1}^{s}=\\text{top-}s\\ \\text{by }\\delta_i;\\quad \\text{dash: } W=W_0+BA+\\textstyle\\sum_{k=1}^{s}\\Delta\\sigma_k\\,\\bar u_k\\bar v_k^{\\top},\\ \\ \\Delta\\sigma_k\\leftarrow 0;\\ W_0,\\bar u_k,\\bar v_k\\ \\text{frozen}; A,B,\\Delta\\sigma\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})+s\\quad(s=8\\ \\text{by default})",
+   "locus": "LoRA-targeted linear layers (W_q, W_k, W_v, W_{up}, W_{down} in the LLaMA commonsense setting; also DeBERTa and SDXL)",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA update plus a diagonal update in W_0's own singular basis restricted to s core directions u_k v_k^\\top. These are the task-specific directions (TSDs) whose coordinates change the most relative to their singular value, estimated from LoRA's \\Delta W after a short warm-up. The second term is a learned s-dimensional diagonal perturbation of W_0's spectrum along data-chosen singular pairs.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both BA and \\sum_k \\Delta\\sigma_k \\bar u_k \\bar v_k^\\top are dense additive matrices that fold into W_0.",
+   "identity_at_init": "Exact. LoRA starts at B = 0, and the dash coefficients \\Delta\\sigma_k are zero-initialized when the dash phase begins. The method needs a one-off SVD of each W_0, and the directions are chosen from the LoRA update after about 100 steps. The companion LoRA-Init/LoRA-TSD variants instead initialize A and B from the top-r TSDs, which is a PiSSA-style split.",
+   "key_idea": "LoRA's own paper says \\Delta W amplifies directions of W_0 that matter for the task. LoRA-Dash defines these as the core singular directions of W_0 with the largest relative coordinate change, and shows that a briefly trained LoRA already identifies them with high precision. It then gives each identified direction its own scalar so its change can grow beyond what the low-rank product allows.",
+   "results_note": "On commonsense reasoning, LoRA-Dash improves LoRA across LLaMA-7B, LLaMA2-7B and LLaMA3-8B (e.g. LLaMA3-8B r=32: 80.8 to 85.4 average) with only s extra scalars per matrix; gains are also reported on GLUE (DeBERTaV3) and subject-driven SDXL generation.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "adds s singular-direction scalars on top of the standard BA update"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "PiSSA adapts the top singular directions of W_0, whereas the TSD analysis shows task directions sit among smaller, though not the smallest, singular values"
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "MiLoRA adapts the smallest singular directions; LoRA-Dash picks directions by measured change rate, not by singular-value rank"
+    },
+    {
+     "target": "kasa",
+     "type": "competes-with",
+     "note": "KaSA also learns singular-value-level updates in an SVD basis; LoRA-Dash uses W_0's frozen singular vectors selected by LoRA's update"
+    },
+    {
+     "target": "svft",
+     "type": "competes-with",
+     "note": "SVFT learns coefficients on the outer products of W_0's singular vectors; LoRA-Dash learns diagonal coefficients only on s data-selected pairs, added to LoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.01035",
+    "https://arxiv.org/abs/2409.01035v1",
+    "https://arxiv.org/html/2409.01035",
+    "https://openreview.net/forum?id=RYrJqz44p4",
+    "https://github.com/Chongjie-Si/Subspace-Tuning",
+    "https://proceedings.iclr.cc/paper_files/paper/2025/hash/c3d101702194a5a345d81cdee4fe966f-Abstract-Conference.html",
+    "https://iclr.cc/virtual/2025/poster/32083"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added the ICLR 2025 proceedings page and poster page that confirm the venue (OpenReview is behind a bot challenge)."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: id 2409.01035 now carries the TPAMI 2026 title 'Task-Specific Directions: Definition, Exploration, and Utilization in Parameter Efficient Fine-Tuning' (v5); v1 (2024-09-02, first author Chongjie Si) has the listed ICLR title. ICLR 2025 poster confirmed in proceedings.iclr.cc and iclr.cc/virtual/2025/poster/32083. Formula checked against v1 HTML Sec. 4: t=100 pre-launch, δ_i=u_i^TΔWv_i/(σ_i+ε), top s=8, ΔW_dash=ΣΔσ_i ū_i v̄_i^T with Δσ zero-init, only A,B,Δσ trained; official lora-dash.py ranks |·| change rates and zero-inits Δσ. Target modules Q,K,V,Up,Down (Table 7); LLaMA3-8B r=32 80.8->85.4 (Table 1). LoRA-Init/LoRA-TSD PiSSA-style split confirmed in the TPAMI version (Eqs. 7-10). Not in HF PEFT. No corrections to content needed."
+  },
+  {
+   "id": "lcm-lora",
+   "name": "LCM-LoRA",
+   "full_name": "Latent Consistency Model LoRA (universal acceleration module)",
+   "paper_title": "LCM-LoRA: A Universal Stable-Diffusion Acceleration Module",
+   "authors": "Luo et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2311.05556",
+   "url": "https://arxiv.org/abs/2311.05556",
+   "code_url": "https://github.com/luosiallen/latent-consistency-model",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig (plain LoRA weights; loaded in diffusers through the PEFT backend with load_lora_weights(..., adapter_name='lcm') and combined via set_adapters(['lcm','style'], adapter_weights=[1.0, 0.8]))",
+   "formula_latex": "\\text{train: } W=W_0+B_{\\mathrm{LCM}}A_{\\mathrm{LCM}}\\ \\text{on the U-Net, minimizing the latent consistency distillation loss } d\\big(f_\\theta(z_{t_{n+k}},\\omega,c,t_{n+k}),\\,f_{\\theta^-}(\\hat z^{\\Psi,\\omega}_{t_n},\\omega,c,t_n)\\big),\\ W_0\\ \\text{frozen};\\quad \\text{use: } \\theta'=\\theta_{\\mathrm{pre}}+\\lambda_1\\tau'+\\lambda_2\\tau_{\\mathrm{LCM}},\\ \\text{i.e. } W=W_0+\\lambda_1 B'A'+\\lambda_2 B_{\\mathrm{LCM}}A_{\\mathrm{LCM}}\\ \\ (\\lambda_1=0.8,\\lambda_2=1.0),\\ \\text{no further training}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted linear},\\ r(c_{in}k_hk_w+c_{out})\\ \\text{per adapted conv};\\ r=64\\ \\text{(67.5M for SD-v1.5, 105M for SSD-1B, 197M for SDXL)}",
+   "locus": "all LoRA-targeted modules of the Stable Diffusion U-Net (SD-v1.5, SSD-1B, SDXL): attention q/k/v/out, proj_in/proj_out and feed-forward linears, plus ResNet conv1/conv2/conv_shortcut, down/upsampler convolutions and time_emb_proj (diffusers LCM-LoRA training script; the released checkpoints contain conv LoRA tensors); applied to fine-tuned community checkpoints of the same base",
+   "modification_kind": "composition-or-routing",
+   "structure": "Two additive low-rank task vectors on a shared base: an 'acceleration vector' \\tau_{LCM} = B_{LCM}A_{LCM}, trained by consistency distillation of the probability-flow ODE, and a 'style vector' \\tau' = B'A', trained by ordinary fine-tuning. They are combined linearly with fixed scalars in weight space, which is task arithmetic in the commutative monoid of additive low-rank updates. The result is a few-step (2-8) sampler for any style.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both LoRAs and their weighted sum are additive low-rank terms that fuse into the U-Net weights, giving a standard model run with the LCM scheduler.",
+   "identity_at_init": "LoRA init (B = 0) during distillation, so training starts from the teacher diffusion model. At composition time no training occurs, and the base is recovered with \\lambda_1 = \\lambda_2 = 0.",
+   "key_idea": "Few-step sampling can be distilled into a LoRA instead of a full model. That acceleration LoRA works as a portable 'neural PF-ODE solver': adding it to the base or to a fine-tuned checkpoint of the same base, or to any style LoRA, gives 4-step generation in that style with no extra training. It is a widely cited example of skill arithmetic between LoRA modules.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "latent consistency distillation is run as LoRA fine-tuning of the diffusion U-Net"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "special-case-of",
+     "note": "\\theta_{pre} + \\lambda_1\\tau' + \\lambda_2\\tau_{LCM} is task-vector addition with LoRA task vectors"
+    },
+    {
+     "target": "pem-arithmetic",
+     "type": "builds-on",
+     "note": "cited as prior work on arithmetic over parameter-efficient modules; but LCM-LoRA sums the weight updates \\lambda_1B'A'+\\lambda_2B_{LCM}A_{LCM}, whereas PEM addition interpolates the factors A and B themselves (creating cross terms), so it is not literally a special case"
+    },
+    {
+     "target": "ziplora",
+     "type": "competes-with",
+     "note": "ZipLoRA learns per-column merge coefficients to avoid interference between subject and style LoRAs; LCM-LoRA combines its acceleration LoRA with a style LoRA using fixed scalars and no learned merge"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.05556",
+    "https://arxiv.org/html/2311.05556",
+    "https://huggingface.co/docs/diffusers/main/en/using-diffusers/inference_with_lcm",
+    "https://github.com/luosiallen/latent-consistency-model",
+    "https://huggingface.co/docs/diffusers/main/en/api/pipelines/latent_consistency_models",
+    "https://github.com/huggingface/diffusers/blob/main/examples/consistency_distillation/train_lcm_distill_lora_sdxl.py",
+    "https://huggingface.co/latent-consistency/lcm-lora-sdxl"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "locus: the released LCM-LoRA checkpoints and the diffusers training script also adapt ResNet/downsampler convolutions and time-embedding projections, not only linear/attention layers (verified from the safetensors headers of latent-consistency/lcm-lora-sdv1-5 and lcm-lora-sdxl).",
+    "trainable_params: added the conv-LoRA count and the rank r=64 of the released modules; header sums (67.25M SD-v1.5, 196.75M SDXL) match the paper's Table 1.",
+    "pem-arithmetic relation retyped special-case-of -> builds-on: PEM arithmetic's LoRA addition acts on (A,B) component-wise, while LCM-LoRA adds the products BA, so the operation is task arithmetic, not PEM addition.",
+    "ziplora note: removed the unsupported causal claim that fixed scalars work 'because the acceleration and style vectors interfere little' (not stated or measured in the report).",
+    "sources: added the current diffusers LCM page (where the set_adapters(['lcm', ...], adapter_weights=[1.0, 0.8]) example now lives), the training script and the released checkpoint."
+   ],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Simian Luo, 2023-11-09, comment 'Technical Report'; no peer-reviewed venue, venue stays 'arXiv'. Formula checked against Sec. 3: LCD loss (Alg. 1), W_0+BA, θ'=θ_pre+λ1τ'+λ2τ_LCM with λ1=0.8, λ2=1.0, Table 1 parameter counts. hf_peft=true stands: the modules are plain PEFT LoraConfig adapters (diffusers trains them with peft.LoraConfig and composes them via set_adapters); PEFT v0.21.1 has no LCM-specific tuner."
+  }
+ ],
+ "papers": [
+  {
+   "id": "bayes-by-backprop",
+   "title": "Weight Uncertainty in Neural Networks",
+   "authors": "Blundell et al.",
+   "year": 2015,
+   "venue": "ICML 2015",
+   "arxiv": "1505.05424",
+   "url": "https://arxiv.org/abs/1505.05424",
+   "claim": "Bayes by Backprop learns a factorized Gaussian posterior over the weights by minimizing the variational free energy with reparameterized Monte-Carlo gradients. This gives principled weight uncertainty using ordinary backpropagation.",
+   "relevance": "BLoB applies this variational objective to the LoRA factor A. This makes the adapter a probability distribution over updates (a Kleisli-style lift of the additive-update functor) rather than a single point, which is the template for uncertainty-aware PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/1505.05424",
+    "https://arxiv.org/html/2406.11675"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Charles Blundell, 2015-05-20; ICML 2015 confirmed by the arXiv comment ('Proceedings of the 32nd ICML'). Claim matches the paper (diagonal Gaussian, reparameterized MC gradients of the variational free energy) and BLoB Sec. 2."
+  },
+  {
+   "id": "revnet",
+   "title": "The Reversible Residual Network: Backpropagation Without Storing Activations",
+   "authors": "Gomez et al.",
+   "year": 2017,
+   "venue": "NeurIPS 2017",
+   "arxiv": "1707.04585",
+   "url": "https://arxiv.org/abs/1707.04585",
+   "claim": "Additive coupling blocks (y_1 = x_1 + F(x_2), y_2 = x_2 + G(y_1)) are exactly invertible. Activations can therefore be recomputed from the outputs during backpropagation, and activation memory becomes independent of depth.",
+   "relevance": "MEFT builds directly on this result. Reversibility makes each layer an isomorphism in the category of hidden-state spaces, which lets memory-efficient PEFT trade cached activations for recomputation.",
+   "sources": [
+    "https://arxiv.org/abs/1707.04585",
+    "https://arxiv.org/html/2306.00477"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Aidan N. Gomez, 2017-07-14; NeurIPS (NIPS) 2017 confirmed by DBLP conf/nips/GomezRUG17 (pp. 2214-2224). Additive coupling y1=x1+F(x2), y2=x2+G(y1) is the paper's block; MEFT cites it as [41]."
+  },
+  {
+   "id": "laser-layer-selective-rank-reduction",
+   "title": "The Truth is in There: Improving Reasoning in Language Models with Layer-Selective Rank Reduction",
+   "authors": "Sharma et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2312.13558",
+   "url": "https://arxiv.org/abs/2312.13558",
+   "claim": "LASER removes the higher-order (small singular value) components of specific weight matrices in specific layers after training. This can improve LLM reasoning and factuality without any gradient updates, so small-singular-value directions often hold noise.",
+   "relevance": "LASER is the spectral precursor of Spectrum's SNR-based layer selection. With PiSSA, MiLoRA and LoRA-Dash, it shows that the singular spectrum of W_0 is a natural coordinate system in which to place, prune or select PEFT updates.",
+   "sources": [
+    "https://arxiv.org/abs/2312.13558",
+    "https://openreview.net/forum?id=ozX92bu8VA",
+    "https://arxiv.org/html/2406.06623"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Pratyusha Sharma, 2023-12-21; ICLR 2024 confirmed in proceedings.iclr.cc (2024 list) and Semantic Scholar. Spectrum cites LASER as the SNR/denoising precedent (Sec. 2)."
+  },
+  {
+   "id": "taylor-importance-pruning",
+   "title": "Importance Estimation for Neural Network Pruning",
+   "authors": "Molchanov et al.",
+   "year": 2019,
+   "venue": "CVPR 2019",
+   "arxiv": "1906.10771",
+   "url": "https://arxiv.org/abs/1906.10771",
+   "claim": "The squared first-order Taylor term (\\partial\\mathcal{L}/\\partial W \\cdot W)^2, accumulated over groups, is an accurate and cheap estimate of the loss change from removing a parameter or filter.",
+   "relevance": "LoRAPrune's criterion reuses this Taylor score but takes the gradient through the LoRA factors. That makes the same low-rank adapter both the update and a probe of the backbone's local geometry.",
+   "sources": [
+    "https://arxiv.org/abs/1906.10771",
+    "https://arxiv.org/html/2305.18403"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv API: title, first author Pavlo Molchanov, 2019-06-25; CVPR 2019 confirmed by DOI 10.1109/CVPR.2019.01152 (pp. 11256-11264). LoRAPrune Eq. 3 is exactly (∂L/∂W_ij · W_ij)^2 citing Molchanov et al. (2019)."
+  }
+ ],
+ "notes": "All 8 requested methods exist and are distinct from catalog entries, so none was skipped. Venues: ModuLoRA TMLR 2024, SLTrain NeurIPS 2024 poster, MEFT NeurIPS 2023, BLoB NeurIPS 2024 and LoRAPrune Findings of ACL 2024 were checked on OpenReview. LoRA-Dash was first released as arXiv 2409.01035v1, 'Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning' (ICLR 2025 poster). The same arXiv id now hosts an extended TPAMI 2026 version with a new title, 'Task-Specific Directions: Definition, Exploration, and Utilization in Parameter Efficient Fine-Tuning'. It adds the LoRA-Init and LoRA-TSD variants, which are covered in identity_at_init rather than as separate entries. Spectrum (arXiv only) and the LCM-LoRA technical report (arXiv only) have no peer-reviewed venue. Spectrum's formula follows the official code: threshold sigma_hat*(1+sqrt(beta)) with sigma_hat = IQR/1.349, SNR normalized by sigma_max, and the top p% chosen per module type. Its Axolotl plugin (axolotl.integrations.spectrum) was confirmed. LCM-LoRA is marked hf_peft=true only because its weights are plain LoRA loaded and combined through diffusers' PEFT backend; PEFT has no LCM-specific config. Its results_note is empty because the report gives only qualitative figures, with no quantitative benchmark. ModuLoRA is marked hf_peft=false. HF PEFT does support LoRA on GPTQ/AQLM/HQQ-quantized bases, which is close in spirit, but it does not implement ModuLoRA's quantizer-agnostic recompute-in-backward design. SLTrain: the paper does not say how the sparse factor is initialized for fine-tuning (SLTrain-FT), so identity at init is not guaranteed by the text. SLTrain's main contribution is pretraining; fine-tuning is in Appendix G. MEFT's trainable_params (~4dr per layer) is derived from the architecture (two bottleneck adapters per layer), not quoted from the paper. Dangling relation targets for catalog gaps: 'laplace-lora' (Yang et al., 'Bayesian Low-rank Adaptation for Large Language Models', arXiv 2308.13111, ICLR 2024, the main baseline BLoB compares against) and 'llm-pruner' (Ma et al., arXiv 2305.11627, NeurIPS 2023). Both would be worth adding to the catalog. Web search budget was exhausted during this batch. Verification relied on arXiv full text and the arXiv API, the OpenReview API, GitHub raw files and the diffusers docs.",
+ "verification_summary": "Adversarially verified on 2026-10-01: 8 methods and 4 papers, none dropped. All 12 arXiv ids (plus 2308.13111 Laplace-LoRA and 2305.11627 LLM-Pruner, the two dangling relation targets) were batch-checked against the arXiv API for title, first author and first-version year; all match. Venues confirmed via arXiv comments, Semantic Scholar/DBLP keys, ACL Anthology (LoRAPrune, Findings ACL 2024) and proceedings.iclr.cc (LoRA-Dash ICLR 2025, LASER ICLR 2024); Spectrum and LCM-LoRA remain arXiv-only. Every formula and parameter count was re-checked against the arXiv HTML full text, and official code was read where init or parametrization was in doubt (LoRAPrune, SLTrain, Spectrum, LoRA-Dash, diffusers LCM-LoRA script, released LCM-LoRA safetensors headers). HF PEFT claims checked against huggingface/peft main (v0.21.1, 2026-09-29): none of BLoB, LoRAPrune, ModuLoRA, SLTrain, MEFT, Spectrum or LoRA-Dash has a tuner; LCM-LoRA is a plain LoraConfig adapter. Key fixes: SLTrain does not beat GaLore (worse at 130M-1B); Spectrum always unfreezes embeddings and lm_head and its repo moved to QuixiAI/spectrum; LCM-LoRA also adapts convolutions (r=64); MEFT formula now states the fixed scalings and MEFT3's no-swap, OPT result restated; LoRAPrune memory figure attributed to the right comparison; relations: blob->asylora removed (not cited, different asymmetry), lcm-lora->pem-arithmetic retyped builds-on, notes fixed for loraprune->qlora, sltrain->dsee, lcm-lora->ziplora. Dangling targets laplace-lora and llm-pruner are kept (justified, canonical slugs) and should be added to the catalog. Web search budget was exhausted; OpenReview pages were behind a bot challenge, so OpenReview-only checks were replaced by proceedings/DBLP/Semantic Scholar evidence."
+}

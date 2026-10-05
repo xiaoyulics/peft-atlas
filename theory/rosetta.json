@@ -1,0 +1,182 @@
+[
+ {
+  "peft": "pretrained checkpoint",
+  "category": "base point theta0: 1 -> Theta; a pointed 1-cell (Theta, theta0, f) of Para(Diff)",
+  "explanation": "Fine-tuning moves a point; everything is measured relative to it (Def I.1)."
+ },
+ {
+  "peft": "PEFT method",
+  "category": "object of the pointed slice Meth(Theta,theta0) = Diff_*/(Theta,theta0), equivalently the opposite of the pointed coslice of reparametrisation 2-cells under F",
+  "explanation": "A method is a pointed map rho:(Q,q0)->(Theta,theta0). The slice depends only on (Theta,theta0); Para is bookkeeping for weight-space methods (Remark I.3)."
+ },
+ {
+  "peft": "\"method N can do whatever M can\"",
+  "category": "morphism (simulation) h: M -> N with rho_N o h = rho_M",
+  "explanation": "Smooth simulations also carry parameter paths; at the level of sets they reduce to image inclusion (Obs I.4)."
+ },
+ {
+  "peft": "frozen model / full fine-tuning",
+  "category": "initial / terminal object",
+  "explanation": "Every weight-space method lies in the interval [frozen, full FT]; adapters, prefixes and ReFT are extensions, not objects of Meth (Obs I.4)."
+ },
+ {
+  "peft": "merging an adapter into the weights",
+  "category": "the canonical morphism to the terminal object (it is rho itself); for extensions, a lift along the realisation Phi_f",
+  "explanation": "For weight-space methods merging is definitional; for extensions zero inference overhead is a lifting problem, certified box-locally by rewriting (sufficient conditions and box-local obstructions) under side conditions such as position-uniformity, no weight sharing and bias slots (Thm VI.3)."
+ },
+ {
+  "peft": "expressivity / effective number of parameters",
+  "category": "image germ of rho at theta0; its dimension d(M) = generic rank of d rho",
+  "explanation": "Rank is a cut invariant; dimension is a volume invariant (Thm II.10, Prop II.12)."
+ },
+ {
+  "peft": "lazy / NTK-regime capability",
+  "category": "first-order image S1 = d rho_{q0}(T Q), a functorial isomorphism invariant",
+  "explanation": "The lazy kernel has range J_f(S1); S1 separates zero-init pointings (T_A vs T_B, the row space of A0) that the image cannot, while the image already separates split inits (Obs I.6)."
+ },
+ {
+  "peft": "zero-init vs PiSSA-type init",
+  "category": "apex (singular vertex) vs smooth point of the image; Type I (new q0 in the apex fibre) vs Type II (new rho by splitting)",
+  "explanation": "Zero-init loses r(n-r) first-order directions; split inits are different objects, incomparable with LoRA (Thm II.2, Prop III.8)."
+ },
+ {
+  "peft": "the zoo of LoRA initialisations",
+  "category": "points of three distinguished strata of full-rank pointings, classified as a set by Gr(r,n) disjoint-union Gr(r,m) disjoint-union M_r",
+  "explanation": "Vanilla LoRA on linear layers, EVA, Init[B], HF's default LoRA on embedding layers, PiSSA, MiLoRA, OLoRA, CorDA, LoRA-GA and Astra are points; LoRA-FA and MiCA are frozen-factor sub-objects of the zero-B and zero-A strata; HF's 'orthogonal' init lies outside the three strata, and LoftQ/QLoRA are defect pointings. The optimizer sees a finer quotient (Thm II.2, Cor III.13)."
+ },
+ {
+  "peft": "no init buys rank above 2r",
+  "category": "union over pointings of theta0 + (C - C) = theta0 + M_{<=2r}",
+  "explanation": "An exact initialisation picks a translate of the shape; from any starting point the update has rank at most 2r. This is the known rank-2r PiSSA-to-LoRA conversion (Thm II.1)."
+ },
+ {
+  "peft": "redundant parameters",
+  "category": "gauge group = automorphisms of Q over Theta; generic fibre",
+  "explanation": "LoRA wastes r^2 parameters; LoHa wastes r1^2 + r2^2 + m + n - 1 below the mn cap, and more where the cap binds (Prop II.12)."
+ },
+ {
+  "peft": "high-rank PEFT (LoHa, LoKr, HiRA, MoRA, C3A)",
+  "category": "tensor networks whose min-cut avoids the bond; transport of structure along GL(Theta)",
+  "explanation": "High rank is not GL(Theta)-invariant (though rank is GL_m x GL_n-invariant) and need not mean large volume; a large min-cut is necessary, not sufficient (Thms II.10-II.11, Prop II.13)."
+ },
+ {
+  "peft": "Kronecker adapters (unconstrained Kronecker sums, KronA, LoKr)",
+  "category": "LoRA across a different cut of the same 4-leg tensor (Van Loan-Pitsianis rearrangement, a coordinate permutation)",
+  "explanation": "For aligned splits (equal square splits, and every split HF PEFT's factorisation produces), a generic rank-one update has maximal Kronecker rank, so unconstrained Kronecker sums with fewer terms and LoRA_r below the rank of a full-rank Kronecker product are incomparable. LoKr with inner rank r' sits inside LoRA_r only when r >= min(m1,n1) r'; Compacter's PHM weights live in a nonlinear adapter (Thm II.11)."
+ },
+ {
+  "peft": "\"new method = old method\"",
+  "category": "transport T_* along T in GL(Theta): an automorphism of the category, not an arrow inside it",
+  "explanation": "FourierFT (up to sampled conjugate pairs), WaveFT, C3A, LoRA-XS, SVFT and SHiRA are coordinate masks in transported frames; for LoRA-XS, SVFT and HiRA the frame depends on theta0 (Prop II.13)."
+ },
+ {
+  "peft": "orthogonal fine-tuning preserves knowledge",
+  "category": "the image lies in a fibre of the complete invariant W -> W W^T (first fundamental theorem for O(n))",
+  "explanation": "In exact arithmetic, exactly orthogonal methods (OFT with an exact Cayley map, strict GOFT without its default scaler, HRA) can never change the spectrum or neuron angles, however often they are merged; HF's default Cayley-Neumann OFT is only approximately orthogonal (Cor II.6)."
+ },
+ {
+  "peft": "HRA bridges LoRA and OFT",
+  "category": "image-level meet with the rotation orbit: (W0 + M_{<=r}) cap W0 SO(n) for injective W0 and even r, not a product of methods",
+  "explanation": "Exactly orthogonal (exact-Cayley) OFT is strictly smaller, and HF's default Cayley-Neumann OFT is incomparable; HRA's paired identity init is an apex: the germ is the skew-determinantal cone (Thm II.7)."
+ },
+ {
+  "peft": "LoRA-XS",
+  "category": "categorical product FA(A0) x FB(B0) of the two one-sided LoRAs",
+  "explanation": "The overlap that a split init double-counts (Prop I.8, Prop II.3)."
+ },
+ {
+  "peft": "DoRA's magnitude/direction decoupling",
+  "category": "diagonal saturation Diag_m . (W0 + M_{<=r}), the image of LoRA followed by a trainable output scale",
+  "explanation": "Equal images. Under gradient flow the exact gradient changes the metric and the detached backward is a non-gradient update; under AdamW the magnitude coordinates matter too (Prop II.8)."
+ },
+ {
+  "peft": "(IA)^3, SSF, LN tuning, RoAd, HiRA",
+  "category": "rungs of the Hadamard-torus ladder W0 (.) (J + Z); RoAd_1 is the complex torus (C^x)^{m/2}, RoAd_2/4 are block-GL_2",
+  "explanation": "Zeros of W0 stay zero; covariance Mon x GL on output-scaled boxes, GL x Mon on down_proj, never GL x GL (Prop II.9)."
+ },
+ {
+  "peft": "\"the geometry a method lives in\"",
+  "category": "covariance group G_M (Klein): the largest (g,h) with Im M(g W0 h^{-1}) = g Im M(W0) h^{-1}",
+  "explanation": "Descent depends on whether each induced pair (g,h) lies in G_M, a question of side for one-sided methods and of group for coordinate-structured ones. LoRA and (IA)^3 (HF defaults) provably keep their reachable function sets under a global residual rotation of a gain-fused pre-norm model; block OFT, LoHa (r >= 2), HiRA and masks fail the sufficient condition (Obs II.15, Conj A)."
+ },
+ {
+  "peft": "how a method trains",
+  "category": "induced cometric K = D rho Lambda D rho^T (pulled-back gradient of the lens)",
+  "explanation": "Two isomorphic objects can train differently; gradient descent is natural exactly where cometrics agree, which for LoRA's linear gauge means O(r) (Thm III.3)."
+ },
+ {
+  "peft": "balancedness B^T B = A A^T",
+  "category": "Noether charge of the non-compact half Sym_r of gl_r; the Kempf-Ness slice of the gauge action",
+  "explanation": "Conserved under gradient flow for any cotangent signal of the form Lambda D rho^T gamma (DoRA's detached norm, clipping), after Zhao et al. 2023 (Thm III.5, Prop III.7)."
+ },
+ {
+  "peft": "LoRA+ ratio, alpha, init scale, rsLoRA",
+  "category": "coordinates on the orbit space of a hyperparameter torus",
+  "explanation": "Under Adam with eps=0, no weight decay, no clipping and a shared schedule, LoRA+ with ratio lambda is exactly LoRA with alpha times lambda (the LoRA case is Schulman et al. 2025); rsLoRA is isomorphic to LoRA (Thm III.10, Cor III.11)."
+ },
+ {
+  "peft": "transformation-invariant optimizer (Riemannian preconditioning, ScaledGD, LoRA-Pro, LoRA-RITE)",
+  "category": "update rule equivariant under the whole gauge GL_r, so it descends to the quotient M_r",
+  "explanation": "Undamped scaled GD and LoRA-RITE (on the full-rank locus) are GL_r-equivariant at the parameter level; damped variants and LoRA-Pro's step are O(r)-equivariant, and Adam sees only B_r (Prop III.4, Thm III.12)."
+ },
+ {
+  "peft": "GaLore vs LoRA",
+  "category": "cotangent-side vs tangent-side lens 2-cells; they coincide for linear charts (degree-one collapse)",
+  "explanation": "GaLore = one-sided LoRA with a moving frame, with optimizer state carried across re-basings (not transported) (Prop IV.2, credited to Torroba-Hennigen et al. 2025)."
+ },
+ {
+  "peft": "when is a gradient-projection method really a reparametrisation",
+  "category": "Frobenius integrability of the anchor distribution",
+  "explanation": "Every practical cotangent method has a theta-independent anchor within its period, hence affine leaves, and is a rebasing scheme of a linear forward method (Prop IV.2); Frobenius integrability matters only for theta-dependent anchors such as full-batch GaLore with T=1 (Prop IV.3)."
+ },
+ {
+  "peft": "activation memory",
+  "category": "backward reach of the composite lens (the backprop cone)",
+  "explanation": "An upper bound: LST avoids the backbone's backward pass; LoRA-FA stores A0 x; LISA's cone is the whole network because its embedding is always trained, though its frozen layers still drop their linear-input residuals; MeZO has no reverse pass (Obs IV.4)."
+ },
+ {
+  "peft": "QLoRA / LoftQ",
+  "category": "base change along a map that does not preserve the function; pointing defect; approximate section",
+  "explanation": "Split-then-quantise, quantise-then-fit (LoftQ's default, whose HF init ignores the LoRA scale) and quantise-split-requantise leave three different defects (Prop V.2)."
+ },
+ {
+  "peft": "ReLoRA, re-OFT, iterated BOFT/HRA",
+  "category": "the monoid (or Lie subgroup) generated by the reachable displacements",
+  "explanation": "ReLoRA reaches exactly M_{<=Kr}; exact-Cayley block OFT is stuck; iterated BOFT reaches SO(n) only at full butterfly depth; re-HRA reaches (W0 + M_{<=Kr}) cap W0 SO(n) (Thm V.3)."
+ },
+ {
+  "peft": "task arithmetic vs TIES/DARE",
+  "category": "GL(Theta)-natural vs coordinatewise operations (TIES: homotheties times signed permutations; DARE: the monomial group)",
+  "explanation": "Coordinate merges depend on the basis; factor-space merges depend on the gauge (Prop V.4)."
+ },
+ {
+  "peft": "LoraHub / Poly factor mixing",
+  "category": "a rule on factors that is not invariant under prod GL_r, hence not a function of the adapters",
+  "explanation": "Post-hoc LoraHub (and HF's 'linear' combination) needs a joint gauge fixing that produces a shared factor (KnOTS) or a shared frozen factor (FFA-LoRA); Poly/MHR are trained jointly and have only the diagonal GL_r symmetry (Prop V.4)."
+ },
+ {
+  "peft": "adapters (Houlsby, parallel), LLaMA-Adapter, LoReFT",
+  "category": "pointed extensions: function-preserving embeddings with a neutral point",
+  "explanation": "LoReFT is LoRA on an inserted affine identity box (bias confined to col B), applied at selected positions; pyreft's default init is not neutral (Prop VI.4)."
+ },
+ {
+  "peft": "prompt / prefix tuning",
+  "category": "unpointed extensions on the sequence wire",
+  "explanation": "Prefix = gated parallel adapter (attention = monoid homomorphism followed by a perspective map); content-attention ratios are rigid only within the layer where the prefix acts; prompt tuning maps into deep prefix tuning in causal decoders (Thm VI.5)."
+ },
+ {
+  "peft": "privileged neuron basis",
+  "category": "automorphism group of the elementwise activation (the sigma-spider)",
+  "explanation": "For ungated FFNs: permutations for GELU/SiLU, signed permutations for tanh, positive monomials for ReLU; gated FFNs (SwiGLU, GeGLU) have the full monomial group (Lemma VI.2)."
+ },
+ {
+  "peft": "RoSA, GraLoRA, HF 'cat' merges, ReLoRA stages",
+  "category": "words in the convolution monoidal product (+) of additive methods (Minkowski sum of images)",
+  "explanation": "(+) is not the categorical product, whose image is the intersection when it exists. LoRA-soup CAT is a (+) of frozen line methods (a span), and UniPELT/MAM are not (+)-words (Obs I.7)."
+ },
+ {
+  "peft": "target_modules / applying a method to every layer",
+  "category": "assigning a 2-cell to each generator box and composing horizontally; T-points for routing, tasks and tenants",
+  "explanation": "Non-local methods (VB-LoRA, Compacter, FacT, Uni-LoRA) share parameters across boxes and are not generator-wise."
+ }
+]

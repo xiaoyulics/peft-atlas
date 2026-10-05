@@ -1,0 +1,51 @@
+{
+ "hash": "81f23ceb1147eb01",
+ "seconds": 34.88,
+ "pauses": [
+  [
+   0.0,
+   0.283
+  ],
+  [
+   1.667,
+   2.178
+  ],
+  [
+   4.022,
+   4.388
+  ],
+  [
+   7.684,
+   8.576
+  ],
+  [
+   12.08,
+   12.483
+  ],
+  [
+   14.269,
+   14.549
+  ],
+  [
+   19.216,
+   20.027
+  ],
+  [
+   24.514,
+   24.786
+  ],
+  [
+   26.269,
+   26.934
+  ],
+  [
+   30.385,
+   30.972
+  ],
+  [
+   34.533,
+   34.88
+  ]
+ ],
+ "text": "Here's the surprise. The gauge is a whole group, but the usual optimizers respect only part of it. Gradient descent respects the rotations and reflections. Adam respects far less: only the signed permutations, which shuffle the r channels and flip their signs. <short pause> Start Adam from two initialisations related by a generic rotation, and the runs drift apart. Relate them by a signed permutation, and they stay identical. The optimizer sees more of where you start than the image does."
+}

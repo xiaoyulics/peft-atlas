@@ -1,0 +1,440 @@
+% Appendix E: numerical checks and reproducibility.
+% Sources: theory/framework_checks.py (= anc/framework_checks.py), run on 2 October 2026 (output reproduced in
+% Table tab:repro-checks); site/SPEC.md, site/js/core.js and the header comments of site/js/fig-*.js;
+% site/sections/14-cite.html (colophon, "Reproducing the numbers"); paper/figures/src/*.py.
+\section{Numerical checks and reproducibility}\label{app:repro}
+
+Claims marked [Num] in the main text are numerical checks and are not counted as proved. Most of them are re-run by one
+script, \texttt{framework\_checks.py}, one of the data files that accompany this paper. This appendix says what the script
+computes and how to read its output (\S\ref{app:repro-script}), lists every check with the result it supports and the
+value it prints (\S\ref{app:repro-checks}, Table~\ref{tab:repro-checks}), names the few numbers of the main text that
+come from elsewhere (\S\ref{app:repro-other}), records the software (\S\ref{app:repro-software}), describes how
+the companion site and the figures of this paper compute what they show (\S\ref{app:repro-site}), and gives the
+settings and values behind each figure (\S\ref{app:repro-figures}).
+
+\subsection{The script}\label{app:repro-script}
+
+The script runs with \texttt{python3 framework\_checks.py} and needs PyTorch \citep{xpaszke2019pytorch}, NumPy
+\citep{xharris2020array} and SciPy \citep{xvirtanen2020scipy}. It works in float64 throughout
+(\texttt{torch.set\_default\_dtype(torch.float64)}) and on the CPU. It seeds PyTorch's generator at the start and again
+before several checks, so that a run prints the same numbers every time on a given machine. On a laptop (Apple M5) it
+finishes in about $50$ seconds.
+
+It computes three kinds of quantity.
+\begin{itemize}
+  \item \emph{Dimensions.} The expressive dimension $d(M)$ of a method is the generic rank of its Jacobian
+  (\bgref{C.3}). The script forms the Jacobian of $\rho$ by automatic differentiation
+  (\texttt{torch.autograd.functional.jacobian}) at a random point, or at the base point when it measures a first-order
+  image $S_1$, and counts the singular values above $10^{-9}$ times the largest. The points of lower rank have measure
+  zero (\bgref{C.21}, \bgref{C.22}), so this computes the generic rank with probability one, up to the tolerance.
+  \item \emph{Optimizer runs.} Adam, decoupled weight decay and gradient descent are written out step by step, with the
+  bias correction and the convention $0/0=0$ at $\varepsilon=0$, so that nothing is hidden in a library default. Gradient
+  flows are integrated by explicit Euler steps or by the classical fourth-order Runge--Kutta method.
+  \item \emph{Identities and defects.} An identity or an equivariance is tested by computing both sides and printing the
+  Frobenius norm of their difference.
+\end{itemize}
+Each line prints a value beside its prediction. Some lines are controls, cases in which the theory predicts that an
+identity fails; they show that the test would detect a failure.
+
+\paragraph{How sharp the rank decisions are}
+The script takes $45$ Jacobian ranks. In every one of them the smallest singular value it keeps is at least
+$3.9\times10^{-3}$ times the largest, and the largest singular value it discards is at most $4.3\times10^{-16}$ times the
+largest, which is rounding error. The threshold $10^{-9}$ lies more than six orders of magnitude from both, so no rank in
+Table~\ref{tab:repro-checks} depends on its choice. We measured these margins with a copy of the script whose rank
+function also records the two ratios; the copy prints the same output.
+
+\paragraph{What changes between machines}
+The ranks and dimensions are integer decisions taken with the margins above, and the exact zero of check~3 comes from
+rescaling by a power of two, which is exact in IEEE arithmetic. These outputs are expected to be the same on any machine.
+Values of order $10^{-15}$ are rounding errors, and their leading digits change with the processor and the
+linear-algebra library. Values of order one depend on the random draws, which follow from the seeds.
+
+\subsection{The checks, section by section}\label{app:repro-checks}
+
+The script has thirteen sections. Sections 1 to 11 are the numerical claims of the framework, section 12 re-runs the
+main numbers of the first referee round, and section 13 those of the second. Table~\ref{tab:repro-checks} lists every
+check in the script's order, with the result it supports, what it computes and what it prints in the run of
+2 October 2026. Every printed value agrees with its prediction, and every control fails, by amounts between
+$1.6\times10^{-2}$ and $52$. Matrix shapes are written $(m,n,r)$ for an $m\times n$ weight and rank $r$; a defect is the
+Frobenius norm of the difference between the two sides of the identity tested.
+
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.12}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.9cm}>{\raggedright\arraybackslash}p{1.85cm}%
+>{\raggedright\arraybackslash}p{6.2cm}>{\raggedright\arraybackslash}p{5.75cm}@{}}
+\caption{The checks of \texttt{framework\_checks.py}, in the script's order, with the result each one supports, what it
+computes, and what it prints. Controls are cases in which the theory predicts a failure.}\label{tab:repro-checks}\\
+\toprule\headrow
+\textbf{Check} & \textbf{Supports} & \textbf{What the script computes} & \textbf{What it prints}\\\midrule
+\endfirsthead
+\toprule\headrow
+\textbf{Check} & \textbf{Supports} & \textbf{What the script computes} & \textbf{What it prints}\\\midrule
+\endhead
+\bottomrule\endlastfoot
+\multicolumn{4}{@{}l}{\sffamily\bfseries\color{tide}Sections 1--11: the numerical claims of the framework}\\[1pt]
+1 & \thmref{Thm}{II.7}(b) &
+HRA$_r$ without Gram--Schmidt, $u\mapsto W_0H(u_1)\cdots H(u_r)$, with an injective $W_0\in\R^{(n+2)\times n}$. Jacobian
+rank at a random point, and at HF's paired initialisation ($u_{2i-1}=u_{2i}$, so $k=r/2$ distinct vectors). &
+At $(n,r)=(9,2)$, $(9,4)$, $(10,2)$, $(10,4)$, $(12,6)$: generic $15$, $26$, $17$, $30$, $51$, equal to $rn-r(r+1)/2$;
+paired $8$, $15$, $9$, $17$, $30$, equal to $kn-k(k+1)/2$.\\
+2 & \thmref{Thm}{III.12}(b) &
+The first Adam step from zero state with $\varepsilon=0$ is sign descent. Its first-order weight update $dB\,A+B\,dA$ at
+$(B,A)$ and at $(Bg,g^{-1}A)$, $(m,n,r)=(6,5,3)$. &
+Defect $1.4\times10^{-15}$ for a signed permutation $g$. Controls: $11.3$ for $g=\diag(2,0.5,3)$ and $6.6$ for a random
+rotation. With per-channel rates $(\eta_Bd_j,\eta_A/d_j)$ the diagonal $g=\diag(d)$ gives $5.0\times10^{-16}$.\\
+3 & \thmref{Cor}{III.11}, \thmref{Thm}{III.10} &
+$200$ steps of bias-corrected Adam with $\varepsilon=0$ on a least-squares toy ($W_0\in\R^{7\times6}$, $r=2$, $B_0=0$):
+LoRA+ with ratio $\lambda=8$ and scale $s$, against LoRA with scale $\lambda s$ and equal rates. &
+Largest weight difference over the whole trajectory $0.0$, exactly, since $\lambda$ is a power of two. Control without
+the rescaling: $0.93$.\\
+4 & \thmref{Prop}{II.12} &
+GraLoRA with $k\times k$ blocks of rank $r/k$: Jacobian rank, and the rank of $\Delta W$ at a random point. &
+At $(m,n,r,k)=(8,8,4,2)$, $(12,8,4,2)$, $(12,12,6,3)$: dimension $48$, $64$, $108$, equal to $r(m+n-r)$; rank of $\Delta
+W$ $8$, $8$, $12$, against LoRA's cap $4$, $4$, $6$.\\
+5 & \thmref{Prop}{II.12} &
+LoHa$_{r,r}$, $(B_1A_1)\odot(B_2A_2)$: Jacobian rank. &
+At $(m,n,r)=(8,7,2)$, $(12,10,2)$, $(12,10,3)$: $38$, $59$, $93$, equal to the bound $2r(m+n-r)-(m+n-1)$.\\
+6 & \thmref{Cor}{III.6}(b) &
+Euler integration ($h=10^{-4}$, $T=2$) of LoRA's gradient flow with decay $\lambda=0.5$ at $(m,n,r)=(5,4,2)$; the final
+charge $\Phi$ against its closed form. &
+Coupled decay at $\eta_B/\eta_A=4$ against $e^{-2\eta_A\lambda t}\Phi(0)$: relative error $10.7$ (control). Coupled decay
+at $\eta_A=\eta_B$: $2.5\times10^{-4}$. Per-time decay at $\eta_B/\eta_A=4$ against $e^{-2\lambda t}\Phi(0)$:
+$2.3\times10^{-4}$. Both are integrator errors.\\
+7 & \thmref{Thm}{III.3}, \thmref{Prop}{III.4} &
+At a random point, $(m,n,r)=(7,6,2)$, under a generic $g\in\GL_2$: the plain-GD cometric $GA\T A+BB\T G$ and the
+undamped scaled-GD cometric; and LoRA-Pro's update $\Pi=P_UG+GP_V-P_UGP_V$ paired with a random tangent vector
+$T=XA+BY$. &
+Gauge defect $52.3$ for plain GD (control) and $1.1\times10^{-14}$ for scaled GD, which equals $P_UG+GP_V$ to
+$8.7\times10^{-16}$. $\langle G-\Pi,T\rangle=0.0$, so $\Pi$ is the orthogonal projection onto the tangent space.\\
+8 & \thmref{Thm}{V.3} &
+The span of $200$ random VeRA updates $\diag(b)\,B\,\diag(d)\,A$ with frozen $B$ and $A$, $(m,n,r)=(6,5,2)$. &
+Dimension $12=mr$: the span is $\{XA\}$, the reach of re-merged VeRA.\\
+9 & \thmref{Prop}{II.9} &
+RoAd$_1$ at $m=8$, one angle and one scale per output pair acting on $W_0$ by $2\times2$ blocks: Jacobian rank. &
+$8=m$, the number of parameters: an injective map with an $m$-dimensional image.\\
+10 & \thmref{Prop}{II.3} &
+The rank of $(dB,dA)\mapsto dB\,A+B\,dA$ with $\rk A=r_A$ and $\rk B=r_B$, at $(m,n,r)=(7,6,3)$. &
+$(r_A,r_B)=(3,0)$, $(3,3)$, $(2,1)$: $21$, $30$, $18$, equal to $mr_A+nr_B-r_Ar_B$.\\
+11 & \thmref{Thm}{V.3} &
+The product of two rotations, each a product of two reflections in $\R^8$, as in two cycles of HRA$_2$. &
+$\rk(R_1R_2-I)=4\le2+2$: subadditivity, attained.\\[2pt]
+\multicolumn{4}{@{}l}{\sffamily\bfseries\color{tide}Section 12: the first referee round}\\[1pt]
+12a & \thmref{Prop}{II.8} &
+DoRA as in HF PEFT, $\diag(\mu_i/\lVert V_i\rVert)\,V$ with $V=W_0+BA$: Jacobian rank. &
+$9=mn$ at $(3,3,2)$, where $r(m+n-r)+m=11$; $36$ at $(8,8,2)$, matching the formula; $24$ for a rank-one $W_0$ at
+$(6,6,2)$, equal to $r(m+n-r)+m-r$.\\
+12b & \thmref{Prop}{II.12} &
+The rank of GraLoRA's $\Delta W$ at a random point. &
+$8=\min(kr,m,n)$ at $(16,16,4,2)$; $12=\min(m,n)$ at $(12,12,6,3)$.\\
+12c & \thmref{Prop}{II.12} &
+LoHa at $(4,4,2)$: Jacobian rank. &
+$16=mn$, where the bound gives $17$.\\
+12d & \thmref{Prop}{VI.4} &
+LoReFT on $d=6$ with $r=2$, $(R,W,b)\mapsto\big(I+R\T(W-R),\,R\T b\big)$ with the rows of $R$ orthonormalised: Jacobian
+rank. &
+$22=r(2d+1-r)$, against $26$ for LoRA$_r$ with a free bias.\\
+12e & \thmref{Prop}{VI.4}(b) &
+The serial adapter $(I+UD)W_0$ at $(m,n,r)=(5,3,1)$: Jacobian rank. &
+$7$, equal to LoRA's $r(m+n-r)$, since this $W_0$ is injective.\\
+12f & \thmref{Prop}{II.12}, \thmref{Prop}{II.13} &
+FourierFT atoms: the real parts of inverse two-dimensional DFTs of single frequencies on $8\times8$. &
+The frequencies $(1,2)$ and $(7,6)$ give the same atom; three frequencies containing one conjugate pair span $2$
+dimensions.\\
+12g & \thmref{Cor}{II.6}, \thmref{Thm}{V.3} &
+HF's default Cayley--Neumann factor $R=I+2Q+2Q^2+2Q^3+Q^4$ for a skew $Q$ of block size $8$ with entries of size about
+$0.07$; then $200$ successive merges with entries of size about $0.05$. &
+$\lVert R\T R-(I-Q^4)^2\rVert=4.7\times10^{-16}$ and $\lVert R\T R-I\rVert=1.5\times10^{-2}$. Relative drift of $K_{\rm
+out}$: $0.002$, $0.010$, $0.064$, $0.224$ after $1$, $10$, $50$, $200$ merges.\\
+12h & \thmref{Cor}{II.6} &
+BOFT's $\diag(s)\,W_0R\T$ with an exact Cayley $R$ and $s=(-0.5,1,\dots,1)$. &
+Largest change of a cosine between neurons $1.50$; of an absolute cosine $5.6\times10^{-16}$.\\
+12i & \thmref{Prop}{V.4} &
+DARE with a fixed mask under an invertible diagonal $D$ with signs; TIES (top $20\%$ kept, sign election by total mass)
+under scalings. &
+$\mathrm{DARE}(D\tau)-D\,\mathrm{DARE}(\tau)$: $1.8\times10^{-15}$. TIES: $8.9\times10^{-16}$ for the factor $3.7$,
+$0.0$ for $-2$, and $5.6$ for a generic positive diagonal (control).\\
+12j & \thmref{Prop}{II.16} &
+The whitened split $[W_0L]_rL^{-1}$, the paper-form CorDA split $[W_0C]_rC^{-1}$ and PiSSA's $[W_0]_r$ at
+$(m,n,r)=(6,5,2)$: the defect of $f(W_0h^{-1},hCh\T)$ against $f(W_0,C)h^{-1}$ for an input change $h$. &
+Under $h=3O$, $O\in\Ort(n)$: $2.2\times10^{-15}$, $1.8\times10^{-15}$, $8.1\times10^{-16}$. Under a generic $h$: $1.3\times10^{-15}$,
+$0.63$, $1.1$. Whitened split with damping $C+0.1I$, generic $h$: $0.14$. The whitened split equals $\Pi_rW_0$ to
+$5.3\times10^{-15}$.\\
+12k & \thmref{Thm}{III.12}(b) &
+The first Adam step with $\varepsilon=10^{-8}$ and gradients of size $10^{-6}$, under $g=\diag(0.3,1,4)$ with
+per-channel rates. &
+Relative defect $1.6\times10^{-2}$ with $\varepsilon$ shared (control), $4.9\times10^{-17}$ with $\varepsilon$ rescaled
+per channel.\\
+12l & \thmref{Thm}{III.12} &
+LoRA-Pro's parameter step at $(m,n,r)=(8,7,3)$, $s=1.5$, with the Sylvester-optimal free matrix $X$ and with $X=0$. &
+Non-orthogonal $g$: $1.2$ with the Sylvester $X$, $1.9\times10^{-15}$ with $X=0$. Orthogonal $g$: $1.2\times10^{-15}$
+and $1.4\times10^{-15}$.\\
+12m & \thmref{Thm}{II.2}, \thmref{Prop}{II.3} &
+$\dim S_1$ at $(m,n,r)=(7,5,2)$ for the three strata and for HF's \texttt{orthogonal} initialisation. &
+$\mathrm T_A$: $14=mr$; $\mathrm T_B$: $10=nr$; $\mathrm S$: $20=r(m+n-r)$. Orthogonal init: $\lvert B_0A_0\rvert\le
+3.5\times10^{-18}$ and $\dim S_1=11=m+n-1$, the rank formula at $\rk A_0=\rk B_0=1$.\\
+12n & \thmref{Obs}{I.7}, \thmref{Prop}{I.8}(a) &
+$\dim S_1$ of a standard LoRA$_4$ and of LoRA$_2\oplus{}$LoRA$_2$ with one $A_0$ used twice ($m=7$, $n=6$); the dimension
+of the fibre product of $B\mapsto W_0+BA_0$ and $A\mapsto W_0+B_0A$ at $(6,8,2)$. &
+$28$ against $14$; fibre product $4=r^2$.\\
+12o & \thmref{Prop}{II.13} &
+Two HiRA cycles at $r=1$ on a $6\times5$ weight with no zero entry: the rank of the relative update
+$(W_2-W_0)\oslash W_0$. &
+$3$, above $2r=2$ and equal to $\min(2r+r^2,m,n)$.\\
+12p & \thmref{Thm}{II.11} &
+The Kronecker rank of a generic $uv\T$ for the $2\times4$ split of $\R^8$; the largest rank of a LoKr update $C\otimes
+D$ with $C\in\R^{4\times4}$ and a rank-one $D\in\R^{4\times4}$ over $200$ draws. &
+$4=\min(m_1,m_2)\min(n_1,n_2)$, the largest Kronecker rank for this split; $4$.\\
+12q & \thmref{Thm}{V.3}(c), cor.~4 &
+Connected components of the hypergraph of BOFT blocks of size $b=4$ on $n=64$ coordinates after $m'$ butterfly
+factors. &
+Component sizes $4$, $8$, $16$, $32$, $64$ for $m'=1,\dots,5$: connected only at full depth.\\
+12r & \thmref{Cor}{III.6} &
+A long gradient flow ($T=200$) from $B_0=0$ at $\eta_B/\eta_A=4$, decay $\lambda=0.1$, $(m,n,r)=(12,10,3)$: the final
+sizes of $\mu=B\T B-AA\T$ and of $\Phi$, relative to $B\T B$ and to $B\T B/\eta_B$. &
+Coupled decay: $\mu$ $1.0\times10^{-12}$, $\Phi$ $3.0$. Per-time decay: $\mu$ $0.75$, $\Phi$ $1.4\times10^{-12}$.\\
+12s & \thmref{Cor}{III.13} &
+A $\GL_r$-equivariant example rule, $B\leftarrow B-\eta\,G_B(AA\T)^{-1}$ and $A\leftarrow A-\eta\,AA\T G_A$, for $50$
+steps from $B_0=0$, started at $A_0$ and at $gA_0$. &
+Difference of the final weights $1.8\times10^{-15}$.\\
+12t & \thmref{Thm}{V.3}, cor.~4 &
+The Lie algebra generated by the logarithms of $12$ random HF Cayley--Neumann factors with $b=4$. &
+Dimension $16=\dim\gl(4)$, against $\dim\so(4)=6$. This identifies the generated group only; re-merging reaches a
+monoid (check 13n).\\[2pt]
+\multicolumn{4}{@{}l}{\sffamily\bfseries\color{tide}Section 13: the second referee round}\\[1pt]
+13a & \thmref{Obs}{I.7} &
+$\dim S_1$ at $m=7$, $n=6$ for LoRA$_2\oplus{}$LoRA$_2$ with independent $A_0$'s, for $F(1)\oplus F(2)$, and for a
+standard $F(3)$. &
+$28$; $21$ and $21$.\\
+13b & \thmref{Thm}{II.2}(e) &
+HF's \texttt{orthogonal} initialisation against a $\mathrm T_A$ point at $(m,n,r)=(4,5,2)$. &
+$\dim S_1=8=mr$ for both, but the two first-order images together span $14$ dimensions, so they differ.\\
+13c & \thmref{Cor}{II.6} &
+BOFT with every $s_i<0$; GOFT with its scaler $g=1\pm0.05$; a conformal block $\sqrt2\,\mathrm{Rot}(0.3)$ on two of eight
+inputs; the Cayley--Neumann factor at $\theta=1$ with $b=2$. &
+Cosine change $4.4\times10^{-16}$. GOFT: cosine change $0.044$, relative singular-value change $0.033$, and $K_{\rm out}=
+W_0\diag(g)^2W_0\T$ to $6.1\times10^{-15}$. Conformal block: cosine change $0.19$. $\lVert R\rVert=0$, so $R=0$.\\
+13d & \thmref{Thm}{II.7} &
+The Hurwitz move $H_aH_b=H_{H_ab}H_a$ for reflections in $\R^6$. &
+Defect $4.4\times10^{-16}$.\\
+13e & \thmref{Prop}{II.8} &
+DoRA at $(8,8,2)$ with one magnitude $\mu_i=0$: Jacobian rank. &
+$34$, against $36$ when every $\mu_i\ne0$.\\
+13f & \thmref{Thm}{II.11}(e) &
+The largest rank of a LoKr update $C\otimes BA$ over $50$ draws. &
+$(m_1,m_2,n_1,n_2)=(2,8,8,2)$ with inner dimension $4$: $4$. $(4,2,2,8)$ with inner dimension $5$: $4$. Predicted
+$\min(m_1,n_1)\min(r',m_2,n_2)=4$ and $4$.\\
+13g & \thmref{Prop}{II.12} &
+LoHa$_{r,r}$ against LoRA$_{2r}$; the orbit of LoHa's exhibited gauge; HRA at $r\ge n-1$. &
+$(9,9,3)$: LoHa $73$, LoRA$_6$ $72$. $(4,4,2)$: $16$ and $16$. LoHa at $(4,4,2)$: orbit dimension $15$, fibre dimension
+$16$. HRA at $n=5$: $10$ for $r=4$ and for $r=5$, equal to $\dim\SO(5)$.\\
+13h & \thmref{Prop}{II.13} &
+OFT transported by $T=2I$, through two merge-and-restart cycles of the rotation $-I$ from $\theta_0=(1,0)$; HiRA after
+two cycles at $r=1,2,3$ on a $30\times30$ weight. &
+$\theta_2=(9,0)$, of norm $9$, off the rotation orbit of $\theta_0$. HiRA's relative-update ranks $3$, $8$, $15$, equal
+to $\min(2r+r^2,30)$.\\
+13i & \thmref{Prop}{II.16} &
+Bottom-$r$ splits (CorDA's knowledge-preserving form on $W_0C$; MiLoRA on $W_0$) and whitened splits with absolute
+damping $0.1$ and with trace-relative damping $0.1\tr C/n$, at $(m,n,r)=(7,6,2)$. &
+Under $h=3O$: $3.1\times10^{-15}$, $4.0\times10^{-15}$, $2.3\times10^{-2}$, $3.0\times10^{-15}$. Under a generic $h$:
+$4.9$, $0.34$, $4.6$, $5.9$. At $r=n$, PiSSA under a generic $h$: $3.1\times10^{-14}$.\\
+13j & \thmref{Thm}{III.5} &
+Per-channel rates $\eta_B=(1,1,1)$ and $\eta_A=(1,1,2)$ at $(m,n,r)=(5,4,3)$ on the non-quadratic loss
+$\sum_{ij}\log\cosh W_{ij}-\langle Y,W\rangle$, by Runge--Kutta with $h=10^{-3}$ for $1000$ steps; one discrete GD step. &
+Drift of the charge of channels $1,2$ (equal products $\eta_{B,j}\eta_{A,j}$) $4.2\times10^{-12}$; of the form of
+channels $1,3$, $3.1$. One GD step changes $\Phi$ by $\eta_BAG\T GA\T-\eta_AB\T GG\T B$ to $2.4\times10^{-15}$.\\
+13k & \thmref{Cor}{III.6} &
+One Adam sign step: $\lVert\Delta\Phi\rVert$ divided by the learning rate. &
+$20.9$, $21.1$, $21.1$ at learning rates $10^{-2}$, $10^{-3}$, $10^{-4}$: first order in the step size.\\
+13l & \thmref{Prop}{IV.3} &
+GaLore's field for $T=1$ at $W=\diag(2,1)$ with $L=\lVert W\rVert^2/2$: the Lie bracket of $X_i(W)=u_1(W)e_i\T$ by
+automatic differentiation; the cometric of $B\mapsto BB\T$ at $B$ and at $BR$, $R\in\Ort(2)$. &
+$[X_1,X_2]=-\tfrac13e_2e_1\T$ to six digits, as predicted. Cometric difference $9.5\times10^{-16}$.\\
+13m & \thmref{Prop}{V.2} &
+Blockwise absmax NF4 (blocks of $64$) on $256\times256$ weights with $r=8$: the defects of QLoRA, QPiSSA and one-step
+LoftQ; NF4 under addition. &
+Gaussian $W$: $\lVert e\rVert=0.945$, $\lVert e-\mathrm{SVD}_8(e)\rVert=0.889$, LoftQ with $s=2$: $0.945=\lVert e\rVert$,
+QPiSSA $0.887$. Low rank plus noise: $\lVert e\rVert=0.592$, QPiSSA $0.227$, LoftQ with $s=1$: $0.549$. $96.7\%$ of the
+entries of $\kappa(W)+\kappa(\Delta)$ lie off the NF4 grid.\\
+13n & \thmref{Thm}{V.3}, cor.~4 &
+The operator norm of Cayley--Neumann factors for $2000$ random skew $Q\in\R^{4\times4}$ with $\lVert Q\rVert_{\rm op}\le
+2^{1/4}$; $200$ successive merges on $W\in\R^{6\times8}$. &
+Largest $\lVert R\rVert_{\rm op}$: $1$ to rounding. Largest eigenvalue of $K_{\rm out}(t+1)-K_{\rm out}(t)$:
+$-5.5\times10^{-9}$, so $K_{\rm out}$ decreases in the Loewner order at every merge.\\
+13o & \thmref{Prop}{V.4} &
+Factor-wise DARE on two adapters under a diagonal gauge of one adapter or of both; the LoraHub change formula with three
+modules; the fibre of Poly with $K=3$ skills, $r=2$ and $6\times6$ weights. &
+Gauge on one adapter: $39.5$ (control); on both: $5.6\times10^{-15}$. LoraHub formula: $4.0\times10^{-15}$. Poly fibre:
+$32$ with $2$ tasks, $4=\dim\GL_2$ with $4$ tasks.\\
+13p & \thmref{Thm}{VI.3} (R5) &
+Transposition under RoPE with $d_k=8$: $\langle R_mMq,R_nk\rangle$ against $\langle q,M\T R_{n-m}k\rangle$, and against
+the slide onto the key side, $\langle R_mq,R_nM\T k\rangle$. &
+$2.2\times10^{-16}$; the key-side slide differs by $2.2$ (control).\\
+13q & \thmref{Prop}{VI.4}(b) &
+The serial adapter at $(m,n,r)=(4,8,1)$: Jacobian rank. &
+$7$, against $d(\mathrm{LoRA}_1)=11$: with $m<n$ the update rows stay in $\operatorname{row}W_0$.\\
+\end{longtable}\endgroup
+
+\subsection{Numbers from other sources}\label{app:repro-other}
+
+A few [Num] values in the main text are not printed by the script. They come from the replications that the referees ran
+in the two review rounds, recorded with the review notes of each result, and from the check scripts that accompanied
+the four proposals from which the framework was synthesised. They are the rank formula of \thmref{Proposition}{II.3} in
+$400$ random cases and its loss rate, the Adam steps after \thmref{Lemma}{II.4}, the LOFT identities of \S\ref{sec:erlangen-loft}, the
+RoAd$_2$ dimension (\thmref{Proposition}{II.9}), the $283$ random networks of \thmref{Theorem}{II.10}, VeRA's dimension
+$m+r-1$ and the LoHa dimension at $(20,16,2)$ in the census of \thmref{Proposition}{II.12}, the operator-Schmidt ranks
+after \thmref{Theorem}{II.11}, the transported cometric and Adam runs of \thmref{Proposition}{II.13}, the shared-frame
+and RoPE tests of \thmref{Observation}{II.15}, the finite-difference cometrics of \thmref{Observation}{III.2} and
+\thmref{Theorem}{III.3}, LoRA-FA under AdamW (\thmref{Proposition}{III.4}), the non-gradient signals and the clipping of
+\thmref{Theorem}{III.5}, the Kempf--Ness minimum of \thmref{Proposition}{III.7}, the closed form of
+\thmref{Theorem}{III.9}, the warm-up, $\varepsilon$, decay and clipping runs of \thmref{Theorem}{III.10} and
+\thmref{Corollary}{III.11}, LoRA-RITE, LoRA-Pro's second-order $W$-step defect and the zero-$B$ runs of \thmref{Theorem}{III.12} and \thmref{Corollary}{III.13},
+the GaLore runs of \thmref{Proposition}{IV.2}, the general bracket formula of \thmref{Proposition}{IV.3}, the NF4
+example with a dominant low-rank part in \thmref{Proposition}{V.2} (check 13m runs an analogous one at another scale),
+the query-scaling and post-LN tests of \thmref{Theorem}{VI.3}, and the decoder tests of \thmref{Theorem}{VI.5}. Where a
+referee's replication and the script use different random draws, the main text may quote the referee's value; the
+conformal block of \thmref{Corollary}{II.6}, for instance, changes some cosine by $0.17$ in the referee's draw and by
+$0.19$ in the script's (check 13c).
+
+\subsection{Software}\label{app:repro-software}
+
+Table~\ref{tab:repro-software} lists the software behind the run of Table~\ref{tab:repro-checks}, the figures and this
+document. Only the first four rows are needed to re-run the checks.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Software and hardware for the checks, the figures and the companion site.}\label{tab:repro-software}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{3.7cm}>{\raggedright\arraybackslash}X@{}}
+\toprule\headrow
+\textbf{Component} & \textbf{Version} & \textbf{Used for}\\\midrule
+Python & 3.9.6 & the check script, the figure scripts, the generators of the tables and ancillary files\\
+PyTorch \citep{xpaszke2019pytorch} & 2.8.0 & float64 automatic differentiation, linear algebra, seeded random draws\\
+NumPy \citep{xharris2020array} & 2.0.2 & discrete Fourier transforms and ranks in the checks; the figure scripts\\
+SciPy \citep{xvirtanen2020scipy} & 1.13.1 & Sylvester equations (LoRA-Pro, check 12l) and matrix logarithms (check 12t)\\
+Matplotlib \citep{xhunter2007matplotlib} & 3.9.4 & the figures of this paper\\
+Hugging Face PEFT \citep{xmangrulkar2022peft} & commit \texttt{85be3f3}, 30 September 2026 & the implementation that every library claim was checked against; not needed to run the checks\\
+TeX Live & 2026 (pdf\TeX{} 1.40.29, latexmk 4.88) & this document\\
+D3 \citep{xbostock2011d3} & 7.9.0 & drawing the companion site's figures\\
+MathJax \citep{xcervone2012mathjax} & 3.2.2 & typesetting the companion site's mathematics\\
+Hardware & Apple M5, macOS 26.7, CPU only & the run reported in Table~\ref{tab:repro-checks}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{How the companion site and the figures compute what they show}\label{app:repro-site}
+
+The companion site is one static page. A build script assembles it from one HTML file per exposé, and a second script
+compiles its data file from the verified catalogue, the arXiv metadata, the classification batches, the axis definitions,
+the Rosetta stone and the numbered results. The data file is loaded as a script, so the page runs from a web host, from
+disk or in a sandboxed viewer without fetching its data; it loads D3, MathJax and its fonts from public CDNs. The tables of Appendix~\ref{app:catalogue} and the ancillary
+files are generated from the same data.
+
+Each figure of the site is a small module in plain JavaScript that computes every number it shows in the reader's
+browser, when it first comes into view and again at every interaction; nothing is typed in by hand. JavaScript numbers
+are IEEE doubles, so the arithmetic is float64, as in the script. A shared kernel provides dense matrix products,
+Kronecker and Hadamard products, a cyclic Jacobi eigensolver for symmetric matrices, singular values, numerical rank,
+random orthogonal matrices and a seeded generator (mulberry32, with Box--Muller normals), so every figure opens on the
+same default state. Figures that must see exact zeros, such as the operator-Schmidt spectra behind Figure~\ref{fig:cut}
+and the invariant lamps of the Gram lab, use a one-sided Jacobi SVD, which resolves singular values down to about
+$10^{-16}$ of the norm, where an eigensolver applied to the Gram matrix stops near $10^{-8}$.
+\begin{itemize}
+  \item The orbit explorer trains a seeded toy regression twice, by a hand-written bias-corrected Adam or by gradient
+  descent. Its sliders move on a factor-of-two grid, so every torus element it can reach rescales doubles exactly, and at
+  $\varepsilon=0$ without decay or clipping its meter $\max_t\lVert W_t-W'_t\rVert_F$ reads exactly $0$, as check~3
+  does.
+  \item The gauge lab computes the update of SGD, Adam, Adam with per-channel rates, damped and undamped scaled GD and
+  LoRA-Pro at $(B,A)$ and at $(Bg^{-1},gA)$ and prints the relative defect, as checks 2, 7, 12k and 12l do. It recomputes
+  task arithmetic and LoraHub from the factors at every gauge, as check 13o does.
+  \item The Noether figure integrates scalar LoRA under gradient flow by fourth-order Runge--Kutta with $h=10^{-3}$, under
+  gradient descent by Euler steps and under Adam step by step, so that the charge is computed and never assumed. Its
+  matrix panel uses the implicit midpoint rule, which keeps quadratic invariants to rounding, and compares the
+  closed-form velocity of \thmref{Theorem}{III.9} with the integrated one.
+  \item The apex figure checks its counters by a Jacobian rank on mount, reproducing the [Num] lines of
+  \thmref{Theorem}{II.2} and \thmref{Theorem}{II.7}. The rank-versus-volume figure rebuilds each parametrisation, forms
+  its Jacobian by central differences, which are exact here because each map is affine in every single coordinate, and
+  takes its numerical rank by Householder QR with column pivoting; for a large layer it runs on a small copy with the
+  same rank parameters. The plug workbench (\S\ref{sec:cut-plug}) measures dimensions the same way.
+  \item The merge game checks every rewrite of \thmref{Theorem}{VI.3} on seeded random weights of a small pre-LN
+  transformer block and prints the relative output difference, about $10^{-16}$ for a legal rewrite, or the residual of
+  a refused one. The prefix figure computes its attention weights from seeded synthetic tokens. The rebasing figure
+  measures the rank of accumulated ReLoRA updates by Jacobi SVD against $\min(Kr,m,n)$. The lens figure runs two float64
+  checks on mount, of \thmref{Proposition}{IV.2} and of the bracket of \thmref{Proposition}{IV.3}.
+  \item The budget calculator evaluates parameter counts from each base model's \texttt{config.json} and reproduces on
+  screen the parameter count of the official checkpoint. The catalogue, the periodic table, the timeline, the category
+  graph and the citation panel compute every count from the data file at load, and the graph's layered layout is a
+  deterministic Sugiyama procedure.
+\end{itemize}
+
+The static figures of this paper are drawn by Python scripts kept with the authors' sources, most of them ports of the
+site's modules, with NumPy and Matplotlib. They recompute every plotted number in float64 from the site's toys and seeds.
+Figure~\ref{fig:orbit}, for example, ports the orbit explorer and check~3, and Figure~\ref{fig:gauge} ports the gauge lab
+and checks 2, 7, 12k, 12l and 13o.
+
+\subsection{The numbers behind the figures}\label{app:repro-figures}
+
+The captions of the figures describe what each panel shows. This subsection records the settings and the values
+behind them, as the figure scripts print them. Every value is recomputed in float64 when a script runs.
+
+\paragraph{Figure~\ref{fig:rankvol}} GraLoRA with $k=2$, $4$ and $8$ blocks reaches ranks $16$, $32$ and $64$ at
+$d=65{,}472$. HiRA$_8$, the transport $X\mapsto W_0\odot X$ of LoRA$_8$ (\thmref{Proposition}{II.13}), reaches full rank
+for generic $W_0$. MoRA in its reshape form $\Delta W=I_{16}\otimes M$ with $M\in\R^{256\times256}$, and C3A with
+$256\times256$ circulant blocks, are injective, so $d=\lvert M\rvert$, and both reach full rank. FourierFT with
+$n_c=65{,}536$ frequencies from HF PEFT's default draw (seed $777$) has $120$ conjugate pairs, so $d=65{,}416$, and its
+maximum rank is known only through the bound $\min(2n_c,m,n)$. No KronA factor shapes have budget exactly $65{,}536$. The
+closest, $256\times256\otimes16\times16$, cost $65{,}792$ and give $d=65{,}791$ and rank
+$\min(m_1,n_1)\min(m_2,n_2)=4{,}096$ (\thmref{Theorem}{II.11}(b)). LoHa$_{4,4}$ is placed at the proved upper bound
+$F=57{,}313$; it reaches rank $16$, as GraLoRA with $k=2$ does, with at least $(m+n-1)-2r^2=8{,}159$ fewer dimensions
+than LoRA$_8$ (\thmref{Proposition}{II.12}(c)). Every dimension and maximum rank shown is confirmed by float64 Jacobian
+ranks and random-point ranks on a $64\times64$ copy.
+
+\paragraph{Figure~\ref{fig:cut}} The vectors $u,v$ and the factors $C,D$ are seeded Gaussians, and the rank threshold is
+$10^{-10}$. The numerically zero values are at most $1.3\times10^{-16}$; values below $10^{-17}$, exact zeros included,
+are drawn at $10^{-17}$, and every nonzero value is at least $9.5\times10^{-4}$. Each reshape permutes the entries, so
+the squared normalised singular values sum to $1$ on every cut. A bond of dimension $k$ costs $k(4\cdot4+4\cdot4)=32k$
+parameters across any of the three cuts.
+
+\paragraph{Figure~\ref{fig:noether}} Panel (a) integrates gradient flow by fourth-order Runge--Kutta with step $10^{-3}$.
+The charge is integrated, not imposed, and stays at $\Phi_0$ to within $6\times10^{-11}$ on every run. From the zero-$B$
+start $(1.2,0)$, $\Phi_0=-1.44$, and Adam with $\eta=0.1$ ends at $\Phi=-0.53$. A GD step multiplies the charge by exactly
+$1-\eta^2\eta_A\eta_B\,s^2(w_k-w^\star)^2$; the GD drift is $1.2\times10^{-3}$ at $\eta=0.0025$ and $0.14$ at $\eta=0.2$,
+and $5.8\times10^{-13}$ for the flow. The Adam drift stays between $0.55$ and $1.5$. In panel (b) the seeded target update
+has singular values $2.0$ and $0.3$, with $s=1$ and $\eta_A=\eta_B=1$, so $\mu=s\sqrt{\eta_A\eta_B}=1$. The flow is
+integrated by the implicit midpoint rule. The hollow circles are $u_i^\top(BB^\top/\eta_B)u_i$ and
+$v_i^\top(A^\top A/\eta_A)v_i$; the charge stays at $-\kappa I$ to $2\times10^{-14}$, and the closed-form $\dot W$ matches
+$s(\dot BA+B\dot A)$ to a relative $1.3\times10^{-13}$. The one-sided regime is where one gain exceeds ten times the
+other, $\sigma<0.70\,\sigma^*$, and the balanced regime where the two gains are within a factor two,
+$\sigma>2.83\,\sigma^*$. $\sigma_1$ crosses $\sigma^*$ at $t\approx0.49$ and settles at $2.0$, where the $A$-update
+supplies $38\%$ of its growth rate; $\sigma_2$ settles at $0.3$, where that share is $7\%$.
+
+\paragraph{Figure~\ref{fig:orbit}} The toy has $W_0\in\R^{8\times6}$, a rank-two target update and $r=2$. Both runs take
+300 steps of a hand-written, bias-corrected Adam in float64 and reach a loss of $2.7\times10^{-7}$; the control ends at
+$5.7\times10^{-2}$. At $\varepsilon=0$ the runs are bit-identical at all 301 steps (check~3 of the script). The red curves
+use Adam's $\varepsilon=10^{-8}$ or $10^{-6}$ (the gap is proportional to $\varepsilon$), PyTorch-style decoupled weight
+decay $0.01$, and global-norm clipping at $1$, which clips 8 steps of the LoRA+ run and 37 of the LoRA run. Their maximal
+gaps are $4\times10^{-8}$, $4\times10^{-6}$, $7\times10^{-3}$ and $0.43$, against $2.0$ for the control. The per-block
+rescaling sets $\varepsilon_B=16\,\varepsilon$, decay $16\times0.01$ on $B$, and $B$'s clipping threshold multiplied by
+$16$.
+
+\paragraph{Figure~\ref{fig:gauge}} The state is $B\in\R^{5\times2}$, $A\in\R^{2\times4}$. The rotation is by $30^\circ$,
+the stretch is $\diag(e^{0.5},e^{-0.4})$, and the signed permutation swaps the two rank channels and flips one. Adam is
+its first step from zero state, which at $\varepsilon=0$ is sign descent; the per-channel rescaling for $g=\diag(d)$ is
+$\eta_{B,j}\mapsto\eta_{B,j}/d_j$, $\eta_{A,j}\mapsto d_j\,\eta_{A,j}$, and the damped scaled GD has $\delta=0.1$. The
+first-order weight update is $P_UG+GP_V$ for undamped scaled GD and $P_UG+GP_V-P_UGP_V$ for LoRA-Pro. In panel (b) the
+weights are $w=(0.6,0.5,0.4)$. Task arithmetic changes by less than $10^{-16}$ relative to its norm, the LoraHub merge by
+up to $3.4$ times its norm at $c=1/8$, and the closed form
+$\sum_{l\ne2}w_lw_2\big[(c-1)B_2A_l+(c^{-1}-1)B_lA_2\big]$ matches the recomputed change to $10^{-15}$.
+
+\paragraph{Figure~\ref{fig:rebase}} In panel (a), ReLoRA reaches the full rank $16=\min(m,n)$ after $6$ cycles for $r=3$
+and after $4$ for $r=5$. LoRA-XS adds updates $U_rR_kV_r^\top$ inside one $r^2$-dimensional subspace. In panel (b), BOFT's
+level $\ell$ pairs coordinate $c$ with $c\oplus2^\ell$. Each light bar equals both the dimension of the Lie closure of the
+blocks' plane rotations under brackets and the measured dimension of the reachable set after $16$ merge cycles of
+exact-Cayley factors (the rank of the right-trivialised Jacobian of the product map). Block OFT reaches $24$ and $56$ in
+one cycle and never more. BOFT goes from $16$ to $24$ and from $24$ to $56$ at depths $m'=2,3$, and only the full depth
+$m'=1+\log_2(16/b)=4$ connects the hypergraph: a single full-depth BOFT has dimension $32$, and merging reaches $120$ after
+$4$ cycles. The $7$ Givens planes leave components of sizes $4,3,2,2$ and five isolated coordinates, so they generate only
+$11$ dimensions; the $15$-plane tree reaches $120$ after $9$ cycles.
+
+\paragraph{Figure~\ref{fig:prefix}} The query has $q\in\R^4$ and $\lVert q\rVert=2.4$; the logits are $\langle q,k\rangle/2$,
+and the prefix keys are scaled by $1.2$. In panel (a), $\lambda_q=0.44$, so every content weight is multiplied by $0.56$,
+and the six ratios agree to within $10^{-15}$. In panel (b), $g=0.5$ and the ratios are exactly $1$. In panel (c), the two
+principal axes keep $88\%$ of the variance of the values, and the LLaMA-Adapter output lies at distance $0.65$ from the
+segment in $\R^4$. The script evaluates the joint softmax directly and recovers the identity of part~(b) of
+\thmref{Theorem}{VI.5} to $4\times10^{-16}$.

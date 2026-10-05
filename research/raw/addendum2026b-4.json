@@ -1,0 +1,394 @@
+{
+ "family": "addendum2026b-4",
+ "family_title": "2026 sweep pass 2, batch 4",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "vapt",
+   "name": "VAPT",
+   "full_name": "Visual Adaptive Prompt Tuning",
+   "paper_title": "Revisit Visual Prompt Tuning: The Expressiveness of Prompt Experts",
+   "authors": "Le et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2501.18936",
+   "url": "https://arxiv.org/abs/2501.18936",
+   "code_url": "https://github.com/Minhchuyentoancbn/VAPT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\tilde X^{(l)}=[x^{(l)}_1,\\dots,x^{(l)}_N]^{\\top}\\in\\mathbb{R}^{N\\times d}\\ \\mapsto\\ X^{(l)}_{\\text{img}}\\in\\mathbb{R}^{H\\times W\\times d};\\ \\ X^{(l)}_{\\text{conv}}=F^{(l)}*X^{(l)}_{\\text{img}}\\in\\mathbb{R}^{H'\\times W'\\times d}\\ \\ (F^{(l)}\\in\\mathbb{R}^{K\\times K}\\text{ shared by all }d\\text{ channels});\\ \\ G^{(l)}_j=\\sum_{k=1}^{H'W'}\\alpha^{(l)}_{j,k}\\,x^{\\text{conv},(l)}_k;\\ \\ p^{(l)}_j(\\tilde X^{(l)})=W^{(2)}\\sigma\\big(W^{(1)}G^{(l)}_j\\big),\\ j=1,\\dots,\\ell;\\ \\ \\tilde h_{m}=\\mathrm{Attn}\\Big(\\begin{bmatrix}\\tilde X^{(l)}\\\\P^{(l)}(\\tilde X^{(l)})\\end{bmatrix}W^{Q}_m,\\begin{bmatrix}\\tilde X^{(l)}\\\\P^{(l)}(\\tilde X^{(l)})\\end{bmatrix}W^{K}_m,\\begin{bmatrix}\\tilde X^{(l)}\\\\P^{(l)}(\\tilde X^{(l)})\\end{bmatrix}W^{V}_m\\Big)\\ \\text{(prompt-position outputs discarded)};\\ \\ \\text{frozen: all ViT weights};\\ \\text{trained: }\\alpha^{(l)}\\in\\mathbb{R}^{\\ell\\times H'W'},\\ F^{(l)},\\ \\text{a per-block LayerNorm},\\ W^{(1)}\\in\\mathbb{R}^{r\\times d},W^{(2)}\\in\\mathbb{R}^{d\\times r}\\ (\\text{one feature projector shared by all blocks}),\\ \\text{head}",
+   "trainable_params": "L\\,\\ell\\,H'W'+L\\,K^{2}+2rd\\ \\text{per model (token-wise projectors, channel-shared kernels, shared feature projector), plus per-block LayerNorm and the head; e.g. }0.36\\%\\text{ of ViT-B/16 on average over the 24 FGVC/VTAB tasks (VPT-Deep: }L\\ell d)",
+   "locus": "input token sequence of every ViT block (VPT-Deep insertion point), with each block's prompts generated from that block's own patch tokens; paper: ViT-B/16 (supervised ImageNet-21K, MAE, MoCo v3), ViT-L/H, SETR-PUP on ADE20K, the CLIP ViT-B/32 image encoder",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Input-conditioned deep prompts. At block \\(l\\) the \\(N\\) patch tokens are laid out as an \\(H\\times W\\times d\\) map, convolved with one \\(K\\times K\\) kernel \\(F^{(l)}\\) reused across all \\(d\\) channels, and pooled by \\(\\ell\\) learned token-wise weightings \\(\\alpha^{(l)}_{j,\\cdot}\\in\\mathbb{R}^{H'W'}\\). Each pooled vector \\(G^{(l)}_j\\) passes through a bottleneck MLP \\(g(u)=W^{(2)}\\sigma(W^{(1)}u)\\) with \\(r\\ll d\\) that is shared by all blocks. Because convolution and pooling are linear, \\(G^{(l)}_j=W_jX\\) for some \\(W_j\\in\\mathbb{R}^{d\\times Nd}\\), so each prompt expert is \\(f_{N+j}(X)=W_m^{V\\top}W^{(2)}\\sigma(W^{(1)}_jX)\\) with \\(W^{(1)}_j=W^{(1)}W_j\\). It is therefore a one-hidden-layer function of the whole sequence, where VPT's expert \\(W_m^{V\\top}p_j\\) is a constant. The prompts are re-generated at every block from \\(\\tilde X^{(l)}\\), not from the first-layer input or a [CLS] query, and their attention outputs are dropped as in VPT-Deep. In the released code the first block keeps ordinary static VPT prompts (VPT_DEPTH=1). The token-wise projector also carries a bias and is zero-initialised, and the shared projector is residual, \\(p=G+W^{(2)}\\sigma(W^{(1)}G)\\), a detail not in the paper's Eq. (12).",
+   "mergeable": "no",
+   "mergeable_reason": "The prompts are extra tokens that depend on the current input \\(\\tilde X^{(l)}\\). They lengthen the attention sequence to \\(N+\\ell\\) and cannot be folded into \\(W^{Q},W^{K},W^{V}\\). Inference keeps the generator, about 0.6% more FLOPs than VPT.",
+   "identity_at_init": "No. In the released code the token-wise projectors are zero-initialised, so the generated prompts start as zero vectors. Zero prompt tokens still enter the softmax through the key bias \\(b^{K}\\) and dilute attention on the real tokens. The first block also uses randomly initialised static prompts. The paper describes no zero-output mechanism.",
+   "key_idea": "In the attention-as-mixture-of-experts reading, VPT adds prompt experts \\(W_m^{V\\top}p_j\\) that are constant in the input, while the pretrained experts \\(W_m^{V\\top}x_j\\) are linear in it. VAPT makes each prompt a cheap nonlinear function of the current block's tokens (channel-shared convolution, then token pooling, then a shared bottleneck MLP). This uses fewer parameters than VPT because \\(H'W'<d\\), and least-squares prompt estimation reaches the optimal \\(\\mathcal{O}_P([\\log n/n]^{1/2})\\) rate for prompts fitted by a single atom (\\([\\log n/n]^{1/4}\\) when several fitted atoms crowd one true prompt).",
+   "results_note": "On ViT-B/16 pretrained on ImageNet-21K, VAPT reaches 72.91% mean VTAB-1K and 89.58% FGVC accuracy, 7.34 and 1.04 points above full fine-tuning, while tuning 0.36% of backbone parameters.",
+   "relations": [
+    {
+     "target": "vpt",
+     "type": "builds-on",
+     "note": "Same VPT-Deep insertion point and frozen backbone. The per-block static prompt matrix P^(l) is replaced by prompts generated from that block's own tokens, using fewer parameters (L*ell*H'W' versus L*ell*d). The bias-free generator in the paper cannot output a general constant prompt, so this is a successor rather than a strict generalisation."
+    },
+    {
+     "target": "le-2025-revisiting-prefix",
+     "type": "builds-on",
+     "note": "Same group and the same attention/prompt-to-MoE correspondence. The Voronoi-loss least-squares analysis of prompt estimation is reused, here for input-dependent prompt experts."
+    },
+    {
+     "target": "prefix-tuning-capabilities-limitations",
+     "type": "builds-on",
+     "note": "Cited as motivation (Petrov et al.): static prompts can only add a bias to an attention block's output. VAPT's input-dependent prompt experts are meant to escape that limitation."
+    },
+    {
+     "target": "idpg",
+     "type": "competes-with",
+     "note": "Instance-dependent prompt generation for NLP (not cited). IDPG generates prompts once from the input sentence. VAPT regenerates them at every block from that block's tokens, with a convolution-plus-pooling generator."
+    },
+    {
+     "target": "late-prompt-tuning",
+     "type": "competes-with",
+     "note": "LPT generates one instance-dependent prompt from the hidden states of a single middle layer. VAPT generates prompts at every block."
+    },
+    {
+     "target": "l2p",
+     "type": "competes-with",
+     "note": "Prompt-pool methods (cited as Wang et al., 2022) select prompts with a first-layer [CLS] query, so their prompts are functions of X^(0). VAPT conditions each layer's prompts on X^(l)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2501.18936",
+    "https://arxiv.org/html/2501.18936",
+    "https://github.com/Minhchuyentoancbn/VAPT",
+    "https://raw.githubusercontent.com/Minhchuyentoancbn/VAPT/HEAD/src/models/vit_prompt/vit.py",
+    "https://raw.githubusercontent.com/Minhchuyentoancbn/VAPT/HEAD/src/configs/config.py",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://api2.openreview.net/notes/search?term=Revisit%20Visual%20Prompt%20Tuning&source=forum"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "adapad",
+   "name": "AdaPaD",
+   "full_name": "Adaptive Parallel Deflation",
+   "paper_title": "AdaPaD: Adaptive Parallel Deflation for PEFT with Self-Correcting Rank Discovery",
+   "authors": "Su et al.",
+   "year": 2026,
+   "venue": "arXiv preprint",
+   "arxiv": "2605.10741",
+   "url": "https://arxiv.org/abs/2605.10741",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_i=s\\sum_{k=1}^{r_i}b_{i,k}a_{i,k}^{\\top},\\ \\ b_{i,k}\\in\\mathbb{R}^{d_{out}},\\ a_{i,k}\\in\\mathbb{R}^{d_{in}};\\ \\ \\text{bilinear model (theory): } Y_{k,\\ell}=Y-\\sum_{k'<k}b_{k',\\ell-1}a_{k',\\ell-1}^{\\top}X,\\ \\ (a_{k,\\ell},b_{k,\\ell})=\\mathrm{Rank1}\\big(Y_{k,\\ell},X,T;\\ \\text{warm start }(a_{k,\\ell-1},b_{k,\\ell-1})\\big)\\approx\\arg\\min_{a,b}\\|Y_{k,\\ell}-ba^{\\top}X\\|_F^2\\ \\ \\text{for all active }k\\le\\ell\\text{ in parallel};\\ \\ \\text{deep net: every }\\Delta\\text{ steps snapshot }\\{\\bar b_{i,k'},\\bar a_{i,k'}\\};\\ \\text{component }k\\text{ trained on }\\mathcal{L}\\big(W_{0,i}+s\\sum_{k'<k}\\bar b_{i,k'}\\bar a_{i,k'}^{\\top}+s\\,b_{i,k}a_{i,k}^{\\top}\\big);\\ \\ \\text{growth: } r_i\\leftarrow r_i+1\\text{ for the top-}h\\text{ modules by }\\bar S_iU_i\\ (r_i<r_{\\max})\\text{ until }\\textstyle\\sum_i r_i\\ge B,\\ \\ S_i=\\|\\theta_i\\|_2^{-1/2}\\sum_{p\\in\\theta_i}|p\\,\\nabla_p\\mathcal{L}|;\\ \\ \\text{frozen: }W_0;\\ \\text{trained: rank-1 pairs (plus one privately warmed reserve per module)}",
+   "trainable_params": "r_i(d_{in}+d_{out})\\ \\text{per adapted matrix, plus one reserve }(d_{in}+d_{out})\\text{ while growing};\\ \\ 1\\le r_i\\le r_{\\max},\\ \\textstyle\\sum_i r_i\\le B\\ \\text{(GLUE: }B=144\\text{ over 72 modules, }r_{\\max}=4\\text{, }0.32\\text{-}0.47\\text{M parameters)}",
+   "locus": "all linear layers: Wq, Wk, Wv, Wo, Wf1, Wf2 of every DeBERTaV3-base layer (72 modules); the seven attention and MLP projections of every Qwen3-0.6B layer (196 modules)",
+   "modification_kind": "additive-weight",
+   "structure": "The deployed object is an ordinary additive update \\(\\Delta W_i=s\\sum_{k\\le r_i}b_{i,k}a_{i,k}^{\\top}\\) whose rank \\(r_i\\) differs per module. What changes is how the rank-1 terms are trained. Component \\(k\\) is fitted to a deflation target that removes only its predecessors, \\(k'<k\\), using their latest estimates. All components are refined in parallel, and each worker's target is refreshed every round. Sequential (Hotelling-style) deflation, of which the paper counts ReLoRA as an instance, freezes earlier errors into every later residual. Here the mismatch \\(\\|Y_{k,\\ell}-Y_k^{\\star}\\|_F\\) vanishes as rounds proceed (self-correction, Proposition 2). Activation is staggered (worker \\(k\\) starts at round \\(k\\)), and before activation a component is trained privately against its current target (advance learning). In the network the target is implicit: component \\(k\\) is trained with the task loss through a forward pass containing the round-start snapshot of components \\(0,\\dots,k-1\\) and itself, with later components absent. Per-module rank grows from 1 with IncreLoRA's importance-times-uncertainty score under a shared budget, so the rank profile is an output. On CoLA it settles at 16/44/8/4 modules with rank 1/2/3/4. The theory covers a single bilinear layer \\(Y=W^{\\star}X+\\mathcal{E}\\) under a spectral-gap assumption. The total error obeys \\(G_{k,\\ell}\\le 3\\mathcal{R}_k(\\ell-s_k+2)m_k^{\\ell-s_k+1}\\), and the weight-recovery bound splits into a vanishing algorithmic term plus a statistical floor.",
+   "mergeable": "yes",
+   "mergeable_reason": "After training \\(\\Delta W_i=s\\sum_k b_{i,k}a_{i,k}^{\\top}\\) is a fixed matrix of rank at most \\(r_i\\) that folds into \\(W_{0,i}\\), as with LoRA.",
+   "identity_at_init": "Not exact. Each module starts with one committed component whose \\(a\\) and \\(b\\) are both drawn from \\(\\mathcal{N}(0,0.02)\\), so \\(\\Delta W_i=s\\,b_{i,1}a_{i,1}^{\\top}\\) is small but non-zero. Components added later arrive pre-trained by advance learning, not at zero.",
+   "key_idea": "Treat a LoRA update as a sum of rank-1 deflation steps, but train all steps at once, each against a target rebuilt from its predecessors' current estimates. Errors in early components are then corrected over rounds instead of being frozen into later residuals, and individual rank-1 directions get exponential-convergence guarantees. On top of this, ranks grow per module under a global budget, so the rank allocation is an output.",
+   "results_note": "On GLUE with DeBERTaV3-base at 0.32-0.47M trainable parameters, AdaPaD has the highest average (89.34) against AdaLoRA (89.03) and a reproduced IncreLoRA (88.99). On Qwen3-0.6B SQuAD/SQuAD v2 it matches fixed-rank LoRA F1 with adapters 15.9-44.3% (mean 30.7%) smaller.",
+   "relations": [
+    {
+     "target": "increlora",
+     "type": "builds-on",
+     "note": "Borrows IncreLoRA's importance-times-uncertainty score and reserve components (turned into advance learning) and likewise grows ranks from 1 under a shared budget. Here each new component is trained against a self-correcting deflation target."
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "GLUE baseline. AdaLoRA prunes from a high initial rank using SVD-triplet importance; AdaPaD grows from rank 1."
+    },
+    {
+     "target": "sora",
+     "type": "competes-with",
+     "note": "GLUE baseline. SoRA learns sparse gates on rank-1 components; AdaPaD trains rank-1 components as parallel deflation steps."
+    },
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "The paper calls ReLoRA's sequence of merged low-rank updates sequential deflation, whose early errors persist. AdaPaD instead trains all components in parallel with refreshed targets."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "The deployed adapter is a standard LoRA update with per-module ranks. AdaPaD changes how its rank-1 terms are trained and how many each module gets."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.10741",
+    "https://arxiv.org/html/2605.10741",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2605.10741?fields=title,year,venue,citationCount",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lora-da",
+   "name": "LoRA-DA",
+   "full_name": "LoRA-DA: Data-Aware initialization for Low-Rank Adaptation",
+   "paper_title": "LoRA-DA: Data-Aware Initialization for Low-Rank Adaptation via Asymptotic Analysis",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "ICML 2026",
+   "arxiv": "2510.24561",
+   "url": "https://arxiv.org/abs/2510.24561",
+   "code_url": "https://github.com/zqy0126/LoRA-DA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=(W_0+BA)x,\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}},\\ AA^{\\top}=I_r;\\ \\ \\text{on }|\\mathcal{S}|=256\\text{ target samples: } G=\\nabla_W\\mathcal{L}(W_0),\\ Z_F=\\mathbb{E}[xx^{\\top}]\\in\\mathbb{R}^{d_{in}\\times d_{in}},\\ Y_F=\\mathbb{E}[\\nabla_h\\ell\\,\\nabla_h\\ell^{\\top}]\\in\\mathbb{R}^{d_{out}\\times d_{out}}\\ \\text{(K-FAC)};\\ \\ \\widehat{\\Delta}=-D\\,G\\,Z_F^{-1},\\ D=\\mathrm{Diag}\\big([Y_F^{-1}]_{11},\\dots,[Y_F^{-1}]_{d_{out}d_{out}}\\big)\\ \\ (\\text{Fisher-gradient estimate of }W_{\\text{tgt}}-W_0);\\ \\ \\Omega=\\frac{\\mathrm{tr}(Y_F^{-1})}{N}Z_F^{-1}-\\widehat{\\Delta}^{\\top}\\widehat{\\Delta}\\in\\mathbb{R}^{d_{in}\\times d_{in}};\\ \\ A_0=\\arg\\min_{AA^{\\top}=I_r}\\mathrm{tr}(A\\,\\Omega\\,A^{\\top})\\ (\\text{the }r\\text{ smallest-eigenvalue eigenvectors of }\\Omega\\text{, via LOBPCG}),\\ \\ B_0=\\widehat{\\Delta}A_0^{\\top}\\ \\Rightarrow\\ B_0A_0=\\widehat{\\Delta}A_0^{\\top}A_0;\\ \\ \\text{frozen: }W_0;\\ \\text{trained: }A,B\\ (\\text{or }B\\text{ only in the LoRA-FA setting})",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix }(rd_{out}\\text{ with frozen }A)",
+   "locus": "any linear layer; paper: Q, K, V, O, Gate, Up, Down of LLaMA-2-7B and Q, K, V of LLaMA-2-13B (r=8, alpha=16)",
+   "modification_kind": "additive-weight",
+   "structure": "Plain LoRA with a closed-form, data-dependent starting point. The derivation is done in the frozen-\\(A\\) (LoRA-FA) setting with \\(A\\) row-orthonormal. It minimises \\(\\mathbb{E}\\|\\hat W-W_{\\text{tgt}}\\|_F^2\\) for the constrained MLE under \\(\\|W_{\\text{tgt}}-W_0\\|_F=O(N^{-1/2})\\). The bound reduces to the quadratic \\(\\mathrm{tr}(A\\Omega A^{\\top})\\), whose Initialization Guidance Matrix \\(\\Omega\\) has two parts. The variance part is the diagonal \\(d_{in}\\times d_{in}\\) blocks of the inverse Fisher of \\(\\mathrm{vec}(W)\\), summed over outputs, divided by \\(N\\). Under K-FAC this is \\(\\tfrac{1}{N}\\mathrm{tr}(Y_F^{-1})Z_F^{-1}\\). The bias part is \\(-\\widehat{\\Delta}^{\\top}\\widehat{\\Delta}\\), with the displacement estimated by a block-diagonal natural-gradient step \\(\\widehat{\\Delta}=-DGZ_F^{-1}\\). This is not the full K-FAC step \\(-Y_F^{-1}GZ_F^{-1}\\), since only the diagonal of \\(Y_F^{-1}\\) is kept. \\(A_0\\) takes the \\(r\\) bottom eigenvectors of \\(\\Omega\\), and \\(B_0=\\widehat{\\Delta}A_0^{\\top}\\) makes \\(W_0+B_0A_0\\) the projection of the estimated target onto that row space. Two limits are informative. Dropping the variance term and using the raw gradient (\\(\\widehat{\\Delta}\\to-G\\)) gives \\(A_0=V_r^{\\top}\\) and \\(B_0A_0=-U_rS_rV_r^{\\top}\\), the LoRA-One/LoRA-GA gradient-SVD choice (Remark 4.3). Keeping only the variance term gives the top eigenvectors of \\(Z_F\\), the principal input-activation directions an EVA-type init uses (our observation, not in the paper). The released code adds three implementation details: \\(\\widehat{\\Delta}\\) is normalised by its top singular value, the variance term is down-weighted (\\(\\beta=0.03\\)), and both factors are scaled by \\(1/\\sqrt{\\gamma}\\) with \\(\\gamma=1024\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the starting point changes. The trained \\(BA\\) is an ordinary rank-\\(r\\) delta that folds into \\(W_0\\).",
+   "identity_at_init": "No. \\(B_0A_0=\\widehat{\\Delta}A_0^{\\top}A_0\\neq 0\\), so training starts at a projected Fisher-gradient step from \\(W_0\\) (in the paper's derivation, the projection of the estimated target). Like LoRA-One, the official code does not subtract \\(B_0A_0\\) from \\(W_0\\), although it does for other init modes. With the \\(1/\\sqrt{\\gamma}\\) factor scaling the initial offset is small.",
+   "key_idea": "Choose the LoRA subspace to minimise the expected distance between the fine-tuned and target weights. That distance splits into a bias term, the target's distance from the subspace estimated by a Fisher-preconditioned gradient, and a variance term from sampling noise through the inverse Fisher. Both enter one symmetric matrix \\(\\Omega\\), and \\(A_0\\) is its bottom-\\(r\\) eigenspace. Gradient-SVD inits such as LoRA-One are recovered when the variance term is dropped and the Fisher is ignored.",
+   "results_note": "With LLaMA-2-7B (r=8), LoRA-DA averages 84.3% on eight commonsense benchmarks against 84.0% for MiLoRA, the best baseline. After MetaMathQA-100K it reaches 55.0% GSM8K and 9.2% MATH, 1.0 point above LoRA-One on average.",
+   "relations": [
+    {
+     "target": "lora-one",
+     "type": "generalizes",
+     "note": "Remark 4.3: dropping the variance term and replacing the Fisher-gradient by the raw gradient makes A_0 the top-r right singular vectors of G, with B_0A_0 = -U_r S_r V_r^T. That is LoRA-One's spectral initialisation up to factor balancing and scale (initialisation only; LoRA-One's preconditioned training is not part of LoRA-DA)."
+    },
+    {
+     "target": "lora-ga",
+     "type": "builds-on",
+     "note": "Gradient-based data-aware init that LoRA-DA criticises for being single-step and ignoring anisotropy. Only the A side coincides in the degenerate case, since LoRA-GA takes B from the next r left singular vectors and offsets W_0."
+    },
+    {
+     "target": "lora-fa",
+     "type": "builds-on",
+     "note": "The optimality theory is derived for frozen A (LoRA-FA); the same A_0 and B_0 are then used for standard LoRA, and a frozen-A experiment is reported."
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "Data-agnostic baseline built from the top singular directions of W_0."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "Data-agnostic baseline built from the minor singular directions of W_0; the strongest commonsense baseline (84.0 vs 84.3)."
+    },
+    {
+     "target": "eva",
+     "type": "competes-with",
+     "note": "Not cited. In the variance-only limit, Omega is proportional to Z_F^{-1}, whose bottom eigenvectors are the top principal directions of the layer inputs. These are the directions EVA uses for A (up to centring), so LoRA-DA interpolates between an activation-variance init and a gradient-SVD init."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.24561",
+    "https://arxiv.org/html/2510.24561",
+    "https://github.com/zqy0126/LoRA-DA",
+    "https://raw.githubusercontent.com/zqy0126/LoRA-DA/HEAD/lora_da.py",
+    "https://raw.githubusercontent.com/zqy0126/LoRA-DA/HEAD/run_exp.py",
+    "https://raw.githubusercontent.com/zqy0126/LoRA-DA/HEAD/conf/lora_da.yaml",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://api2.openreview.net/notes/search?term=LoRA-DA%20Data-Aware&source=forum"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "wasi",
+   "name": "WASI",
+   "full_name": "Weight-Activation Subspace Iteration",
+   "paper_title": "Efficient Resource-Constrained Training of Transformers via Subspace Optimization",
+   "authors": "Nguyen et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (oral)",
+   "arxiv": "2510.09160",
+   "url": "https://arxiv.org/abs/2510.09160",
+   "code_url": "https://github.com/Le-TrungNguyen/ICLR2026-WASI",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{start: } W_0=U\\Sigma V^{\\top},\\ K_i=\\min\\Big\\{K:\\tfrac{\\sum_{j\\le K}s_j^2}{\\sum_j s_j^2}\\ge\\varepsilon\\Big\\},\\ L=U_{K_i}\\Sigma_{K_i}\\in\\mathbb{R}^{d_{out}\\times K_i},\\ R=V_{K_i}^{\\top}\\in\\mathbb{R}^{K_i\\times d_{in}};\\ \\ \\text{forward: } h=L(Rx);\\ \\ \\text{saved activation: } \\tilde{\\mathcal{A}}=\\tilde{\\mathcal{S}}\\times_1\\tilde U^{(1)}\\times_2\\tilde U^{(2)}\\times_3\\tilde U^{(3)}\\ (\\text{Tucker over batch, token, channel modes; ranks }\\mathbf{r}_i\\text{ chosen once by a perplexity-vs-memory search});\\ \\ \\text{backward: } \\widetilde{\\nabla_W\\mathcal{L}}=f_{\\text{LR}}(\\tilde{\\mathcal{A}},\\nabla_h\\mathcal{L})\\in\\mathbb{R}^{d_{out}\\times d_{in}},\\ \\ \\nabla_x\\mathcal{L}=R^{\\top}L^{\\top}\\nabla_h\\mathcal{L};\\ \\ \\text{update: } W\\leftarrow LR-\\eta\\,\\widetilde{\\nabla_W\\mathcal{L}},\\ \\ R^{\\top}\\leftarrow W^{\\top}L_{\\text{prev}},\\ \\ L\\leftarrow\\mathrm{orth}(WR^{\\top})\\ (\\text{one warm-started subspace-iteration step, rank }K_i\\text{ fixed});\\ \\ \\text{activation factors }\\tilde U^{(m)}\\text{ also refreshed by warm-started subspace iteration};\\ \\ \\text{trained: all weights (and biases) of the selected layers; nothing added}",
+   "trainable_params": "d_{out}d_{in}\\ (+d_{out}\\text{ bias})\\ \\text{per adapted matrix: the whole weight is updated with a dense gradient assembled from the compressed activation, but held and run as rank-}K_i\\text{ factors with }K_i(d_{in}+d_{out})\\text{ entries; no added parameters}",
+   "locus": "linear layers of the MLP blocks of ViT-B and Swin-T (all attention and MLP linear layers of ViT in an appendix ablation); the last 1-5 decoder layers of TinyLlama; the last 1-4 convolutions of MCUNet for the weight part only",
+   "modification_kind": "hybrid",
+   "structure": "Compression-aware fine-tuning without an adapter. Each fine-tuned weight is replaced by its rank-\\(K_i\\) truncation, with \\(K_i\\) set once by an explained-variance threshold \\(\\varepsilon\\) on \\(W_0\\)'s spectrum. Thereafter the factored weight \\(LR\\) is tracked across steps by one power/subspace-iteration step warm-started from the previous \\(L\\), not by fresh SVDs. This relies on the observed stability of layer ranks during fine-tuning (Fig. 3a). Forward and input-gradient passes cost \\(O(K_i(d_{in}+d_{out}))\\) per token. The weight gradient is formed from a Tucker/HOSVD compression of the stored input activation, whose mode factors are also warm-started by subspace iteration (the ASI method, here with a dynamic-programming rank search and 3-D/4-D activation support). The update is therefore a full-matrix step in weight space followed by re-projection onto a rank-\\(K_i\\) manifold, close to training a low-rank model in factored form. It is not a frozen-\\(W_0\\) plus \\(\\Delta W\\) method. In the released code the dense weight remains the optimised parameter and \\(L,R\\) are recomputed from it at each forward pass; the paper's Eq. (11) writes the update directly on \\(LR\\). The method targets on-device transfer learning, where activation and weight memory dominate.",
+   "mergeable": "yes",
+   "mergeable_reason": "There is no side branch to merge: the trained model is the factored weight \\(L_iR_i\\) per layer. It can be multiplied out to a dense matrix or kept factored, which is cheaper at inference (about 1.4x faster than vanilla on a Raspberry Pi 5).",
+   "identity_at_init": "No. From the first step the forward pass uses the truncation \\(U_{K_i}\\Sigma_{K_i}V_{K_i}^{\\top}\\) of \\(W_0\\), not \\(W_0\\), so the starting function differs unless \\(\\varepsilon=1\\), which recovers vanilla training. Activation compression also makes the first gradients approximate.",
+   "key_idea": "On edge devices the memory of backpropagation, not the trainable-parameter count, is the bottleneck. WASI keeps both the weights and the saved activations in fixed low-rank subspaces and follows those subspaces with warm-started subspace iteration instead of repeated SVDs. Training memory falls by up to 62x and FLOPs by about 1.5-2x, while the low-rank weights also speed up inference.",
+   "results_note": "Fine-tuning Swin-T at epsilon=0.9, WASI matches vanilla accuracy while cutting training memory by up to 62x and FLOPs by 1.5x; on a Raspberry Pi 5 it is about 1.4x faster than vanilla training for ViT on CIFAR-10.",
+   "relations": [
+    {
+     "target": "tinytl",
+     "type": "competes-with",
+     "note": "Not cited. Both target activation-dominated on-device training memory. TinyTL freezes weights and trains biases plus lite residual branches; WASI updates the weights inside low-rank weight and activation subspaces."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Not cited. GaLore keeps full weights and projects gradients onto a periodically refreshed SVD subspace for optimiser memory. WASI factorises the weights themselves to a fixed rank, tracks them by power iteration, and compresses the saved activations."
+    },
+    {
+     "target": "velora",
+     "type": "competes-with",
+     "note": "Not cited. Both compress the activations saved for the weight gradient: VeLoRA projects sub-tokens to rank 1, WASI uses a warm-started Tucker/HOSVD."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "WASI argues that LoRA keeps the frozen dense weights and full activations in memory and loses the low-rank speed-up once merged. WASI trains and deploys a factored model instead (compared against SVD-LLM, which pairs truncated SVD with a LoRA adapter)."
+    },
+    {
+     "target": "intrinsic-dimensionality",
+     "type": "builds-on",
+     "note": "Cited low-intrinsic-dimension evidence (Aghajanyan et al.) motivating training inside a stable low-dimensional subspace."
+    },
+    {
+     "target": "intrinsic-dimension-objective-landscapes",
+     "type": "builds-on",
+     "note": "Cited (Li et al., 2018) for the claim that over-parameterised models reside in low-dimensional subspaces."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.09160",
+    "https://arxiv.org/html/2510.09160",
+    "https://github.com/Le-TrungNguyen/ICLR2026-WASI",
+    "https://raw.githubusercontent.com/Le-TrungNguyen/ICLR2026-WASI/HEAD/main/custom_op/linear/linear_WASI.py",
+    "https://raw.githubusercontent.com/Le-TrungNguyen/ICLR2026-WASI/HEAD/main/custom_op/compression/rank/power_iteration.py",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://api2.openreview.net/notes/search?term=Weight-Activation%20Subspace%20Iteration&source=forum"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "tera",
+   "name": "TeRA",
+   "full_name": "Vector-based random Tensor network for high-Rank Adaptation",
+   "paper_title": "TeRA: Vector-based Random Tensor Network for High-Rank Adaptation of Large Language Models",
+   "authors": "Gu et al.",
+   "year": 2025,
+   "venue": "ACL 2026 (long)",
+   "arxiv": "2509.03234",
+   "url": "https://arxiv.org/abs/2509.03234",
+   "code_url": "https://github.com/guyuxuan9/TeRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta\\mathcal{W}(i_1,\\dots,i_N)=\\sum_{r_1=1}^{R_1}\\cdots\\sum_{r_N=1}^{R_N}\\mathcal{G}(r_1,\\dots,r_N)\\prod_{n=1}^{N}d^{(n)}_{r_n}A^{(n)}(r_n,i_n),\\ \\ \\Delta W=\\mathrm{Unfold}_{[N;k]}(\\Delta\\mathcal{W})\\in\\mathbb{R}^{d_{out}\\times d_{in}},\\ \\prod_{n\\le k}I_n=d_{out},\\ \\prod_{n>k}I_n=d_{in};\\ \\ \\text{equivalently } \\Delta W=L\\big(\\mathcal{G}_{[N;k]}\\odot uv^{\\top}\\big)M,\\ L=\\big(\\textstyle\\bigotimes_{n\\le k}A^{(n)}\\big)^{\\top},\\ M=\\textstyle\\bigotimes_{n>k}A^{(n)},\\ u=\\textstyle\\bigotimes_{n\\le k}d^{(n)},\\ v=\\textstyle\\bigotimes_{n>k}d^{(n)};\\ \\ h=(W_0+\\Delta W)x;\\ \\ \\text{frozen and shared by all adapted layers: random core }\\mathcal{G}\\in\\mathbb{R}^{R_1\\times\\cdots\\times R_N}\\text{ and factors }A^{(n)}\\in\\mathbb{R}^{R_n\\times I_n};\\ \\text{trained per layer: }d^{(n)}\\in\\mathbb{R}^{R_n},\\ n=1,\\dots,N",
+   "trainable_params": "\\sum_{n=1}^{N}R_n\\ \\text{per adapted matrix; paper default }R_n=I_n\\text{ with only one side split, e.g. a }4096\\times4096\\text{ matrix folded to }4096\\times8\\times8\\times8\\times8\\text{ gives }4096+4\\cdot8=4128\\ (\\approx0.0039\\%\\text{ of Llama-2-7B with }W_q,W_v\\text{ adapted})",
+   "locus": "W_q and W_v of every attention layer (paper: Llama-2-7B, Llama-3-8B); any linear layer in principle, with one core and factor set sliced to each layer's shape",
+   "modification_kind": "additive-weight",
+   "structure": "The update matrix is folded into an order-\\(N\\) tensor and written in Tucker form. The core and factor matrices are large, random (Kaiming), frozen and shared by every adapted layer. The trainable part is a set of \\(N\\) per-layer vectors \\(d^{(n)}\\) acting as diagonal matrices on the core's modes. After unfolding, \\(\\Delta W=L\\,\\mathrm{diag}(u)\\,\\mathcal{G}_{[N;k]}\\,\\mathrm{diag}(v)\\,M\\), with \\(u\\) and \\(v\\) Kronecker products of the trained vectors. This is a VeRA-type double diagonal scaling of a frozen random matrix, except that the diagonals are rank-1 tensors and the outer projections are Kronecker-structured. The rank bound is \\(\\mathrm{rank}(\\Delta W)\\le\\min(\\prod_{n\\le k}R_n,\\prod_{n>k}R_n)\\), so \\(R_n=I_n\\) permits full rank with only \\(\\sum_n I_n\\le d_{in}+d_{out}\\) parameters (Theorems 1-2). Measured updates are near full rank in every layer. Theorem 3 bounds the approximation error by the energy of \\(W^{\\star}\\) outside \\(\\mathrm{span}(L)\\otimes\\mathrm{span}(M^{\\top})\\) plus a tensor-spectral-norm term that grows with the tensor order \\(N\\). VeRA is the case \\(N=2\\) with \\(A^{(1)}=I\\), core equal to VeRA's \\(B\\), \\(R_2=r\\) and \\(A^{(2)}\\) equal to VeRA's \\(A\\), which gives \\(\\mathrm{diag}(d^{(1)})B\\,\\mathrm{diag}(d^{(2)})A\\). In ablations, replacing the random factors by identities (\\(\\text{TeRA}_{iden}\\)) or using unshared per-layer cores both hurt accuracy.",
+   "mergeable": "yes",
+   "mergeable_reason": "After training, \\(\\Delta W=\\mathrm{Unfold}_{[N;k]}(\\Delta\\mathcal{W})\\) is materialised once and added to \\(W_0\\) (\\(W_{\\text{final}}=W_0+\\Delta W\\)), so inference has no overhead. Training is slower because \\(\\Delta W\\) is contracted from the core at every step.",
+   "identity_at_init": "Exact. All \\(d^{(n)}\\) are initialised as ones (0.1 in the released code) except one, which is zero, so \\(\\Delta W=0\\).",
+   "key_idea": "Decouple rank from parameter count by putting the trainable parameters on the diagonal of a shared random Tucker tensor network. The frozen core and factors supply the high-rank directions, and each layer learns only \\(\\sum_n R_n\\) mode-wise scalings. The result is near-full-rank updates at VeRA-level parameter counts.",
+   "results_note": "On Commonsense170k with W_q and W_v adapted, TeRA averages 85.31% on Llama-3-8B. That ties HiRA (r=32) with about 51x fewer trainable parameters and beats the parameter-matched LoRETTA (83.58%).",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "generalizes",
+     "note": "VeRA's diag(b) B diag(d) A is the N=2 instance with an identity first factor and the core set to VeRA's B. TeRA tensorises the update so the shared frozen randomness can reach full rank with a similar number of trained scalars."
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "Main high-rank baseline. TeRA matches HiRA r=32 with 51-64x fewer parameters and beats HiRA r=1."
+    },
+    {
+     "target": "loretta",
+     "type": "competes-with",
+     "note": "Tensor-train adapter with trained cores, the strongest parameter-matched baseline. TeRA trains only diagonal scalings of a frozen shared network."
+    },
+    {
+     "target": "lotr",
+     "type": "competes-with",
+     "note": "Cited tensor-based adapter. LoTR trains shared bases and a per-layer r x r core; TeRA freezes the shared core and factors and trains only per-layer mode-wise diagonals."
+    },
+    {
+     "target": "randlora",
+     "type": "competes-with",
+     "note": "Not cited. RandLoRA also reaches full rank from frozen random bases with learned diagonal scalings, but sums many low-rank terms and so uses far more trainable parameters."
+    },
+    {
+     "target": "quanta",
+     "type": "competes-with",
+     "note": "Cited quantum-inspired high-rank baseline; outperformed by TeRA at a fraction of its parameter count."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.03234",
+    "https://arxiv.org/html/2509.03234",
+    "https://aclanthology.org/2026.acl-long.106/",
+    "https://aclanthology.org/volumes/2026.acl-long/",
+    "https://github.com/guyuxuan9/TeRA",
+    "https://raw.githubusercontent.com/guyuxuan9/TeRA/HEAD/peft_local/tuners/tera/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "hybrid-lora",
+   "name": "Hybrid-LoRA",
+   "full_name": "Hybrid-LoRA: score-based split of modules into full fine-tuning and LoRA",
+   "paper_title": "Hybrid-LoRA: Bridging Full Fine-Tuning and Low-Rank Adaptation for Post-Training",
+   "authors": "Zhang et al.",
+   "year": 2026,
+   "venue": "arXiv preprint",
+   "arxiv": "2605.18822",
+   "url": "https://arxiv.org/abs/2605.18822",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{probe (500 warm-up steps, all }(l,m)\\in\\mathcal{U}=[L]\\times\\{W_q,W_k,W_v,W_o,W_{gate},W_{up},W_{down}\\}\\text{): } h=W_{0}x+b+\\alpha_{l,m}B\\,\\mathrm{diag}(e_{l,m})A\\,x;\\ \\ s^{(t)}_{l,m}=\\tfrac{1}{r}\\big\\|e_{l,m}\\odot\\nabla_{e_{l,m}}[\\mathcal{L}_{val}(\\mathcal{B}_t;z^{(t)}_{-A})+\\mathcal{L}_{val}(\\mathcal{B}_t;z^{(t)}_{-B})]\\big\\|_1\\ (\\text{random complementary bipartition }\\mathcal{U}=\\mathcal{U}_A^{(t)}\\cup\\mathcal{U}_B^{(t)});\\ \\ H(l,m)=\\mu_{l,m}\\,\\sigma_{l,m}\\text{ over batches};\\ \\ \\mathcal{S}_{fft}=\\text{lowest-}H\\text{ modules, added greedily while }\\textstyle\\sum_{\\mathcal{S}_{fft}}P_{l,m}\\le R_{fft}\\sum_{\\mathcal{U}}P_{l,m};\\ \\ \\text{final (re-initialised from }W_0\\text{): } W_{l,m}=W_{0,l,m}+\\Delta W_{l,m}\\ (\\text{dense, trained})\\ \\text{for }(l,m)\\in\\mathcal{S}_{fft},\\ \\ W_{l,m}=W_{0,l,m}+BA\\ (r=16)\\ \\text{for }(l,m)\\in\\mathcal{U}\\setminus\\mathcal{S}_{fft};\\ \\ \\text{optimised with GRPO or GSPO}",
+   "trainable_params": "\\sum_{(l,m)\\in\\mathcal{S}_{fft}}d_{out}d_{in}+\\sum_{(l,m)\\in\\mathcal{S}_{lora}}r(d_{in}+d_{out}),\\ r=16,\\ R_{fft}=10\\%\\ (\\approx105\\text{M of }1{,}544\\text{M on Qwen2.5-1.5B},\\ 449\\text{M on Qwen2.5-7B})",
+   "locus": "the seven attention and MLP linear projections of every decoder layer of Qwen2.5-1.5B/3B/7B-Instruct; the fully fine-tuned modules concentrate in the attention projections of later layers",
+   "modification_kind": "hybrid",
+   "structure": "The trainable locus is a union. A small set \\(\\mathcal{S}_{fft}\\) of whole matrices receives dense updates, and every other candidate matrix receives a rank-\\(r\\) LoRA update. The partition is chosen once, before the real run. A probe attaches AdaLoRA-style SVD-form LoRA (\\(B\\,\\mathrm{diag}(e)A\\), scaled by a per-module architecture weight \\(\\alpha_{l,m}\\)) to all modules and trains it briefly. Each module is then scored by the first-order sensitivity \\(\\tfrac1r\\|e\\odot\\nabla_e\\mathcal{L}_{val}\\|_1\\) of its LoRA coefficients. The score is measured under random complementary on/off masks of the other modules (Shapley-NAS style) and aggregated as mean times standard deviation over batches. A low score is read as LoRA being insufficient for that module, so the lowest-scoring modules are fully fine-tuned up to the budget. Eq. (4) states the budget as a parameter fraction, while the experiments call it a 10% module ratio. The model is then re-initialised and trained with RLVR using separate learning rates (\\(10^{-6}\\) for dense modules, \\(2.5\\times10^{-5}\\) for LoRA). This is the allocation-across-loci counterpart of the RLVR-PEFT studies: rather than enlarging every adapter, it upgrades a few modules to full rank.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both kinds of update are additive deltas on frozen-shape matrices: the dense \\(\\Delta W_{l,m}\\) replaces \\(W_{0,l,m}\\) outright and each \\(BA\\) folds into its \\(W_0\\). The result is a single dense model with no inference overhead.",
+   "identity_at_init": "For the final stage, fully fine-tuned modules start exactly at \\(W_0\\). The LoRA modules presumably use standard \\(B=0\\) initialisation (not stated), giving \\(h=W_0x\\) at the start of RL. The probe's adapters are discarded.",
+   "key_idea": "Modules differ in how well a low-rank update can adapt them. Hybrid-LoRA measures this with a cheap LoRA probe and spends a small full-fine-tuning budget on the modules where LoRA's coefficients show the weakest sensitivity, keeping LoRA elsewhere. The aim is to close the LoRA-to-full-fine-tuning gap in RLVR post-training while tuning roughly 6-7% of the parameters (105M of 1,544M at 1.5B, 449M at 7B).",
+   "results_note": "On Qwen2.5-1.5B-Instruct with GRPO, Hybrid-LoRA (105M tunable of 1,544M) reaches 80.2 Math-500 pass@1, against 80.6 for full fine-tuning and 77.4 for the best module-selection baseline (AutoLoRA criterion).",
+   "relations": [
+    {
+     "target": "adalora",
+     "type": "builds-on",
+     "note": "The probe reuses AdaLoRA's SVD-form LoRA (B diag(e) A), and the mean-times-variability score echoes AdaLoRA's sensitivity-times-uncertainty importance. Here it selects whole modules for full fine-tuning rather than pruning ranks. An AdaLoRA-rank criterion is also a baseline."
+    },
+    {
+     "target": "autolora",
+     "type": "competes-with",
+     "note": "AutoLoRA's learned architecture weight alpha is the strongest selection baseline (bottom-10% modules by alpha assigned to full fine-tuning)."
+    },
+    {
+     "target": "lora-drop",
+     "type": "competes-with",
+     "note": "Baseline criterion: modules with the smallest LoRA output contribution are assigned to full fine-tuning."
+    },
+    {
+     "target": "spectrum",
+     "type": "competes-with",
+     "note": "Not cited. Spectrum fully trains the matrices with the highest weight-only random-matrix SNR and freezes the rest. Hybrid-LoRA selects by LoRA-probe gradient sensitivity and puts LoRA on everything else."
+    },
+    {
+     "target": "plop",
+     "type": "competes-with",
+     "note": "Not cited. PLoP decides where LoRA should go from module-data alignment; Hybrid-LoRA decides which modules should get full-rank updates instead of LoRA."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Combines dense full fine-tuning on about 10% of modules with standard LoRA (r=16) on the rest."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.18822",
+    "https://arxiv.org/html/2605.18822",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json"
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "papers": [],
+ "notes": "All six requested methods exist and are PEFT or memory-efficient fine-tuning methods. None duplicates a catalogued id: checked against existing_index.json, raw/, verified/ and the sibling batches addendum2026b-2 and addendum2026b-5. LoRA-DA appeared earlier only as a skipped name in the init-rank notes. Every formula was written from the arXiv HTML method sections and, where code exists, cross-checked against the official repository. Venue checks: VAPT is an ICLR 2026 poster and WASI an ICLR 2026 oral (iclr-2026-orals-posters.json and the OpenReview search API). LoRA-DA is ICML 2026 'Accept (regular)' (icml-2026-orals-posters.json; OpenReview LvKSVUbXc9) after an ICLR 2026 rejection. TeRA is in the ACL Anthology as 2026.acl-long.106 (pp. 2314-2329); its oral status claimed by the sweep could not be confirmed from the Anthology. DISCREPANCY: the brief described AdaPaD (2605.10741) and Hybrid-LoRA (2605.18822) as 'NeurIPS 2026 (verified)', but neither could be verified. Neither title nor any of their authors (Barbara Su; Chengqian Zhang, Kyumin Lee) appears in the 9,236-entry neurips-2026-orals-posters.json, which does list another Liao-Kyrillidis paper. Neither arXiv page has a venue comment, Semantic Scholar lists AdaPaD as arXiv only, and the sweep pool lists both only as Apr-Jun 2026 overflow with no venue. Both are therefore recorded as 'arXiv preprint'; re-check if camera-ready information appears. Year follows the first public version: VAPT 2025 (arXiv v1 2025-01-31), LoRA-DA 2025 (ICLR 2026 submission public 2025-10-08, arXiv 2025-10-28), WASI 2025 (arXiv 2025-10-10), TeRA 2025 (arXiv 2025-09-03). Code-versus-paper details recorded in the structure fields: (i) VAPT's released code keeps static VPT prompts in the first block, zero-initialises the token-wise projector (with bias) and makes the shared projector residual. (ii) LoRA-DA's code (like LoRA-One) does not subtract B_0A_0 from W_0, normalises the Fisher-gradient estimate by its top singular value, down-weights the variance term (beta=0.03), and scales both factors by 1/sqrt(1024). The paper's K-FAC algorithm keeps only the diagonal of Y_F^{-1}, so its displacement estimate is a block-diagonal natural-gradient step. (iii) WASI's code keeps the dense weight as the optimised parameter and recomputes the rank-K factors from it at each forward pass, whereas the paper describes updating LR directly. WASI is included as a memory-efficient transfer-learning method in the quant-memory sense. It adds no adapter, updates whole weights of selected layers inside low-rank weight and activation subspaces, and is not identity at init because the forward uses the truncated W_0. Hybrid-LoRA: the brief's 'fully fine-tunes the top ~10%' is inverted. The paper fully fine-tunes the LOWEST-scoring modules, those where LoRA appears insufficient. Its Eq. (4) budget is a parameter fraction while the experiments call R_fft=10% a module ratio. No code is released. AdaPaD: no code found. Its theory covers a single bilinear layer, and the deep-network procedure (snapshot prefix plus current component) is described only in Algorithm 2, hence medium confidence. Structural observation added by us (not in the paper): LoRA-DA's two limits interpolate between an EVA-like activation-variance init (variance term only) and LoRA-One's gradient-SVD init (bias term with raw gradient). None of the six is in Hugging Face PEFT (tuners directory, LoRA init options and release notes through v0.21.2 checked). No standalone theory papers were added. The VAPT sample-efficiency theorem and the AdaPaD self-correction theorems are recorded inside their method entries. Semantic Scholar mostly returned HTTP 429, and OpenReview's notes endpoint required a browser challenge, which was not attempted; venue facts rely on the search endpoint and the conference JSON files."
+}

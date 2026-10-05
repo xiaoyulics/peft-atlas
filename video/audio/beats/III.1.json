@@ -1,0 +1,63 @@
+{
+ "hash": "97b7632816d07925",
+ "seconds": 32.72,
+ "pauses": [
+  [
+   0.0,
+   0.331
+  ],
+  [
+   2.541,
+   3.202
+  ],
+  [
+   5.201,
+   5.87
+  ],
+  [
+   7.543,
+   8.003
+  ],
+  [
+   9.239,
+   9.51
+  ],
+  [
+   14.052,
+   14.673
+  ],
+  [
+   17.87,
+   18.138
+  ],
+  [
+   18.262,
+   18.825
+  ],
+  [
+   20.033,
+   20.323
+  ],
+  [
+   21.473,
+   22.21
+  ],
+  [
+   22.21,
+   22.58
+  ],
+  [
+   25.145,
+   25.656
+  ],
+  [
+   28.984,
+   29.444
+  ],
+  [
+   32.437,
+   32.72
+  ]
+ ],
+ "text": "Images say where a method can go. Fibres say how it gets there. <short pause> Take a LoRA update, B times A, and slip any invertible r-by-r matrix g into the middle: B times g-inverse, times g times A. The factors change. Their product doesn't. <short pause> All of these settings give the same weights. When the product has full rank, they make up the whole fibre, and the group of all such g is LoRA's gauge."
+}

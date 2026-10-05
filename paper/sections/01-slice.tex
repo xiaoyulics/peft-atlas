@@ -1,0 +1,419 @@
+% Exposé I. The pointed slice
+% Sources: theory/framework.md (Exposé I), site/sections/02-idea.html (#idea-methods ... #idea-dictionary),
+% public statements of I.4, I.6, I.7, I.8 in theory/propositions.json. Proofs are in Appendix C.
+\section{The pointed slice}\label{sec:slice}
+
+We model a weight-space PEFT method as a pointed map into the pretrained weights. The frozen model and full fine-tuning sit
+at the two ends of an interval, and sums and products of such maps already give methods in use. This exposé sets up the
+category and its first invariants. The theorems begin when we look closely at one image near one point, which is where
+Exposé~\ref{sec:image} starts.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{Pretrained models and methods}\label{sec:slice-methods}
+
+A pretrained network is a function with a parameter slot and a chosen value in it. Its natural home is the bicategory of
+parametrised maps (\bgref{B.16}).
+
+\begin{definition}{I.1}{Para; pretrained model}
+For a cartesian category $\mathcal C$, the bicategory $\Para(\mathcal C)$ is defined as follows
+\citep{fong2017backprop,cruttwell2021categorical}:
+\begin{itemize}
+  \item its 1-cells $X\to Y$ are pairs $(P,\,f:P\times X\to Y)$;
+  \item its 2-cells $(P,f)\Rightarrow(Q,g)$ are maps $r:Q\to P$ with $g=f\circ(r\times X)$.
+\end{itemize}
+A \textbf{pretrained model} is a pointed 1-cell $F=(\Theta,\theta_0,f)$ of $\Para(\Diff)$. Its \textbf{realisation} is
+$\Phi_f:\Theta\to C^\infty(X,Y)$, $\theta\mapsto f(\theta,-)$. Fine-tuning is a path $\theta(t)$ with $\theta(0)=\theta_0$.
+\end{definition}
+
+$\Para$ and the lens reading of backpropagation are due to \citet{fong2017backprop} and \citet{cruttwell2021categorical};
+\citet{gavranovic2024position} develop a broader programme on the same foundations.
+
+\begin{definition}{I.2}{methods and simulations}
+A weight-space \textbf{PEFT method} at $\theta_0$ is a pointed smooth map $M=(Q,q_0,\rho)$, $\rho:Q\to\Theta$, with
+$\rho(q_0)=\theta_0$. Usually $\dim Q\ll\dim\Theta$, and $\theta_0$ (or a splitting of it) is frozen inside $\rho$. These
+form the pointed slice
+\begin{equation*}
+  \Meth(\Theta,\theta_0):=\Diff_*/(\Theta,\theta_0).
+\end{equation*}
+\begin{itemize}
+  \item A \textbf{morphism} $h:M\to N$ is a pointed smooth map with $\rho_N\circ h=\rho_M$. Read it as ``$N$ simulates $M$''.
+    Then $N$ reproduces every weight that $M$ reaches, together with its parameter path. A \emph{weak} morphism drops the
+    condition $h(q_0)=q_0'$.
+  \item The \textbf{budget} is $\lvert M\rvert=\dim Q$.
+  \item $M$ is \textbf{additive} if $\rho=\theta_0+\delta$ with $\delta(q_0)=0$ and $\delta$ independent of $\theta_0$.
+  \item $M$ is of \textbf{action type} if $\rho(q)=\gamma(q)\cdot\theta_0$ for a map $\gamma$ into a group acting on $\Theta$.
+\end{itemize}
+\end{definition}
+
+\begin{example*}{four objects}
+On one $m\times n$ box, LoRA \citep{hu2021lora} is $\rho(B,A)=W_0+sBA$ on $Q=\R^{m\times r}\times\R^{r\times n}$, pointed
+at $(0,A_0)$. It is additive, with budget $r(m+n)$. OFT \citep{qiu2023controlling} with the exact Cayley map
+(\bgref{D.7}) is $\rho(Q)=W_0\,C(Q)$ for skew $Q$ (block-diagonal in OFT), pointed at $Q=0$. It is of action type, with
+$\gamma=C$ landing in $\SO(n)$ on the input side. The frozen model is $(\mathrm{pt},*,\theta_0)$, the inclusion of the
+single point $\theta_0$, and full fine-tuning is $(\Theta,\theta_0,\id)$, the identity of $\Theta$.
+\end{example*}
+
+\begin{example*}{one arrow}
+Take LoRA-FA \citep{zhang2023lora}, $B\mapsto W_0+sBA_0$ with $A_0$ frozen, pointed at $B=0$. The pointed map
+$h(B)=(B,A_0)$ satisfies $\rho_{\rm LoRA}\circ h=\rho_{\rm FA}$, so LoRA pointed at $(0,A_0)$ simulates LoRA-FA
+(Figure~\ref{fig:interval}c).
+\end{example*}
+
+Random-subspace training, $\rho(z)=\theta_0+Pz$ with a fixed random matrix $P$, is how \citet{li2018measuring} measured
+intrinsic dimension and how \citet{aghajanyan2020intrinsic} fine-tuned language models in small subspaces. In the slice it
+is a linear object, with $d(M)=\lvert M\rvert$ (\thmref{Definition}{I.5}) when $P$ has full column rank.
+
+\begin{figure}[tbp]
+\centering
+{\small
+\begin{tikzcd}[column sep=6.2em,row sep=0.5em]
+  (\mathrm{pt},*) \arrow[r,"{*\,\mapsto\, q_0}"] \arrow[rr,bend left=24,inkgray,"{*\,\mapsto\,\theta_0}"]
+  & (Q_M,q_0) \arrow[r,tide,"\rho_M","\textsf{merge}"']
+  & (\Theta,\theta_0) \\
+  |[inkgray]| \textsf{Frozen (initial)} & |[inkgray]| M & |[inkgray]| \textsf{Full FT (terminal)}
+\end{tikzcd}}
+
+\smallskip
+{\sffamily\footnotesize\color{inkgray}(a) the interval [frozen, full FT]}
+
+\bigskip
+\begin{minipage}[b]{0.42\linewidth}\centering
+{\small
+\begin{tikzcd}[column sep=1.6em,row sep=3.0em]
+  (Q_M,q_0) \arrow[rr,"h"] \arrow[dr,tide,"\rho_M"'] & & (Q_N,q_0') \arrow[dl,tide,"\rho_N"] \\
+  & (\Theta,\theta_0) &
+\end{tikzcd}}
+
+\smallskip
+{\sffamily\footnotesize\color{inkgray}(b) $N$ simulates $M$: $\rho_N\circ h=\rho_M$}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.56\linewidth}\centering
+{\small
+\begin{tikzcd}[column sep=0.6em,row sep=3.0em]
+  (\R^{m\times r},0) \arrow[rr,"{B\,\mapsto\,(B,A_0)}"] \arrow[dr,tide,"{W_0+sBA_0}"']
+  & & (\R^{m\times r}\times\R^{r\times n},(0,A_0)) \arrow[dl,tide,"{W_0+sBA}"] \\
+  & (\R^{m\times n},W_0) &
+\end{tikzcd}}
+
+\smallskip
+{\sffamily\footnotesize\color{inkgray}(c) LoRA simulates LoRA-FA}
+\end{minipage}
+\caption{The pointed slice $\Meth(\Theta,\theta_0)$.
+(a)~The interval of weight-space methods. For a method $M$, the first arrow picks the initialisation $q_0$; it lies over
+$\Theta$ because $M$ starts at $\theta_0$. The second arrow is $\rho_M$ itself, the merge into the base weights, and the
+composite is the inclusion of $\theta_0$. The frozen model is initial and full fine-tuning terminal
+(\thmref{Observation}{I.4}). A pointing defect, $\rho_M(q_0)\neq\theta_0$, leaves the triangle commuting only up to that
+defect (Exposé~\ref{sec:base}). Adapters and prefixes fall outside the interval because they extend the network
+(\thmref{Definition}{VI.1}).
+(b)~A simulation is a pointed smooth map $h$ that makes the triangle over $(\Theta,\theta_0)$ commute; a weak simulation
+drops $h(q_0)=q_0'$.
+(c)~An instance: LoRA pointed at $(0,A_0)$ simulates LoRA-FA through $h(B)=(B,A_0)$.}
+\label{fig:interval}
+\end{figure}
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{What Para adds}\label{sec:slice-para}
+
+\begin{remark}{I.3}{orientation, and what Para adds}
+Each $\rho$ is a 2-cell $F\Rightarrow F^\rho:=(Q,f\circ(\rho\times X))$ \emph{out of} $F$. A simulation $h:M\to N$ is a
+2-cell $F^{\rho_N}\Rightarrow F^{\rho_M}$, since $\rho_N\circ h=\rho_M$. Hence $\Meth(\Theta,\theta_0)$ is the
+\textbf{opposite of the pointed coslice of reparametrisation 2-cells under $F$} (\bgref{A.7}). The slice over $F$ is a
+different category, and its objects are extensions (Exposé~\ref{sec:merge}).
+
+$\Meth$ depends only on $(\Theta,\theta_0)$ and not on $f$. So for weight-space methods, $\Para$ is bookkeeping. The
+network enters in exactly three places, and we use $\Para$ only there:
+\begin{itemize}
+  \item extensions and mergeability (Exposé~\ref{sec:merge}; \thmref{Definition}{VI.1}, \thmref{Theorem}{VI.3});
+  \item the realisation $\Phi_f$, through functional images and descent (\thmref{Observation}{II.15});
+  \item the backpropagation lens (Exposé~\ref{sec:lens}; \thmref{Definition}{IV.1}, \thmref{Proposition}{IV.2}).
+\end{itemize}
+\end{remark}
+
+Calling $\Para$ bookkeeping concerns this slice only. In the three places listed we use the framework of
+\citet{fong2017backprop} and \citet{cruttwell2021categorical} directly, including their lens 2-functor in
+Exposé~\ref{sec:lens}.
+
+This is also why the next exposés work in weight space. Reach in $\Theta$ is a property of the image, and the cometric
+$K=D\rho\,\Lambda\,D\rho\T$ that shapes training is built from $\rho$ and the optimizer's rates $\Lambda$. The network
+enters training through the gradient it hands to the method, and enters expressivity through $\Phi_f$ once we ask about
+functions instead of weights. So Exposés~\ref{sec:image} and~\ref{sec:fibres} work in $\Theta$ and flag the places where
+$f$ matters.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{Frozen and full fine-tuning}\label{sec:slice-interval}
+
+\begin{observation}{I.4}{universal properties}
+In $\Meth(\Theta,\theta_0)$:
+
+(a) the frozen model $(\mathrm{pt},*,\theta_0)$ is initial, and full fine-tuning $(\Theta,\theta_0,\id)$ is terminal. The
+unique morphism $M\to{}$Full FT is $\rho_M$ itself.
+
+(b) If the fibre product $Q_M\times_\Theta Q_N$ (\bgref{A.11}) exists in $\Diff$, it is the product $M\times N$. It exists,
+for instance, when the set-level fibre product is an embedded submanifold of $Q_M\times Q_N$: a clean intersection
+(\bgref{C.7}), or linear or affine $\rho$'s as in \thmref{Proposition}{I.8}(a). Transversality $\rho_M\pitchfork\rho_N$ is
+never the reason when $\lvert M\rvert+\lvert N\rvert<\dim\Theta$, since at $(q_0,q_0')$ it would force
+$\lvert M\rvert+\lvert N\rvert\ge\dim\Theta$. In $\Set$ the fibre product always exists and
+$\Im(M\times N)=\Im M\cap\Im N$. Whenever the product exists in $\Meth$, its underlying set is this set-level fibre
+product, so the image identity holds in every case. The product can fail to exist. On $\Theta=\R$ ($1\times1$ matrices),
+$\mathrm{LoRA}_1\times\text{Frozen}$ would have the cross $\{BA=0\}\subset\R^2$ as underlying set. No manifold structure
+on the cross has the universal property, because both axes would have to lift smoothly through the point over the origin,
+which forces rank $2$ there.
+
+(c) $\Im$ is a functor (\bgref{A.4}) to the poset (\bgref{A.16}) of subsets of $\Theta$ containing $\theta_0$. Conversely,
+$\Im M\subseteq\Im N$ yields a morphism of the set-level slice $\Set_*/(\Theta,\theta_0)$, though not necessarily a smooth
+one. Take $\rho_M(t)=t$ and $\rho_N(u)=u^3$ on $\R$, pointed at $0$. The images agree, yet no smooth $h:\R\to\R$ satisfies
+$\rho_N\circ h=\id$, that is, $h(t)^3=t$.
+\end{observation}
+
+\noindent The proof is in Appendix~\ref{proof:I.4}. The obstruction in (b) covers every pointing of $\mathrm{LoRA}_1$,
+including the standard one $(0,a_0)$ with $a_0\neq0$, whose base point is a smooth point of the cross; the obstruction sits
+at the origin.
+
+\begin{explains}
+Every weight-space method pointed at $\theta_0$ lies in the interval [frozen, full FT]. Adapters, prefixes and ReFT
+\citep{wu2024reft} are extensions outside $\Meth$ (Exposé~\ref{sec:merge}). ``Merge into the base weights'' is the
+canonical morphism to the terminal object. In exact arithmetic on a full-precision base this is definitional, since every
+object of $\Meth$ is mergeable by construction. Type-preserving merges into quantised bases are lossy
+(\thmref{Proposition}{V.2}(d)), combining several adapters is a separate question (\thmref{Proposition}{V.4}), and the
+remaining zero-overhead questions live on extensions (Exposé~\ref{sec:merge}). What both $M$ and $N$ can express,
+$\Im M\cap\Im N$, always exists as a set. The categorical product, when it exists, is the universal method simulated by
+both, and its image is exactly this set. \thmref{Proposition}{I.8}(a) computes a genuine one (LoRA-XS).
+\thmref{Proposition}{I.8}(b) and \thmref{Theorem}{II.7} compute meets, that is, intersections in the poset of subsets of
+$\Theta$ containing $\theta_0$; they are not products in $\Meth$.
+\end{explains}
+
+\paragraph{Defaults that do not start at the checkpoint}
+Some defaults move the weights before training starts. In Hugging Face PEFT \citep{xmangrulkar2022peft} the default
+FourierFT \citep{gao2024parameter} draws its spectrum from a standard normal, and the default vector bank and logits of
+VB-LoRA \citep{li2024vb} are random too. LoRA with \texttt{init\_lora\_weights=False}, LoRA-XS with its small random $R$, and every method on
+a quantised base also start away from $\theta_0$. Each lives over its own starting weight or carries a pointing defect,
+which Exposé~\ref{sec:base} measures.
+
+\paragraph{Lifting obstructions beyond first order}
+The gap between $\Set$ and $\Diff$ in (c) is a smooth lifting obstruction. \thmref{Observation}{I.6} below detects its
+first-order instances. In the cube-root example, $S_1(M)=\R\not\subseteq S_1(N)=0$. Higher-order obstructions need finer
+invariants. The maps $\rho_M(t)=t^3$ and $\rho_N(u)=u^5$ have equal images and $S_1=0$ on both sides, yet the only lift,
+$t^{3/5}$, is not $C^1$.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{Invariants of a method}\label{sec:slice-invariants}
+
+The budget $\lvert M\rvert$ counts parameters. Two other numbers say more. One is the dimension of what a method
+reaches; the other is the dimension of what it reaches to first order at the start, which is what the first gradient steps
+use. For LoRA with $r=16$
+on a $4096\times4096$ matrix the budget is $131{,}072$, the image has dimension $r(m+n-r)=130{,}816$, and from zero
+initialisation the first steps use only $mr=65{,}536$ directions (\thmref{Theorem}{II.2}, \thmref{Proposition}{II.12}).
+
+\begin{definition}{I.5}{invariants of an object}
+For $M=(Q,q_0,\rho)$:
+\begin{itemize}
+  \item the image $\Im M=\rho(Q)$;
+  \item the \textbf{expressive dimension} $d(M)=\dim\Im M=\max_q\rk d\rho_q$;
+  \item the \textbf{gauge waste} $g(M)=\lvert M\rvert-d(M)$;
+  \item the \textbf{first-order image} $S_1(M)=d\rho_{q_0}(T_{q_0}Q)$, and the \textbf{first-order deficit}, which is
+    $d(M)-\dim S_1(M)$;
+  \item the \textbf{gauge group} $\{\varphi\in\mathrm{Diff}(Q):\rho\circ\varphi=\rho\}$, which is unpointed, since a gauge
+    transformation moves $q_0$ inside its fibre. In practice we exhibit a Lie group (\bgref{D.1}) acting on $Q$ that
+    preserves $\rho$ and is locally transitive on generic fibres, and call it the \textbf{generic gauge}.
+\end{itemize}
+The base point $\theta_0$ is \textbf{regular} for $M$ if the deficit is $0$, and an \textbf{apex} if the deficit is
+positive. We say \textbf{vertex} for the subset-level notion, the cone point of an image germ (\bgref{C.10}), and keep
+\textbf{apex} for the base-point notion. The two differ in general. At a crossing of two smooth branches the image is
+singular, yet the deficit can be $0$. In every case below with a positive deficit, the image germ is (diffeomorphic to) a
+cone with vertex $\theta_0$; the exception is DoRA \citep{liu2024dora}, which inherits LoRA's deficit through its torus
+factor. A cone germ that is a $C^1$ manifold at its vertex equals its tangent space (\bgref{C.2}) there, so it is linear.
+Hence the vertex of a non-linear cone is a singular point.
+\end{definition}
+
+\begin{remark*}{the word ``gauge''}
+``Gauge'' here means the symmetry group of a parametrisation, as in \thmref{Definition}{I.5}. There is no connection, and
+away from the full-rank stratum the fibres jump. The word borrows, as an analogy, the physicist's picture of redundant
+coordinates that leave every observation unchanged. Only the group and its action enter the theorems.
+\end{remark*}
+
+If $N$ simulates $M$, whatever $M$ can do at its first step, $N$ can do too.
+
+\begin{observation}{I.6}{$S_1$ is functorial}
+If $M\to N$ is a (pointed) morphism, then $S_1(M)\subseteq S_1(N)$. In particular, isomorphic methods have equal $S_1$ and
+equal first-order deficit. Monotonicity holds only along pointed morphisms. Along a weak morphism, such as a gauge map
+moving $q_0$ inside its fibre, $S_1$ can change.
+\end{observation}
+
+\noindent The proof is in Appendix~\ref{proof:I.6}.
+
+\begin{explains}
+$S_1$ is the set of weight-space directions available to the linearised (lazy, NTK) dynamics at initialisation, since the
+lazy-regime kernel $J_f\,d\rho\,\Lambda\,d\rho\T J_f\T$ has range $J_f(S_1)$. That kernel also depends on $\Lambda$ and on
+the network Jacobian $J_f$, not only on $S_1$. For random-$A_0$ zero-init LoRA it approximates the full fine-tuning kernel
+\citep{malladi2022kernel}, so a large first-order deficit need not cost much on the data. $S_1$ is an isomorphism
+invariant that separates initialisations the image cannot, namely zero-init $\mathrm T_A$ against $\mathrm T_B$, and the
+choice of $\operatorname{row}A_0$ (\thmref{Theorem}{II.2}). The image already separates split initialisations, since it
+determines $P$.
+\end{explains}
+
+The kernel view of language-model fine-tuning, and the closeness of LoRA's kernel to full fine-tuning's, are due to
+\citet{malladi2022kernel}. \citet{hayou2024impact} compared the zero initialisations $B_0=0$ and $A_0=0$ as training
+procedures; in the slice they are already different objects.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{Sums}\label{sec:slice-sums}
+
+Weight space is a vector space, so running two methods side by side and adding their updates gives a method again.
+
+\begin{observation}{I.7}{additive monoidal structure}
+$\Theta$ is a vector space, so every object of $\Meth(\Theta,\theta_0)$ can be written $\rho=\theta_0+\delta$ with
+$\delta:=\rho-\theta_0$ and $\delta(q_0)=0$. Put
+\begin{equation*}
+  M\oplus N:=\big(Q_M\times Q_N,\ (q_0,q_0'),\ \theta_0+\delta_M+\delta_N\big).
+\end{equation*}
+This is a symmetric monoidal structure (\bgref{B.1}) with the frozen model as unit. Its image is the Minkowski sum
+$\theta_0+(\Im\delta_M+\Im\delta_N)$ (\bgref{B.14}). It differs from the categorical product, whose image, when the
+product exists, is the intersection $\Im M\cap\Im N$ (\thmref{Observation}{I.4}(b)). ``Additive'' in
+\thmref{Definition}{I.2} ($\delta$ independent of $\theta_0$) is a condition on \emph{families}
+$\theta_0\mapsto M(\theta_0)$; it matters for base change (Exposé~\ref{sec:base}) and plays no role here.
+
+Write $\mathrm{LoRA}_k$ for LoRA with frozen residual $\theta_0$; for split pointings the sum below has residual
+$\theta_0-P-P'$. Concatenation $h(B_1,A_1,B_2,A_2)=([B_1\ B_2],[A_1;A_2])$ is an isomorphism
+$\mathrm{LoRA}_r\oplus\mathrm{LoRA}_s\cong\mathrm{LoRA}_{r+s}$ of unpointed objects. It is a pointed isomorphism onto
+$\mathrm{LoRA}_{r+s}$ pointed at $([B_0\ B_0'],[A_0;A_0'])$. For $\mathrm T_A$ pointings ($B_0=0$, $\rk A_0=r$), the
+target pointing has $\rk[A_0;A_0']=r+s$ if and only if $\operatorname{row}A_0\cap\operatorname{row}A_0'=0$; it lies in the
+stratum $\mathrm T_A$ of \thmref{Theorem}{II.2} when moreover $r+s<\min(m,n)$.
+
+Standard pointings ($\mathrm T_A$, or symmetrically $\mathrm T_B$) exist only for $r<\min(m,n)$ (\thmref{Theorem}{II.2}),
+so the monoidal question is pointwise. If $F(r)$ and $F(2r)$ are standard ($2r<\min(m,n)$), then
+$F(r)\oplus F(r)\not\cong F(2r)$ as pointed objects; for $2r\ge\min(m,n)$ no standard $F(2r)$ exists. Hence no assignment
+$r\mapsto\mathrm{LoRA}_r$ with $F(1)$ and $F(2)$ standard is \textbf{strong monoidal} (\bgref{B.15}) into pointed objects.
+For $r\neq s$ and standard pointings, $F(r)\oplus F(s)\cong F(r+s)$ as pointed objects exactly when the row space of the
+target's $A_0$ is the direct sum of the two source row spaces. The assignment is strong monoidal on unpointed objects, up to
+weak morphisms, and on pointed objects with degenerate pointings, namely the origin $(B_0,A_0)=(0,0)$, where $S_1=0$, or
+the stacked pointings $F(r)=F(1)^{\oplus r}$. Concatenation is strictly associative and unital, so discrete $(\N,+)$
+suffices for a plain strong monoidal functor. \emph{Symmetric} strong monoidality needs the permutation groupoid, since
+swapping and then concatenating permutes the blocks.
+
+With per-adapter scales $s_r$ ($\alpha/r$ for LoRA, $\alpha/\sqrt r$ for rsLoRA) and any target scale $s_*$, the map
+$h=([B_1\ B_2],[c_1A_1;c_2A_2])$ with $c_i=s_{r_i}/s_*$, where $r_1=r$ and $r_2=s$, is an isomorphism over $\Theta$. It is
+a linear bijection and preserves row spaces, so the pointing criterion is unchanged.
+\end{observation}
+
+\noindent The proof is in Appendix~\ref{proof:I.7}. The negative claim rests on $\dim S_1$, which any pointed
+isomorphism preserves (\thmref{Observation}{I.6}). It is $mr$ for $F(r)\oplus F(r)$ and $2mr$ for a standard $F(2r)$.
+[Num] At $m=7$, $\dim S_1=28$ for a standard $\mathrm{LoRA}_4$, against $14$ for $\mathrm{LoRA}_2\oplus\mathrm{LoRA}_2$
+with the same $A_0$ and $28$ with independent $A_0$'s; $F(1)\oplus F(2)$ and a standard $F(3)$ both give $21$
+(Appendix~\ref{app:repro}).
+
+\paragraph{The \texttt{cat} merge of Hugging Face PEFT}
+Hugging Face PEFT's \texttt{add\_weighted\_adapter(..., combination\_type="cat")} \citep{xmangrulkar2022peft} evaluates the
+rescaled concatenation $h$ at trained points. It takes $s_*=1$. It sets the merged \texttt{lora\_alpha} to the new rank
+$r+s$, multiplies each $A$ block by $w_is_{r_i}$, so that $c_i=w_is_{r_i}$, and leaves the $B$ blocks alone. It is the
+isomorphism $h$ when all weights $w_i=1$ and the merged adapter has \texttt{use\_rslora=False}. In PEFT releases up to
+v0.21.1 the merged adapter inherits \texttt{use\_rslora} from the first source. For rsLoRA sources
+\citep{kalajdzievski2023rank} its scale is then $(r+s)/\sqrt{r+s}=\sqrt{r+s}$, and the merged update is $\sqrt{r+s}$ times
+too large. PR \#3449 on the main branch fixes this by setting \texttt{use\_rslora=False} on the merged adapter.
+
+\begin{explains}
+RoSA \citep{nikdan2024rosa} (LoRA $\oplus$ a fixed-mask sparse method) and GraLoRA \citep{jung2025gralora} ($\oplus$ of
+$k^2$ block-embedded LoRAs) are $\oplus$-words, and their expressivity is a Minkowski sum. ReLoRA \citep{lialin2023relora}
+is $\mathrm{LoRA}^{\oplus K}$ unrolled in time, apart from its full-rank warm start. A sum of $k$ rank-$r$ LoRAs, each with
+residual $\theta_0$, is isomorphic in $\Meth$ to one LoRA of rank $kr$, pointed at the concatenated initialisation. Under
+$\alpha/r$ scaling the isomorphism rescales the $A$ blocks, so training at equal $\alpha$ and learning rate follows a
+different trajectory. The \texttt{cat} merge is the isomorphism $h$ evaluated at trained points; the merged adapter, if
+unfrozen, is $\mathrm{LoRA}_{r+s}$.
+\end{explains}
+
+\paragraph{What is and is not a sum}
+LoRA-soup CAT \citep{prabhakar2024lora} freezes the trained modules and learns layer-wise weights, so it is a $\oplus$ of
+$k$ frozen line methods $\alpha_i\mapsto\alpha_iB_iA_i$. Its per-layer image is a span of dimension at most $k$
+(generically exactly $k$), much smaller than the image of $\mathrm{LoRA}_{kr}$. UniPELT \citep{mao2021unipelt} and MAM
+\citep{he2021unified} are \textbf{not} $\oplus$-words in $\Meth(\Theta,\theta_0)$. Their adapter and prefix parts live on
+extensions (Exposé~\ref{sec:merge}), and UniPELT's gates depend on the input. The obstruction in
+\thmref{Observation}{I.7} is the reuse of one pointing. With a fixed pointing, stacking the same $A_0$ twice gives a
+rank-deficient frame, which $S_1$ distinguishes from a standard $\mathrm{LoRA}_{2r}$.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{Products}\label{sec:slice-products}
+
+Freeze $A$ at $A_0$ and train $B$, or freeze $B$ at $B_0$ and train $A$. The product of these two one-sided methods is
+LoRA-XS. As a pullback square over $\Theta$ it reads
+\begin{equation*}
+\begin{tikzcd}[column sep=6.5em,row sep=2.8em]
+  \R^{r\times r} \arrow[r,"{R\,\mapsto\, B_0R}"] \arrow[d,"{R\,\mapsto\, RA_0}"'] \arrow[dr,phantom,"\lrcorner",pos=0.09]
+  & Q_{\rm FA}=\R^{m\times r} \arrow[d,tide,"{B\,\mapsto\, W_0+BA_0}"] \\
+  Q_{\rm FB}=\R^{r\times n} \arrow[r,tide,"{A\,\mapsto\, W_0+B_0A}"] & \Theta=\R^{m\times n}
+\end{tikzcd}
+\end{equation*}
+and both composites send $R$ to $W_0+B_0RA_0$.
+
+\begin{proposition}{I.8}{a product that produces a named method; an image-level meet}
+(a) Let $A_0\in\R^{r\times n}$ have full row rank and $B_0\in\R^{m\times r}$ full column rank. Define the one-sided methods
+\begin{equation*}
+  \mathrm{FA}(A_0):B\mapsto W_0+BA_0,\qquad \mathrm{FB}(B_0):A\mapsto W_0+B_0A,
+\end{equation*}
+both pointed at $0$. Then
+\begin{equation*}
+  \mathrm{FA}(A_0)\times\mathrm{FB}(B_0)\;\cong\;\big(\R^{r\times r},\ 0,\ R\mapsto W_0+B_0RA_0\big).
+\end{equation*}
+The product supplies this sandwich for \emph{any} frames. Assume $\rk W_0\ge r$ ($\sigma_r>0$) and take the SVD frames
+$B_0=U_r$, $A_0=\Sigma_rV_r\T$. The result is \textbf{LoRA-XS pointed at $R=0$}.
+
+(b) Let $W_0$ have full row rank (so $m\le n$), and let $\mathrm{LoRA}_r$ carry its standard pointing ($B_0=0$, image
+$W_0+\Mr$). The image-level meet of $\mathrm{LoRA}_r$ with the output-scaling method $\ell\mapsto\diag(\ell)W_0$ is
+$\{\diag(\ell)W_0:\#\{i:\ell_i\neq1\}\le r\}$, that is, ``rescale at most $r$ output neurons''.
+
+\upshape The LoRA-XS paper \citep{baazy2024lora} writes $xW+xARB$ in row-vector convention with $A=U_r\Sigma_r$ and
+$B=V_r\T$. Transposed, the update is $B_0R\T A_0$, so the isomorphism is $R\mapsto\alpha R\T$. LoRA-XS initialises
+$R\sim\mathcal N(0,\sigma^2)$ with $\sigma=10^{-5}$, a negligible pointing defect. The output-scaling method in (b) is the
+key/value part of (IA)$^3$ \citep{liu2022few}. On the FFN, (IA)$^3$ scales the \emph{input} of $W_{\rm down}$,
+$W\mapsto W\diag(\ell)$; the mirror statement then needs full column rank, or holds generically for $r<d$, where $d$ is the
+number of rows of $W_{\rm down}$.
+\end{proposition}
+
+\noindent The proof is in Appendix~\ref{proof:I.8}. In (a) the fibre product is the $r^2$-dimensional linear subspace
+$\{(B_0R,RA_0)\}$, and if $\rk W_0<r$ the frame $\Sigma_rV_r\T$ is rank-deficient and the LoRA-XS instance breaks.
+[Num] The fibre product of (a) has dimension $4=r^2$ at $(m,n,r)=(6,8,2)$ (Appendix~\ref{app:repro}).
+
+\begin{explains}
+LoRA-XS is the largest method that factors through \emph{both} frozen frames. In the frames of an initialisation it is the
+overlap that a split initialisation double-counts (\thmref{Proposition}{II.3}); it is LoRA-XS proper when those frames span
+the top-$r$ singular subspaces of $W_0$, as at a PiSSA initialisation \citep{meng2024pissa}. The meet in (b) is only
+set-level. For $n\ge2$ the product does not exist in $\Diff$, because its fibre product is singular at the origin
+$(b,a,\ell)=(0,0,\mathbf 1)$, by the rank argument of \thmref{Observation}{I.4}(b) (Appendix~\ref{proof:I.8}). Once a support is fixed, the meet is
+just (IA)$^3$ masked to $r$ neurons; compare sparse activation scaling \citep{xstoehr2024activation}.
+\end{explains}
+
+\paragraph{The shape of the meet in (b)}
+The meet is the union of the $\binom mr$ coordinate $r$-planes ``rescale at most $r$ output neurons''. For $r=1$ the fibre
+product is the union of the linear spaces $\{b=0,\ \ell=\mathbf 1\}$ and $\{a=0,\ \ell=\mathbf 1\}$ with $m$
+two-dimensional sheets $\{b=ce_i,\ a=\lambda w_i,\ \ell_i=1+sc\lambda\}$, where $w_i$ is row $i$ of $W_0$. Under the
+standard pointing ($b=0$, $a_0$ generic) the base point is a smooth point of $\{b=0,\ \ell=\mathbf 1\}$, so the singularity
+sits away from it, at the origin.
+
+% ------------------------------------------------------------------------------------------------
+\subsubsection{The dictionary so far}\label{sec:slice-dictionary}
+
+Table~\ref{tab:slice-dictionary} collects the translations made in this exposé. The full dictionary is the Rosetta stone
+of Exposé~\ref{sec:rosetta}.
+
+\begin{table}[!htb]
+\centering
+\caption{The dictionary for Exposé~\ref{sec:slice}.}
+\label{tab:slice-dictionary}
+\small\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.2\linewidth}}
+\toprule
+\headrow \textbf{In PEFT} & \textbf{In the pointed slice} & \textbf{Statement} \\
+\midrule
+pretrained checkpoint & base point $\theta_0$ of a pointed 1-cell $(\Theta,\theta_0,f)$ & \thmref{Definition}{I.1} \\
+a weight-space PEFT method & an object $\rho:(Q,q_0)\to(\Theta,\theta_0)$ of $\Meth(\Theta,\theta_0)$ & \thmref{Definition}{I.2} \\
+``$N$ can do whatever $M$ can'' & a morphism $h:M\to N$, $\rho_N\circ h=\rho_M$; at the level of sets, image inclusion
+  & \thmref{Definition}{I.2}, \thmref{Observation}{I.4}(c) \\
+frozen model, full fine-tuning & initial and terminal objects & \thmref{Observation}{I.4}(a) \\
+merging into full-precision weights & the canonical morphism $\rho_M$ to the terminal object & \thmref{Observation}{I.4}(a) \\
+effective number of parameters & expressive dimension $d(M)$; the rest is gauge waste & \thmref{Definition}{I.5} \\
+what the first steps can use & first-order image $S_1$, a functorial invariant & \thmref{Observation}{I.6} \\
+RoSA, GraLoRA, ReLoRA stages & $\oplus$-words, with a Minkowski sum as image & \thmref{Observation}{I.7} \\
+HF \texttt{cat} merge & the concatenation isomorphism evaluated at trained points & \thmref{Observation}{I.7} \\
+LoRA-XS & the product $\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)$ & \thmref{Proposition}{I.8} \\
+adapters, prefixes, ReFT & extensions of the network, outside $\Meth$ & \thmref{Definition}{VI.1} \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,811 @@
+{
+ "family": "gap-3",
+ "family_title": "Gap fill 3: interpolation, output-space arithmetic, federated LoRA, head-only and memory-lean tuning, discrete prompts",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "concept-sliders",
+   "name": "Concept Sliders",
+   "full_name": "Concept Sliders (attribute-direction LoRA with a continuous inference-time strength)",
+   "paper_title": "Concept Sliders: LoRA Adaptors for Precise Control in Diffusion Models",
+   "authors": "Gandikota et al.",
+   "year": 2023,
+   "venue": "ECCV 2024",
+   "arxiv": "2311.12092",
+   "url": "https://arxiv.org/abs/2311.12092",
+   "code_url": "https://github.com/rohitgandikota/sliders",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W(\\alpha)=W_0+\\alpha\\,BA,\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}},\\ \\alpha\\in\\mathbb{R}\\ \\text{(slider strength, set at inference)};\\ \\ \\text{text sliders regress the slider model onto the frozen model's guided score: }\\epsilon_{\\theta^{*}}(X,c_t,t)\\leftarrow\\epsilon_{\\theta}(X,c_t,t)+\\eta\\sum_{p\\in\\mathcal{P}}\\big(\\epsilon_{\\theta}(X,(c_{+},p),t)-\\epsilon_{\\theta}(X,(c_{-},p),t)\\big);\\ \\ \\text{image-pair sliders: }\\min_{A,B}\\|\\epsilon_{\\theta_{-}}(x^{A}_t,\\varnothing,t)-\\epsilon\\|^2+\\|\\epsilon_{\\theta_{+}}(x^{B}_t,\\varnothing,t)-\\epsilon\\|^2\\ (\\theta_{\\pm}:\\ \\alpha=\\pm1);\\ \\ \\text{composition: }W=W_0+\\sum_k\\alpha_kB_kA_k;\\ W_0\\ \\text{frozen},\\ A,B\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix per slider (default } r=4\\text{)}",
+   "locus": "LoRA on the diffusion U-Net (SD-XL, SD-1.4); the official text-slider config adapts all layers except cross-attention ('noxattn'), including 3x3 conv layers ('c3lier'), with rank 4 and alpha 1, so the code applies the fixed internal scale alpha/r = 1/4 times the slider multiplier; at inference the slider is switched on only after the first t denoising steps (SDEdit-style)",
+   "modification_kind": "additive-weight",
+   "structure": "Each slider is a rank-r ray \\{W_0+\\alpha BA:\\alpha\\in\\mathbb{R}\\} through W_0, i.e. a one-parameter additive family in weight space; K sliders span the affine slice W_0+\\mathrm{span}_{\\mathbb{R}}\\{B_kA_k\\}_{k=1}^{K}, navigated by the coefficient vector (\\alpha_1,\\dots,\\alpha_K). The training target is an output-space (score) contrast \\epsilon(c_+)-\\epsilon(c_-) distilled into this weight direction.",
+   "mergeable": "yes",
+   "mergeable_reason": "For any fixed strength vector the update \\sum_k \\alpha_k B_k A_k is a plain matrix that folds into W_0; the SDEdit-style schedule only switches between W_0 and the merged weights across denoising steps.",
+   "identity_at_init": "Standard LoRA initialization (B = 0); in addition, alpha = 0 recovers the base model exactly at any time after training, since every slider is a ray through W_0.",
+   "key_idea": "Train a LoRA whose direction encodes a single attribute, using the frozen model's own guidance-style score difference between opposing prompts (with preservation prompts to disentangle) or before/after image pairs as the target; scaling the LoRA multiplier then dials the attribute continuously up or down, and sliders add.",
+   "results_note": "On SD-XL, a 'fix hands' slider cut the rater-judged rate of distorted hands from 62% to 22%, the disentanglement objective lowered attribute interference from 0.36 to 0.10, and up to 50 sliders were composed in one model.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "architecturally each slider is a LoRA whose multiplier alpha is exposed as a continuous control"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "special-case-of",
+     "note": "composing sliders, W_0 + sum_k alpha_k B_k A_k, is task arithmetic with low-rank task vectors and user-chosen signed coefficients"
+    },
+    {
+     "target": "proxy-tuning",
+     "type": "dual-to",
+     "note": "sliders distil an output-space contrast eps(c+) - eps(c-) into a weight-space direction; proxy-tuning applies an output-space (logit) contrast at decode time without touching weights"
+    },
+    {
+     "target": "ziplora",
+     "type": "competes-with",
+     "note": "both combine several diffusion LoRAs; ZipLoRA learns per-column merge coefficients instead of exposing user-set scalar strengths"
+    },
+    {
+     "target": "multi-lora-composition",
+     "type": "competes-with",
+     "note": "alternative way to apply several diffusion LoRAs at once (switching/compositing across denoising steps)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.12092",
+    "https://arxiv.org/html/2311.12092",
+    "https://github.com/rohitgandikota/sliders",
+    "https://raw.githubusercontent.com/rohitgandikota/sliders/main/trainscripts/textsliders/data/config.yaml",
+    "https://api2.openreview.net/notes/search?term=Concept%20Sliders"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "locus: added the official config's rank 4 / alpha 1 (internal scale alpha/r = 1/4 multiplying the slider strength) and the 'c3lier' conv-layer coverage, from trainscripts/textsliders/data/config.yaml and lora.py"
+   ],
+   "verification_notes": "arXiv 2311.12092 (Gandikota, 2023-11) confirmed; ECCV 2024 confirmed via Crossref (LNCS, DOI 10.1007/978-3-031-73661-2_10) and Semantic Scholar. Eqs. 4, 7, 8, 9 of the paper match the formula (W = W_0 + alpha*DeltaW with alpha set at inference; disentanglement target; image-pair loss with theta_+/theta_-). Code (lora.py) inits lora_up to zeros, so B = 0 at init. 62% -> 22% distorted hands, interference 0.36 -> 0.10 (Table 3, age slider) and 50-slider composition confirmed. Not in HF PEFT as a training method (peft.helpers.rescale_adapter_scale or add_weighted_adapter can set strengths/compose trained sliders, but the guided-score objective is absent)."
+  },
+  {
+   "id": "ic-lora",
+   "name": "IC-LoRA",
+   "full_name": "In-Context LoRA for diffusion transformers",
+   "paper_title": "In-Context LoRA for Diffusion Transformers",
+   "authors": "Huang et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2410.23775",
+   "url": "https://arxiv.org/abs/2410.23775",
+   "code_url": "https://github.com/ali-vilab/In-Context-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+\\tfrac{\\alpha}{r}BA\\ \\text{in the FLUX.1-dev DiT},\\ r=\\alpha=16\\ \\text{(official config)};\\ \\ \\text{training input: one composite image }X=[\\,x_1\\,|\\,x_2\\,|\\cdots|\\,x_n\\,]\\ \\text{(n panels concatenated spatially) with one merged caption }c=[c_{\\text{set}};c_1;\\dots;c_n];\\ \\ \\text{loss: the base model's own flow-matching objective on }(X,c);\\ \\ \\text{image-conditioned use: mask some panels and inpaint them from the rest with SDEdit (training-free)};\\ W_0\\ \\text{and text encoders frozen},\\ A,B\\ \\text{trained on 20--100 image sets per task}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix},\\ r=16",
+   "locus": "LoRA on the layers of a text-to-image diffusion transformer (FLUX.1-dev); the task itself is carried by the input format (panel-concatenated image + merged prompt), not by new modules",
+   "modification_kind": "additive-weight",
+   "structure": "Plain low-rank \\Delta W=BA; the cross-image conditioning is supplied by the DiT's existing full self-attention over the tokens of all panels in one canvas, so the adapter only re-weights an in-context capability the base model already has (no token-routing masks, no extra encoders).",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter is a standard LoRA on an unchanged DiT, so BA folds into W_0; the multi-panel behaviour comes from the input canvas and prompt.",
+   "identity_at_init": "Standard LoRA initialization (B = 0) on an unmodified architecture, so the zero adapter is exactly FLUX.1-dev.",
+   "key_idea": "Text-to-image DiTs can already draw coherent multi-panel images from one merged prompt; concatenating image sets into a single canvas with a joint caption and training a small task-specific LoRA on 20-100 examples activates this in-context ability, and SDEdit-style masking turns it into reference-conditioned generation.",
+   "results_note": "Qualitative results only: storyboards, font design, portrait photography, home decoration, visual identity and visual effects, each trained for 5,000 steps (batch 4, rank 16) on one A100; no quantitative benchmark is reported.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "the trainable object is an ordinary LoRA; the contribution is the data/input recipe"
+    },
+    {
+     "target": "ominicontrol",
+     "type": "competes-with",
+     "note": "both reuse the DiT's own attention over concatenated image tokens; OminiControl concatenates condition tokens in sequence and adds an attention bias, IC-LoRA concatenates panels in pixel space"
+    },
+    {
+     "target": "easycontrol",
+     "type": "competes-with",
+     "note": "alternative LoRA-based conditioning of DiTs on reference images"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.23775",
+    "https://arxiv.org/html/2410.23775",
+    "https://github.com/ali-vilab/In-Context-LoRA",
+    "https://export.arxiv.org/api/query?id_list=2410.15027"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: alpha fixed to 16 (linear_alpha in config/movie-shots.yml, so alpha/r = 1); 'denoising objective' replaced by the flow-matching objective actually used (noise_scheduler: flowmatch); text encoders marked frozen (train_text_encoder: false)"
+   ],
+   "verification_notes": "arXiv 2410.23775 (Lianghua Huang, 2024-10; comment 'Tech report') confirmed; no peer-reviewed venue found (Semantic Scholar lists arXiv only), so venue stays arXiv. Method section confirms image concatenation, merged prompts, LoRA on 20-100 sets, SDEdit for conditioning; implementation details (FLUX.1-dev, 5,000 steps, batch 4, rank 16, one A100) and 'qualitative only' confirmed. Official ai-toolkit config: lora linear 16 / linear_alpha 16, flowmatch, text encoder frozen. Not in HF PEFT as a method (the resulting weights are plain LoRA)."
+  },
+  {
+   "id": "proxy-tuning",
+   "name": "Proxy-Tuning",
+   "full_name": "Proxy-tuning (decoding-time tuning of a large model through a small tuned/untuned pair)",
+   "paper_title": "Tuning Language Models by Proxy",
+   "authors": "Liu et al.",
+   "year": 2024,
+   "venue": "COLM 2024",
+   "arxiv": "2401.08565",
+   "url": "https://arxiv.org/abs/2401.08565",
+   "code_url": "https://github.com/alisawuffles/proxy-tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "p_{\\tilde{\\mathcal M}}(X_t\\mid x_{<t})=\\mathrm{softmax}\\big[s_{\\mathcal M}(X_t\\mid x_{<t})+s_{\\mathcal M^{+}}(X_t\\mid x_{<t})-s_{\\mathcal M^{-}}(X_t\\mid x_{<t})\\big];\\ \\ \\mathcal M:\\ \\text{large base model (frozen; only its logits are used)},\\ \\mathcal M^{-}:\\ \\text{small base model (frozen)},\\ \\mathcal M^{+}:\\ \\mathcal M^{-}\\ \\text{after tuning};\\ \\text{models must share a vocabulary}",
+   "trainable_params": "0\\ \\text{in }\\mathcal M;\\ \\text{only the small proxy }\\mathcal M^{-}\\to\\mathcal M^{+}\\ \\text{is tuned (any method, done once)}",
+   "locus": "next-token logits at decoding time; the large model's weights are never accessed",
+   "modification_kind": "composition-or-routing",
+   "structure": "Output-space (logit) arithmetic: the large model's logit vector is translated by the small model's tuning vector s_{\\mathcal M^{+}}-s_{\\mathcal M^{-}}, i.e. task arithmetic in logit space, equivalently a product of experts \\propto p_{\\mathcal M}\\,p_{\\mathcal M^{+}}/p_{\\mathcal M^{-}} with one expert and one anti-expert (DExperts).",
+   "mergeable": "no",
+   "mergeable_reason": "Every decoding step needs forward passes of three models; nothing is folded into the large model's weights.",
+   "identity_at_init": "If the proxy is untuned (M+ = M-), the offset vanishes and the large model's distribution is recovered exactly.",
+   "key_idea": "Tune a small model, then add the difference between its tuned and untuned logits to a large (possibly black-box) model's logits at each decoding step, transferring the effect of tuning without touching the large model's weights.",
+   "results_note": "Steering Llama2-13B and 70B base with Llama2-7B chat/base proxies closed 91.1% and 88.1% of the gap to the true chat models on average over five settings (AlpacaFarm, GSM, ToxiGen, TruthfulQA multiple-choice and open-ended); it was also applied to GPT-3.5 using only its top-5 log-probabilities (+2.3% on RealTimeQA).",
+   "relations": [
+    {
+     "target": "eft",
+     "type": "equivalent-to",
+     "note": "the per-token EFT up-scaling rule pi_ref^N * pi^M / pi_ref^M normalizes to the same softmax of s_M + s_{M+} - s_{M-}; the two papers are concurrent"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "dual-to",
+     "note": "adds a 'tuning vector' in logit space instead of in weight space"
+    },
+    {
+     "target": "black-box-tuning",
+     "type": "competes-with",
+     "note": "both adapt a model whose weights are inaccessible; BBT searches a soft prompt gradient-free, proxy-tuning needs output logits but no prompt optimization"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "the paper's appendix compares proxy-tuning with LoRA for task fine-tuning"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.08565",
+    "https://arxiv.org/html/2401.08565",
+    "https://github.com/alisawuffles/proxy-tuning"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "results_note: clarified that the 91.1%/88.1% averages are over five settings (TruthfulQA counted as MC and open-ended) and added the +2.3% RealTimeQA gain for GPT-3.5"
+   ],
+   "verification_notes": "arXiv 2401.08565 (Alisa Liu, 2024-01; comment 'COLM 2024 camera-ready') confirmed. Eq. in Sec. 2 is exactly softmax[s_M + s_M+ - s_M-] with a shared-vocabulary requirement; Sec. 8 states that Mitchell et al. (EFT) apply 'the same DExperts equation', justifying equivalent-to; Appendix D compares with LoRA. Not in HF PEFT."
+  },
+  {
+   "id": "eft",
+   "name": "EFT",
+   "full_name": "Emulated Fine-Tuning (LM up-scaling)",
+   "paper_title": "An Emulator for Fine-Tuning Large Language Models using Small Language Models",
+   "authors": "Mitchell et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.12962",
+   "url": "https://arxiv.org/abs/2310.12962",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\pi^{N}_{M}(y\\mid x)\\propto\\pi^{N}_{\\mathrm{ref}}(y\\mid x)\\,\\frac{\\pi^{M}(y\\mid x)}{\\pi^{M}_{\\mathrm{ref}}(y\\mid x)}=\\pi^{N}_{\\mathrm{ref}}(y\\mid x)\\exp\\big(r^{M}_{\\pi}(x,y)\\big),\\ \\ r^{M}_{\\pi}=\\log\\tfrac{\\pi^{M}}{\\pi^{M}_{\\mathrm{ref}}};\\ \\ \\text{sampled per token: }\\tilde\\pi(y_t\\mid x,y_{<t})=\\tfrac{1}{Z(x,y_{<t})}\\pi^{N}_{\\mathrm{ref}}(y_t\\mid x,y_{<t})\\tfrac{\\pi^{M}(y_t\\mid x,y_{<t})}{\\pi^{M}_{\\mathrm{ref}}(y_t\\mid x,y_{<t})};\\ \\ \\text{up-scaling: }N>M\\ \\text{(large base, small fine-tuned and small base)};\\ \\text{all models frozen}",
+   "trainable_params": "0\\ \\text{(composes existing pre-trained and fine-tuned checkpoints)}",
+   "locus": "next-token distributions at sampling time",
+   "modification_kind": "composition-or-routing",
+   "structure": "Reward transport across scales: fine-tuning is viewed as KL-regularized RL, so a fine-tuned model equals its base times \\exp(\\text{implicit reward}); EFT moves the small-scale implicit reward \\log(\\pi^{M}/\\pi^{M}_{\\mathrm{ref}}) onto a large-scale base, a log-linear (logit-additive) composition of three models.",
+   "mergeable": "no",
+   "mergeable_reason": "Sampling requires the large base and both small models at every step (speculative decoding reduces but does not remove this cost).",
+   "identity_at_init": "Setting N = M returns the original fine-tuned policy; an untuned small model (pi^M = pi^M_ref) returns the large base model.",
+   "key_idea": "Fine-tuning's effect can be isolated as the log-ratio between a fine-tuned model and its base; adding a small model's log-ratio to a large base model emulates fine-tuning the large model, and decouples the scales of pre-training and fine-tuning.",
+   "results_note": "Averaged over Llama-1, Llama-2 and Falcon on Anthropic-HH and ELI5, up-scaling recovered nearly 70% of the factuality gain of the truly fine-tuned large model (scores normalized so that the small fine-tuned model is 0 and the large fine-tuned model is 1); speculative EFT decoding sped up sampling by nearly 2.5x when up-scaling Llama-2-7B-chat with Llama-2-70B-base.",
+   "relations": [
+    {
+     "target": "proxy-tuning",
+     "type": "equivalent-to",
+     "note": "concurrent work with the same per-token logit-arithmetic rule; EFT gives the KL-regularized-RL derivation"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "dual-to",
+     "note": "transports a fine-tuning delta in log-probability space rather than weight space"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.12962",
+    "https://arxiv.org/html/2310.12962",
+    "https://api2.openreview.net/notes/search?term=An%20Emulator%20for%20Fine-Tuning%20Large%20Language%20Models%20using%20Small%20Language%20Models"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "results_note: made the normalization behind 'nearly 70%' explicit (0 = small fine-tuned, 1 = large fine-tuned), as in Fig. 3"
+   ],
+   "verification_notes": "arXiv 2310.12962 (Mitchell, 2023-10) confirmed; ICLR 2024 (poster) confirmed via OpenReview (venueid ICLR.cc/2024/Conference). Eqs. 3-5 match the formula, including the per-timestep partition function and 'N = M corresponds to sampling from the original policy'. No official code found. Not in HF PEFT."
+  },
+  {
+   "id": "wise-ft",
+   "name": "WiSE-FT",
+   "full_name": "Weight-space ensembles for fine-tuning",
+   "paper_title": "Robust fine-tuning of zero-shot models",
+   "authors": "Wortsman et al.",
+   "year": 2021,
+   "venue": "CVPR 2022",
+   "arxiv": "2109.01903",
+   "url": "https://arxiv.org/abs/2109.01903",
+   "code_url": "https://github.com/mlfoundations/wise-ft",
+   "hf_peft": true,
+   "hf_peft_config": "peft.helpers.rescale_adapter_scale(model, multiplier=alpha) with alpha in [0,1]: LoRA-adapter form only (scales Delta W toward W_0, which the PEFT docstring calls strictly equivalent to WiSE-FT); heads trained via modules_to_save are not interpolated",
+   "formula_latex": "\\theta_{\\alpha}=(1-\\alpha)\\,\\theta_0+\\alpha\\,\\theta_1=\\theta_0+\\alpha(\\theta_1-\\theta_0),\\ \\ \\alpha\\in[0,1];\\ \\ \\theta_0=[V_{\\mathrm{enc}},W_{\\text{zero-shot}}]\\ \\text{(zero-shot CLIP: pre-trained encoder + text-derived head)},\\ \\theta_1=\\text{standard (end-to-end or head-only) fine-tuned weights};\\ \\ \\text{per matrix: }W=W_0+\\alpha\\,\\Delta W;\\ \\text{only }\\alpha\\ \\text{is chosen post hoc (default }0.5\\text{)}",
+   "trainable_params": "0\\ \\text{beyond the underlying fine-tuning (which updates all parameters); one scalar }\\alpha",
+   "locus": "all parameters of the image encoder and the classification head",
+   "modification_kind": "composition-or-routing",
+   "structure": "The segment \\{\\theta_0+\\alpha(\\theta_1-\\theta_0)\\}_{\\alpha\\in[0,1]} joining the pre-trained point and the fine-tuned point in weight space (a two-point convex combination); when only the linear head is fine-tuned it coincides with the output-space ensemble (1-\\alpha)f(x,\\theta_0)+\\alpha f(x,\\theta_1).",
+   "mergeable": "yes",
+   "mergeable_reason": "The interpolated weights form a single model of the original architecture, so inference costs exactly one model.",
+   "identity_at_init": "alpha = 0 returns the zero-shot model and alpha = 1 the fine-tuned one; for end-to-end fine-tuning the head is initialized with the (temperature-scaled) zero-shot classifier.",
+   "key_idea": "Zero-shot CLIP is robust under distribution shift while fine-tuning is accurate in distribution; because the two endpoints are linearly connected in weight space, simply interpolating their weights keeps most of both at no extra inference cost.",
+   "results_note": "On ImageNet and five derived distribution shifts with CLIP, WiSE-FT improved accuracy under shift by 4-6 pp over prior work while raising ImageNet accuracy by 1.6 pp.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "special-case-of",
+     "note": "WiSE-FT is task arithmetic with a single task vector tau = theta_1 - theta_0 and lambda = alpha in [0,1]"
+    },
+    {
+     "target": "model-soups",
+     "type": "competes-with",
+     "note": "same group's follow-up averages several fine-tuned endpoints instead of interpolating back toward the zero-shot start"
+    },
+    {
+     "target": "lp-ft",
+     "type": "competes-with",
+     "note": "concurrent robust fine-tuning recipe addressing the same ID/OOD trade-off by initialization rather than interpolation"
+    },
+    {
+     "target": "linear-probing",
+     "type": "generalizes",
+     "note": "with head-only fine-tuning, WiSE-FT returns the linear probe at alpha = 1 (warm-started from the zero-shot head) and the output ensemble of the zero-shot head and the probe for 0 < alpha < 1"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2109.01903",
+    "https://arxiv.org/html/2109.01903",
+    "https://github.com/mlfoundations/wise-ft"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "hf_peft: false -> true; PEFT main (85be3f3, v0.21.1) ships peft.helpers.rescale_adapter_scale, documented as strictly equivalent to WiSE-FT for LoRA with multiplier in [0,1]",
+    "hf_peft_config: added the helper call and its scope (LoRA layers only)",
+    "relations[linear-probing].note: restated precisely (alpha = 1 endpoint is the probe; intermediate alpha is an output ensemble)"
+   ],
+   "verification_notes": "arXiv 2109.01903 (Wortsman, 2021-09; comment 'CVPR 2022') confirmed. Eq. 1 wse(x, alpha) = f(x, (1-alpha) theta_0 + alpha theta_1) and the linear-classifier equivalence to an output-space ensemble confirmed; alpha = 0.5 recommended; head initialized with the temperature-scaled zero-shot classifier for end-to-end fine-tuning (App. D). 4-6 pp OOD and +1.6 pp ImageNet confirmed from the abstract."
+  },
+  {
+   "id": "linear-probing",
+   "name": "Linear probing",
+   "full_name": "Linear probing (head-only tuning on frozen pre-trained features)",
+   "paper_title": "DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition",
+   "authors": "Donahue et al.",
+   "year": 2013,
+   "venue": "ICML 2014",
+   "arxiv": "1310.1531",
+   "url": "https://arxiv.org/abs/1310.1531",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "f(x)=V^{\\top}g_{B_0}(x)\\ (+\\,b),\\ \\ B_0\\ \\text{(entire pre-trained backbone) frozen},\\ \\ V\\in\\mathbb{R}^{d\\times K}\\ \\text{new linear head, trained by }\\min_{V}\\sum_i\\ell\\big(V^{\\top}g_{B_0}(x_i),y_i\\big)+\\lambda\\|V\\|^2\\ \\text{(convex: logistic regression or linear SVM)}",
+   "trainable_params": "dK\\ (+K)\\ \\text{for }d\\text{-dim features and }K\\text{ classes; nothing inside the backbone}",
+   "locus": "a new final linear classifier on top of frozen penultimate (or intermediate) features",
+   "modification_kind": "selective",
+   "structure": "The trivial selection: the trainable coordinate set is exactly the task head, so the backbone map g_{B_0} is held fixed (the identity on the backbone factor of parameter space); any PEFT method that also trains the head contains linear probing as its restriction to \\Delta(\\text{backbone})=0.",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the task head is learned and the backbone is untouched, so inference is the original network plus the head that any fine-tuning would need.",
+   "identity_at_init": "The backbone function is preserved exactly throughout; the head is new (random or zero initialized), so there is no pre-trained output to preserve.",
+   "key_idea": "Reuse a frozen pre-trained representation and fit only a linear classifier on it; the problem is convex and cheap and keeps the features intact (good out-of-distribution extrapolation), but it cannot adapt the features to the task.",
+   "results_note": "In DeCAF, a linear SVM on frozen DeCAF6 features (trained with dropout) reached 86.9% mean per-class accuracy on Caltech-101 with 30 images per class, 2.6 points above the prior multi-kernel state of the art (84.3%); Kumar et al. (2022) later found linear probing about 7 points better out of distribution than full fine-tuning on 10 shift datasets (66.2% vs 59.3%).",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "special-case-of",
+     "note": "bias-only tuning plus the head reduces to linear probing when the bias update is zero"
+    },
+    {
+     "target": "lp-ft",
+     "type": "competes-with",
+     "note": "LP-FT uses the linear-probing optimum as the head initialization of full fine-tuning"
+    },
+    {
+     "target": "surgical-fine-tuning",
+     "type": "special-case-of",
+     "note": "surgical fine-tuning's block choices include the final linear layer ('Last Layer'); selecting only that block is exactly linear probing"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/1310.1531",
+    "https://proceedings.mlr.press/v32/donahue14.html",
+    "https://arxiv.org/html/2202.10054",
+    "https://arxiv.org/abs/1610.01644"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "results_note: specified the dropout-trained SVM on DeCAF6, the prior SOTA (84.3%, +2.6 points) and the exact LP/FT OOD averages (66.2% vs 59.3%)",
+    "relations[surgical-fine-tuning].note: replaced the vague 'mild extension' with the exact reduction (Lee et al. list 'Last Layer' among the tunable blocks)"
+   ],
+   "verification_notes": "arXiv 1310.1531 (Donahue, 2013-10) confirmed; ICML 2014 confirmed via PMLR v32 (donahue14). DeCAF Fig. 4/Sec. 4.1 confirm LogReg/SVM on frozen DeCAF5-7 features and 86.91 +- 0.7 for SVM+dropout on DeCAF6. Attribution of 'linear probing' to DeCAF is a canonical-example choice (no single originating paper). LP-FT figures checked in arXiv 2202.10054. Not in HF PEFT as a method (modules_to_save trains a head but is not a probe config)."
+  },
+  {
+   "id": "lp-ft",
+   "name": "LP-FT",
+   "full_name": "Linear Probing then Fine-Tuning",
+   "paper_title": "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution",
+   "authors": "Kumar et al.",
+   "year": 2022,
+   "venue": "ICLR 2022",
+   "arxiv": "2202.10054",
+   "url": "https://arxiv.org/abs/2202.10054",
+   "code_url": "https://github.com/AnanyaKumar/transfer_learning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "f_{v,B}(x)=v^{\\top}g_B(x);\\ \\ \\text{stage 1 (LP): }v_{\\mathrm{lp}}=\\arg\\min_{v}\\widehat L(v,B_0)\\ \\text{with }B=B_0\\ \\text{frozen};\\ \\ \\text{stage 2 (FT): gradient descent on }\\widehat L(v,B)\\ \\text{over all of }(v,B)\\ \\text{starting from }(v_{\\mathrm{lp}},B_0)",
+   "trainable_params": "\\text{stage 1: }dK;\\ \\ \\text{stage 2: all parameters (full fine-tuning)}",
+   "locus": "first the linear head only, then every layer",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A two-stage training schedule: the head-only (selective) optimum initializes full fine-tuning, which shrinks the head-alignment error \\varphi^2=|(v_0^{\\top}v_\\star)^2-(v_\\star^{\\top}v_\\star)^2| that otherwise drives large, ID-only feature updates; in the two-layer linear theory, features in directions outside the training span are then not distorted.",
+   "mergeable": "yes",
+   "mergeable_reason": "The output is a single fine-tuned network of the original architecture.",
+   "identity_at_init": "Stage 2 starts at the pre-trained backbone B_0 with the linear-probing head v_lp instead of a random head, i.e. at the best frozen-feature predictor.",
+   "key_idea": "With a random head, full fine-tuning distorts pretrained features: gradients from the badly aligned head change the features of in-distribution directions while out-of-distribution directions stay put. Fitting the head by linear probing first removes most of this coupling, so the method gets fine-tuning's in-distribution accuracy and linear probing's robustness.",
+   "results_note": "Across 10 distribution-shift datasets, LP-FT was about 1% better in distribution and 10% better out of distribution than full fine-tuning, and changed features 10-100x less than fine-tuning.",
+   "relations": [
+    {
+     "target": "linear-probing",
+     "type": "builds-on",
+     "note": "stage 1 is linear probing"
+    },
+    {
+     "target": "wise-ft",
+     "type": "competes-with",
+     "note": "concurrent robust fine-tuning recipe (interpolation instead of initialization)"
+    },
+    {
+     "target": "surgical-fine-tuning",
+     "type": "competes-with",
+     "note": "another selective remedy for fine-tuning under distribution shift"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2202.10054",
+    "https://arxiv.org/html/2202.10054",
+    "https://github.com/AnanyaKumar/transfer_learning"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "structure: added the absolute value in the head-alignment error phi^2 = |(v_0^T v*)^2 - (v*^T v*)^2| as defined in Theorem 3.3"
+   ],
+   "verification_notes": "arXiv 2202.10054 (Kumar, 2022-02; comment 'ICLR (Oral) 2022') confirmed. Stage-wise formula, 1% ID / 10% OOD gains over FT on 10 shift datasets and the 10x-100x smaller feature change confirmed in the text. Code repo AnanyaKumar/transfer_learning resolves. Not in HF PEFT."
+  },
+  {
+   "id": "ffa-lora",
+   "name": "FFA-LoRA",
+   "full_name": "Federated Freeze-A LoRA",
+   "paper_title": "Improving LoRA in Privacy-preserving Federated Learning",
+   "authors": "Sun et al.",
+   "year": 2024,
+   "venue": "ICLR 2024",
+   "arxiv": "2403.12313",
+   "url": "https://arxiv.org/abs/2403.12313",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+BA_0,\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained (init }0),\\ A_0\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{random Gaussian, frozen and shared by all clients};\\ \\ \\text{FedAvg: }B^{+}=\\textstyle\\sum_kp_kB_k\\Rightarrow W_0+B^{+}A_0=W_0+\\sum_kp_kB_kA_0\\ \\text{(exact average of client updates, unlike }(\\sum_kp_kB_k)(\\sum_kp_kA_k));\\ \\ \\text{DP-SGD noise enters only as }\\xi_BA_0",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "standard LoRA sites (attention and feed-forward linear layers in the RoBERTa experiments)",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W ranges over the linear subspace \\{BA_0:B\\in\\mathbb{R}^{d_{out}\\times r}\\} with a fixed random row space, so \\Delta W is linear in the trainable parameters and client aggregation commutes with the parametrization (no cross terms B_iA_j, no quadratic noise term \\xi_B\\xi_A).",
+   "mergeable": "yes",
+   "mergeable_reason": "BA_0 is an ordinary matrix that folds into W_0 exactly as in LoRA.",
+   "identity_at_init": "B = 0, so Delta W = 0; A_0 is random Gaussian and never trained; the scaling factor alpha becomes unnecessary (the paper shows LoRA's trajectory tends to FFA-LoRA's as alpha goes to infinity).",
+   "key_idea": "LoRA's bilinear BA breaks federated averaging (the average of products is not the product of averages) and amplifies differential-privacy noise; freezing the random A makes the update linear in B, so FedAvg is exact, DP noise is not squared, and communication is halved.",
+   "results_note": "In a 3-client heterogeneous federated setting with RoBERTa-Large, FFA-LoRA beat LoRA on GLUE tasks with and without DP (e.g. MNLI-m 78.8% vs 39.5% at epsilon = 6), and reached 17.12% vs 15.68% on GSM-8K with LLaMA-7B.",
+   "relations": [
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "identical parametrization to LoRA-FA v1 (frozen random A, trainable zero-initialized B); LoRA-FA is motivated by activation memory and its current version adds a projected B-gradient, FFA-LoRA by exact federated aggregation and DP"
+    },
+    {
+     "target": "asylora",
+     "type": "competes-with",
+     "note": "same train-B / freeze-random-A design (AsyLoRA samples A with orthonormal rows rather than Gaussian), there justified by generalization bounds"
+    },
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with A fixed at its random initialization"
+    },
+    {
+     "target": "flora-federated",
+     "type": "competes-with",
+     "note": "both remove LoRA's FedAvg aggregation error (cross terms B_iA_j); FLoRA keeps A trainable and stacks client modules instead (the FLoRA paper does not compare against FFA-LoRA directly)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2403.12313",
+    "https://arxiv.org/html/2403.12313"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "relations[lora-fa]: equivalent-to -> competes-with; the catalog's LoRA-FA entry includes a projected-gradient optimizer FFA-LoRA does not use (lora-fa and asylora are already linked by competes-with)",
+    "relations[asylora]: equivalent-to -> competes-with; AsyLoRA's frozen A has orthonormal rows, FFA-LoRA's is Gaussian",
+    "relations[flora-federated].note: noted that the FLoRA paper does not benchmark FFA-LoRA"
+   ],
+   "verification_notes": "arXiv 2403.12313 (Youbang Sun, 2024-03; comment 'published at ICLR 2024') confirmed. Sec. 4: W = W_0 + B A_0 with A_0 Gaussian and frozen, B_0 = 0; DP noise only in xi_B A; LoRA tends to FFA-LoRA as alpha -> infinity (Theorem). 3-client RoBERTa-Large setup, MNLI-m 78.81 vs 39.46 at eps = 6 (Table 1) and GSM-8K 17.12% vs 15.68% with LLaMA-7B confirmed. No official code found. Not in HF PEFT (freezing lora_A by hand emulates it; PEFT's LoRA-FA optimizer adds a gradient projection)."
+  },
+  {
+   "id": "flora-federated",
+   "name": "FLoRA (federated)",
+   "full_name": "FLoRA: stacking-based federated fine-tuning with heterogeneous LoRA ranks",
+   "paper_title": "FLoRA: Federated Fine-Tuning Large Language Models with Heterogeneous Low-Rank Adaptations",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2409.05976",
+   "url": "https://arxiv.org/abs/2409.05976",
+   "code_url": "https://github.com/ziyaow1010/FederatedLLM",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{client }k:\\ W_0+B_kA_k,\\ B_k\\in\\mathbb{R}^{d_{out}\\times r_k},\\ A_k\\in\\mathbb{R}^{r_k\\times d_{in}}\\ \\text{(heterogeneous }r_k,\\ \\text{re-initialized every round)};\\ \\ \\text{server: }A=p_1A_1\\oplus\\cdots\\oplus p_KA_K\\in\\mathbb{R}^{(\\sum_kr_k)\\times d_{in}}\\ \\text{(row stacking)},\\ B=B_1\\oplus\\cdots\\oplus B_K\\in\\mathbb{R}^{d_{out}\\times\\sum_kr_k}\\ \\text{(column stacking)};\\ \\ BA=\\textstyle\\sum_kp_kB_kA_k,\\ \\ p_k=|D_k|/\\sum_j|D_j|;\\ \\ \\text{clients then update }W_0\\leftarrow W_0+BA",
+   "trainable_params": "r_k(d_{in}+d_{out})\\ \\text{on client }k;\\ \\text{the broadcast global module has }(\\textstyle\\sum_kr_k)(d_{in}+d_{out})\\ \\text{entries}",
+   "locus": "LoRA on the self-attention layers only (following the original LoRA paper) of TinyLlama-1.1B, Llama-7B and Llama2-7B",
+   "modification_kind": "composition-or-routing",
+   "structure": "Direct sum of the clients' rank spaces \\mathbb{R}^{r_1}\\oplus\\cdots\\oplus\\mathbb{R}^{r_K}: block concatenation of factors satisfies [B_1\\cdots B_K][A_1;\\dots;A_K]=\\sum_kB_kA_k exactly, so the aggregate factors through \\sum_kr_k dimensions with no cross terms B_iA_j (which FedAvg of A and B separately introduces) and with no constraint that ranks agree.",
+   "mergeable": "yes",
+   "mergeable_reason": "After each round the aggregated BA is added into the base weights, so the final model is the original architecture.",
+   "identity_at_init": "Clients re-initialize their local LoRA each round (the official code uses PEFT's LoraConfig, i.e. B = 0), so each round starts exactly at the current global model.",
+   "key_idea": "Averaging LoRA's A and B separately does not average the products; stacking the client factors instead gives the exact weighted sum of updates and naturally supports clients with different ranks.",
+   "results_note": "On MMLU and MT-bench with TinyLlama, Llama and Llama2 fine-tuned federatedly on Dolly, Alpaca, Wizard and ShareGPT, FLoRA outperformed FedIT in homogeneous settings and zero-padding in heterogeneous-rank settings (zero-padded FedIT dropped to 7.97% MMLU for Llama on Alpaca).",
+   "relations": [
+    {
+     "target": "ffa-lora",
+     "type": "competes-with",
+     "note": "alternative cure for LoRA's FedAvg aggregation error (freeze A vs stack factors)"
+    },
+    {
+     "target": "hetlora",
+     "type": "competes-with",
+     "note": "both support heterogeneous client ranks; HetLoRA zero-pads and averages factors with norm-based weights"
+    },
+    {
+     "target": "lora-soups",
+     "type": "competes-with",
+     "note": "uses the same block-stacking identity sum_k B_k A_k = [B_1 ... B_K][A_1; ...; A_K], with data-size weights instead of learned per-layer coefficients"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "client modules are standard LoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.05976",
+    "https://arxiv.org/html/2409.05976",
+    "https://github.com/ATP-1010/FederatedLLM",
+    "https://api2.openreview.net/notes/search?term=FLoRA%3A%20Federated%20Fine-Tuning%20Large%20Language%20Models%20with%20Heterogeneous%20Low-Rank%20Adaptations",
+    "https://github.com/ziyaow1010/FederatedLLM/blob/main/main.py",
+    "https://papers.nips.cc/paper_files/paper/2024/hash/28312c9491d60ed0c77f7fff4ad86dd1-Abstract-Conference.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "code_url: github.com/ATP-1010/FederatedLLM now 301-redirects to github.com/ziyaow1010/FederatedLLM; updated to the canonical location",
+    "locus: restricted to self-attention layers, as stated in Sec. 4.1, and gave model sizes",
+    "identity_at_init: grounded the B = 0 claim in the official code (PEFT LoraConfig); the paper only says modules are re-initialized each round"
+   ],
+   "verification_notes": "arXiv 2409.05976 (Ziyao Wang, 2024-09) confirmed; NeurIPS 2024 confirmed via the NeurIPS proceedings listing. Eqs. 9-12: A = p_0A_0 (+) ... (+) p_KA_K (rows), B = B_0 (+) ... (+) B_K (columns), p_k applied to one factor only, per-round re-initialization confirmed. Baselines are FedIT and zero-padding (citing HetLoRA's workshop version), not FFA-LoRA; 7.97% MMLU (Llama, Alpaca, zero-padding) confirmed. Not in HF PEFT."
+  },
+  {
+   "id": "hetlora",
+   "name": "HetLoRA",
+   "full_name": "Heterogeneous LoRA for federated fine-tuning",
+   "paper_title": "Heterogeneous LoRA for Federated Fine-tuning of On-Device Foundation Models",
+   "authors": "Cho et al.",
+   "year": 2024,
+   "venue": "EMNLP 2024",
+   "arxiv": "2401.06432",
+   "url": "https://aclanthology.org/2024.emnlp-main.717/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{distribute by truncation: }B_k^{(t,0)}=\\overline B^{(t)}_{:,:r_k},\\ A_k^{(t,0)}=\\overline A^{(t)}_{:r_k,:};\\ \\ \\text{local: }\\min_{B_k,A_k}\\ \\ell(B_k,A_k\\mid W_0)+\\lambda\\,\\|B_{k,:,\\gamma r_k:r_k}\\|\\,\\|A_{k,\\gamma r_k:r_k,:}\\|\\ (\\gamma<1,\\ \\text{rank self-pruning});\\ \\ \\text{server (zero-pad to }r_{\\max}):\\ \\overline B^{(t+1)}=\\textstyle\\sum_kp_kB_k,\\ \\overline A^{(t+1)}=\\sum_kp_kA_k,\\ \\ p_k\\propto\\|B_kA_k\\|_F;\\ W_0\\ \\text{frozen}",
+   "trainable_params": "r_k(d_{in}+d_{out})\\ \\text{on client }k\\ (r_{\\min}\\le r_k\\le r_{\\max})",
+   "locus": "LoRA on the self-attention layers only (following the original LoRA paper) of on-device PaLM 2 XXS and XS",
+   "modification_kind": "composition-or-routing",
+   "structure": "Nested rank truncations: client k sees the leading r_k columns of B and rows of A of a global rank-r_{\\max} pair; aggregation zero-pads and averages factors separately with weights proportional to \\|B_kA_k\\|_F (so cross terms remain), and a tail-norm penalty lets clients shrink r_k.",
+   "mergeable": "yes",
+   "mergeable_reason": "The final global pair BA is a plain low-rank matrix that folds into W_0.",
+   "identity_at_init": "Not specified in the paper; clients receive truncations of the current global LoRA pair, so with LoRA's standard B = 0 initialization the first round starts exactly at W_0.",
+   "key_idea": "Let resource-limited clients train smaller-rank slices of one global LoRA, prune unnecessary rank locally, and weight the server average toward clients whose updates carry more signal.",
+   "results_note": "With PaLM 2 XXS/XS on multi-session chat (perplexity) and Reddit summarization (RougeL), HetLoRA beat homogeneous-rank LoRA and a reconstruct-then-SVD baseline, slightly below full federated fine-tuning.",
+   "relations": [
+    {
+     "target": "flora-federated",
+     "type": "competes-with",
+     "note": "FLoRA replaces zero-padded factor averaging with exact factor stacking"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "client modules are truncations of one LoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.06432",
+    "https://arxiv.org/html/2401.06432",
+    "https://aclanthology.org/2024.emnlp-main.717/"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "identity_at_init: the paper does not state the global initialization; reworded as conditional on LoRA's standard B = 0",
+    "locus: restricted to self-attention layers, as stated in Sec. 4",
+    "relations: removed hetlora -> adalora (competes-with); neither paper compares against or cites the other, and the settings (federated tail-norm self-pruning vs centralized SVD-triplet budget allocation) differ"
+   ],
+   "verification_notes": "arXiv 2401.06432 (Yae Jee Cho, 2024-01) confirmed; EMNLP 2024 main confirmed via ACL Anthology 2024.emnlp-main.717. Truncation B_{:,:r_k}, A_{:r_k,:}, the tail-norm regularizer with gamma < 1, zero-padding and p_k = ||S_k||/Z with ||S_k|| computed as ||B_kA_k||_F confirmed (Sec. 3.3). Table 3 confirms HetLoRA > HomLoRA and Recon+SVD, slightly below full FT. No official code found. Not in HF PEFT."
+  },
+  {
+   "id": "tinytl",
+   "name": "TinyTL",
+   "full_name": "Tiny Transfer Learning (bias tuning with lite residual modules)",
+   "paper_title": "TinyTL: Reduce Memory, Not Parameters for Efficient On-Device Learning",
+   "authors": "Cai et al.",
+   "year": 2020,
+   "venue": "NeurIPS 2020",
+   "arxiv": "2007.11622",
+   "url": "https://arxiv.org/abs/2007.11622",
+   "code_url": "https://github.com/mit-han-lab/tinyml/tree/master/tinytl",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "a_{i+1}=\\mathcal F_{W}(a_i)+b+\\mathcal F_{w_r}\\big(a_i'\\big),\\ \\ a_i'=\\mathrm{reduce}(a_i)\\ \\text{(}2\\times2\\ \\text{average pooling)};\\ \\ W\\ \\text{frozen (8-bit)},\\ \\text{trained: biases }b,\\ \\text{lite residual weights }w_r\\ \\text{(group convolution, no }1\\times1\\ \\text{expansion, output bilinearly upsampled), classifier head};\\ \\ \\text{rationale: }\\tfrac{\\partial\\mathcal L}{\\partial W}=a_i^{\\top}\\tfrac{\\partial\\mathcal L}{\\partial a_{i+1}}\\ \\text{needs the stored activation }a_i,\\ \\tfrac{\\partial\\mathcal L}{\\partial b}=\\tfrac{\\partial\\mathcal L}{\\partial a_{i+1}}\\ \\text{does not}",
+   "trainable_params": "\\textstyle\\sum_{\\text{layers}}d_{out}\\ \\text{(biases)}+\\sum_{\\text{blocks}}|w_r|\\ \\text{(lite residual group convs)}+\\text{head}",
+   "locus": "all bias vectors, one lite residual branch per mobile inverted-bottleneck block, and the classifier head (BatchNorm replaced by GroupNorm)",
+   "modification_kind": "hybrid",
+   "structure": "Selective translation of every layer's output (bias shift) plus a parallel low-resolution, narrow residual branch (downsample, group conv, upsample) per block; chosen to minimize stored activations rather than parameter count.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Bias updates fold in trivially, but the lite residual branches are extra nonlinear modules that stay at inference (in the default protocol they are already part of the pre-trained architecture).",
+   "identity_at_init": "By default the lite residual modules are present during pre-training and initialized from those weights, so transfer starts exactly at the pre-trained function; with randomly initialized lite residuals (TinyTL-RandomL+B) there is no such guarantee and accuracy drops.",
+   "key_idea": "On-device training memory is dominated by the activations needed for weight gradients, not by the parameter count; bias gradients need no stored activations, so freeze weights, train biases, and recover capacity with tiny residual branches whose activations are small.",
+   "results_note": "TinyTL saved up to 6.5x training memory relative to full fine-tuning with little accuracy loss, was up to 34.1% more accurate than last-layer tuning, and with feature-extractor adaptation saved 7.3-12.9x memory without accuracy loss.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "generalizes",
+     "note": "the TinyTL-B variant (biases + head) is bias-only tuning; TinyTL adds lite residual modules"
+    },
+    {
+     "target": "linear-probing",
+     "type": "generalizes",
+     "note": "last-layer tuning (FT-Last) is the paper's baseline and the restriction of TinyTL to the head"
+    },
+    {
+     "target": "ladder-side-tuning",
+     "type": "competes-with",
+     "note": "both target activation memory rather than parameter count; LST moves the trainable path to a side network"
+    },
+    {
+     "target": "residual-adapter",
+     "type": "competes-with",
+     "note": "parallel convolutional residual adapters for vision transfer"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2007.11622",
+    "https://arxiv.org/html/2007.11622",
+    "https://github.com/mit-han-lab/tinyml/tree/master/tinytl"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2007.11622 (Han Cai, 2020-07; comment 'NeurIPS 2020') confirmed; the NeurIPS 2020 proceedings title 'TinyTL: Reduce Memory, Not Parameters for Efficient On-Device Learning' is confirmed (arXiv title differs). Eq. 4 a_{i+1} = F_W(a_i) + b + F_{w_r}(reduce(a_i)), 2x2 average pooling, group conv without 1x1 projection, bilinear upsampling, GN instead of BN, 8-bit frozen weights and pre-trained lite-residual initialization (Table 4) confirmed. 6.5x / 34.1% / 7.3-12.9x are the abstract's figures (Sec. 4 text gives 7.5-12.9x). Not in HF PEFT."
+  },
+  {
+   "id": "autoprompt",
+   "name": "AutoPrompt",
+   "full_name": "AutoPrompt (gradient-guided discrete trigger-token search)",
+   "paper_title": "AutoPrompt: Eliciting Knowledge from Language Models with Automatically Generated Prompts",
+   "authors": "Shin et al.",
+   "year": 2020,
+   "venue": "EMNLP 2020",
+   "arxiv": "2010.15980",
+   "url": "https://aclanthology.org/2020.emnlp-main.346/",
+   "code_url": "https://github.com/ucinlp/autoprompt",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "x_{\\text{prompt}}=\\lambda(x_{\\text{inp}},x_{\\text{trig}}),\\ \\ x_{\\text{trig}}=(x^{(1)}_{\\text{trig}},\\dots,x^{(\\ell)}_{\\text{trig}})\\in\\mathcal V^{\\ell}\\ \\text{(discrete tokens shared across inputs, initialized to [MASK])};\\ \\ p(y\\mid x_{\\text{prompt}})=\\textstyle\\sum_{w\\in\\mathcal V_y}p([\\mathrm{MASK}]=w\\mid x_{\\text{prompt}});\\ \\ \\mathcal V_{\\text{cand}}=\\operatorname{top-}k_{w\\in\\mathcal V}\\big[w_{\\text{in}}^{\\top}\\nabla\\log p(y\\mid x_{\\text{prompt}})\\big]\\ \\text{(gradient w.r.t. the embedding of }x^{(j)}_{\\text{trig}}),\\ \\text{keep the candidate with the highest }p(y\\mid\\cdot);\\ \\text{LM frozen}",
+   "trainable_params": "0\\ \\text{continuous parameters};\\ \\ell\\ \\text{discrete token choices (search space }|\\mathcal V|^{\\ell})\\ \\text{plus label-token sets }\\mathcal V_y",
+   "locus": "input token sequence (trigger tokens placed by a template around the input and the [MASK] slot)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "A discrete prompt: the prompt matrix is constrained to the vocabulary lattice \\{E_w\\}^{\\ell}\\subset\\mathbb{R}^{\\ell\\times d} and optimized by first-order (HotFlip-style) coordinate swaps; prompt tuning is the continuous relaxation of this set.",
+   "mergeable": "no",
+   "mergeable_reason": "The trigger tokens lengthen every input, so inference is not at the original cost (though no new parameters exist).",
+   "identity_at_init": "Triggers start as [MASK] tokens; there is no identity guarantee, since the template itself changes the input.",
+   "key_idea": "Turn a task into masked-LM cloze form and search for a few shared discrete trigger tokens (and label words) with gradient-ranked candidate swaps, eliciting knowledge from a frozen MLM without any fine-tuning.",
+   "results_note": "Without fine-tuning, AutoPrompt-prompted RoBERTa-large reached 91.4% on SST-2; on LAMA fact retrieval, AutoPrompt prompts for BERT reached 43.3% precision@1 (7 trigger tokens) vs 34.1% for the best prior single prompt (LPAQA Top1).",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "special-case-of",
+     "note": "AutoPrompt restricts the soft prompt to rows of the embedding matrix; prompt tuning is its continuous relaxation"
+    },
+    {
+     "target": "warp",
+     "type": "competes-with",
+     "note": "WARP replaced the discrete search with continuous prompt and verbalizer embeddings"
+    },
+    {
+     "target": "p-tuning",
+     "type": "competes-with",
+     "note": "continuous-prompt successor evaluated on the same LAMA probing setup"
+    },
+    {
+     "target": "black-box-tuning",
+     "type": "competes-with",
+     "note": "both tune only the prompt of a frozen LM; AutoPrompt needs gradients, BBT is derivative-free"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2010.15980",
+    "https://arxiv.org/html/2010.15980",
+    "https://aclanthology.org/2020.emnlp-main.346/",
+    "https://github.com/ucinlp/autoprompt"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "results_note: the 43.3% LAMA P@1 is for BERT, not RoBERTa (Table 4; RoBERTa is weaker on LAMA)"
+   ],
+   "verification_notes": "arXiv 2010.15980 (Taylor Shin, 2020-10) confirmed; EMNLP 2020 confirmed via ACL Anthology 2020.emnlp-main.346. Eqs. 1-2: p(y|x_prompt) marginalized over V_y, triggers initialized to [MASK], V_cand = top-k[w_in^T grad log p(y|x_prompt)] confirmed. SST-2 91.4 (RoBERTa) confirmed. Not in HF PEFT."
+  }
+ ],
+ "papers": [
+  {
+   "id": "linear-classifier-probes",
+   "title": "Understanding intermediate layers using linear classifier probes",
+   "authors": "Alain & Bengio",
+   "year": 2016,
+   "venue": "ICLR 2017 (Workshop)",
+   "arxiv": "1610.01644",
+   "url": "https://arxiv.org/abs/1610.01644",
+   "claim": "Linear classifiers ('probes') trained independently on each layer's frozen features measure how linearly separable the representation is; on Inception v3 and ResNet-50 separability increases monotonically with depth.",
+   "relevance": "Names and formalizes the probe, the terminal object of selective PEFT (train only a linear map on frozen features) and the standard yardstick that every other adaptation method is compared against.",
+   "sources": [
+    "https://arxiv.org/abs/1610.01644",
+    "https://api.openreview.net/notes/search?term=Understanding%20intermediate%20layers%20using%20linear%20classifier%20probes"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 1610.01644 (Alain, 2016-10) confirmed; ICLR 2017 Workshop confirmed via OpenReview (ICLR.cc/2017/workshop submission; DBLP conf/iclr/AlainB17). Claim matches the abstract (Inception v3, ResNet-50, monotone separability)."
+  },
+  {
+   "id": "linear-mode-connectivity",
+   "title": "Linear Mode Connectivity and the Lottery Ticket Hypothesis",
+   "authors": "Frankle et al.",
+   "year": 2019,
+   "venue": "ICML 2020",
+   "arxiv": "1912.05671",
+   "url": "https://arxiv.org/abs/1912.05671",
+   "claim": "Networks become stable to SGD noise early in training: copies trained from a shared checkpoint end in a linearly connected region of low loss.",
+   "relevance": "Explains why weight-space interpolation and arithmetic (WiSE-FT, model soups, task arithmetic, slider composition) work when all models share a pre-trained starting point, i.e. why the 'affine structure' over W_0 is meaningful.",
+   "sources": [
+    "https://arxiv.org/abs/1912.05671"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 1912.05671 (Frankle, 2019-12; comment 'Published in ICML 2020') confirmed; claim matches the abstract."
+  },
+  {
+   "id": "dexperts",
+   "title": "DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts",
+   "authors": "Liu et al.",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2105.03023",
+   "url": "https://aclanthology.org/2021.acl-long.522/",
+   "claim": "Combining a pretrained LM with expert and anti-expert LMs in a product of experts (adding and subtracting logits) controls attributes such as toxicity and sentiment, and works with small (anti-)experts, even on GPT-3.",
+   "relevance": "The output-space composition rule that proxy-tuning and EFT reuse for adaptation: tuning as a translation of logits.",
+   "sources": [
+    "https://arxiv.org/abs/2105.03023",
+    "https://aclanthology.org/2021.acl-long.522/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2105.03023 (Alisa Liu, 2021-05; comment 'ACL 2021 camera-ready') and ACL Anthology 2021.acl-long.522 confirmed; claim (product of experts, small (anti-)experts, GPT-3) matches the abstract."
+  },
+  {
+   "id": "universal-adversarial-triggers",
+   "title": "Universal Adversarial Triggers for Attacking and Analyzing NLP",
+   "authors": "Wallace et al.",
+   "year": 2019,
+   "venue": "EMNLP 2019",
+   "arxiv": "1908.07125",
+   "url": "https://aclanthology.org/D19-1221/",
+   "claim": "A gradient-guided search over tokens finds short input-agnostic trigger sequences that force a target prediction for any input, and these triggers transfer across models.",
+   "relevance": "The discrete-token search that AutoPrompt adapts from attacks to task prompting; the 'hard prompt' end of the prompt family.",
+   "sources": [
+    "https://arxiv.org/abs/1908.07125",
+    "https://aclanthology.org/D19-1221/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 1908.07125 (Wallace, 2019-08; comment 'EMNLP 2019') and ACL Anthology D19-1221 confirmed; claim matches the abstract."
+  },
+  {
+   "id": "fedpetuning",
+   "title": "FedPETuning: When Federated Learning Meets the Parameter-Efficient Tuning Methods of Pre-trained Language Models",
+   "authors": "Zhang et al.",
+   "year": 2022,
+   "venue": "Findings of ACL 2023",
+   "arxiv": "2212.10025",
+   "url": "https://aclanthology.org/2023.findings-acl.632/",
+   "claim": "A holistic empirical study of PEFT methods (adapters, prefix tuning, LoRA, BitFit) under federated learning: tuning and aggregating only lightweight parameters cuts communication greatly while keeping acceptable performance across heterogeneity levels, data scales and FL scenarios.",
+   "relevance": "Establishes federated PEFT as a setting where the adapter is the unit of communication and aggregation, which is where the algebraic issue of averaging factored updates (FFA-LoRA, FLoRA) arises.",
+   "sources": [
+    "https://arxiv.org/abs/2212.10025",
+    "https://aclanthology.org/2023.findings-acl.632/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2212.10025 (Zhuo Zhang, 2022-12) confirmed; the arXiv title is 'When Federated Learning Meets Pre-trained Language Models' Parameter-Efficient Tuning Methods', the Findings of ACL 2023 title (used here) is confirmed at ACL Anthology 2023.findings-acl.632. Adapter, prefix tuning, LoRA and BitFit are the PEFT methods studied."
+  },
+  {
+   "id": "fedit",
+   "title": "Towards Building the Federated GPT: Federated Instruction Tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICASSP 2024",
+   "arxiv": "2305.05644",
+   "url": "https://arxiv.org/abs/2305.05644",
+   "claim": "Introduces Federated Instruction Tuning (FedIT) for LLMs, combining LoRA with FedAvg so that clients tune and upload only LoRA modules, which the server averages.",
+   "relevance": "The baseline whose separate averaging of A and B produces the cross-term aggregation error that FFA-LoRA and FLoRA correct.",
+   "sources": [
+    "https://arxiv.org/abs/2305.05644",
+    "https://arxiv.org/html/2409.05976"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2305.05644 (Jianyi Zhang, 2023-05) confirmed; ICASSP 2024 confirmed via Semantic Scholar/DBLP (conf/icassp). The paper adopts LoRA in the FedAvg framework (Sec. 3)."
+  },
+  {
+   "id": "group-diffusion-transformers",
+   "title": "Group Diffusion Transformers are Unsupervised Multitask Learners",
+   "authors": "Huang et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2410.15027",
+   "url": "https://arxiv.org/abs/2410.15027",
+   "claim": "Recasting visual generation tasks as generating a group of related images, by concatenating self-attention tokens across images in a DiT, enables task-agnostic zero-shot generation over 200 instructions in 30 tasks.",
+   "relevance": "The precursor that IC-LoRA simplifies: it shows that cross-image attention inside one DiT can carry task conditioning, which IC-LoRA then activates with a small LoRA instead of large-scale training.",
+   "sources": [
+    "https://arxiv.org/abs/2410.15027",
+    "https://arxiv.org/html/2410.23775"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2410.15027 (Lianghua Huang, 2024-10) confirmed; no peer-reviewed venue found (Semantic Scholar lists arXiv), so venue stays arXiv. '200 instructions across 30 tasks' matches the abstract."
+  }
+ ],
+ "notes": "All 8 requested methods exist and are not duplicates; Linear probing / LP-FT is split into two entries (linear-probing, lp-ft). Three additions: EFT (eft), the concurrent twin of proxy-tuning with an identical per-token rule; FLoRA (flora-federated), the heterogeneous-rank federated method named in the brief; and HetLoRA (hetlora, EMNLP 2024), the zero-padding baseline FLoRA compares against. Naming: 'FLoRA' now names four methods in the catalog (flora-batched, flora-opt, flora-tucker, flora-federated); the slug disambiguates. linear-probing has no single originating paper. It is attributed to DeCAF (ICML 2014) as the canonical 'frozen deep features + linear classifier' transfer paper, and Alain & Bengio's probes are listed under papers; confidence is medium for this attribution. TinyTL's NeurIPS title ('Reduce Memory, Not Parameters') differs from its arXiv title ('Reduce Activations, Not Trainable Parameters'); the NeurIPS title is used. IC-LoRA is an arXiv tech report with qualitative results only. No official code was found for FFA-LoRA, EFT or HetLoRA. None of these methods is in HF PEFT as a named config. Concept Sliders and IC-LoRA produce plain LoRA weights loadable with LoraConfig/diffusers, but their training recipes are not in PEFT. FFA-LoRA can be emulated by freezing lora_A; PEFT ships LoRA-FA only as an optimizer. Cross-file suggestions: icedit (frontier.json) should get builds-on -> ic-lora, since ICEdit reuses the IC-LoRA diptych/in-context format; model-soups should get builds-on -> wise-ft. Web search budget was exhausted, so venues were checked through arXiv comments, OpenReview API, ACL Anthology, PMLR and official READMEs: Concept Sliders ECCV 2024, FLoRA NeurIPS 2024, EFT ICLR 2024, HetLoRA EMNLP 2024 and FedIT ICASSP 2024 were confirmed through OpenReview/DBLP records.",
+ "verification_summary": "Adversarial check on 2026-10-01 of all 12 methods and 7 papers in gap-3. Metadata: all 19 arXiv ids were fetched in one export-API batch; titles, first authors and first-version years match. Two arXiv titles differ from venue titles and the venue titles are kept: TinyTL (NeurIPS 2020 proceedings) and FedPETuning (Findings of ACL 2023). Venues were confirmed via arXiv comments (Proxy-Tuning COLM 2024, WiSE-FT CVPR 2022, LP-FT ICLR 2022 oral, FFA-LoRA ICLR 2024, TinyTL NeurIPS 2020, DExperts, UAT, LMC), Crossref (Concept Sliders ECCV 2024, LNCS), OpenReview (EFT ICLR 2024 poster, Alain & Bengio ICLR 2017 Workshop), the NeurIPS proceedings (FLoRA 2024, TinyTL 2020), PMLR v32 (DeCAF ICML 2014), ACL Anthology (AutoPrompt, HetLoRA EMNLP 2024 main, FedPETuning, DExperts, UAT) and Semantic Scholar/DBLP (FedIT ICASSP 2024). IC-LoRA and GDT stay arXiv. Formulas were checked against the arXiv full text of every method paper plus the official configs for Concept Sliders and IC-LoRA. Fixes: IC-LoRA uses r = alpha = 16 and the flow-matching loss with frozen text encoders; the Concept Sliders code scale (rank 4, alpha 1) was added; LP-FT's phi^2 takes an absolute value; AutoPrompt's 43.3% LAMA P@1 is for BERT, not RoBERTa; FLoRA and HetLoRA adapt self-attention layers only; HetLoRA's B = 0 start is not stated in the paper; EFT's 70% figure is on a 0 (small FT) to 1 (large FT) scale; the FLoRA repo moved to ziyaow1010/FederatedLLM. HF PEFT (main 85be3f3, v0.21.1): WiSE-FT is now hf_peft = true via peft.helpers.rescale_adapter_scale, whose docstring states equivalence to WiSE-FT for LoRA with multiplier in [0,1]; no other gap-3 method has a PEFT config or helper. Mergeability and identity flags were unchanged. Relations: ffa-lora -> lora-fa and ffa-lora -> asylora were retyped from equivalent-to to competes-with, matching lora-fa <-> asylora; hetlora -> adalora was removed as unjustified; notes were sharpened for wise-ft -> linear-probing, linear-probing -> surgical-fine-tuning and ffa-lora -> flora-federated. All relation targets are kebab-case slugs that exist in some family file. Nothing was dropped. 20 field-level corrections in total."
+}

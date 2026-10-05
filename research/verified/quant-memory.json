@@ -1,0 +1,1404 @@
+{
+ "family": "quant-memory",
+ "family_title": "Quantization-aware PEFT and memory-efficient (gradient-side) fine-tuning",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "qlora",
+   "name": "QLoRA",
+   "full_name": "Quantized Low-Rank Adaptation",
+   "paper_title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+   "authors": "Dettmers et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.14314",
+   "url": "https://arxiv.org/abs/2305.14314",
+   "code_url": "https://github.com/artidoro/qlora",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(target_modules='all-linear', ...) on a model loaded with BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type='nf4', bnb_4bit_use_double_quant=True, bnb_4bit_compute_dtype=torch.bfloat16), after peft.prepare_model_for_kbit_training(model)",
+   "formula_latex": "h=\\mathrm{doubleDequant}\\big(c_1^{\\mathrm{FP32}},c_2^{\\mathrm{FP8}},W_0^{\\mathrm{NF4}}\\big)\\,x+\\tfrac{\\alpha}{r}BAx,\\quad W_0^{\\mathrm{NF4}}=q_{\\mathrm{NF4}}(W_0)\\ \\text{frozen (blockwise, constants double-quantized)},\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},A\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{trained in BF16 (paged optimizer)}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "every linear layer of the transformer (attention and MLP); base weights stored as 4-bit NormalFloat",
+   "modification_kind": "additive-weight",
+   "structure": "rank-r additive update BA on top of a frozen 4-bit NF4 (quantile-quantized, blockwise, double-quantized constants) base weight; storage dtype NF4, compute dtype BF16, so \\Delta W factors through an r-dimensional space while W_0 lives on a 16-level grid",
+   "mergeable": "conditional",
+   "mergeable_reason": "BA merges exactly only into a dequantized 16-bit copy of W_0; merging and re-quantizing to NF4 adds fresh rounding error, so exact inference at the original 4-bit cost is not preserved.",
+   "identity_at_init": "B = 0 (LoRA default, A random), so the initial function is the quantized model \\mathrm{dequant}(q_{NF4}(W_0)), not W_0: the quantization gap is left uncompensated at init (the gap LoftQ / LQ-LoRA / ApiQ close).",
+   "key_idea": "Backpropagate through a frozen 4-bit base model into LoRA adapters. Three memory tricks make this work: NF4 (a quantile data type that is information-theoretically optimal for normally distributed weights), double quantization of the scale constants, and paged optimizers. Together they let a 65B model be fine-tuned on one 48GB GPU.",
+   "results_note": "Fine-tunes a 65B model on a single 48GB GPU while matching 16-bit fine-tuning; Guanaco-65B reaches 99.3% of ChatGPT's score on the Vicuna benchmark after 24 hours on one GPU.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA adapters attached to a frozen NF4-quantized backbone"
+    },
+    {
+     "target": "loftq",
+     "type": "special-case-of",
+     "note": "LoftQ with T=0 alternating steps (Q=q_N(W_0), BA=0) is exactly QLoRA's initialization"
+    },
+    {
+     "target": "peqa",
+     "type": "competes-with",
+     "note": "concurrent (May 2023) memory-efficient fine-tuning of quantized LLMs; PEQA tunes quantization scales instead of adding adapters"
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "QA-LoRA removes QLoRA's need for a 16-bit merge / post-training re-quantization"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.14314",
+    "https://arxiv.org/html/2305.14314",
+    "https://github.com/huggingface/peft/blob/main/docs/source/developer_guides/quantization.md",
+    "https://openreview.net/forum?id=OUIFPHEgJU"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "hf_peft_config: added bnb_4bit_compute_dtype=torch.bfloat16 (QLoRA's BF16 compute dtype) and the call order of prepare_model_for_kbit_training",
+    "sources: added https://openreview.net/forum?id=OUIFPHEgJU"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2305.14314 (Dettmers, 2023) confirmed; NeurIPS 2023 oral (OpenReview). Eq. 5-6 (doubleDequant with c1 FP32, c2 FP8, NF4 blocksize 64, c2 blocksize 256) checked; the paper's Eq. 5 omits the LoRA scale s (its Eq. 3 has it), alpha/r is the HF convention. 65B on one 48GB GPU and 99.3% of ChatGPT on Vicuna in 24h confirmed in the abstract. PEFT quantization guide recommends target_modules='all-linear' for QLoRA-style training (huggingface/peft main @85be3f3 (2026-09-30))."
+  },
+  {
+   "id": "qa-lora",
+   "name": "QA-LoRA",
+   "full_name": "Quantization-Aware Low-Rank Adaptation",
+   "paper_title": "QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models",
+   "authors": "Xu et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.14717",
+   "url": "https://arxiv.org/abs/2309.14717",
+   "code_url": "https://github.com/yuhuixu1993/qa-lora",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_qalora=True, qalora_group_size=g) (default g=16; GPTQ-quantized linear layers only; PEFT does not implement the integer zero-point merge: merge/get_delta_weight raise NotImplementedError)",
+   "formula_latex": "\\tilde W_0=\\alpha\\odot(\\hat W-z),\\ \\hat W\\in\\{0,\\dots,2^b-1\\}^{d_{out}\\times d_{in}}\\ \\text{(GPTQ, one }(\\alpha_{j,l},z_{j,l})\\text{ per output }j\\text{ and input group }l=1..L);\\quad h=\\tilde W_0x+s\\,BA\\,\\mathrm{pool}_L(x),\\ \\ \\mathrm{pool}_L(x)_l=\\textstyle\\sum_{i\\in\\mathcal G_l}x_i,\\ A\\in\\mathbb{R}^{r\\times L},\\ B\\in\\mathbb{R}^{d_{out}\\times r};\\quad \\text{merge: } z'_{j,l}=z_{j,l}-s\\,(BA)_{j,l}/\\alpha_{j,l}",
+   "trainable_params": "r\\,(L+d_{out}),\\quad L=d_{in}/g",
+   "locus": "all linear layers of the LLM (attention and MLP projections); base weights group-wise INT2/3/4 quantized with GPTQ",
+   "modification_kind": "additive-weight",
+   "structure": "low-rank update constrained to be constant on each input quantization group: \\Delta W=s\\,BAP with P\\in\\{0,1\\}^{L\\times d_{in}} the group-summation operator, so rank\\le r and \\Delta W lies exactly in the span of per-group zero-point shifts",
+   "mergeable": "yes",
+   "mergeable_reason": "Because \\Delta W is constant across the g inputs of every quantization group, it is absorbed exactly into the per-group zero-points, giving a pure INT-b model at the original inference cost.",
+   "identity_at_init": "LoRA-style zero initialization of one factor (B = 0), so training starts from the GPTQ-quantized model rather than from W_0.",
+   "key_idea": "QA-LoRA rebalances the degrees of freedom of quantization and adaptation. Quantization parameters become finer (group-wise) and the LoRA input becomes coarser (group-pooled), so every learned update is exactly a shift of the quantizer's zero-points. The adapter therefore merges into an INT-b model without loss.",
+   "results_note": "On LLaMA/LLaMA2 (7B-65B), INT4 QA-LoRA matches mixed-precision QLoRA and beats QLoRA+GPTQ on MMLU and commonsense QA. The margin widens at low bit-widths, e.g. +15.0% average commonsense accuracy over post-quantized QLoRA at 2 bits on LLaMA-7B.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "same frozen-quantized-base + LoRA recipe, but quantization-aware so that the merged model stays integer"
+    },
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with the down-projection constrained to A' = AP (rows tied within input groups)"
+    },
+    {
+     "target": "peqa",
+     "type": "dual-to",
+     "note": "QA-LoRA effectively learns the quantizer's additive zero-points (through a low-rank factorization), PEQA learns its multiplicative scales"
+    },
+    {
+     "target": "l4q",
+     "type": "competes-with",
+     "note": "L4Q also yields a fully quantized merged model but without constraining the LoRA factors"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.14717",
+    "https://arxiv.org/html/2309.14717",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://openreview.net/forum?id=WvFoJccpo8"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "hf_peft_config: added that PEFT supports QA-LoRA only for GPTQ layers and does not implement the paper's zero-point merge (variants.py QALoraLinearVariant)",
+    "sources: added https://openreview.net/forum?id=WvFoJccpo8"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2309.14717 (Xu, 2023) confirmed; ICLR 2024 poster (OpenReview). Algorithm 1 (AvgPool(D_in/L) x (D_in/L) = group sum, lora_A in R^{D_int x L}) and App. B (W~ = A (.) (W^ - B), merge B <- B - s L1L2 (/) A) match the formula. +15.0% over 2-bit post-quantized QLoRA (commonsense QA, LLaMA-7B) confirmed. PEFT (huggingface/peft main @85be3f3 (2026-09-30)) pools with mean x L rather than the paper's group sum (a constant rescaling absorbed by s)."
+  },
+  {
+   "id": "loftq",
+   "name": "LoftQ",
+   "full_name": "LoRA-Fine-Tuning-aware Quantization",
+   "paper_title": "LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large Language Models",
+   "authors": "Li et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.08659",
+   "url": "https://arxiv.org/abs/2310.08659",
+   "code_url": "https://github.com/yxli2123/LoftQ",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='loftq', loftq_config=LoftQConfig(loftq_bits=4, loftq_iter=1)) on the full-precision model; or replace_lora_weights_loftq(peft_model) on a bnb-4bit model (one LoftQ step only, LoRA weights replaced in place)",
+   "formula_latex": "\\min_{Q,A,B}\\lVert W_0-Q-BA\\rVert_F:\\ \\ Q_t=q_N(W_0-B_{t-1}A_{t-1}),\\ \\ B_tA_t=\\mathrm{SVD}_r(W_0-Q_t)\\ (B_t=U_r\\Sigma_r^{1/2},\\ A_t=\\Sigma_r^{1/2}V_r^{\\top}),\\ \\ B_0A_0=0;\\qquad h=(Q_T+BA)x,\\ Q_T\\ \\text{frozen }N\\text{-bit},\\ A,B\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all targeted linear layers (best with target_modules='all-linear'); quantized backbone (NF4/NF2 or uniform)",
+   "modification_kind": "additive-weight",
+   "structure": "W_0 \\approx Q + BA: an N-bit matrix plus the rank-r truncated SVD of the quantization residual, found by alternating quantization and SVD; fine-tuning then trains the rank-r part",
+   "mergeable": "conditional",
+   "mergeable_reason": "As with QLoRA, BA can be merged exactly only into a high-precision copy of the weight; merging into the N-bit Q requires re-quantization.",
+   "identity_at_init": "Approximate rather than exact: Q_T+B_TA_T approximates W_0. For T=1 the rank-r SVD of the residual W_0-Q_1 strictly lowers the error of QLoRA's Q_1+0 (Q_1 is exactly QLoRA's quantized weight); further alternations are heuristic (not guaranteed monotone). T=0 is QLoRA's zero-initialized adapter (paper Fig. 3).",
+   "key_idea": "LoftQ makes quantization LoRA-aware. It picks the quantized backbone and the LoRA initialization jointly, so the adapter starts out cancelling the quantization error. This matters most at 2-3 bits, where zero-initialized QLoRA often fails to train.",
+   "results_note": "In all reported experiments it is never worse than QLoRA ('We have not seen our approach performs worse than QLoRA') across DeBERTaV3 (GLUE, SQuAD, ANLI), BART (XSum, CNN/DM) and LLaMA-2 (WikiText-2, GSM8K). At 2 bits it gains over 8% on MNLI and more than 10% on SQuADv1.1.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "same quantized-base + LoRA setting with a better joint initialization"
+    },
+    {
+     "target": "lq-lora",
+     "type": "competes-with",
+     "note": "concurrent; same objective \\min\\lVert W_0-Q-BA\\rVert, LQ-LoRA starts from Q^{(0)}=0 and adds ILP mixed precision and Fisher weighting"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "QPiSSA also lowers quantization error by quantizing the SVD residual"
+    },
+    {
+     "target": "apiq",
+     "type": "competes-with",
+     "note": "ApiQ replaces LoftQ's weight-space objective by an activation-space objective"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.08659",
+    "https://arxiv.org/html/2310.08659",
+    "https://github.com/huggingface/peft/blob/main/docs/source/developer_guides/quantization.md",
+    "https://openreview.net/forum?id=LzPWWPAdY4"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "identity_at_init: replaced the unqualified 'strictly shrinks' claim: the strict improvement is guaranteed only for the first SVD step; the paper notes alternation does not always reduce the gap",
+    "results_note: softened 'never underperforms' to the paper's own empirical wording",
+    "hf_peft_config: added that replace_lora_weights_loftq implements only one alternating step (PEFT quantization guide)",
+    "relations: -> qlora changed generalizes -> builds-on and -> pissa note aligned with verified/init-rank.json (the T=0 special-case fact is kept on the qlora -> loftq edge)",
+    "sources: added https://openreview.net/forum?id=LzPWWPAdY4"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2310.08659 (Li, 2023) confirmed; ICLR 2024 (OpenReview). Eqs. 6-9: B0=A0=0, Q_t=q_N(W-A_{t-1}B_{t-1}^T), sqrt(sigma)-split SVD factors; Fig. 3 states T=0 is QLoRA. PEFT LoftQConfig defaults (4 bits, 1 iter) and replace_lora_weights_loftq checked (huggingface/peft main @85be3f3 (2026-09-30))."
+  },
+  {
+   "id": "lq-lora",
+   "name": "LQ-LoRA",
+   "full_name": "Low-rank plus Quantized LoRA",
+   "paper_title": "LQ-LoRA: Low-rank Plus Quantized Matrix Decomposition for Efficient Language Model Finetuning",
+   "authors": "Guo et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2311.12023",
+   "url": "https://arxiv.org/abs/2311.12023",
+   "code_url": "https://github.com/HanGuo97/lq-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\min_{Q\\in\\mathbb{Q}_{c},\\,B,A}\\big\\lVert\\sqrt{F}\\odot\\big(W_0-(Q+BA)\\big)\\big\\rVert_F\\ \\ (F\\equiv\\mathbf 1\\ \\text{or diagonal empirical Fisher}):\\ \\ B^{(t)}A^{(t)}=\\mathrm{SVD}_r(W_0-Q^{(t-1)}),\\ \\ Q^{(t)}=\\mathrm{Quantize}_c(W_0-B^{(t)}A^{(t)}),\\ Q^{(0)}=0;\\ \\ c=(\\text{bits, block sizes})\\ \\text{per matrix from an ILP under a global bit budget};\\quad h=(Q+BA)x,\\ Q\\ \\text{frozen},\\ A,B\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all linear layers of the transformer, each with its own NF quantization configuration",
+   "modification_kind": "additive-weight",
+   "structure": "robust-PCA-style low-rank-plus-quantized decomposition W_0 \\approx Q + BA; Q uses a per-matrix mixed-precision configuration chosen by integer linear programming; data-aware variant uses a row/column-scaled (Fisher-weighted) SVD",
+   "mergeable": "conditional",
+   "mergeable_reason": "The low-rank component is high-precision and can be folded only into a dequantized copy of Q; folding into the quantized Q needs re-quantization.",
+   "identity_at_init": "Approximate: Q+BA is the alternating approximation of W_0 (stopped when the error rises). Since Q^{(0)}=0, the first low-rank component is the top-r SVD of W_0 itself, so the adapter starts on W_0's principal subspace rather than at zero.",
+   "key_idea": "Split each pretrained matrix into a fixed, easily quantized part and a trainable high-variance low-rank part. Integer linear programming then allocates bits across matrices to meet any target memory budget.",
+   "results_note": "Beats QLoRA and GPTQ-LoRA at matched bit budgets on LLaMA-2 (C4, OpenAssistant) and RoBERTa-large (GLUE). For example, 3.5-bit Fisher LQ-LoRA roughly equals 4.127-bit NF4 QLoRA, and a 2.75-bit LLaMA-2-70B (27GB) stays competitive with 16-bit.",
+   "relations": [
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "same Q+BA objective; differs in starting point (Q^{(0)}=0 vs BA=0), ILP bit allocation and Fisher weighting"
+    },
+    {
+     "target": "pissa",
+     "type": "generalizes",
+     "note": "with the identity quantizer and one iteration, the decomposition is exactly PiSSA's principal-component adapter plus frozen residual"
+    },
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "same frozen-quantized-base + LoRA fine-tuning stage"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.12023",
+    "https://arxiv.org/html/2311.12023",
+    "https://openreview.net/forum?id=xw29VvOMmU"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added https://openreview.net/forum?id=xw29VvOMmU"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2311.12023 (Guo, 2023) confirmed; ICLR 2024 poster (OpenReview, DBLP conf/iclr/GuoGXK24). Eq. 2 alternation with Q^(0)=0 and error-increase stopping, Eq. 4-5 Fisher-weighted SVD with D_row/D_col, ILP over configurations, '3.5-bit Fisher ~ NF4 QLoRA at 4.127 bits/param' and the 2.75-bit 70B (27GB) result all confirmed. Not in HF PEFT."
+  },
+  {
+   "id": "ir-qlora",
+   "name": "IR-QLoRA",
+   "full_name": "Information-Retention QLoRA",
+   "paper_title": "Accurate LoRA-Finetuning Quantization of LLMs via Information Retention",
+   "authors": "Qin et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.05445",
+   "url": "https://arxiv.org/abs/2402.05445",
+   "code_url": "https://github.com/AI-Efficiency/IR-QLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat W_0=\\mathrm{NF}k\\!\\Big(\\tfrac{W_0-\\tau^{*}}{\\mathrm{absmax}(W_0-\\tau^{*})}\\Big)\\,\\mathrm{absmax}(W_0-\\tau^{*})+\\tau^{*},\\ \\ \\tau^{*}=\\arg\\max_{\\tau}\\ \\mathcal H\\big(\\mathrm{NF}k((W_0-\\tau)/\\mathrm{absmax}(W_0-\\tau))\\big)\\ \\text{(blockwise search on } [\\tau_0\\pm\\lambda\\sigma],\\ \\tau_0=\\mathrm{median};\\ \\text{scales and }\\tau\\text{ double-quantized)};\\quad h=\\hat W_0x+\\alpha\\,U_2(U_1(x)),\\ \\ U_1(x)=Ax+\\beta_1\\,\\mathrm{avg}_r(x),\\ \\ U_2(u)=Bu+\\beta_2\\,\\mathrm{rep}_{d_{out}/r}(u),\\ \\ \\mathrm{avg}_r(x)_j=\\tfrac{r}{d_{in}}\\textstyle\\sum_{i\\in\\mathcal G_j}x_i\\ (r\\text{ contiguous groups}),\\ \\ \\beta_1,\\beta_2\\ \\text{layer-wise learnable scalars}",
+   "trainable_params": "r(d_{in}+d_{out})+2",
+   "locus": "all linear layers of LLaMA/LLaMA2; NF2-NF4 or integer-quantized base",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA with parameter-free 'elastic' shortcuts: \\Delta W=\\alpha(B+\\beta_2E)(A+\\beta_1P), where P\\in\\mathbb{R}^{r\\times d_{in}} averages r contiguous input groups and E\\in\\{0,1\\}^{d_{out}\\times r} repeats each of the r entries d_{out}/r times; still rank \\le r. Base is an entropy-calibrated NF-k quantizer with a per-block shift \\tau",
+   "mergeable": "conditional",
+   "mergeable_reason": "The IEC shortcuts are linear and fold into the LoRA factors (and then into a 16-bit copy of the weight), but folding into the NF-k base requires re-quantization.",
+   "identity_at_init": "Exact relative to the quantized base: B = 0 and, in the official code, \\beta_1=\\beta_2=0 (the paper itself does not state their initialization), so the adapter is zero at step 0. The starting model is the ICQ-quantized one, not W_0.",
+   "key_idea": "View quantize-then-LoRA through information retention. Calibration Quantization (ICQ) maximizes the entropy of the quantized weights so they keep more information. The Elastic Connection (IEC) adds parameter-free pooling and tiling paths so LoRA can directly reuse the original features.",
+   "results_note": "Improves LLaMA/LLaMA2 at 2-4 bits over QLoRA and QA-LoRA, e.g. +1.4% MMLU for 4-bit LLaMA-7B over the prior state of the art, at only 0.31% extra training time.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "same NF-k + LoRA pipeline with a calibrated quantizer and augmented adapter"
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "both route group-pooled inputs into the adapter; IR-QLoRA uses pooling as an extra shortcut, not as a constraint"
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "both reduce the quantization gap at init, via entropy calibration rather than residual SVD"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.05445",
+    "https://arxiv.org/html/2402.05445",
+    "https://proceedings.mlr.press/v235/qin24b.html",
+    "https://github.com/AI-Efficiency/IR-QLoRA"
+   ],
+   "confidence": "medium",
+   "corrections": [
+    "code_url: htqin/IR-QLoRA now redirects to AI-Efficiency/IR-QLoRA",
+    "formula_latex: made the scale s explicit as absmax(W_0-tau*) (Eq. 10), wrote the IEC pooling as the mean over r contiguous input groups and the expansion as repeating each of the r entries d_out/r times (the paper's appendix merged-matrix form and the official code; the main text calls it 'repeated concatenation'), and noted beta_1, beta_2 are layer-wise learnable scalars (Eq. 12-14)",
+    "structure: T 'tiles' -> E repeats each entry d_out/r times (appendix merged form and official code)",
+    "identity_at_init: resolved the beta initialization from the official code (lora_default_A_scale / lora_default_B_scale initialized with torch.zeros)",
+    "sources: added https://proceedings.mlr.press/v235/qin24b.html",
+    "sources: added https://github.com/AI-Efficiency/IR-QLoRA"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2402.05445 (Qin, 2024) confirmed; ICML 2024 (PMLR v235 qin24b). Eq. 8-10 (ICQ), Eq. 12-15 (IEC with layer-wise learnable beta_1, beta_2) and appendix merged-matrix forms checked; official code (utils.py for the NF path and integer quantizer/peft_utils_iec.py) zero-inits both betas, averages contiguous groups via reshape(..., r, -1).mean and expands by per-entry repetition. +1.4% MMLU (4-bit LLaMA-7B) and 0.31% extra time confirmed."
+  },
+  {
+   "id": "l4q",
+   "name": "L4Q",
+   "full_name": "Low-rank adaptive Learning quantization for LLMs",
+   "paper_title": "L4Q: Parameter Efficient Quantization-Aware Fine-Tuning on Large Language Models",
+   "authors": "Jeon et al.",
+   "year": 2024,
+   "venue": "ACL 2025",
+   "arxiv": "2402.04902",
+   "url": "https://aclanthology.org/2025.acl-long.99/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_{comb}=W_0+\\alpha BA,\\quad \\tilde w=\\mathrm{round}\\Big(\\mathrm{clamp}\\big(\\tfrac{W_{comb}-b}{s},Q_N,Q_P\\big)\\Big),\\ \\ W_q=\\tilde w\\,s+b,\\quad h=W_qx;\\ \\ W_0\\ \\text{frozen},\\ (A,B,s,b)\\ \\text{trained with STE};\\ \\ \\tfrac{\\partial\\mathcal L}{\\partial B}=\\alpha\\big(\\tfrac{\\partial\\mathcal L}{\\partial W_q}\\odot\\mathbb 1_{[Q_N,Q_P]}\\big)A^{\\top}",
+   "trainable_params": "r(d_{in}+d_{out})+2\\,d_{out}\\,d_{in}/g\\ \\ \\text{(LoRA factors + one scale and bias per quantization group of size } g)",
+   "locus": "all linear layers (LLaMA 7B-33B, OpenLLaMA-3B, Mistral-7B)",
+   "modification_kind": "hybrid",
+   "structure": "learned-step-size quantizer composed after a rank-r additive update: W=Q_{s,b}(W_0+\\alpha BA); custom backward reuses \\partial\\mathcal L/\\partial W_q so no weight-gradient buffer is stored",
+   "mergeable": "yes",
+   "mergeable_reason": "The deployed model is exactly the fully quantized W_q=Q_{s,b}(W_0+\\alpha BA); no adapter or 16-bit branch remains at inference.",
+   "identity_at_init": "B = 0, so training starts from the 'L4Q init' symmetric quantization of W_0 (scale s=\\max(|\\min W/Q_N|,|\\max W/Q_P|), chosen to avoid clipping outliers), not from W_0 itself.",
+   "key_idea": "Put the LoRA update inside the quantizer rather than beside it, and train LoRA jointly with the quantization scale and bias. The result is a fully quantized model without QA-LoRA's constraints on the factors, at roughly LoRA's training memory.",
+   "results_note": "On LLaMA and Mistral models with instruction data, 4-bit and 3-bit L4Q is more accurate than decoupled quantize-then-fine-tune schemes and QA-LoRA, at inference speed comparable to other fully quantized models.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA factors inside a quantization-aware training (LSQ-style) quantizer"
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "both produce merged integer models; L4Q leaves A and B unconstrained by re-quantizing W_0+\\alpha BA"
+    },
+    {
+     "target": "peqa",
+     "type": "competes-with",
+     "note": "both learn quantization scales; L4Q also learns a LoRA update inside the quantizer"
+    },
+    {
+     "target": "efficientqat",
+     "type": "competes-with",
+     "note": "both are memory-efficient quantization-aware training procedures for LLMs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.04902",
+    "https://arxiv.org/html/2402.04902",
+    "https://aclanthology.org/2025.acl-long.99/"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 2402.04902 (Jeon, 2024) confirmed; ACL 2025 main (journal-ref, ACL Anthology 2025.acl-long.99). Eq. 7-8 (W_comb=W0+alpha BA then group-wise LSQ quantizer with scale s and bias b), Eq. 13-14 STE gradients, L4Q_init s=max(|min W/Q_n|,|max W/Q_p|), b=0 (Eq. 37-38), group size 128, and the name expansion all checked. No public code found."
+  },
+  {
+   "id": "peqa",
+   "name": "PEQA",
+   "full_name": "Parameter-Efficient and Quantization-aware Adaptation",
+   "paper_title": "Memory-Efficient Fine-Tuning of Compressed Large Language Models via sub-4-bit Integer Quantization",
+   "authors": "Kim et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.14152",
+   "url": "https://arxiv.org/abs/2305.14152",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat W=\\mathrm{diag}(s_0+\\Delta s)\\,\\overline W_0,\\quad \\overline W_0=\\mathrm{clamp}\\big(\\lfloor W_0/s_0\\rceil+z_0,\\,0,\\,2^b-1\\big)-z_0\\ \\ \\text{(frozen integer codes)},\\ \\ s_0,z_0\\in\\mathbb{R}^{d_{out}};\\ \\ \\text{only } s_0+\\Delta s \\text{ trained}",
+   "trainable_params": "d_{out}\\ \\text{(per-channel; } d_{out}\\,d_{in}/g \\text{ for group size } g)",
+   "locus": "every linear layer of a weight-only (3-4 bit) quantized LLM",
+   "modification_kind": "multiplicative-weight",
+   "structure": "diagonal rescaling of the output rows of a frozen integer matrix: \\hat W=\\mathrm{diag}(s)\\,\\overline W_0 (group-wise: one scale per output row and input group); the integer codes never change",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained parameters are the quantization scales themselves, so the result is a standard quantized model with the same integer codes and kernels.",
+   "identity_at_init": "\\Delta s = 0: the model starts as the RTN/OPTQ-quantized model whose scales s_0 minimize \\lVert W_0-\\hat W_0\\rVert_F, so the starting point is close to but not exactly W_0.",
+   "key_idea": "Treat the quantization step sizes as the PEFT parameters. Freeze the integer codes and fine-tune only per-channel scales, so each task adapter is a tiny scale vector and the deployed model stays quantized.",
+   "results_note": "Scales to LLaMA-65B. After instruction tuning, sub-4-bit PEQA models recover or exceed their full-precision language-modeling, few-shot in-context and comprehension performance.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "concurrent memory-efficient fine-tuning of quantized LLMs (scales vs adapters)"
+    },
+    {
+     "target": "qa-lora",
+     "type": "dual-to",
+     "note": "PEQA learns the quantizer's multiplicative scales, QA-LoRA its additive zero-points"
+    },
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "algebraically an (IA)^3-style output-channel rescaling (\\hat W=\\mathrm{diag}(1+\\Delta s/s_0)\\,\\hat W_0) applied to every quantized linear layer; not equivalent, since (IA)^3 scales only keys, values and the input of W_2"
+    },
+    {
+     "target": "efficientqat",
+     "type": "special-case-of",
+     "note": "PEQA is EfficientQAT's E2E-QP stage alone (train only step sizes on frozen integer codes, here from RTN/OPTQ init) without the Block-AP stage"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.14152",
+    "https://arxiv.org/pdf/2305.14152"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> ia3 equivalent-to -> competes-with ((IA)^3's FFN vector scales the input of W_2 and it touches only k, v, ff; PEQA rescales the output rows of every linear layer)",
+    "relations: -> efficientqat note rewritten so that the special-case direction is explicit"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2305.14152 (Kim, 2023) confirmed; NeurIPS 2023 (arXiv comment, DBLP conf/nips/KimLKPYKL23). Eq. 1-2 (W^=(s0+Delta s)(clamp(round(W0/s0)+z0,0,2^b-1)-z0), s0,z0 in R^{n x 1} initialized to minimize ||W0-W^0||_F^2, RTN in experiments) and the group-wise variant checked. No public code found."
+  },
+  {
+   "id": "apiq",
+   "name": "ApiQ",
+   "full_name": "Activation-preserved initialization of Quantized LLMs",
+   "paper_title": "ApiQ: Finetuning of 2-Bit Quantized Large Language Model",
+   "authors": "Liao et al.",
+   "year": 2024,
+   "venue": "EMNLP 2024",
+   "arxiv": "2402.05147",
+   "url": "https://aclanthology.org/2024.emnlp-main.1168/",
+   "code_url": "https://github.com/BaohaoLiao/ApiQ",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\min_{Q,A,B}\\ \\big\\lVert W_0X-(Q+BA)X^{q}\\big\\rVert_F\\ \\ \\text{(layer-wise; block-wise: } \\lVert\\mathcal F(W_s,X)-\\mathcal F(Q_s,A_s,B_s,X^{q})\\rVert),\\ \\ Q=q_b(W_0;\\gamma,\\beta)\\ \\text{with learnable clipping }(\\gamma,\\beta)\\ \\text{via STE},\\ X^{q}=\\text{inputs from the already-quantized preceding layers};\\ \\text{then fine-tune } h=(Q+BA)x,\\ Q\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{during fine-tuning}",
+   "locus": "all linear layers (or whole transformer blocks for ApiQ-bw); DeBERTa-v3, RoBERTa, Llama-2, Mistral",
+   "modification_kind": "additive-weight",
+   "structure": "the same Q+BA shape as LoftQ, but fitted in activation space with calibration data, sequentially layer-by-layer or block-by-block so that quantization error does not accumulate with depth",
+   "mergeable": "conditional",
+   "mergeable_reason": "BA can be merged only into a high-precision copy; merging into the b-bit Q requires re-quantization.",
+   "identity_at_init": "Approximate: Q, A, B are calibrated so that the quantized layer or block reproduces the full-precision activations given the already-quantized inputs X^{q}; the model function is close to, not equal to, the original.",
+   "key_idea": "Initialize LoRA and quantize jointly by matching activations, not weights. Each quantized layer is fitted given its quantized inputs, so the adapter stops error propagation from shallow to deep layers, which is crucial at 2 bits.",
+   "results_note": "Attains the lowest activation error and the best fine-tuning results against QLoRA, LoftQ and LQ-LoRA across 2-4 bits on GLUE (DeBERTa-v3, RoBERTa) and on Llama-2/Mistral language modeling, arithmetic and commonsense reasoning, with the largest gains at 2 bits.",
+   "relations": [
+    {
+     "target": "loftq",
+     "type": "builds-on",
+     "note": "same joint (Q,A,B) initialization, objective moved from weight error \\lVert W_0-Q-BA\\rVert to activation error"
+    },
+    {
+     "target": "lq-lora",
+     "type": "competes-with",
+     "note": "alternative quantization-aware LoRA initialization"
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "replaces QLoRA's zero-init adapters on a naively quantized base"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.05147",
+    "https://arxiv.org/html/2402.05147",
+    "https://aclanthology.org/2024.emnlp-main.1168/"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 2402.05147 (Liao, 2024) confirmed; EMNLP 2024 main (ACL Anthology 2024.emnlp-main.1168). Eq. 4 (layer-wise ||XW - X^q(Q+AB^T)||), block-wise ApiQ-bw, learnable clipping gamma, beta (sigmoid, init 4) trained with STE, all checked."
+  },
+  {
+   "id": "efficientqat",
+   "name": "EfficientQAT",
+   "full_name": "Efficient Quantization-Aware Training",
+   "paper_title": "EfficientQAT: Efficient Quantization-Aware Training for Large Language Models",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ACL 2025",
+   "arxiv": "2407.11062",
+   "url": "https://arxiv.org/abs/2407.11062",
+   "code_url": "https://github.com/OpenGVLab/EfficientQAT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{Block-AP: }\\min_{W,s,z}\\lVert\\mathcal F_{blk}(W_0,X)-\\mathcal F_{blk}(Q_{s,z}(W),X)\\rVert\\ \\text{block by block};\\quad \\text{E2E-QP: } \\hat W=s\\odot(\\overline W-z),\\ \\overline W\\ \\text{frozen integers},\\ \\text{only step sizes } s \\text{ trained end-to-end on the task loss}",
+   "trainable_params": "d_{out}\\,d_{in}/g\\ \\text{step sizes in E2E-QP (group size } g)",
+   "locus": "all linear layers of the LLM; 2-4 bit group-wise uniform quantization",
+   "modification_kind": "hybrid",
+   "structure": "two stages: block-wise reconstruction training of all weights plus quantization parameters, then end-to-end training of group-wise multiplicative step sizes only (diagonal-per-group scaling of a frozen integer matrix)",
+   "mergeable": "yes",
+   "mergeable_reason": "Block-AP trains the latent weights together with step sizes and zero points and then rounds them to integer codes; E2E-QP trains only step sizes on those frozen codes. The output is a standard group-wise uniformly quantized model, with no adapter.",
+   "identity_at_init": "E2E-QP starts from the Block-AP-calibrated quantized model (step sizes from Block-AP); there is no exact identity with W_0, by design of quantization.",
+   "key_idea": "Make quantization-aware training feasible for 70B models in two stages. First, train all parameters block by block against a reconstruction loss. Then, end to end, train only the quantization step sizes, which is a PEQA-style parameter-efficient stage on a frozen integer model.",
+   "results_note": "Produces a 2-bit Llama-2-70B on a single A100-80GB in 41 hours with less than 3 points of accuracy loss (69.48 vs 72.41), and outperforms prior quantization methods from 7B to 70B, including instruction-tuned and multimodal LLMs.",
+   "relations": [
+    {
+     "target": "peqa",
+     "type": "builds-on",
+     "note": "the E2E-QP stage trains only quantization scales on frozen integer weights, like PEQA"
+    },
+    {
+     "target": "l4q",
+     "type": "competes-with",
+     "note": "both are memory-efficient QAT for LLMs"
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "alternative route to accurate low-bit fine-tuned models without a 16-bit branch"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.11062",
+    "https://arxiv.org/html/2407.11062"
+   ],
+   "confidence": "medium",
+   "corrections": [
+    "mergeable_reason: Block-AP trains latent full-precision weights plus step sizes and zero points (then rounded), it does not train integer codes directly"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2407.11062 (Chen, 2024) confirmed; ACL 2025 main (arXiv comment, DBLP conf/acl). Block-AP trains all parameters incl. step sizes and zero points block by block; E2E-QP 'keeps the quantized weights fixed and trains only the quantization parameters (step sizes)'; 2-bit Llama-2-70B on one A100-80GB in 41h, 69.48 vs 72.41, all confirmed from the paper HTML."
+  },
+  {
+   "id": "loqt",
+   "name": "LoQT",
+   "full_name": "Low-Rank Adapters for Quantized Training",
+   "paper_title": "LoQT: Low-Rank Adapters for Quantized Pretraining",
+   "authors": "Loeschcke et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.16528",
+   "url": "https://arxiv.org/abs/2405.16528",
+   "code_url": "https://github.com/sebulo/LoQT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=\\big(W_Q+s\\,P_QB\\big)x,\\ \\ W_Q=q_{NF4}(W),\\ \\ P=U_{[:,1:r]}\\ \\text{from}\\ \\mathrm{SVD}(\\nabla_W\\mathcal L)\\ \\text{(frozen, } P_Q=q_{NF4}(P)\\text{; projector on the smaller side, shown for } d_{out}\\le d_{in}),\\ \\ B\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{trained},\\ B_{init}=P^{+}(W-Q)\\ \\text{refined for up to 5 steps with } Q=q_{NF4}(W-PB);\\quad \\text{at } t\\in\\{T_i\\}:\\ W\\leftarrow W_Q+sP_QB,\\ \\text{recompute }P,\\ \\text{re-quantize, re-init }B;\\ \\ T_{i}=\\tau+\\psi^{i}",
+   "trainable_params": "r\\max(d_{in},d_{out})\\ \\text{(only } B\\text{; } W \\text{ and } P \\text{ frozen and NF4-quantized; } P \\text{ is placed on the smaller dimension, so } B \\text{ is } r\\times\\max(d_{in},d_{out}))",
+   "locus": "all attention and MLP linear layers; used for both pre-training and fine-tuning",
+   "modification_kind": "hybrid",
+   "structure": "one-sided low-rank adapter with a frozen gradient-derived projector, W=W_Q+sPB with P the top-r left singular vectors of \\nabla_W\\mathcal L; periodically merged into the NF4 weight and re-quantized at exponentially growing intervals",
+   "mergeable": "yes",
+   "mergeable_reason": "PB is periodically merged into the (quantized) full-rank weight, with a final merge at the end, so inference uses a plain dense or quantized matrix.",
+   "identity_at_init": "Approximate: B is initialized to compensate the quantization error (B \\approx P^{+}(W-q_{NF4}(W))) instead of 0; without quantization (LoQT-nq), B=0 gives exact identity.",
+   "key_idea": "Realize GaLore's projected step as a trainable adapter. Freeze a gradient-SVD projector P and train only B in W+PB; since \\partial\\mathcal L/\\partial B=P^{\\top}\\nabla_W\\mathcal L, Adam on B equals GaLore within a window. Periodically fold PB into an NF4 weight, so neither W nor P ever needs 16-bit storage or gradients.",
+   "results_note": "Trains models up to 7B on a single 24GB GPU (13B with per-layer gradient updates). Perplexity is close to unquantized low-rank baselines in LLaMA pre-training on C4, with competitive DeBERTaV3 GLUE and GSM8K fine-tuning.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "builds-on",
+     "note": "rewrites GaLore as an adapter: without quantization and within one interval (B_0=0), Adam on B in W+PB applies P\\,\\rho(P^{\\top}G) with the same P, i.e. GaLore's one-sided projected step (paper Eq. 3-7); across intervals LoQT merges and re-initializes B instead of carrying projected states"
+    },
+    {
+     "target": "relora",
+     "type": "builds-on",
+     "note": "periodic merging of low-rank factors into the base weight to accumulate a high-rank update"
+    },
+    {
+     "target": "qlora",
+     "type": "combines",
+     "note": "NF4 quantization of the frozen weight (and here also of the projector)"
+    },
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "both train only one factor of a low-rank product with the other frozen (random A in LoRA-FA, gradient-SVD P in LoQT)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.16528",
+    "https://arxiv.org/html/2405.16528",
+    "https://openreview.net/forum?id=Pnv8C0bU9t"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "formula_latex: added the iterative error-compensation refinement of B (Sec. 2.5 / Algorithm 2) and that P sits on the smaller dimension, as in GaLore",
+    "trainable_params: re-derived: since LoQT (like GaLore) projects along the smaller side, B has r*max(d_in,d_out) entries rather than a fixed r*d_in",
+    "relations: -> galore equivalent-to -> builds-on (the identity holds only within one interval, without quantization and with B_0=0; LoQT also merges/re-initializes B at each T_i)",
+    "sources: added https://openreview.net/forum?id=Pnv8C0bU9t"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2405.16528 (Loeschcke, 2024; v1 title 'LoQT: Low Rank Adapters for Quantized Training') confirmed; NeurIPS 2024 poster (OpenReview). Eq. 3-7 (G_B=P^T G_W), Algorithm 1-2, Sec. 2.5 compensation (the text writes B=P^+(Q-W) but Algorithm 2 and the objective give P^+(W-Q), used here) and the T_i=tau+psi^i schedule checked; 7B on 24GB, 13B with per-layer updates confirmed."
+  },
+  {
+   "id": "galore",
+   "name": "GaLore",
+   "full_name": "Gradient Low-Rank Projection",
+   "paper_title": "GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection",
+   "authors": "Zhao et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2403.03507",
+   "url": "https://arxiv.org/abs/2403.03507",
+   "code_url": "https://github.com/jiaweizzhao/GaLore",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "G_t=\\nabla_W\\mathcal L(W_t)\\in\\mathbb{R}^{d_{out}\\times d_{in}},\\ \\ P_t=U_{[:,1:r]}\\ \\text{of}\\ \\mathrm{SVD}(G_{t_0})\\ \\text{(refreshed every }T\\text{ steps)};\\ \\ R_t=P_t^{\\top}G_t\\in\\mathbb{R}^{r\\times d_{in}},\\ (M_t,V_t)=\\mathrm{Adam}(R_t),\\ N_t=M_t/(\\sqrt{V_t}+\\epsilon);\\quad W_{t+1}=W_t-\\eta\\,\\alpha\\,P_tN_t\\ \\ \\text{(all of }W\\text{ trained; no adapter; shown for } d_{out}\\le d_{in}\\text{, else project on the right)}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight); optimizer state } 2r\\,d_{in}+r\\,d_{out}\\ \\text{vs. } 2d_{out}d_{in}\\ \\text{for Adam (for } d_{out}\\le d_{in})",
+   "locus": "all 2-D weight matrices of attention and MLP blocks (embeddings / LM head usually kept on standard Adam)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "each step's update lies in an r-dimensional left subspace: \\Delta W_t=-\\eta\\alpha P_tN_t with P_t\\in\\mathrm{St}(d_{out},r) the gradient's top singular vectors; the subspace switches every T steps, so the accumulated \\sum_t\\Delta W_t is high-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "There is no auxiliary module: updates are written straight into W, so the result is an ordinary dense checkpoint with the original architecture.",
+   "identity_at_init": "Trivial: training starts at W_0 with no reparameterization; the projector is initialized from the SVD of the first gradient.",
+   "key_idea": "Put the low-rank structure on the gradient rather than the weights. Project each gradient onto a periodically refreshed top-r singular subspace, run Adam there, and project back. This gives full-parameter learning with LoRA-like optimizer memory.",
+   "results_note": "Cuts optimizer-state memory by up to 65.5% (82.5% with 8-bit GaLore) while matching full-rank LLaMA 1B/7B pre-training on C4 (up to 19.7B tokens) and RoBERTa GLUE fine-tuning. It was the first to pre-train a 7B model on a single 24GB RTX 4090 without model parallelism, checkpointing or offloading.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "dual-to",
+     "note": "LoRA confines the weight update to a fixed r-dimensional subspace (parameter side); GaLore confines each gradient step to a periodically re-chosen r-dimensional subspace (optimizer side)"
+    },
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "both aim at high-rank updates with low-rank memory, by periodic merging (ReLoRA) vs periodic subspace switching (GaLore)"
+    },
+    {
+     "target": "flora-opt",
+     "type": "competes-with",
+     "note": "SVD-chosen vs resampled random projections of the gradient"
+    },
+    {
+     "target": "loqt",
+     "type": "dual-to",
+     "note": "optimizer-side vs parameter-side form of the same step: a frozen-P adapter W+PB trained with Adam (LoQT, without quantization, B_0=0) reproduces GaLore's update inside one subspace window"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2403.03507",
+    "https://arxiv.org/html/2403.03507",
+    "https://huggingface.co/docs/transformers/main/en/optimizers",
+    "https://proceedings.mlr.press/v235/zhao24s.html"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> loqt equivalent-to -> dual-to (exact only within one window, without quantization; not a global equivalence)",
+    "sources: added https://proceedings.mlr.press/v235/zhao24s.html"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2403.03507 (Zhao, 2024) confirmed; ICML 2024 oral (arXiv comment, DBLP). Algorithm 2 (left projector U[:, :r] for m<=n, N=Adam(P^T G), G~=alpha P N), optimizer states mr+2nr, 65.5% / 82.5% / 63.3% memory figures, 19.7B tokens and RTX 4090 claim confirmed. Not in HF PEFT; available as transformers optim='galore_adamw' / 'galore_adamw_8bit' / 'galore_adafactor'."
+  },
+  {
+   "id": "galore-2",
+   "name": "GaLore 2",
+   "full_name": "GaLore 2 (scalable Gradient Low-Rank Projection)",
+   "paper_title": "GaLore 2: Large-Scale LLM Pre-Training by Gradient Low-Rank Projection",
+   "authors": "Su et al.",
+   "year": 2025,
+   "venue": "arXiv",
+   "arxiv": "2504.20437",
+   "url": "https://arxiv.org/abs/2504.20437",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_{t+1}=W_t-\\eta\\,\\alpha\\,P_t\\,\\rho_t\\big(P_t^{\\top}G_t\\big),\\ \\ P_t=\\mathrm{rSVD}_r(G_{t_0})\\ \\text{(fast randomized SVD, refreshed every }T\\text{ steps)};\\ \\rho_t=\\text{(8-bit) Adam on the }r\\times d_{in}\\text{ state};\\ \\text{per-layer fused update after FSDP reduce-scatter; optional low-bit projectors (Q-GaLore) and tensor projections (Tensor-GaLore)}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight); optimizer state } \\approx 2r\\,d_{in}+r\\,d_{out}",
+   "locus": "all 2-D weight matrices; designed for large-scale pre-training under FSDP",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "same projected-gradient structure as GaLore (\\Delta W_t\\in\\mathrm{span}(P_t)\\otimes\\mathbb{R}^{d_{in}}), with randomized-SVD projectors and sharded per-layer updates",
+   "mergeable": "yes",
+   "mergeable_reason": "Updates go directly into W; the output is a standard dense checkpoint.",
+   "identity_at_init": "Trivial: starts at the initial (or pretrained) W with no reparameterization.",
+   "key_idea": "An engineering consolidation of GaLore. Randomized SVD removes the SVD bottleneck (up to 20 minutes per subspace update on Llama 7B), FSDP integration fuses per-layer projected updates, and Q-GaLore and Tensor-GaLore extensions are folded in. The paper then tests GaLore at real pre-training scale.",
+   "results_note": "Pre-trains Llama 7B from scratch on 500B tokens with final validation loss, perplexity and downstream scores comparable to an 8-bit Adam baseline.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "builds-on",
+     "note": "same projected-gradient optimizer, made scalable (randomized SVD, FSDP)"
+    },
+    {
+     "target": "q-galore",
+     "type": "combines",
+     "note": "supports Q-GaLore's low-bit projection matrices"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.20437",
+    "https://arxiv.org/html/2504.20437",
+    "https://github.com/jiaweizzhao/GaLore"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 2504.20437 (Su, 2025) confirmed; tech report, no venue. Randomized SVD (SVD took up to 20 min per subspace update on Llama 7B), Q-GaLore low-bit projection and Tensor-GaLore support (Sec. 4.2), updated bnb 8-bit Adam, FSDP per-layer update after reduce-scatter, and 500B-token Llama 7B run comparable to 8-bit Adam all confirmed. GaLore repo README only announces GaLore 2 (2024-09-01); no code release found."
+  },
+  {
+   "id": "q-galore",
+   "name": "Q-GaLore",
+   "full_name": "Quantized GaLore",
+   "paper_title": "Q-GaLore: Quantized GaLore with INT4 Projection and Layer-Adaptive Low-Rank Gradients",
+   "authors": "Zhang et al.",
+   "year": 2024,
+   "venue": "CPAL 2025",
+   "arxiv": "2407.08296",
+   "url": "https://proceedings.mlr.press/v280/zhang25a.html",
+   "code_url": "https://github.com/VITA-Group/Q-GaLore",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{\\mathrm{INT8}}_{t+1}=\\mathrm{SR}_{8}\\Big(W_t-\\eta\\,\\alpha\\,P_t^{\\mathrm{INT4}}\\,\\rho_t\\big(P_t^{\\mathrm{INT4}\\top}G_t\\big)\\Big),\\ \\ \\mathrm{SR}=\\text{stochastic rounding (unbiased)};\\ \\ P_t^{\\mathrm{INT4}}\\ \\text{block-wise INT4};\\ \\text{SVD interval of layer } l \\text{ doubled when } \\cos(P^{(l)}_{k\\text{ intervals}})\\ge\\text{threshold (lazy layer-adaptive refresh)};\\ \\text{fused per-layer backward update}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight, stored INT8); optimizer state } \\approx 2r\\,d_{in}\\ \\text{(+ INT4 projector } r\\,d_{out})",
+   "locus": "all 2-D weight matrices; pre-training and fine-tuning",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "GaLore projected update with quantized operands: INT8 weights updated through stochastic rounding, INT4 projector, per-layer adaptive subspace-refresh schedule",
+   "mergeable": "yes",
+   "mergeable_reason": "Training directly updates the (INT8) weights; no adapter remains.",
+   "identity_at_init": "Trivial: starts from the (INT8-quantized) initial weights with no reparameterization.",
+   "key_idea": "Gradient subspaces settle early in many layers and projectors tolerate 4-bit quantization. Q-GaLore therefore refreshes subspaces lazily per layer, stores projectors in INT4 and weights in INT8, and uses stochastic rounding so small updates are not lost.",
+   "results_note": "Pre-trains LLaMA-7B from scratch on a single 16GB RTX 4060 Ti. In fine-tuning it uses up to 50% less memory than LoRA and GaLore and beats QLoRA by up to 5.19 MMLU points at the same memory cost.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "builds-on",
+     "note": "quantized, lazily refreshed GaLore"
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "memory-matched fine-tuning comparison on MMLU"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.08296",
+    "https://arxiv.org/html/2407.08296",
+    "https://proceedings.mlr.press/v280/zhang25a.html"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: removed -> galore-2 (Q-GaLore is not a special case of GaLore 2; GaLore 2 merely supports Q-GaLore's low-bit projections, already captured by galore-2 -> q-galore 'combines')"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2407.08296 (Zhang, 2024) confirmed; CPAL 2025 (PMLR v280 zhang25a). INT8 weights with stochastic rounding, block-wise (block size 256) INT4 projections, interval doubling when cosine similarity over k intervals stays above a threshold (e.g. 40%), 16GB RTX 4060 Ti 7B pre-training, up to 50% memory vs LoRA/GaLore and up to 5.19 MMLU over QLoRA confirmed."
+  },
+  {
+   "id": "flora-opt",
+   "name": "Flora",
+   "full_name": "From LoRA to high-rank updates",
+   "paper_title": "Flora: Low-Rank Adapters Are Secretly Gradient Compressors",
+   "authors": "Hao et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.03293",
+   "url": "https://arxiv.org/abs/2402.03293",
+   "code_url": "https://github.com/BorealisAI/flora-opt",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{LoRA dynamics} \\approx W_0-\\eta\\textstyle\\sum_t G_tA_0^{\\top}A_0\\ \\ (\\text{random } A_0,\\ \\text{only } B \\text{ moving});\\ \\ \\text{Flora: } C_t=G_tA_t^{\\top}\\in\\mathbb{R}^{d_{out}\\times r},\\ A_t\\sim\\mathcal N(0,\\tfrac1r)^{r\\times d_{in}}\\ \\text{regenerated from a seed, resampled every }\\kappa\\text{ steps};\\ \\ M_t=\\beta M_{t-1}T_t+(1-\\beta)C_t,\\ \\ T_t=A_{t-1}A_t^{\\top}\\ \\text{at resampling steps (momentum transfer), else } T_t=I_r;\\ \\ W_{t+1}=W_t-\\eta\\,\\mathcal U(M_tA_t)\\ \\ (\\mathcal U=\\text{base optimizer, Adafactor in the paper})",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight); compressed state } r\\,d_{out}\\ \\text{per EMA / accumulator (+ a random seed for } A_t)",
+   "locus": "attention and feed-forward weight matrices (embeddings and vector parameters handled uncompressed); T5, GPT-2 (ViT in the appendix)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "random-projection (Johnson-Lindenstrauss) compression of the gradient along its input dimension, C=GA^{\\top}, decompressed by CA; resampling A_t makes the accumulated update high-rank; sublinear O(r\\,d_{out}) state",
+   "mergeable": "yes",
+   "mergeable_reason": "Flora is an optimizer that writes directly into W; no adapter is created.",
+   "identity_at_init": "Trivial: W starts at W_0; only optimizer states are compressed.",
+   "key_idea": "Under SGD with a small learning rate, LoRA's update is dominated by B moving under a nearly fixed random A_0, i.e. -\\eta GA_0^{\\top}A_0, which is random-projection compression of the gradient. Resampling the projection breaks LoRA's low-rank ceiling while keeping its sublinear memory for momentum and gradient accumulation.",
+   "results_note": "With Adafactor as base optimizer, Flora-compressed gradient accumulation matches full-matrix accumulation on T5 (XSum) and GPT-2 (IWSLT17 De-En) at reasonably large r, using only about 30% of its memory overhead for T5-3B / GPT-2-XL at r=256. Compressed momentum recovers or surpasses naive momentum when training from scratch, where LoRA lags badly.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "dual-to",
+     "note": "shows LoRA updates are approximately random-projection gradient compressors (parameter-side LoRA = optimizer-side compression)"
+    },
+    {
+     "target": "lora-fa",
+     "type": "generalizes",
+     "note": "LoRA-FA without its (A_0A_0^{\\top})^{-1} gradient correction (v1) under SGD is Flora with a fixed, never-resampled projection; with the correction (v3) the fixed projection becomes the orthogonal projector onto row(A_0)"
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "random (Flora) vs SVD-based (GaLore) gradient projections"
+    },
+    {
+     "target": "apollo",
+     "type": "competes-with",
+     "note": "APOLLO also relies on random projections, but only to estimate scaling factors"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.03293",
+    "https://arxiv.org/html/2402.03293",
+    "https://proceedings.mlr.press/v235/hao24a.html"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "formula_latex: momentum transfer M A_{t-1}A_t^T is applied only when the projection is resampled (every kappa steps, Algorithm 2), not at every step",
+    "relations: -> lora-fa note qualified (the identification holds for LoRA-FA without the v3 gradient correction)",
+    "sources: added https://proceedings.mlr.press/v235/hao24a.html"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2402.03293 (Hao, 2024) confirmed; ICML 2024 (arXiv comment, DBLP conf/icml/HaoCM24). Eq. 20 / Thm 2.4 (A ~ N(0,1/r), C=GA^T, decompress CA), Algorithm 2 (transfer only on resampling, kappa interval), Adafactor base optimizer, and '30% of naive accumulation memory at r=256' for T5-3B/GPT-2-XL confirmed."
+  },
+  {
+   "id": "fira",
+   "name": "Fira",
+   "full_name": "Fira (full-rank training under a low-rank constraint)",
+   "paper_title": "Fira: Can We Achieve Full-rank Training of LLMs Under Low-rank Constraint?",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.01623",
+   "url": "https://arxiv.org/abs/2410.01623",
+   "code_url": "https://github.com/xichen-fy/Fira",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "R_t=P_t^{\\top}G_t,\\ \\ W_{t+1}=W_t-\\eta\\,P_t\\psi_t(R_t)-\\eta\\,\\big(G_t-P_tR_t\\big)\\,\\mathrm{diag}\\big(\\phi_t(R_t)\\big),\\ \\ \\phi_t(R_t)_i=\\frac{\\lVert\\psi_t(R_{t,:,i})\\rVert}{\\lVert R_{t,:,i}\\rVert}\\ \\text{(column-wise)};\\ \\ \\text{limiter: if } \\lVert S_t\\rVert/\\lVert S_{t-1}\\rVert>\\gamma,\\ S_t\\leftarrow\\gamma\\lVert S_{t-1}\\rVert\\,S_t/\\lVert S_t\\rVert,\\ \\ S_t=(G_t-P_tR_t)\\,\\mathrm{diag}(\\phi_t(R_t))",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight, full-rank gradient); optimizer state } \\approx 2r\\,d_{in}+r\\,d_{out}\\ \\text{(as GaLore)}",
+   "locus": "all 2-D weight matrices; pre-training and fine-tuning",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "GaLore's Adam-in-subspace term plus the out-of-subspace gradient residual (I-P_tP_t^{\\top})G_t rescaled column-wise by the low-rank Adam norm ratio, with a relative norm-growth limiter",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only method; updates go directly into W.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Adam's effect on gradient norms (the norm ratio before and after correction) is nearly the same in a low-rank subspace and in full rank. Fira reuses the cheap low-rank ratio to scale the discarded residual gradient, giving full-rank updates at low-rank memory, and adds a norm-growth limiter against loss spikes.",
+   "results_note": "Beats LoRA and GaLore in LLaMA pre-training and fine-tuning, matching or exceeding full-rank training. In LLaMA-7B pre-training it uses 8x less optimizer-state memory than GaLore and outperforms it by a large margin.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "generalizes",
+     "note": "setting the residual scale \\phi_t\\equiv0 recovers GaLore"
+    },
+    {
+     "target": "apollo",
+     "type": "competes-with",
+     "note": "concurrent use of channel-wise l2-norm-ratio scaling; APOLLO derives it from structured learning rates with random projections"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.01623",
+    "https://arxiv.org/html/2410.01623",
+    "https://neurips.cc/virtual/2025/poster/119690",
+    "https://openreview.net/forum?id=7aSBAw7tJf"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added https://openreview.net/forum?id=7aSBAw7tJf"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2410.01623 (Chen, 2024) confirmed; NeurIPS 2025 poster (arXiv comment, OpenReview). Eq. 10 (norm-based scaling of G-PR), Eq. 11 (column-wise phi) and Eq. 12 (norm-growth limiter on S_t) match the formula; 8x smaller optimizer-state memory than GaLore for LLaMA 7B confirmed."
+  },
+  {
+   "id": "apollo",
+   "name": "APOLLO",
+   "full_name": "Approximated Gradient Scaling for Memory-Efficient LLM Optimization",
+   "paper_title": "APOLLO: SGD-like Memory, AdamW-level Performance",
+   "authors": "Zhu et al.",
+   "year": 2024,
+   "venue": "MLSys 2025",
+   "arxiv": "2412.05270",
+   "url": "https://arxiv.org/abs/2412.05270",
+   "code_url": "https://github.com/zhuhanqing/APOLLO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "R_t=P_tG_t,\\ P_t\\sim\\mathcal N_{seed}(0,\\tfrac1r)^{r\\times d_{out}}\\ \\text{(resampled every }T);\\ \\ (M^R_t,V^R_t)=\\mathrm{AdamW}(R_t),\\ \\tilde R_t=M^R_t/(\\sqrt{V^R_t}+\\epsilon);\\ \\ s_j=\\frac{\\lVert\\tilde R_t[:,j]\\rVert_2}{\\lVert R_t[:,j]\\rVert_2}\\ \\text{(APOLLO; APOLLO-Mini: one tensor-wise } s=\\lVert\\tilde R_t\\rVert/\\lVert R_t\\rVert,\\ r=1);\\quad W_{t+1}=W_t-\\eta\\,\\alpha\\,G_t\\,\\mathrm{diag}(s)-\\eta\\lambda W_t",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight); optimizer state } 2r\\,d_{in}\\ \\text{(}r=1\\text{ for APOLLO-Mini, i.e. } 2d_{in}\\text{: SGD-like)}",
+   "locus": "all 2-D weight matrices of attention and MLP (optim_target_modules)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "structured (channel-wise or tensor-wise) learning-rate scaling: the raw full-rank gradient is right-multiplied by a diagonal matrix diag(s) whose entries are estimated from Adam states kept in a random r-dimensional sketch",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only method; produces an ordinary dense checkpoint.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "AdamW's element-wise adaptive learning rate is redundant and can be coarsened to one rate per channel or per tensor. Those few scaling factors can be estimated from Adam run inside a cheap random projection without SVD, even of rank 1.",
+   "results_note": "Matches or beats AdamW in LLaMA 60M-7B pre-training (up to 2.8 lower validation perplexity) at near-SGD memory, with about 3x throughput on 8xA100 from larger batches. APOLLO-Mini plus weight quantization pre-trains LLaMA-7B in 12GB.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "builds-on",
+     "note": "inherits the low-rank auxiliary space idea, but uses it only to estimate scaling factors and replaces SVD with random projection"
+    },
+    {
+     "target": "fira",
+     "type": "competes-with",
+     "note": "same l2-norm-ratio channel scaling form, derived from a different principle"
+    },
+    {
+     "target": "adam-mini",
+     "type": "competes-with",
+     "note": "both reduce Adam's second-moment state to block-shared learning rates"
+    },
+    {
+     "target": "flora-opt",
+     "type": "competes-with",
+     "note": "both use seed-regenerated random projections of the gradient; APOLLO uses them only to estimate channel-wise scaling factors and lists Flora among baselines with performance trade-offs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2412.05270",
+    "https://arxiv.org/html/2412.05270",
+    "https://huggingface.co/docs/transformers/main/en/optimizers"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> flora-opt builds-on -> competes-with (APOLLO cites Flora as a competing optimizer, not as its basis)"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2412.05270 (Zhu, 2024) confirmed; MLSys 2025 (arXiv comment, DBLP conf/mlsys). Algorithm 1 (P ~ N(0,1/r) in R^{r x m}, R=PG, channel-wise s_j=||R~[:,j]||/||R[:,j]||, APOLLO-Mini rank 1 tensor-wise with alpha=sqrt(128), W <- W - eta alpha G S - eta lambda W), state 2nr+2, 2.8 perplexity, ~3x throughput with 4x batch on 8xA100, 7B under 12GB all confirmed. transformers optim='apollo_adamw'."
+  },
+  {
+   "id": "online-subspace-descent",
+   "name": "Online Subspace Descent",
+   "full_name": "Online Subspace Descent",
+   "paper_title": "Memory-Efficient LLM Training with Online Subspace Descent",
+   "authors": "Liang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2408.12857",
+   "url": "https://arxiv.org/abs/2408.12857",
+   "code_url": "https://github.com/kyleliang919/Online-Subspace-Descent",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_{t+1}=W_t+P_t\\,\\phi_t(\\hat S_t),\\ \\ \\hat S_t=\\psi_t\\big(\\hat S_{t-1},P_t^{\\top}\\nabla\\mathcal L(W_t)\\big);\\ \\ P_{t+1}=\\mathrm{OptimizerP.step}\\big(P_t,\\nabla_P\\mathcal L_{G_t}(P_t)\\big),\\ \\ \\mathcal L_{G}(P)=\\lVert PP^{\\top}\\tilde G-\\tilde G\\rVert^2+\\lambda\\lVert P^{\\top}P-I_r\\rVert^2,\\ \\tilde G=G/\\lVert G\\rVert",
+   "trainable_params": "d_{out}d_{in}\\ \\text{(full weight); optimizer state in the } r\\text{-dim subspace plus } P\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{(and its optimizer state)}",
+   "locus": "all 2-D weight matrices; LLaMA pre-training (60M-7B)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "projected optimizer whose projector P_t evolves continuously by one online-PCA gradient step per iteration (no SVD); any Hamiltonian-descent optimizer (SGD, momentum, Lion, Adam) can run inside the subspace",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only method; updates go directly into W.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Replace GaLore's periodic SVD with streaming online PCA on the projector. A Hamiltonian-descent (Lyapunov) analysis then gives the first convergence guarantee for arbitrary projector update rules.",
+   "results_note": "In LLaMA 60M-7B pre-training on C4 it reaches lower perplexity and better downstream scores than other low-rank training methods, narrowing the gap to full-rank baselines.",
+   "relations": [
+    {
+     "target": "galore",
+     "type": "generalizes",
+     "note": "GaLore is the special choice of projector rule P_{t+1}=\\chi_t(\\cdot)= top-r left singular vectors of the current gradient, recomputed every T steps (paper Sec. 3.2)"
+    },
+    {
+     "target": "apollo",
+     "type": "competes-with",
+     "note": "SVD-free memory-efficient optimizer"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2408.12857",
+    "https://arxiv.org/pdf/2408.12857",
+    "https://neurips.cc/virtual/2024/poster/95328",
+    "https://openreview.net/forum?id=P8rTCT6g45"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> galore note defined chi_t (the projector update rule) instead of referring to an undefined symbol",
+    "sources: added https://openreview.net/forum?id=P8rTCT6g45"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2408.12857 (Liang, 2024) confirmed; NeurIPS 2024 poster (OpenReview, DBLP conf/nips/LiangLCL24). Sec. 3.2 update, Eq. 6 online-PCA objective with normalized G and orthogonality penalty, one OptimizerP step per iteration, LLaMA 60M-7B on C4 confirmed."
+  },
+  {
+   "id": "adam-mini",
+   "name": "Adam-mini",
+   "full_name": "Adam-mini",
+   "paper_title": "Adam-mini: Use Fewer Learning Rates To Gain More",
+   "authors": "Zhang et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2406.16793",
+   "url": "https://arxiv.org/abs/2406.16793",
+   "code_url": "https://github.com/zyushun/Adam-mini",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta=(\\theta_{b})_{b\\in\\mathcal B}\\ \\text{(blocks = smallest dense Hessian sub-blocks: q,k by head; v, attn.proj, MLP by output neuron; embed/output by token)};\\ \\ m_b\\leftarrow\\beta_1m_b+(1-\\beta_1)g_b,\\ \\ v_b\\leftarrow\\beta_2v_b+(1-\\beta_2)\\,\\mathrm{mean}(g_b\\odot g_b)\\in\\mathbb{R},\\ \\ \\theta_b\\leftarrow\\theta_b-\\eta\\,m_b/(\\sqrt{v_b}+\\epsilon)",
+   "trainable_params": "\\text{all parameters; second-moment state reduced from } d_{out}d_{in} \\text{ to at most } d_{out}\\ \\text{scalars per matrix (one per block: per head for } W_q,W_k\\text{, per output neuron otherwise)}",
+   "locus": "all parameters; Hessian-structure-aware partition of Transformer weights",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "block-wise shared adaptive learning rate: Adam's per-coordinate v is replaced by one scalar per Hessian block (more than 99.9% of v removed)",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only method; trains the original parameters directly.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Transformer Hessians are near block-diagonal, and one good learning rate per dense block is enough. Adam-mini keeps momentum but stores one second-moment scalar per block, halving Adam's optimizer memory.",
+   "results_note": "On par with or better than AdamW for 39M-13B models in pre-training, SFT and RLHF, with 50% less optimizer memory and 49.6% higher throughput for Llama 2-7B pre-training on 2xA800.",
+   "relations": [
+    {
+     "target": "apollo",
+     "type": "competes-with",
+     "note": "both coarsen Adam's element-wise learning rates into structured ones"
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "alternative way to shrink optimizer state for full-parameter training"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.16793",
+    "https://arxiv.org/html/2406.16793",
+    "https://openreview.net/forum?id=iBExhaU3Lc"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added https://openreview.net/forum?id=iBExhaU3Lc"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2406.16793 (Zhang, 2024) confirmed; ICLR 2025 poster (OpenReview). Partition principle (q,k by heads; v, attn.proj, MLP by output neurons; embed/output by tokens), v_b=(1-beta2) mean(g_b^2)+beta2 v_b (Algorithm 1, with bias correction and decoupled weight decay omitted here), >=99.9% of v removed, 49.6% throughput on 2xA800 confirmed."
+  },
+  {
+   "id": "mezo",
+   "name": "MeZO",
+   "full_name": "Memory-efficient Zeroth-order Optimizer",
+   "paper_title": "Fine-Tuning Language Models with Just Forward Passes",
+   "authors": "Malladi et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.17333",
+   "url": "https://arxiv.org/abs/2305.17333",
+   "code_url": "https://github.com/princeton-nlp/MeZO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\widehat\\nabla\\mathcal L(\\theta;\\mathcal B)=\\frac{\\mathcal L(\\theta+\\epsilon z;\\mathcal B)-\\mathcal L(\\theta-\\epsilon z;\\mathcal B)}{2\\epsilon}\\,z\\ \\approx zz^{\\top}\\nabla\\mathcal L(\\theta;\\mathcal B),\\ \\ z\\sim\\mathcal N(0,I_d)\\ \\text{regenerated from a stored seed};\\ \\ \\theta\\leftarrow\\theta-\\eta\\,\\widehat\\nabla\\mathcal L\\ \\ \\text{(in place; two forward passes, no backprop)}",
+   "trainable_params": "\\text{all } d \\text{ parameters (or a PEFT subset such as LoRA / prefix); optimizer memory } O(1)\\text{: one scalar and one seed}",
+   "locus": "all parameters (full-parameter) or the parameters of a PEFT module",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "SPSA zeroth-order estimate: a rank-one random projection zz^{\\top}\\nabla\\mathcal L of the gradient, obtained from a finite difference of two forward passes; perturbations regenerated from a random seed so no extra memory is stored",
+   "mergeable": "yes",
+   "mergeable_reason": "MeZO only changes how updates are computed; the trained parameters are the model's own (or a standard PEFT module).",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Classical ZO-SGD can run in place by regenerating Gaussian perturbations from a seed, so fine-tuning costs only inference memory. Good pre-training gives a low effective Hessian rank, so convergence does not degrade with parameter count.",
+   "results_note": "With one A100-80GB it fine-tunes a 30B model where backprop fits only 2.7B. It is comparable to backprop fine-tuning on many tasks (OPT up to 66B) with up to 12x memory reduction, works with LoRA and prefix-tuning, and can optimize non-differentiable objectives.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "MeZO can optimize LoRA parameters (MeZO-LoRA)"
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "combines",
+     "note": "MeZO can optimize prefix parameters (MeZO-prefix)"
+    },
+    {
+     "target": "flora-opt",
+     "type": "competes-with",
+     "note": "the SPSA estimate zz^{\\top}\\nabla\\mathcal L is a rank-one random projection of the vectorized gradient, a forward-only analogue of Flora's random gradient compression"
+    },
+    {
+     "target": "lomo",
+     "type": "competes-with",
+     "note": "both target full-parameter fine-tuning at near-inference memory (forward-only vs fused-backward SGD)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.17333",
+    "https://arxiv.org/html/2305.17333"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 2305.17333 (Malladi, 2023) confirmed; NeurIPS 2023 oral (arXiv comment). SPSA estimator with z ~ N(0,I) regenerated from a seed, 30B on one A100-80GB vs 2.7B for backprop, up to 12x memory reduction, OPT up to 66B, LoRA/prefix compatibility confirmed."
+  },
+  {
+   "id": "lomo",
+   "name": "LOMO",
+   "full_name": "LOw-Memory Optimization",
+   "paper_title": "Full Parameter Fine-tuning for Large Language Models with Limited Resources",
+   "authors": "Lv et al.",
+   "year": 2023,
+   "venue": "ACL 2024",
+   "arxiv": "2306.09782",
+   "url": "https://arxiv.org/abs/2306.09782",
+   "code_url": "https://github.com/OpenLMLab/LOMO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{during backprop, as soon as } g_i=\\nabla_{\\theta_i}\\mathcal L \\text{ is computed: } \\theta_i\\leftarrow\\theta_i-\\eta\\,g_i,\\ \\text{then free } g_i\\ \\ \\text{(fused gradient computation + SGD update; no optimizer state; gradient memory } O(\\max_i|\\theta_i|))",
+   "trainable_params": "\\text{all parameters; optimizer state } 0,\\ \\text{gradient buffer} = \\text{largest single tensor}",
+   "locus": "all parameters (full-parameter fine-tuning)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "plain SGD whose per-tensor update is fused into the backward pass (layer-wise gradient release), plus gradient normalization and dynamic loss scaling for mixed precision",
+   "mergeable": "yes",
+   "mergeable_reason": "Trains the original parameters directly; no extra modules.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "For fine-tuning, SGD works well enough to drop Adam's states entirely. Fusing each tensor's update into backpropagation also removes the full gradient buffer, leaving parameters and activations as the only memory.",
+   "results_note": "Combined with other memory-saving techniques it cuts memory to 10.8% of the DeepSpeed baseline, enabling full-parameter fine-tuning of a 65B model on one machine with 8x RTX 3090 (24GB).",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "competes-with",
+     "note": "both target full-parameter fine-tuning with minimal memory"
+    },
+    {
+     "target": "badam",
+     "type": "competes-with",
+     "note": "alternative memory-efficient full-parameter fine-tuning"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.09782",
+    "https://arxiv.org/pdf/2306.09782",
+    "https://huggingface.co/docs/transformers/main/en/optimizers",
+    "https://aclanthology.org/2024.acl-long.445/"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: removed -> adalomo (LOMO is not literally a special case of AdaLomo (AdaLomo replaces LOMO's global gradient normalization with grouped update normalization); the link is kept as adalomo -> lomo 'builds-on')",
+    "sources: added https://aclanthology.org/2024.acl-long.445/"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2306.09782 (Lv, 2023) confirmed; ACL 2024 main (ACL Anthology 2024.acl-long.445). Fused SGD update in backprop, 10.8% of DeepSpeed memory, 65B on 8xRTX 3090 confirmed. transformers optim='lomo'."
+  },
+  {
+   "id": "adalomo",
+   "name": "AdaLomo",
+   "full_name": "Low-memory Optimization with Adaptive Learning Rate",
+   "paper_title": "AdaLomo: Low-memory Optimization with Adaptive Learning Rate",
+   "authors": "Lv et al.",
+   "year": 2023,
+   "venue": "Findings of ACL 2024",
+   "arxiv": "2310.10195",
+   "url": "https://aclanthology.org/2024.findings-acl.742/",
+   "code_url": "https://github.com/OpenLMLab/LOMO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{fused in backprop, per matrix } \\theta_i\\in\\mathbb{R}^{m\\times n}:\\ r_{t}=\\beta r_{t-1}+(1-\\beta)(g_t^{2})\\mathbf 1_n,\\ \\ c_t=\\beta c_{t-1}+(1-\\beta)\\mathbf 1_m^{\\top}(g_t^{2}),\\ \\ v_t=r_tc_t/(\\mathbf 1_m^{\\top}r_t);\\ \\ u_t=g_t/\\sqrt{v_t},\\ \\ \\hat u_t=\\frac{u_t}{\\max(1,\\mathrm{RMS}(u_t))}\\max(\\epsilon,\\mathrm{RMS}(\\theta_{t-1})),\\ \\ \\theta_t=\\theta_{t-1}-\\alpha_t\\hat u_t",
+   "trainable_params": "\\text{all parameters; optimizer state } d_{out}+d_{in}\\ \\text{per matrix (factored second moment), no momentum}",
+   "locus": "all parameters (full-parameter instruction tuning and (further) pre-training)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "rank-one non-negative factorization of the second-moment matrix (Adafactor-style row/column statistics) with grouped RMS update normalization, fused into the backward pass",
+   "mergeable": "yes",
+   "mergeable_reason": "Trains the original parameters directly.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Of Adam's two ingredients, the adaptive learning rate matters more than momentum for closing LOMO's gap to AdamW. AdaLomo adds a factored, sublinear-memory second moment and a grouped normalization compatible with fused, single-pass backward updates. (The paper's Algorithm 1 line 10 prints u=g/v; the official implementation lomo_optim/adalomo.py uses g/\\sqrt{v} via rsqrt, as written here.)",
+   "results_note": "Matches AdamW in instruction tuning, further pre-training and from-scratch pre-training of LLaMA models with LOMO-level memory.",
+   "relations": [
+    {
+     "target": "lomo",
+     "type": "builds-on",
+     "note": "adds an adaptive learning rate to LOMO's fused update"
+    },
+    {
+     "target": "adam-mini",
+     "type": "competes-with",
+     "note": "both shrink Adam's second-moment state (factorization vs block sharing)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.10195",
+    "https://arxiv.org/html/2310.10195",
+    "https://aclanthology.org/2024.findings-acl.742/",
+    "https://huggingface.co/docs/transformers/main/en/optimizers"
+   ],
+   "confidence": "medium",
+   "corrections": [
+    "key_idea: replaced the claim that the paper's Sec. 3 derivation uses g/sqrt(v) (it only shows Adam's update) with the verifiable fact that the official implementation uses rsqrt"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2310.10195 (Lv, 2023; arXiv comment 'ACL 2024 camera ready') confirmed; published in Findings of ACL 2024 (ACL Anthology 2024.findings-acl.742). Algorithm 1 (factored r, c; v=rc/(1^T r); grouped RMS update normalization) checked against the paper and the official code. transformers optim='adalomo'."
+  },
+  {
+   "id": "badam",
+   "name": "BAdam",
+   "full_name": "Block coordinate descent with Adam",
+   "paper_title": "BAdam: A Memory Efficient Full Parameter Optimization Method for Large Language Models",
+   "authors": "Luo et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2404.02827",
+   "url": "https://arxiv.org/abs/2404.02827",
+   "code_url": "https://github.com/Ledzy/BAdam",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta=(\\theta_{\\pi_1},\\dots,\\theta_{\\pi_D})\\ \\text{(e.g. one block per transformer layer; ascending / descending / random order)};\\ \\ \\theta_{\\pi_i}^{t+1}\\approx\\arg\\min_{\\theta_{\\pi_i}}\\mathcal L\\big(\\theta_{\\pi_{<i}}^{t+1},\\theta_{\\pi_i},\\theta_{\\pi_{>i}}^{t}\\big)\\ \\text{via } K \\text{ Adam steps; other blocks frozen; Adam state of } \\theta_{\\pi_i} \\text{ discarded when switching}",
+   "trainable_params": "\\approx|\\theta|/D \\text{ active at a time (FP32 copy, gradient, } m,v \\text{ only for the active block); all parameters over a block-epoch. Memory } \\approx 2M+16M/D \\text{ GB for an } M\\text{B-parameter model}",
+   "locus": "all parameters, cycled block by block (typically transformer layers)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "block coordinate descent: a time-varying coordinate mask selecting one parameter block, optimized with K Adam steps per block, so the cumulative update is full-parameter and high-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "Trains the original parameters in place; the output is a standard dense model.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "Full-parameter fine-tuning at LoRA-like memory: only one block holds FP32 weights, gradients and Adam states at any time. Backpropagation can stop early at the active block, which also saves compute; convergence is proven in the deterministic case.",
+   "results_note": "Fine-tunes Llama 3-8B on a single RTX3090-24GB and Llama 3-70B on 4xA100-80GB. It outperforms LoRA on MT-bench and math benchmarks and is comparable to or better than full Adam.",
+   "relations": [
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "Randomized layer sampling vs. block coordinate descent."
+    },
+    {
+     "target": "lomo",
+     "type": "competes-with",
+     "note": "memory-efficient full-parameter fine-tuning"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "matches LoRA memory while learning high-rank updates"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.02827",
+    "https://arxiv.org/html/2404.02827"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> lisa note aligned with verified/selective.json to avoid a duplicate edge after merging"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2404.02827 (Luo, 2024) confirmed; NeurIPS 2024 (arXiv comment, S2 'NeurIPS 37'). Block subproblem with K Adam steps, ascending/descending/random order, states cleared when switching, memory 2M+16M/D GB, deterministic convergence, Llama 3-8B on one RTX3090 and Llama 3-70B on 4xA100 confirmed."
+  },
+  {
+   "id": "lisa",
+   "name": "LISA",
+   "full_name": "Layerwise Importance Sampled AdamW",
+   "paper_title": "LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning",
+   "authors": "Pan et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2403.17919",
+   "url": "https://arxiv.org/abs/2403.17919",
+   "code_url": "https://github.com/OptimalScale/LMFlow",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{every } K \\text{ steps sample active layers with } p=\\{1,\\tfrac{\\gamma}{N_L},\\dots,\\tfrac{\\gamma}{N_L},1\\}\\ \\text{(embedding and LM head always on, } \\gamma \\text{ of } N_L \\text{ middle layers)};\\ \\ \\theta_{\\ell}\\leftarrow\\mathrm{AdamW}(\\theta_\\ell)\\ \\text{for active } \\ell,\\ \\text{all other layers frozen}",
+   "trainable_params": "\\text{embedding + head + } \\gamma \\text{ transformer layers at a time (e.g. } \\gamma=2);\\ \\text{all layers over training}",
+   "locus": "whole transformer layers (plus embedding and LM head), resampled periodically",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "stochastic block coordinate descent with a time-varying layer mask drawn by importance sampling; optimizer states exist only for the active layers",
+   "mergeable": "yes",
+   "mergeable_reason": "Updates the original weights in place; no adapter.",
+   "identity_at_init": "Trivial: no reparameterization.",
+   "key_idea": "LoRA's update norms are heavily skewed toward the bottom and top layers. LISA mimics this by always training the embedding and head and randomly unfreezing a few middle layers, getting full-rank layer updates at LoRA-level memory.",
+   "results_note": "Beats LoRA by 10-35% on MT-Bench at similar or lower GPU memory, is on par or better on MMLU, AGIEval and WinoGrande, and beats LoRA on MT-Bench, GSM8K and PubMedQA with LLaMA-2-70B.",
+   "relations": [
+    {
+     "target": "badam",
+     "type": "competes-with",
+     "note": "BAdam is block coordinate descent with Adam and a convergence analysis; LISA is its randomized, importance-sampled counterpart."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Designed as a memory-equivalent but full-rank alternative to LoRA."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Alternative memory-efficient full-parameter optimizer (low-rank gradient projection instead of layer sampling)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2403.17919",
+    "https://arxiv.org/html/2403.17919"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: notes for -> badam, lora, galore aligned with verified/selective.json to avoid duplicate edges after merging"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2403.17919 (Pan, 2024) confirmed; NeurIPS 2024 (arXiv comment). Sampling probabilities {1, gamma/N_L, ..., gamma/N_L, 1} (Sec. 3.2), gamma=2 default, MT-Bench +10-35% over LoRA and LLaMA-2-70B MT-Bench/GSM8K/PubMedQA claims confirmed. Code in LMFlow."
+  },
+  {
+   "id": "lora-fa",
+   "name": "LoRA-FA",
+   "full_name": "LoRA with Frozen-A",
+   "paper_title": "LoRA-FA: Memory-efficient Low-rank Adaptation for Large Language Models Fine-tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2308.03303",
+   "url": "https://arxiv.org/abs/2308.03303",
+   "code_url": "https://github.com/huggingface/peft/blob/main/src/peft/optimizers/lorafa.py",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_lorafa_optimizer(model, r, lora_alpha, lr) on a LoraConfig model",
+   "formula_latex": "W=W_0+s\\,BA_0,\\ \\ s=\\tfrac{\\alpha}{r},\\ A_0\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{random and frozen},\\ B\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained with}\\ \\ \\tilde g_B=\\tfrac{1}{s^{2}}\\,\\nabla_B\\mathcal L\\,(A_0A_0^{\\top})^{-1}\\ \\Rightarrow\\ s\\,\\tilde g_BA_0=G\\,A_0^{\\top}(A_0A_0^{\\top})^{-1}A_0=\\arg\\min_{\\hat g\\in\\mathbb{R}^{d_{out}\\times r}A_0}\\lVert\\hat g-G\\rVert_F,\\ \\ G=\\nabla_W\\mathcal L",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "any linear layer targeted by LoRA",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W=sBA_0 with A_0 a frozen random row space: the update lives in the fixed r-dimensional subspace \\mathbb{R}^{d_{out}}\\otimes\\mathrm{row}(A_0); the corrected B-gradient is the orthogonal projection of the full gradient onto that subspace",
+   "mergeable": "yes",
+   "mergeable_reason": "sBA_0 is an ordinary rank-r matrix that folds into W_0 exactly, as in LoRA.",
+   "identity_at_init": "B = 0 with A_0 random (Gaussian or uniform; the paper ablates the choice), so the initial model equals the pretrained one.",
+   "key_idea": "Freezing A has two effects. Memory: LoRA no longer stores the full d_in-dimensional input activation, only the r-dimensional A_0x. Optimization: with SGD, \\Delta W=-\\eta s^{2}GA_0^{\\top}A_0 is a fixed random projection of the gradient, and the (A_0A_0^{\\top})^{-1} correction turns it into the exact least-squares projection of the full gradient.",
+   "results_note": "Matches existing PEFT methods and full fine-tuning on GLUE (RoBERTa), GSM8K, MT-Bench and HumanEval (Llama-2/3 and MoE models) while substantially reducing activation memory and compute.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA with eta_A = 0"
+    },
+    {
+     "target": "flora-opt",
+     "type": "special-case-of",
+     "note": "under SGD and without the v3 correction, LoRA-FA's update -\\eta s^2 GA_0^{\\top}A_0 is Flora's random-projection compression without resampling"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "special-case-of",
+     "note": "with A frozen the correction equals the Riemannian B-preconditioner (AA^T)^{-1} up to the constant s^{-2}"
+    },
+    {
+     "target": "lora-pro",
+     "type": "special-case-of",
+     "note": "LoRA-Pro's gradient-matching objective with g^A constrained to 0 yields exactly LoRA-FA's corrected B-gradient"
+    },
+    {
+     "target": "loqt",
+     "type": "competes-with",
+     "note": "LoQT also trains one factor only, with a gradient-SVD projector instead of a random one"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2308.03303",
+    "https://arxiv.org/html/2308.03303",
+    "https://github.com/huggingface/peft/blob/main/src/peft/optimizers/lorafa.py"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relations: -> lora special-case-of -> builds-on, -> riemannian-preconditioned-lora competes-with -> special-case-of, -> lora-pro competes-with -> special-case-of (exact: g^A=0 in LoRA-Pro / eta_A=0 in Riemannian LoRA give the corrected B-gradient); dicts aligned with verified/lora-core.json",
+    "relations: -> flora-opt note qualified to the uncorrected (v1) update"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2308.03303 (Zhang, 2023; v3 2026-05 listing title 'LoRA-FA: Efficient and Effective Low Rank Representation Fine-tuning', paper title unchanged) confirmed; no formal venue. Thm 4.1 correction (r/alpha)^2 (AA^T)^{-1} translated to column convention; PEFT create_lorafa_optimizer(model, r, lora_alpha, lr, weight_decay=0.0, use_rslora=None) (huggingface/peft main @85be3f3 (2026-09-30)). code_url is the PEFT implementation, not an author repo. modification_kind kept as additive-weight (the trained object is an additive adapter); verified/lora-core.json labels it optimizer-or-training-procedure."
+  }
+ ],
+ "papers": [
+  {
+   "id": "gradient-descent-tiny-subspace",
+   "title": "Gradient Descent Happens in a Tiny Subspace",
+   "authors": "Gur-Ari et al.",
+   "year": 2018,
+   "venue": "arXiv",
+   "arxiv": "1812.04754",
+   "url": "https://arxiv.org/abs/1812.04754",
+   "claim": "After a short period of training, the gradient converges to a very small subspace spanned by the top few Hessian eigenvectors (about as many as there are classes) and stays there.",
+   "relevance": "Empirical basis for the 'dual' (gradient-side) PEFT view: if the gradient flow is effectively low-dimensional, projecting gradients (GaLore, Flora, APOLLO) or confining updates to low-rank parameter subspaces (LoRA) loses little. It also explains why projector refresh schedules matter.",
+   "sources": [
+    "https://arxiv.org/abs/1812.04754"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 1812.04754 (Gur-Ari, 2018) confirmed; arXiv only (DBLP lists CoRR). Claim matches the abstract (top Hessian eigenvectors, about as many as classes)."
+  },
+  {
+   "id": "adafactor",
+   "title": "Adafactor: Adaptive Learning Rates with Sublinear Memory Cost",
+   "authors": "Shazeer & Stern",
+   "year": 2018,
+   "venue": "ICML 2018",
+   "arxiv": "1804.04235",
+   "url": "https://arxiv.org/abs/1804.04235",
+   "claim": "Adam's per-parameter second moment for a weight matrix can be replaced by its row and column sums (a rank-one factorization), cutting optimizer memory from O(nm) to O(n+m) with similar results. Update clipping and an increasing decay rate fix the resulting instability.",
+   "relevance": "The prototype of optimizer-state compression: factoring the second moment is the optimizer-side counterpart of factoring the weight update. It is reused directly by Flora and AdaLomo and shares a lineage with Adam-mini, APOLLO and GaLore-Adafactor.",
+   "sources": [
+    "https://arxiv.org/abs/1804.04235",
+    "https://arxiv.org/html/1804.04235",
+    "https://proceedings.mlr.press/v80/shazeer18a.html"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added https://proceedings.mlr.press/v80/shazeer18a.html"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 1804.04235 (Shazeer, 2018) confirmed; ICML 2018 (DBLP conf/icml/ShazeerS18). Factored second moment, update clipping and increasing decay confirmed."
+  },
+  {
+   "id": "8bit-optimizers",
+   "title": "8-bit Optimizers via Block-wise Quantization",
+   "authors": "Dettmers et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.02861",
+   "url": "https://arxiv.org/abs/2110.02861",
+   "claim": "Block-wise dynamic quantization, combined with a stable embedding layer, lets Adam and momentum states be stored in 8 bits with no loss in performance, removing about 75% of optimizer-state memory.",
+   "relevance": "Shows that optimizer states, not just weights, can be quantized. Its block-wise quantization (released in bitsandbytes) is the basis of QLoRA's block-wise NF4/double quantization and of 8-bit GaLore, and its 8-bit Adam is the baseline of GaLore 2. Paged optimizers were added later by QLoRA, not by this paper.",
+   "sources": [
+    "https://arxiv.org/abs/2110.02861",
+    "https://arxiv.org/pdf/2110.02861"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "relevance: the paging infrastructure is QLoRA's contribution (the 8-bit optimizers paper has no paging); rewrote the lineage accordingly"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2110.02861 (Dettmers, 2021) confirmed; ICLR 2022 spotlight (arXiv comment, DBLP). Block-wise dynamic quantization and stable embedding layer confirmed; 75% is the 32-bit -> 8-bit state reduction."
+  },
+  {
+   "id": "golore-subspace-convergence",
+   "title": "Subspace Optimization for Large Language Models with Convergence Guarantees",
+   "authors": "He et al.",
+   "year": 2024,
+   "venue": "ICML 2025",
+   "arxiv": "2410.11289",
+   "url": "https://arxiv.org/abs/2410.11289",
+   "claim": "GaLore does not always converge to a stationary point in the stochastic setting: SVD projectors become noise-dominated when the true gradient is small, as an explicit counterexample shows. It does converge with large batches or isotropic noise. GoLore, which samples random projections uniformly from the Stiefel manifold, provably converges at standard batch sizes.",
+   "relevance": "Gives the projector-selection morphism of gradient-side PEFT a precise convergence semantics. Data-dependent (SVD) projectors and data-independent (random) projectors behave differently, which explains the shift toward random or online projectors (Flora, APOLLO, Online Subspace Descent).",
+   "sources": [
+    "https://arxiv.org/abs/2410.11289",
+    "https://arxiv.org/html/2410.11289",
+    "https://proceedings.mlr.press/v267/he25i.html"
+   ],
+   "confidence": "high",
+   "corrections": [],
+   "verified": true,
+   "verification_notes": "arXiv 2410.11289 (He, 2024) confirmed; ICML 2025 (PMLR v267 he25i). Non-convergence counterexample (Thm 4), convergence with large batches or isotropic noise, GoLore sampling P from the uniform distribution on the Stiefel manifold confirmed."
+  },
+  {
+   "id": "zo-bench",
+   "title": "Revisiting Zeroth-Order Optimization for Memory-Efficient LLM Fine-Tuning: A Benchmark",
+   "authors": "Zhang et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.11592",
+   "url": "https://arxiv.org/abs/2402.11592",
+   "claim": "A benchmark of BP-free zeroth-order fine-tuning across five LLM families, three task difficulties and five fine-tuning schemes. It finds that task alignment and the forward-gradient method matter, and proposes block-wise descent, hybrid ZO/FO training and gradient sparsity to improve ZO fine-tuning.",
+   "relevance": "Maps the design space around MeZO and shows that ZO estimators combine naturally with parameter-side PEFT (LoRA, prefix). That makes the zeroth-order axis composable with the parametrization axis in a unified theory.",
+   "sources": [
+    "https://arxiv.org/abs/2402.11592",
+    "https://arxiv.org/html/2402.11592",
+    "https://proceedings.mlr.press/v235/zhang24ad.html"
+   ],
+   "confidence": "high",
+   "corrections": [
+    "sources: added https://proceedings.mlr.press/v235/zhang24ad.html"
+   ],
+   "verified": true,
+   "verification_notes": "arXiv 2402.11592 (Zhang, 2024) confirmed; ICML 2024 (PMLR v235 zhang24ad). Five LLM families, three task complexities, five fine-tuning schemes, and block-wise descent / hybrid training / gradient sparsity enhancements confirmed."
+  }
+ ],
+ "notes": "Scope: quantization-aware PEFT (QLoRA, QA-LoRA, LoftQ, LQ-LoRA, IR-QLoRA, L4Q, PEQA, ApiQ, EfficientQAT, LoQT) and gradient-side memory-efficient training (GaLore, GaLore 2, Q-GaLore, Flora, Fira, APOLLO, Online Subspace Descent, Adam-mini, MeZO, LOMO, AdaLomo, BAdam, LISA, LoRA-FA). Key structural observations for the category-theoretic site: (1) Duality theorem (exact). For a one-sided-frozen adapter W=W_0+PB with P frozen, dL/dB = P^T dL/dW, so any optimizer on B applies P*rho(P^T G) to W. LoRA-FA is therefore projected gradient descent with a fixed random right-projector, LoQT within one interval (no quantization, B_0=0) is exactly GaLore, and Flora is the resampled version. This is a clean natural correspondence between the parameter side (adapters) and the optimizer side (gradient projections). (2) The quantizer has two kinds of parameters, which give two dual PEFT families. Additive zero-points: QA-LoRA's group-pooled LoRA lands exactly in the zero-point space. Multiplicative scales: PEQA and EfficientQAT's E2E-QP, algebraically (IA)^3-type diagonal scaling. L4Q composes the quantizer after the LoRA update, W=Q_{s,b}(W_0+BA). (3) Quantization-aware initializations solve variants of min ||W_0 - Q - BA||: weight space for LoftQ and LQ-LoRA, with Fisher weighting in LQ-LoRA; activation space for ApiQ; entropy-maximizing quantizer for IR-QLoRA. QLoRA is the T=0 point, and with an identity quantizer LQ-LoRA reduces to PiSSA. (4) Mergeability: methods whose update lives in the quantizer's parameter space (QA-LoRA, PEQA, L4Q, EfficientQAT) merge into an integer model exactly. QLoRA, LoftQ, LQ-LoRA, IR-QLoRA and ApiQ merge exactly only into a 16-bit copy ('conditional'). Optimizer-side methods are trivially 'mergeable' because they write into W. Integration facts (not HF PEFT): GaLore (optim='galore_adamw'/'galore_adamw_8bit'/'galore_adafactor', '_layerwise'), APOLLO (optim='apollo_adamw', APOLLO-Mini via optim_args rank=1, scale_type=tensor), and LOMO/AdaLomo (optim='lomo'/'adalomo') are Hugging Face transformers Trainer optimizers. In HF PEFT: QLoRA via bitsandbytes + prepare_model_for_kbit_training; LoftQ via init_lora_weights='loftq' or replace_lora_weights_loftq; QA-LoRA via LoraConfig(use_qalora=True) (GPTQ only); LoRA-FA via peft.optimizers.create_lorafa_optimizer. PEFT also supports quantized bases via GPTQ, AQLM, EETQ, HQQ, torchao, INC (FP8) and Transformer Engine (plus AWQ in code), and VeRA, AdaLoRA and (IA)^3 with bnb. Uncertainties: IR-QLoRA's initialization of the learnable IEC scalars beta_1, beta_2 is not stated in the paper (the official code initializes both to 0). AdaLomo's Algorithm 1 prints u=g/v while the official implementation uses g/sqrt(v) (rsqrt); sqrt is written. LoRA-FA arXiv v3 (May 2026) adds the closed-form gradient correction (r/alpha)^2 (A A^T)^{-1}, which v1 (2023) lacked, and has no formal venue. GaLore 2 is a tech report with no confirmed code release (the GaLore repo only announces it). Fira's NeurIPS 2025 venue is confirmed by its NeurIPS 2025 poster page. Overlaps with other families (same ids used for merging): qlora, qa-lora, loftq, lora-fa (hf-peft / lora-core / init-rank), and badam, lisa (selective). The id 'flora-opt' deliberately differs from 'flora-batched' and 'flora-tucker' in other families. Relations reference ids from other families: lora, pissa, relora, ia3, prefix-tuning, lora-pro, riemannian-preconditioned-lora. Notable members omitted for low uptake or redundancy: Tensor-GaLore, GaLore-mini, LDAdam, SubTrack++, GoLore (treated as a theory paper), MeZO variants (Sparse-MeZO, HiZOO, MeZO-SVRG, SubZero, LoHO), QDoRA (blog only), CLoQ, RILQ, QuAILoRA, LR-QAT and VeLoRA (activation compression, covered in hf-peft).",
+ "verification_summary": "Adversarial check on 2026-10-01 of 24 methods and 5 papers. All 29 arXiv ids were batch-queried: titles, first authors and first-version years all match. Every venue was confirmed via arXiv comments/journal-ref, OpenReview (QLoRA, QA-LoRA, LQ-LoRA, LoQT, Online Subspace Descent, Fira, Adam-mini), ACL Anthology (ApiQ, L4Q, LOMO, AdaLomo = Findings of ACL 2024), PMLR (IR-QLoRA, ZO-Bench v235; Q-GaLore v280 CPAL; GoLore v267) or DBLP/Semantic Scholar. No venue changed. Formulas were checked against paper PDFs/HTML and, where the paper is ambiguous, against official code; HF claims against huggingface/peft main @85be3f3 (2026-09-30) and the transformers optimizer docs. 44 corrections. Substantive: IR-QLoRA (IEC pooling/expansion operators, explicit absmax scale, beta_1=beta_2=0 at init from the official code), LoQT (trainable count r*max(d_in,d_out), iterative error compensation), Flora (momentum transfer only on resampling), LoftQ (init-gap claim qualified), QA-LoRA HF config (GPTQ only, no integer merge in PEFT), QLoRA HF config (BF16 compute dtype), EfficientQAT mergeability wording, AdaLomo sqrt sourced to code, 8-bit-optimizers lineage (paging is QLoRA's). Relations: PEQA->ia3 equivalent-to -> competes-with; LoQT->GaLore equivalent-to -> builds-on and GaLore->LoQT -> dual-to (exact only per window); APOLLO->Flora builds-on -> competes-with; removed Q-GaLore->GaLore 2 special-case-of and LOMO->AdaLomo special-case-of; LoRA-FA, LoftQ, BAdam and LISA edges aligned with the already-verified lora-core, init-rank and selective files. IR-QLoRA code_url updated to AI-Efficiency/IR-QLoRA. Nothing dropped. LoRA-FA is labelled additive-weight here but optimizer-or-training-procedure in lora-core."
+}

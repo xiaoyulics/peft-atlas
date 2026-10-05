@@ -1,0 +1,67 @@
+{
+ "hash": "0b935e9ec6fba3b3",
+ "seconds": 42.8,
+ "pauses": [
+  [
+   0.0,
+   0.262
+  ],
+  [
+   3.84,
+   4.295
+  ],
+  [
+   7.873,
+   8.509
+  ],
+  [
+   9.393,
+   9.921
+  ],
+  [
+   11.386,
+   11.795
+  ],
+  [
+   13.656,
+   13.933
+  ],
+  [
+   16.395,
+   16.883
+  ],
+  [
+   17.708,
+   18.087
+  ],
+  [
+   20.859,
+   21.32
+  ],
+  [
+   22.786,
+   23.117
+  ],
+  [
+   25.581,
+   26.284
+  ],
+  [
+   26.455,
+   26.77
+  ],
+  [
+   31.431,
+   31.898
+  ],
+  [
+   35.914,
+   36.253
+  ],
+  [
+   37.764,
+   38.353
+  ]
+ ],
+ "text": "Do this for every method, and you get an atlas. The paper reads seven coordinates off each method's formula: where it acts; the shape of its image; where it starts, at a tip, a smooth point, or off target; its gauge; which changes of basis it respects; whether it can be merged; and what merge-and-restart can reach. <short pause> Three hundred and eighty-two methods from a hundred and thirty-eight papers. Four hundred and three arrows saying which method simulates which, each with an explicit map, and four hundred and eighty-five obstructions saying which can't."
+}

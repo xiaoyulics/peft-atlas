@@ -1,0 +1,1119 @@
+% Appendix A (continued), Parts C and D: manifolds, germs and cones; groups, symmetry and conservation.
+% Source: site/sections/13-appendix.html (#part-c, #part-d), converted in full; entry numbers C.1--C.22 and D.1--D.34
+% are the site's. Claims about numbered results follow theory/propositions.json (public_statement).
+% No \section here: this file continues Appendix A (app:background), whose Parts A and B are in A1-background.tex.
+% "Used in" lines use the macro of A1-background.tex; this copy (identical) lets the file compile on its own.
+\providecommand{\fbAusedin}[1]{\par\smallskip\noindent{\small\color{inkgray}{\sffamily\bfseries\color{tide}Used in.}\enspace #1\par}\medskip}
+
+% ======================================================================================================================
+\subsection*{Part C. Manifolds, germs and cones}
+\phantomsection\label{app:bg-c}\addcontentsline{toc}{subsection}{Part C. Manifolds, germs and cones}
+
+Parts A and B used only the arrows of a method and its wiring. Part C turns to its geometry. A PEFT method in this paper
+is a smooth map $\rho:(Q,q_0)\to(\Theta,\theta_0)$, and its expressivity is read off the set $\Im M=\rho(Q)$ near
+$\theta_0$. This part collects the geometry behind that reading, from manifolds, differentials and rank for the map to
+germs, cones, singular points and semialgebraic dimension for the image, which is often not a manifold.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Manifolds and smooth maps}
+
+\begin{bgentry}{C.1}{smooth manifolds and smooth maps}
+A \textbf{smooth manifold} of dimension $k$ is a space covered by \textbf{charts}, bijections from open pieces of it
+onto open subsets of $\R^k$, whose changes of chart are smooth. Every manifold in this paper is an open subset of a
+vector space or an embedded submanifold of one (\bgref{C.4}), or is diffeomorphic to one, as quotients (\bgref{D.22})
+and the Grassmannian (\bgref{C.15}) are. A \textbf{diffeomorphism} is a smooth bijection with smooth inverse, and
+$\mathrm{Diff}(Q)$ is the group of diffeomorphisms of $Q$ under composition. A \textbf{local diffeomorphism} maps an
+open neighbourhood of each point diffeomorphically onto an open set; by the inverse function theorem, $\rho$ does this
+near $q$ whenever $d\rho_q$ (\bgref{C.2}) is invertible.
+\end{bgentry}
+
+LoRA's \citep{hu2021lora} parameter space $\R^{m\times r}\times\R^{r\times n}$ is a vector space, and HRA's
+\citep{yuan2024bridging} $\{(u_1,\dots,u_r):u_i\ne0\}$ is open in $(\R^n)^r$. The rotation group $\SO(n)$ is a compact
+manifold of dimension $n(n-1)/2$, and the Cayley map (\bgref{D.7}) is a diffeomorphism from $\so(n)$ onto an open dense
+subset of it. A method is a pointed smooth map, and its gauge group
+$\{\varphi\in\mathrm{Diff}(Q):\rho\circ\varphi=\rho\}$ (\bgref{D.21}) contains LoRA's $(B,A)\mapsto(Bg^{-1},gA)$ for
+every $g\in\GL_r$.
+
+\fbAusedin{\thmref{Definition}{I.2}, \thmref{Definition}{I.5}, \thmref{Theorem}{II.7}, \thmref{Proposition}{IV.3}.
+  \textsf{Reading:} \citet[Ch.~1 and~2]{xlee2013introduction}.}
+
+\begin{bgentry}{C.2}{tangent spaces, differentials and covectors}
+For a manifold $Q\subseteq\R^N$, the \textbf{tangent space} $T_qQ$ is the set of velocities $c'(0)$ of smooth curves $c$
+in $Q$ with $c(0)=q$. It is a linear space of dimension $\dim Q$, all of $\R^N$ when $Q$ is open. The
+\textbf{differential} of a smooth $\rho$ at $q$ is the linear map $d\rho_q:T_qQ\to T_{\rho(q)}\Theta$,
+$c'(0)\mapsto(\rho\circ c)'(0)$. In coordinates it is the Jacobian, and the chain rule reads $d(\rho\circ
+h)_q=d\rho_{h(q)}\circ dh_q$. The \textbf{cotangent space} $T^*_\theta\Theta$ is the dual of $T_\theta\Theta$. The
+differential $dL_\theta$ of a loss is a \textbf{covector}, and it becomes a gradient vector $\nabla L(\theta)$ only once
+an inner product is chosen.
+\end{bgentry}
+
+For LoRA, $d\rho_{(B,A)}(\dot B,\dot A)=s(\dot BA+B\dot A)$. For a rotation orbit, $T_I\SO(n)=\so(n)$ and
+$T_{W_0R}\big(W_0\cdot\SO(n)\big)=W_0R\,\so(n)$. \thmref{Observation}{I.6} is the chain rule at $q_0$.
+\thmref{Theorem}{III.5} drives the parameters by any cotangent signal $\gamma(t)\in T^*_{\rho(q)}\Theta$, pulled back to
+$Q$ as $\gamma\circ d\rho_q$, which is $D\rho\T\gamma$ in coordinates.
+
+\fbAusedin{the notation (Table~\ref{tab:notation}), \thmref{Definition}{I.5}, \thmref{Observation}{I.6},
+  \thmref{Theorem}{II.2}, \thmref{Theorem}{II.7}, \thmref{Theorem}{III.5}, \thmref{Definition}{IV.1}. \textsf{Reading:}
+  \citet[Ch.~3 and~11]{xlee2013introduction}.}
+
+\begin{bgentry}{C.3}{rank, expressive dimension and first-order image}
+The \textbf{rank} of $\rho$ at $q$ is $\rk d\rho_q$. It is lower semicontinuous, since a nonzero $k\times k$ minor of
+the Jacobian stays nonzero nearby, so $\{q:\rk d\rho_q\ge k\}$ is open. The \textbf{generic rank} is $\max_q\rk
+d\rho_q$. If $\rho$ is real-analytic and $Q$ is connected, the generic rank is attained on an open dense set whose
+complement has measure zero (\bgref{C.22}). The paper writes $\lvert M\rvert=\dim Q$ for the parameter budget, $d(M)$
+for the generic rank, $S_1=d\rho_{q_0}(T_{q_0}Q)$ for the \textbf{first-order image} and $d(M)-\dim S_1$ for the
+\textbf{first-order deficit}. For definable $\rho$ on an open definable $Q$, as for every method in this paper,
+\bgref{C.18}(d) shows that $d(M)=\dim\Im M$, the \textbf{expressive dimension}. The deficit vanishes exactly when $q_0$
+is a point of maximal rank; the base point $\theta_0$ is then called \textbf{regular} for $M$, and an \textbf{apex} when
+the deficit is positive (\thmref{Definition}{I.5}).
+\end{bgentry}
+
+\thmref{Proposition}{II.3} gives LoRA's rank at every point,
+$m\operatorname{rk}A+n\operatorname{rk}B-\operatorname{rk}A\operatorname{rk}B$. At a random pair it is $r(m+n-r)=d$; at
+the zero-init point $(0,A_0)$ it is $mr$, a deficit of $r(n-r)$. Since the points of lower rank have measure zero, a
+float64 Jacobian rank at one random point computes $d(M)$ with probability one, up to the tolerance that decides
+numerical rank. The plug workbench of the companion site (\S\ref{sec:cut-plug}) and the check script
+(Appendix~\ref{app:repro}) do exactly this.
+
+\fbAusedin{the notation (Table~\ref{tab:notation}), \thmref{Definition}{I.5}, \thmref{Proposition}{II.3},
+  \thmref{Proposition}{II.12}, the plug workbench (\S\ref{sec:cut-plug}), reproducing the numbers
+  (Appendix~\ref{app:repro}).}
+
+\begin{bgentry}{C.4}{immersions, submersions and embedded submanifolds}
+A smooth $\rho:Q\to\Theta$ is an \textbf{immersion} if every $d\rho_q$ is injective (rank $\dim Q$), and a
+\textbf{submersion} if every $d\rho_q$ is surjective (rank $\dim\Theta$). A subset $X\subseteq\R^N$ is an
+\textbf{embedded submanifold} of dimension $k$ if near each of its points it is the zero set of $N-k$ smooth functions
+with linearly independent gradients. A submersion is an open map, so its image contains an open set. An
+\textbf{embedding}, an injective immersion that is a homeomorphism onto its image, has an embedded submanifold as image;
+an injective immersion such as the figure eight need not.
+\end{bgentry}
+
+The one-sided method $\mathrm{FA}(A_0):B\mapsto W_0+BA_0$ is an injective immersion with affine image $W_0+\{BA_0\}$
+when $A_0$ has full row rank. On pairs of full rank, $(B,A)\mapsto BA$ is a submersion onto $\MM_r$ (\bgref{C.12}).
+\thmref{Observation}{I.4}(b) uses openness, in the argument recalled in \bgref{A.13}. \thmref{Proposition}{IV.3} asks
+for injective immersions $(\R^k,0)\to(U,\theta)$ tangent to a distribution.
+
+\fbAusedin{\thmref{Observation}{I.4}, \thmref{Proposition}{IV.3}, integrability (\S\ref{sec:lens-integrability}).
+  \textsf{Reading:} \citet[Ch.~4 and~5]{xlee2013introduction}.}
+
+\begin{bgfact}{C.5}{constant-rank theorem}
+Let $\rho:Q\to\Theta$ be smooth with $\rk d\rho_q=k$ for all $q$ near $p$. Then there are charts centred at $p$ and at
+$\rho(p)$ in which $\rho$ reads $(x_1,\dots,x_{\dim Q})\mapsto(x_1,\dots,x_k,0,\dots,0)$. Hence some neighbourhood $V$
+of $p$ has $\rho(V)$ an embedded $k$-dimensional submanifold, and $\rho^{-1}(\rho(p))\cap V$ an embedded submanifold of
+dimension $\dim Q-k$. By \bgref{C.3} the hypothesis holds wherever the rank is maximal.
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+Choose coordinates in which the top-left $k\times k$ block of the Jacobian is invertible. The inverse function theorem
+straightens the first $k$ output coordinates. Constant rank then forces the other outputs to depend only on those $k$,
+and a second change of coordinates in the target removes them.
+
+The paper uses this theorem without naming it. Near a point of maximal rank, $\rho$ is locally a projection onto a sheet
+of dimension $d(M)$, with fibres of dimension $\lvert M\rvert-d(M)$, the gauge waste. For LoRA at a full-rank pair the
+sheet is a piece of $W_0+\MM_r$ and the fibre a piece of a $\GL_r$-orbit. \thmref{Proposition}{IV.3} makes the analogous
+constant-rank assumption for distributions, where Frobenius' theorem (\bgref{D.25}) takes the place of this one.
+
+\fbAusedin{\thmref{Definition}{I.5}, \thmref{Proposition}{II.12}, \bgref{C.18}. \textsf{Reading:} \citet[Ch.~4, the rank
+  theorem]{xlee2013introduction}.}
+
+\begin{bgentry}{C.6}{fibres and fibre dimension}
+The \textbf{fibre} of $\rho$ over $\theta$ is $\rho^{-1}(\theta)$, the set of parameters that give the weight $\theta$.
+If $\rk d\rho_q=d(M)$, \bgref{C.5} makes the fibre through $q$ a submanifold of dimension $\lvert M\rvert-d(M)$ near
+$q$. For real-analytic $\rho$ on connected $Q$ this holds for all $q$ outside a closed set of measure zero, and these
+are the \textbf{generic fibres}. Fibres through points of lower rank can have a different dimension. The fibres of a
+fibre bundle all look alike locally, so a map whose fibre dimension jumps is no fibre bundle.
+\end{bgentry}
+
+For LoRA on the full-rank stratum, the fibre through $(B,A)$ is the orbit $\{(Bg^{-1},gA):g\in\GL_r\}$, of dimension
+$r^2=r(m+n)-r(m+n-r)$ (\bgref{D.21}). For zero-init LoRA the fibre over $\theta_0$ is $\{(B,A):BA=0\}$. It contains
+$\{B=0\}$, of dimension $rn>r^2$, and is itself a union of strata, such as $\{(0,A):\rk A=r\}$
+(\thmref{Corollary}{III.13}).
+
+\fbAusedin{Exposé~\ref{sec:fibres}, \thmref{Definition}{I.5}, \thmref{Proposition}{II.12}, \thmref{Corollary}{III.13},
+  Rosetta entries 6 and 11 (Exposé~\ref{sec:rosetta}), the seven borrowed words (Exposé~\ref{sec:analogy}).}
+
+\begin{bgentry}{C.7}{fibre products, transversality and clean intersection}
+For $\rho_M:Q_M\to\Theta$ and $\rho_N:Q_N\to\Theta$, the set-level \textbf{fibre product} is
+$P=\{(q,q'):\rho_M(q)=\rho_N(q')\}\subseteq Q_M\times Q_N$. The maps are \textbf{transverse}, $\rho_M\pitchfork\rho_N$,
+if $d\rho_M(T_qQ_M)+d\rho_N(T_{q'}Q_N)=T_\theta\Theta$ at every $(q,q')\in P$; then $P$ is an embedded submanifold of
+dimension $\lvert M\rvert+\lvert N\rvert-\dim\Theta$, and it is the pullback of $\rho_M$ and $\rho_N$ in $\Diff$
+(\bgref{A.11}). The intersection is \textbf{clean} if $P$ is an embedded submanifold with
+$T_{(q,q')}P=\{(v,w):d\rho_Mv=d\rho_Nw\}$ at every point. Transverse maps meet cleanly, and so do affine maps.
+\end{bgentry}
+
+Transversality at $(q_0,q_0')$ needs $\lvert M\rvert+\lvert N\rvert\ge\dim\Theta$, which fails for any two small
+methods, so the products the paper builds come from clean cases. The affine methods $\mathrm{FA}(A_0)$ and
+$\mathrm{FB}(B_0)$, with $B_0$ of full column rank and $A_0$ of full row rank, have the linear fibre product
+$\{(B_0R,RA_0)\}$ of dimension $r^2$, which is LoRA-XS \citep{baazy2024lora} (\thmref{Proposition}{I.8}). On
+$\Theta=\R$, $\mathrm{LoRA}_1$ and the frozen model have the cross $\{BA=0\}$ as fibre product. It is no manifold at the
+origin, and no product exists (\bgref{A.13}).
+
+\fbAusedin{\thmref{Observation}{I.4}, \thmref{Proposition}{I.8}, \thmref{Theorem}{II.7}(d). \textsf{Reading:}
+  \citet[Ch.~1]{xguillemin1974differential}; \citet[Ch.~6]{xlee2013introduction}.}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Germs, cones and singular points}
+
+\begin{bgentry}{C.8}{germs}
+Two subsets $X,Y\subseteq\Theta$ have the same \textbf{germ} at $\theta_0$ if $X\cap U=Y\cap U$ for some neighbourhood
+$U$ of $\theta_0$; two maps have the same germ at $q_0$ if they agree near $q_0$. The germs $(X,\theta_0)$ and $(Y,0)$
+are diffeomorphic if a diffeomorphism $\varphi$ between neighbourhoods $U\ni\theta_0$ and $V\ni0$ has
+$\varphi(\theta_0)=0$ and $\varphi(X\cap U)=Y\cap V$. Local properties, such as the dimension at $\theta_0$, smoothness
+at $\theta_0$ and the tangent cone (\bgref{C.11}), depend only on the germ.
+\end{bgentry}
+
+The image germ of a method is the germ of $\Im M=\rho(Q)$ at $\theta_0$. It uses all of $Q$, so it can be larger than
+the image of a small neighbourhood of $q_0$. For zero-init LoRA, $sBA$ with $B$ small and $A$ arbitrary is a small
+update with any row space, so the germ is that of the whole cone $\theta_0+\Mr$; parameters near $(0,A_0)$ only give
+updates with row space inside $\operatorname{row}A$ for some $A$ near $A_0$. For injective $W_0$ and even $r$ with $2\le
+r\le n-2$, HRA's image germ at $W_0$ is the image of the germ of $\Sigma_r$ at $0$ under the embedding $\Omega\mapsto
+W_0\,C(\Omega)$ of $\so(n)$ into $\R^{m\times n}$ (\bgref{C.13}, \bgref{D.7}).
+
+\fbAusedin{the image germ (Exposé~\ref{sec:image}), the three invariants (Exposé~\ref{sec:thesis}),
+  \thmref{Theorem}{II.7}, the seven axes (\S\ref{sec:atlas-axes}).}
+
+\begin{bgentry}{C.9}{smooth and singular points}
+A point $x$ of a set $X\subseteq\R^N$ is a \textbf{smooth point} if $X\cap U$ is a $C^1$ embedded submanifold for some
+neighbourhood $U$ of $x$, and a \textbf{singular point} otherwise. The singular points form the \textbf{singular locus}
+$\operatorname{Sing}X$. Algebraic geometry defines $\operatorname{Sing}$ through the Jacobian of defining polynomials,
+and for $\Mr$ the two notions agree. Smoothness is a property of a set. The paper's regular base point and apex, defined
+by a zero or positive first-order deficit (\bgref{C.3}, \thmref{Definition}{I.5}), are properties of a method at $q_0$.
+\end{bgentry}
+
+The cross $\{BA=0\}\subseteq\R^2$ is singular at the origin and smooth elsewhere. For $1\le r<\min(m,n)$,
+$\operatorname{Sing}\Mr=\MM_{\le r-1}$. A split initialisation has image $(\theta_0-P)+\Mr$ with $\rk P=r$, so
+$\theta_0$ is a smooth point; zero-init LoRA starts at the singular vertex. A figure-eight curve passing through its
+crossing with nonzero velocity has deficit $0$ there, though its image is singular, so smooth and regular are different
+notions.
+
+\fbAusedin{\thmref{Definition}{I.5}, \thmref{Theorem}{II.2}, Figure~\ref{fig:apex}, \thmref{Theorem}{II.7}, Erlangen
+  (\S\ref{sec:erlangen}). \textsf{Reading:} \citet[Lecture~14]{xharris1992algebraic}.}
+
+\begin{bgentry}{C.10}{cones and vertices}
+A set $X$ in a vector space is a \textbf{cone} with \textbf{vertex} $v$ if $v\in X$ and $v+t(x-v)\in X$ for all $x\in X$
+and $t\ge0$, and \textbf{linear} if it is an affine subspace. If $\rho=\theta_0+\delta$ with
+$\delta(tu,w)=t\,\delta(u,w)$ for $t\ge0$ on a block $u$ of parameters, and $Q$ is closed under $u\mapsto tu$, then $\Im
+M$ is a cone with vertex $\theta_0$. A cone that is a $C^1$ embedded submanifold near its vertex $v$ equals $v+T_vX$, so
+the vertex of a non-linear cone is a singular point.
+\end{bgentry}
+
+\paragraph{Why a smooth cone is linear}
+Each ray from $v$ lies in $X$, so $X\subseteq v+T_vX$. Near $v$, $X$ is a submanifold of full dimension in this affine
+space, so it contains a neighbourhood of $v$ there, and scaling spreads it over all of $v+T_vX$.
+
+$\Mr$ is a closed cone with vertex $0$, and it is not linear for $1\le r<\min(m,n)$, since a rank-$r$ and a rank-one
+matrix can sum to rank $r+1$. Zero-init LoRA has $\delta=sBA$, linear in $B$, so its image $W_0+\Mr$ has singular vertex
+$W_0$. Its deficit $r(n-r)$ makes $\theta_0$ an apex too; the vertex is a property of the set, the apex one of the
+method. Multihomogeneous updates such as LoHa's \citep{hyeonwoo2021fedpara} give cones in the same way (\bgref{D.19}).
+
+\fbAusedin{\thmref{Definition}{I.5}, the image germ (Exposé~\ref{sec:image}), \thmref{Theorem}{II.1},
+  \thmref{Theorem}{II.2}, Figure~\ref{fig:apex}, \thmref{Theorem}{II.7}.}
+
+\begin{bgfact}{C.11}{first-order image versus image}
+The \textbf{tangent cone} of a set $X$ at $x$ is the set of limits of $t_k(x_k-x)$ with $x_k\in X$, $x_k\to x$ and
+$t_k>0$; for a closed cone with vertex $v$ it is $X-v$. For a method $M$: (a) $S_1$ lies in the tangent cone of $\Im M$
+at $\theta_0$; (b) $\dim S_1\le d(M)$; (c) if $\Im M$ is a $C^1$ manifold of dimension $d(M)$ near $\theta_0$, then
+$S_1\subseteq T_{\theta_0}\Im M$, with equality exactly when the deficit is $0$.
+\end{bgfact}
+
+For (a), $d\rho_{q_0}(\xi)$ is the velocity of the curve $\rho(q_0+t\xi)$ inside the image; for (c), $\rho$ maps a
+neighbourhood of $q_0$ into the manifold. For $\mathrm T_A$-pointed LoRA ($B_0=0$, \bgref{C.19}) the tangent cone at
+$\theta_0$ is $\Mr$ itself, and inside it $S_1=\{XA_0\}$, the matrices with row space in $\operatorname{row}A_0$, is a
+linear space of dimension $mr<r(m+n-r)$. Figure~\ref{fig:apex}(a) draws $S_1$ as one ruling of the cone, a line through
+the apex. At a split pointing case (c) applies, and $S_1=T_P\MM_r$, the tangent plane of Figure~\ref{fig:apex}(b).
+
+\fbAusedin{\thmref{Definition}{I.5}, \thmref{Observation}{I.6}, \thmref{Theorem}{II.2}, Figure~\ref{fig:apex}.
+  \textsf{Reading:} \citet[Lecture~20]{xharris1992algebraic}.}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Matrix varieties}
+
+\begin{bgentry}{C.12}{the determinantal variety}
+$\Mr=\{X\in\R^{m\times n}:\rk X\le r\}$, the \textbf{determinantal variety}, is the zero set of all $(r+1)\times(r+1)$
+minors, a closed cone with vertex $0$. Let $1\le r<\min(m,n)$. The matrices of rank exactly $r$ form an open dense
+subset $\MM_r$ of $\Mr$, an embedded submanifold of dimension $r(m+n-r)$, and $\operatorname{Sing}\Mr=\MM_{\le r-1}$. If
+$X\in\MM_r$ has column space $U$ and row space $V$, and $X=BA$ with $B\in\R^{m\times r}$ and $A\in\R^{r\times n}$, then
+\[T_X\MM_r=\{\dot BA+B\dot A\}=\{D:P_{U^\perp}DP_{V^\perp}=0\}.\]
+Also $\Mr-\Mr=\MM_{\le\min(2r,m,n)}$.
+\end{bgentry}
+
+Zero-init LoRA has image $W_0+\Mr$, of dimension $130{,}816$ for a $4096\times4096$ matrix at $r=16$. On full-rank
+pairs, $(B,A)\mapsto BA$ is a submersion onto $\MM_r$ whose fibres are $\GL_r$-orbits, which identifies $\MM_r$ with the
+quotient $(\R^{m\times r}_*\times\R^{r\times n}_*)/\GL_r$ (\bgref{D.22}). The difference formula is why no pointing of
+$\mathrm{LoRA}_r$ reaches an update of rank above $2r$ (\bgref{B.14}, \thmref{Theorem}{II.1}).
+
+\fbAusedin{the notation (Table~\ref{tab:notation}), translates of one shape (\S\ref{sec:strata-translates}),
+  \thmref{Theorem}{II.1}, \thmref{Theorem}{II.2}, \thmref{Proposition}{II.8}, Exposé~II.C (\S\ref{sec:cut}),
+  \thmref{Proposition}{III.4}. \textsf{Reading:} \citet[Lecture~9]{xharris1992algebraic}.}
+
+\begin{bgentry}{C.13}{the skew-determinantal cone}
+Every skew-symmetric matrix has even rank. For even $r$ with $2\le r\le n-2$, the \textbf{skew-determinantal cone}
+$\Sigma_r=\{\Omega\in\so(n):\rk\Omega\le r\}$ is a closed cone with vertex $0$ and dimension
+$r(n-r)+r(r-1)/2=rn-r(r+1)/2$, counting a range in $\Gr(r,n)$ and a nondegenerate skew form on it. Its smooth points are
+the matrices of rank exactly $r$, and $\operatorname{Sing}\Sigma_r=\Sigma_{r-2}$. It is not linear, since skew matrices
+of rank $r$ and $2$ can sum to rank $r+2\le n$, so its vertex is singular.
+\end{bgentry}
+
+For injective $W_0$ and even $r$, HRA's image near $W_0$ consists of the $W_0R$ with $R\in\SO(n)$ near $I$ and
+$\rk(R-I)\le r$. The Cayley map satisfies $\rk(C(\Omega)-I)=\rk\Omega$ (\bgref{D.7}), so the image germ at $W_0$ is the
+image of the germ of $\Sigma_r$ at $0$ under the embedding $\Omega\mapsto W_0\,C(\Omega)$, $W_0$ is a singular vertex,
+and $d(\mathrm{HRA}_r)=\dim\Sigma_r$. At the paired initialisation $u_{2i-1}=u_{2i}=w_i$ ($i\le k=r/2$, with the $w_i$
+independent), put $U=\spanop\{w_1,\dots,w_k\}$, so $\dim U=k$. Then $S_1=W_0\cdot\mathcal S$ with
+\[\mathcal S=\{\Omega\in\so(n):P_{U^\perp}\Omega P_{U^\perp}=0\}=U\wedge\R^n\]
+(\bgref{D.5}), a linear space of skew matrices of rank at most $2k=r$ and of dimension $kn-k(k+1)/2<d(\mathrm{HRA}_r)$.
+It lies inside $\Sigma_r$, so $S_1$ lies inside the tangent cone $W_0\cdot\Sigma_r$ (\thmref{Theorem}{II.7}(b)).
+
+\fbAusedin{\thmref{Theorem}{II.7}, HRA is a meet (\S\ref{sec:erlangen-hra}).}
+
+\begin{bgentry}{C.14}{Segre and toric cones}
+The \textbf{Segre cone} in $\R^p\otimes\R^q\cong\R^{p\times q}$ is the set $\{a\otimes b\}=\MM_{\le1}$ of rank-one
+tensors, a closed cone of dimension $p+q-1$ that spans the whole space and is non-linear when $p,q\ge2$. It is the
+simplest \textbf{toric cone}, the closure of the image of a torus $(\R^\times)^k$ under a monomial map, here
+$(a,b)\mapsto(a_ib_j)_{ij}$. Since rank-one matrices span $\R^{p\times q}$, $k$ generic rank-one matrices span
+$\min(k,pq)$ dimensions.
+\end{bgentry}
+
+Under the Van Loan--Pitsianis rearrangement (\bgref{B.11}), KronA's \citep{edalati2022krona} update $A\otimes B$ becomes
+$\vect(A)\,\vect(B)\T$, so its image is a linear copy of a Segre cone (\thmref{Proposition}{II.12}). VeRA's
+\citep{kopiczko2023vera} update $\Lambda_bB\Lambda_dA$ has entries $\sum_k(b_id_k)B_{ik}A_{kj}$, a fixed linear function
+of the rank-one matrix $bd\T$. This function is injective when $B$ has no zero entry and $A$ has full row rank, so the
+image is a toric cone of dimension $m+r-1$ with vertex $\theta_0$, as VeRA's entry in Exposé~\ref{sec:examples} records.
+\thmref{Proposition}{II.8} uses the spanning fact for DoRA \citep{liu2024dora}, with $m$ points of the Segre cone in
+$\R^{m-r}\otimes\R^{n-r}$.
+
+\fbAusedin{\thmref{Proposition}{II.8}, \thmref{Proposition}{II.12}, \hyperref[ex:vera]{VeRA}
+  (Exposé~\ref{sec:examples}). \textsf{Reading:} \citet[Lecture~2]{xharris1992algebraic}; \citet[Ch.~1]{xcox2011toric}.}
+
+\begin{bgentry}{C.15}{the Grassmannian}
+The \textbf{Grassmannian} $\Gr(r,n)$ is the set of $r$-dimensional linear subspaces of $\R^n$, a compact manifold of
+dimension $r(n-r)$. One model is the full-row-rank $r\times n$ matrices up to $A\mapsto gA$, $g\in\GL_r$, through
+$A\mapsto\operatorname{row}A$; another is the orthogonal projectors $P=P\T=P^2$ with $\tr P=r$. Near $V$, the graphs of
+linear maps $V\to V^\perp$ give a chart onto $\operatorname{Hom}(V,V^\perp)\cong\R^{r(n-r)}$. $\Gr(r,n)$ carries a
+unique $\Ort(n)$-invariant probability measure, the uniform or Haar measure, and the row space of a Gaussian $A$ has
+this law (\bgref{D.14}).
+\end{bgentry}
+
+$\mathrm T_A$-pointed LoRA is classified up to isomorphism by $\operatorname{row}A_0\in\Gr(r,n)$
+(\thmref{Theorem}{II.2}), and its deficit $r(n-r)$ equals $\dim\Gr(r,n)$. First steps keep the row space of the update
+inside $\operatorname{row}A_0$, and the missing directions are those that tilt it. For injective $W_0$ and even $r$ with
+$2\le r\le n-2$, HRA's image is the union of the orbits $W_0\cdot\SO(V)$ over $V\in\Gr(r,n)$, and its dimension
+$r(n-r)+r(r-1)/2$ counts a subspace and a rotation inside it. LoRA-FA \citep{zhang2023lora}, which trains $B$ with $A_0$
+frozen, sees $A_0$ only through $V=\operatorname{row}A_0$ once its gradient is corrected as in
+\thmref{Proposition}{III.4}(c).
+
+\fbAusedin{\thmref{Theorem}{II.2}, the checks (Appendix~\ref{app:repro}), \thmref{Theorem}{II.7}, LOFT
+  (\S\ref{sec:erlangen-loft}) and the LOFT example there, \thmref{Proposition}{III.4}, \thmref{Corollary}{III.13}.
+  \textsf{Reading:} \citet[Ch.~1]{xlee2013introduction}; \citet[Lecture~6]{xharris1992algebraic}.}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Tame sets and genericity}
+
+\begin{bgfact}{C.16}{images of smooth maps need not be manifolds}
+Even a polynomial map can have an image that is no manifold. (a) \emph{Cusps.} $t\mapsto(t^2,t^3)$ is injective with
+image $\{y^2=x^3\}$, which is not $C^1$ at $0$. (b) \emph{Crossings and cones.} The cross $\{BA=0\}\subseteq\R^2$ and
+the cone $\Mr$ are singular at the origin. (c) \emph{Missing limits.} $(x,y)\mapsto(x,xy)$ has image
+$\{u\ne0\}\cup\{(0,0)\}$ in the $(u,v)$-plane, neither open nor closed. (d) \emph{Dense images.} The line of irrational
+slope is an injective immersion into the torus with dense image.
+\end{bgfact}
+
+PEFT images show (b) routinely, as in the LoRA cone and HRA's skew cone, so the paper measures them with tools that need
+no manifold structure, such as germs (\bgref{C.8}), tangent cones (\bgref{C.11}) and the dimension theory of
+semialgebraic and definable sets (\bgref{C.17}, \bgref{C.18}). Whether LoHa's Hadamard image is closed, the question
+raised by (c), is open.
+
+\fbAusedin{\thmref{Observation}{I.4}, \thmref{Theorem}{II.2}, \thmref{Theorem}{II.7}, the open problems
+  (Exposé~\ref{sec:analogy}).}
+
+\begin{bgentry}{C.17}{semialgebraic and definable sets}
+A \textbf{semialgebraic set} is a finite union of sets $\{x\in\R^N:p(x)=0,\ q_1(x)>0,\dots,q_k(x)>0\}$ with polynomials
+$p,q_i$, and a map is semialgebraic if its graph is. A set is \textbf{definable} in $\R_{\exp}$ if a first-order formula
+defines it from polynomials with real coefficients, $\exp$, equality, order, Boolean operations and quantifiers over
+$\R$. \citet{xwilkie1996model} proved that $\R_{\exp}$ is \textbf{o-minimal}, meaning every definable subset of $\R$ is
+a finite union of points and intervals. Semialgebraic sets are the definable sets that need no $\exp$.
+\end{bgentry}
+
+LoRA, DoRA (whose row norms involve square roots), HRA and exact-Cayley OFT \citep{qiu2023controlling} are built from
+polynomials, quotients and square roots, so their images are semialgebraic by \bgref{C.18}(a). A softmax brings in
+$\exp$, and maps that contain one are definable in $\R_{\exp}$.
+
+\fbAusedin{where the category theory works (Exposé~\ref{sec:thesis}), the arrow rules (\S\ref{sec:atlas-arrows}).
+  \textsf{Reading:} \citet[Ch.~2]{xbochnak1998real}; \citet{xwilkie1996model}.}
+
+\begin{bgfact}{C.18}{Tarski--Seidenberg and definable dimension}
+(a) The image of a semialgebraic set under a semialgebraic map is semialgebraic (Tarski--Seidenberg); images of
+definable sets under definable maps are definable. (b) Every definable set $X$ is a finite disjoint union of $C^1$
+embedded submanifolds, and $\dim X$, the largest of their dimensions, does not depend on the choice. (c) $X\subseteq Y$
+implies $\dim X\le\dim Y$, $\dim f(X)\le\dim X$ for definable $f$, and $\dim(\overline X\setminus X)<\dim X$ for
+nonempty $X$. (d) For a definable $C^1$ map $\rho$ on an open definable $Q\subseteq\R^k$, $\dim\rho(Q)=\max_q\rk
+d\rho_q$.
+\end{bgfact}
+
+\paragraph{The idea of (d)}
+Near a point of maximal rank, \bgref{C.5} gives a sheet of that dimension inside $\rho(Q)$. Conversely, a definable
+section of $\rho$, $C^1$ on a top-dimensional piece of $\rho(Q)$, composes with $\rho$ to the identity there, so the
+rank is at least that dimension.
+
+Part (d) is the identity $d(M)=\dim\Im M$ of \thmref{Definition}{I.5}. Part (c) is the monotonicity behind test O2
+(\S\ref{sec:atlas-tests}), since an arrow $M\to N$ gives $\Im M\subseteq\Im N$ and hence $d(M)\le d(N)$; for instance
+$\mathrm{LoRA}_r\not\to\text{LoRA-FA}$ because $r(m+n-r)>mr$.
+
+\fbAusedin{\thmref{Definition}{I.5}, the arrow rules (\S\ref{sec:atlas-arrows}), where the category theory works
+  (Exposé~\ref{sec:thesis}). \textsf{Reading:} \citet[Ch.~3 and~4]{xvandendries1998tame};
+  \citet[Ch.~2]{xbochnak1998real}.}
+
+\begin{bgentry}{C.19}{stratification and local dimension}
+A \textbf{stratification} of a set $X$ is a partition into finitely many embedded submanifolds, the \textbf{strata},
+such that the closure of each stratum is a union of strata. The \textbf{local dimension} $\dim_xX$ is the dimension of
+the germ of $X$ at $x$, the largest dimension of a stratum whose closure contains $x$. $X$ is \textbf{pure-dimensional}
+if $\dim_xX$ is the same at every point. Definable sets admit stratifications, so these notions make sense for every
+image in this paper.
+\end{bgentry}
+
+The cross $\{ba=0\}\subseteq\R^2$ is stratified as the origin and the four open half-axes, and it is pure of dimension
+$1$. Likewise $\Mr=\MM_0\sqcup\MM_1\sqcup\dots\sqcup\MM_r$ with $\overline{\MM_k}=\MM_{\le k}$, and it is pure of
+dimension $r(m+n-r)$. For $1\le r<\min(m,n)$, \thmref{Theorem}{II.2} singles out three strata of full-rank LoRA
+pointings, $\mathrm T_A$ ($B_0=0$, $\rk A_0=r$), $\mathrm T_B$ ($A_0=0$, $\rk B_0=r$) and the open dense $\mathrm S$
+($\rk B_0A_0=r$), and the fibre $\{BA=0\}$ over $\theta_0$ is itself stratified (\thmref{Corollary}{III.13}). The HRA
+fibre product of \thmref{Theorem}{II.7}(d) has local dimension $d(\mathrm{HRA}_r)+r^2=rn+r(r-1)/2$ over generic points
+of the meet and contains $\{(B,0,I)\}$, of dimension $mr$, over $W_0$, so it is not pure-dimensional when
+$mr>rn+r(r-1)/2$.
+
+\fbAusedin{\thmref{Theorem}{II.2}, the three strata (\S\ref{sec:strata-three}), \thmref{Theorem}{II.7},
+  \thmref{Corollary}{III.13}, the open problems (Exposé~\ref{sec:analogy}), the seven borrowed words
+  (Exposé~\ref{sec:analogy}). \textsf{Reading:} \citet[Ch.~4]{xvandendries1998tame}; \citet[Ch.~9]{xbochnak1998real}.}
+
+\begin{bgentry}{C.20}{moduli sets and moduli spaces}
+Classifying objects up to isomorphism gives a set of classes. A \textbf{moduli space} also carries a topology or
+geometry for which continuous or smooth families of objects correspond to continuous or smooth maps into it, ideally
+with a universal family over it from which every family is pulled back. A disjoint union of spaces $X\sqcup Y$ has the
+topology in which $X$ and $Y$ are both open and closed.
+\end{bgentry}
+
+\thmref{Theorem}{II.2} classifies the three strata of LoRA pointings, as a set, by $\Gr(r,n)\sqcup\Gr(r,m)\sqcup\MM_r$.
+The quotient topology does not split this way, since $(\varepsilon B',A_0)\in\mathrm S$ tends to $(0,A_0)\in\mathrm T_A$
+as $\varepsilon\to0$, so $\mathrm T_A$ lies in the closure of $\mathrm S$. No universal family is built, and the paper
+uses ``moduli'' as an analogy.
+
+\fbAusedin{\thmref{Theorem}{II.2}, the Rosetta stone (Exposé~\ref{sec:rosetta}), the seven borrowed words
+  (Exposé~\ref{sec:analogy}). \textsf{Reading:} \citet[Lecture~4]{xharris1992algebraic}.}
+
+\begin{bgentry}{C.21}{generic properties}
+A property of points of $\R^N$ holds \textbf{generically} if the set where it fails lies in $\{f=0\}$ for some nonzero
+polynomial $f$. The set $\{f=0\}$ is closed, nowhere dense and of Lebesgue measure zero, so a generic property holds
+with probability one at a random point whose law has a density, such as a Gaussian or uniform initialisation. For points
+of a parametrised set, such as a Segre cone, ``generic'' refers to generic parameters. To prove genericity it suffices
+to write failure as the vanishing of polynomials and exhibit one point where one of them is nonzero. A weaker notion,
+\textbf{almost every} point, asks only that the failure set have Lebesgue measure zero, as a countable union of proper
+algebraic subsets does.
+\end{bgentry}
+
+\thmref{Theorem}{II.2}(d) uses a generic rank-one update, \thmref{Proposition}{II.8} gives DoRA's dimension
+$\min\big(mn,\,r(m+n-r)+m\big)$ for generic $W_0$, and \thmref{Proposition}{V.2} notes that QLoRA's
+\citep{dettmers2023qlora} defect $e=\kappa W-W$ has full rank for almost every $W$, in the weaker sense. The quantiser
+$\kappa$ is defined cell by cell rather than by one polynomial, so the argument runs cell by cell, and the failure set
+is a countable union of proper algebraic subsets of quantisation cells, which has measure zero. A pretrained $W_0$ is
+not random, and structured weights can lie in the exceptional set. For a rank-one $W_0=ac\T$ with all $a_i\ne0$ and
+$r<n$, \thmref{Proposition}{II.8} finds DoRA's dimension $r(m+n-r)+m-r$, strictly below the generic value exactly when
+$r<m$ and $r\le n-2$.
+
+\fbAusedin{\thmref{Theorem}{II.2}, \thmref{Proposition}{II.8}, \thmref{Theorem}{II.11}, \thmref{Proposition}{II.12},
+  \thmref{Proposition}{V.2}.}
+
+\begin{bgentry}{C.22}{real-analytic functions and their zero sets}
+A function is \textbf{real-analytic} on an open set if near every point it equals a convergent power series.
+Polynomials, $\exp$, softmax, $\tanh$, GELU and SiLU are real-analytic, and so are sums, products, compositions and
+quotients with nonvanishing denominator. On a connected open set, a real-analytic function that vanishes on a nonempty
+open subset vanishes identically, and the zero set of one that is not identically zero is closed, nowhere dense and of
+measure zero.
+\end{bgentry}
+
+\thmref{Lemma}{VI.2} compares Taylor coefficients at $0$. A nonzero scale $c$ with $\sigma(ct)=c\,\sigma(t)$ must
+satisfy $ca_k=c^ka_k$ for every coefficient $a_k$ of $\sigma$, so $c=1$ for GELU and SiLU, whose $a_2\ne0$.
+\thmref{Theorem}{VI.5}(f) uses the zero-set fact. A prefixed head is analytic in the prefix, and one prefix with a
+nonzero second derivative makes the prefixes with affine output a nowhere-dense set. The same fact makes the
+maximal-rank set of an analytic $\rho$ open and dense (\bgref{C.3}).
+
+\fbAusedin{\thmref{Lemma}{VI.2}, \thmref{Theorem}{VI.5}, Rosetta entry 5 (Exposé~\ref{sec:rosetta}). \textsf{Reading:}
+  \citet{xkrantz2002primer}.}
+
+% ======================================================================================================================
+\subsection*{Part D. Groups, symmetry and conservation}
+\phantomsection\label{app:bg-d}\addcontentsline{toc}{subsection}{Part D. Groups, symmetry and conservation}
+
+Part D turns to symmetry. Most PEFT parametrisations have symmetries, since different trainable parameters can give the
+same weights and some transformations of weight space carry a method's image to itself. This part collects the group
+theory the paper uses to describe those symmetries, the invariants they leave untouched, and the quantities they
+conserve under gradient flow.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Groups and their Lie algebras}
+
+\begin{bgentry}{D.1}{Lie groups; the matrix groups of this paper}
+A \textbf{Lie group} is a group that is also a smooth manifold, with smooth multiplication and inversion. Every closed
+subgroup of $\GL_n(\R)$ is a Lie group (Cartan's closed-subgroup theorem), and all groups below are of this kind. Its
+dimension is its dimension as a manifold.
+
+\smallskip
+{\centering\small\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}llX@{}}
+  \toprule
+  \headrow \textbf{group} & \textbf{dimension} & \textbf{elements}\\
+  \midrule
+  $\GL_r$ & $r^2$ & invertible $r\times r$ matrices\\
+  $\Ort(n)$, $\SO(n)$ & $n(n-1)/2$ & $R\T R=I$; for $\SO(n)$ also $\det R=1$\\
+  $\CO(n)$ & $n(n-1)/2+1$ & $cR$ with $c>0$, $R\in\Ort(n)$, so $\CO(n)=\R_{>0}\cdot\Ort(n)$; equivalently
+    $g\T g\in\R_{>0}I$\\
+  $\mathrm{Sp}(2r,\R)$ & $r(2r+1)$ & $M\T JM=J$, with $J=\begin{pmatrix}0&I_r\\-I_r&0\end{pmatrix}$\\
+  $T_m$ & $m$ & invertible diagonal $m\times m$ matrices (\bgref{D.2})\\
+  \bottomrule
+\end{tabularx}\par}
+\end{bgentry}
+
+LoRA's gauge is $\GL_r$, acting on factors by $g\cdot(B,A)=(Bg^{-1},gA)$. Exactly orthogonal OFT keeps the weight inside
+the orbit $W_0\cdot\Ort(n)$, and HRA with even $r$ keeps it inside $W_0\cdot\SO(n)$. $\CO(n)$ is exactly the input-side
+covariance group (\bgref{D.17}) of the PiSSA \citep{meng2024pissa}, MiLoRA \citep{wang2024milora} and paper-form CorDA
+\citep{yang2024corda} splits. LoCO's \citep{nguyen2026loco} skew generator satisfies $UV\T-VU\T=ZJZ\T$ with $Z=[U\ V]$,
+so it is unchanged under $Z\mapsto ZM$ for every $M\in\mathrm{Sp}(2r,\R)$.
+
+\fbAusedin{the notation (Table~\ref{tab:notation}), \thmref{Definition}{I.5}, \thmref{Theorem}{II.5},
+  \thmref{Proposition}{II.16}, LOFT (\S\ref{sec:erlangen-loft}), \thmref{Theorem}{III.5}, \thmref{Theorem}{V.3}.
+  \textsf{Reading:} \citet[Ch.~1]{xhall2015lie}.}
+
+\begin{bgentry}{D.2}{tori, diagonal monoids and saturation}
+The \textbf{diagonal torus} $T_m=\{\diag(d):d_i\ne0\}\cong(\R^\times)^m$ is a commutative Lie group with $2^m$ connected
+components, and $T_m^+=\{\diag(d):d_i>0\}\cong\R_{>0}^m$ is the component of the identity. $\mathrm{Diag}_m$, the set of
+all diagonal matrices including singular ones, is a monoid under multiplication (\bgref{D.10}) whose invertible elements
+form $T_m$. Identifying $\R^2$ with $\mathbb C$, the scaled rotations $a\,\mathrm{Rot}(\theta)$ with $a>0$ form
+$\CO^+(2)\cong\mathbb C^\times$, through $a\,\mathrm{Rot}(\theta)\mapsto ae^{i\theta}$. If a group or monoid $G$ acts on
+a space containing a set $X$, the \textbf{saturation} $G\cdot X=\{g\cdot x:g\in G,\ x\in X\}$ is the smallest $G$-stable
+set containing $X$.
+\end{bgentry}
+
+(IA)$^3$ \citep{liu2022few} on keys and values maps $\ell\mapsto\diag(\ell)W_0$, so its image $\mathrm{Diag}_m\cdot W_0$
+is the closure of the torus orbit $T_m\cdot W_0$. DoRA's image is the saturation $\mathrm{Diag}_m\cdot(W_0+\Mr)$ of
+LoRA's cone. RoAd$_1$ \citep{liao20243} is the left action of $\CO^+(2)^{m/2}\cong(\mathbb C^\times)^{m/2}$ on pairs of
+output rows, which makes it (IA)$^3$ over $\mathbb C$. LoHa's gauge contains a two-sided diagonal torus.
+
+\fbAusedin{\thmref{Theorem}{II.5}, DoRA (\S\ref{sec:erlangen-dora}), \thmref{Proposition}{II.8},
+  \thmref{Proposition}{II.9}, \thmref{Proposition}{II.12}, the hyperparameter torus (\S\ref{sec:fibres-torus}).}
+
+\begin{bgentry}{D.3}{permutations, monomial matrices, semidirect products, normalisers}
+$S_d$ is the group of permutations of $d$ objects, realised by permutation matrices. A matrix is \textbf{monomial} if
+each row and each column has exactly one nonzero entry. Every monomial matrix factors uniquely as $DP$ with $D\in T_m$
+and $P$ a permutation matrix, and $T_m$ is normal in the group $\mathrm{Mon}_m$ of monomial matrices, so
+$\mathrm{Mon}_m=T_m\rtimes S_m$. Here a \textbf{semidirect product} $N\rtimes H$ is a group with a normal subgroup $N$
+and a subgroup $H$ such that $N\cap H=\{e\}$ and $NH$ is the whole group. The \textbf{signed permutations}
+$B_r=\{\pm1\}^r\rtimes S_r=\mathrm{Mon}_r\cap\Ort(r)$ are the monomial matrices with entries $\pm1$, and $\lvert
+B_r\rvert=2^rr!$. The \textbf{normaliser} of a subset $H\subseteq G$ is $N_G(H)=\{g\in G:gHg^{-1}=H\}$.
+\end{bgentry}
+
+A monomial $g$ satisfies $g\,\mathrm{Diag}_m\,g^{-1}=\mathrm{Diag}_m$, and in $\GL_m$ the normaliser of $T_m$ is exactly
+$\mathrm{Mon}_m$. This puts $\mathrm{Mon}_m\times\GL_n$ inside the covariance group (\bgref{D.17}) of output scalings
+such as (IA)$^3$ and DoRA's magnitude. Adam \citep{xkingma2015adam} acts coordinatewise, so on LoRA's full-rank locus with
+channel-uniform hyperparameters (one learning rate, $\varepsilon$ and decay per factor) it is equivariant, of LoRA's
+gauge, only under $B_r\subset\Ort(r)\subset\GL_r$ (\thmref{Theorem}{III.12}). By \thmref{Lemma}{VI.2}, an invertible linear map that
+commutes with a non-affine $C^2$ activation is monomial.
+
+\fbAusedin{DoRA (\S\ref{sec:erlangen-dora}), \thmref{Proposition}{II.8}, \thmref{Proposition}{II.9},
+  \thmref{Theorem}{III.12}, \thmref{Corollary}{III.13}, \thmref{Proposition}{V.4}, \thmref{Lemma}{VI.2}, the privileged
+  basis (\S\ref{sec:merge-basis}).}
+
+\begin{bgentry}{D.4}{connectedness and the identity component}
+The \textbf{identity component} $G^\circ$ of a Lie group $G$ is the connected component containing $e$. It is an open
+normal subgroup. $\GL_n$ has two components, told apart by the sign of the determinant, and $\GL^+(n)=\{\det>0\}$ is the
+identity component; likewise $\SO(n)\subset\Ort(n)$ and $T_m^+\subset T_m$. A subset $U$ is \textbf{symmetric} if
+$U^{-1}=U$. Every neighbourhood of $e$ contains a symmetric one, and in a connected group a symmetric neighbourhood $U$
+of $e$ generates the group as a monoid, so every element is a finite product $u_1\cdots u_k$ with $u_i\in U$.
+\end{bgentry}
+
+In merge-and-restart of a method of action type (\bgref{D.12}), each cycle applies one element of a set $S$. If $S$
+contains a neighbourhood of the identity in a connected group $H$, repeated merging reaches all of $H$
+(\thmref{Theorem}{V.3}(b)). HF's \citep{xmangrulkar2022peft} Cayley--Neumann OFT factors have $\det R\ge0$, so the
+invertible ones lie in $\GL^+(b)$; they generate $\prod\GL^+(b)$ as a group, or $\prod\CO^+(2)$ when $b=2$.
+
+\fbAusedin{complete invariants (\S\ref{sec:erlangen-invariants}), \thmref{Theorem}{V.3}, the corollaries of
+  \thmref{Theorem}{V.3} (\S\ref{sec:base-rebase}).}
+
+\begin{bgentry}{D.5}{Lie algebras; the commutator; $\gl$, $\so$, $\Sym$, $\wedge$}
+The \textbf{Lie algebra} of a matrix group $G\subseteq\GL_n$ is $\mathfrak g=\{X:e^{tX}\in G\text{ for all }t\in\R\}$,
+the tangent space of $G$ at $I$. It is a vector space closed under the \textbf{commutator} $[X,Y]=XY-YX$. The paper uses
+$\gl_r$ (all $r\times r$ matrices, for $\GL_r$), $\so(n)$ (skew matrices $\Omega\T=-\Omega$, for $\Ort(n)$ and
+$\SO(n)$), the diagonal matrices (for $T_m$), $\R I\oplus\so(n)$ (for $\CO(n)$) and $\mathfrak{sp}(2r)=\{X:X\T
+J+JX=0\}$. For a subspace $V\subseteq\R^n$, $\so(V)$ consists of the skew maps of $V$ extended by $0$ on $V^\perp$. The
+symmetric matrices $\Sym_r$ do not form a Lie algebra, since $[S,S']$ is skew. Write $v\wedge w=vw\T-wv\T\in\so(n)$,
+$U\wedge V$ for the span of the $u\wedge v$ with $u\in U$, $v\in V$, and $L_{ab}=e_a\wedge e_b=E_{ab}-E_{ba}$. Then
+$[L_{ac},L_{cb}]=L_{ab}$ for distinct $a,b,c$.
+\end{bgentry}
+
+For injective $W_0$, at HRA's paired initialisation $u_{2i-1}=u_{2i}=w_i$ ($i\le k=r/2$, with independent $w_i$ and
+$U=\spanop\{w_i\}$ of dimension $k$), the first-order image is $S_1=W_0\cdot\{\Omega\in\so(n):P_{U^\perp}\Omega
+P_{U^\perp}=0\}=W_0\cdot(U\wedge\R^n)$, a subspace of $W_0\cdot\so(n)$ of dimension $kn-k(k+1)/2$ (\bgref{C.13}). LOFT
+\citep{zhao2026loft} trains a skew $E\in\so(r)$ inside a fixed $r$-dimensional input subspace. The bracket identity lets
+rotations of overlapping coordinate blocks generate rotations of their union (\bgref{D.8}).
+
+\fbAusedin{\thmref{Theorem}{II.7}, the LOFT example and LOFT fixes one leaf (\S\ref{sec:erlangen-loft}),
+  \thmref{Theorem}{III.5}, \thmref{Theorem}{V.3}. \textsf{Reading:} \citet[Ch.~3]{xhall2015lie}.}
+
+\begin{bgentry}{D.6}{the exponential map; one-parameter subgroups}
+For $X\in\mathfrak g$, the curve $t\mapsto e^{tX}$ of matrix exponentials is a \textbf{one-parameter subgroup}, a smooth
+homomorphism $(\R,+)\to G$, and every continuous one-parameter subgroup has this form for a unique $X$, its
+\textbf{generator}. The exponential map $\mathfrak g\to G$ has derivative $\id$ at $0$, so it maps a neighbourhood of
+$0$ diffeomorphically onto a neighbourhood of $I$. It is onto for $\SO(n)$ and not onto for $\GL^+(n)$, since
+$\diag(-1,-2)$ is $e^X$ for no real $X$.
+\end{bgentry}
+
+The one-parameter subgroup $t\mapsto(Be^{-tX},e^{tX}A)$ of LoRA's gauge moves along a fibre without changing $BA$.
+\thmref{Theorem}{III.5} builds its isometries as $k=e^{\tau\xi}$ from generators $\xi$ with $\Lambda^{-1}\xi$
+antisymmetric. LOFT may use the exponential as its map $\so(r)\to\SO(r)$, and the Kempf--Ness argument (\bgref{D.30})
+differentiates the norm along $e^{t\xi}$.
+
+\fbAusedin{\thmref{Theorem}{III.5}, \thmref{Proposition}{III.7}, LOFT (\S\ref{sec:erlangen-loft}),
+  \thmref{Theorem}{V.3}. \textsf{Reading:} \citet[Ch.~2]{xhall2015lie}.}
+
+\begin{bgentry}{D.7}{the Cayley map and its Neumann truncation}
+For skew $\Omega$ the eigenvalues are imaginary, so $I-\Omega$ is invertible, and the \textbf{Cayley map} is
+\[C(\Omega)=(I+\Omega)(I-\Omega)^{-1}.\]
+It lands in $\SO(n)$, and $C(\Omega)-I=2\Omega(I-\Omega)^{-1}$, so $\rk(C(\Omega)-I)=\rk\Omega$. Its expansion
+$C(\Omega)=I+2\Omega+2\Omega^2+\cdots$ shows that its derivative at $0$ is $2\,\id$. It is a diffeomorphism from
+$\so(n)$ onto the open dense set of rotations with no eigenvalue $-1$, with inverse $R\mapsto(R-I)(R+I)^{-1}$, so it
+misses, for instance, $\diag(-1,-1,1,\dots,1)$.
+\end{bgentry}
+
+Exact-Cayley OFT and block OFT are orthogonal, so they preserve $K_{\mathrm{out}}=WW\T$ (\bgref{D.15}) and the spectrum.
+HF PEFT's default (since version 0.18) truncates $(I-Q)^{-1}$ to $I+Q+Q^2+Q^3$, which gives
+$R=C(Q)(I-Q^4)$. As $Q^4$ is symmetric and
+commutes with $C(Q)$, $R\T R=(I-Q^4)^2\ne I$, and for small $Q$ each merge shrinks $K_{\mathrm{out}}$. The rank identity
+is how \thmref{Theorem}{II.7}(c) identifies HRA's image germ with the cone of skew matrices of rank at most $r$.
+
+\fbAusedin{the thesis (Exposé~\ref{sec:thesis}), \thmref{Corollary}{II.6}, \thmref{Theorem}{II.7}, the Gram lab of the
+  companion site (\S\ref{sec:erlangen-invariants}), the corollaries of \thmref{Theorem}{V.3} (\S\ref{sec:base-rebase}).}
+
+\begin{bgentry}{D.8}{Lie subgroups and subalgebras; the generated Lie algebra}
+A \textbf{Lie subgroup} of $G$ is a subgroup with a Lie group structure for which the inclusion is an injective
+immersion; it need not be closed. Connected Lie subgroups $H\subseteq G$ correspond one to one to Lie subalgebras
+$\mathfrak h\subseteq\mathfrak g$, with $H$ the subgroup generated by $e^{\mathfrak h}$. The Lie algebra
+\textbf{generated} by subalgebras $\mathfrak h_1,\dots,\mathfrak h_p$, written $\operatorname{Lie}\langle\mathfrak
+h_1,\dots,\mathfrak h_p\rangle$, is the smallest subalgebra containing them, the span of their elements and all iterated
+brackets of them.
+\end{bgentry}
+
+Block OFT, BOFT \citep{liu2023parameter} factors and Givens rotations \citep{ma2024parameter} use $\so(I_j)$ for
+coordinate blocks $I_j\subseteq\{1,\dots,n\}$. Since $[L_{ac},L_{cb}]=L_{ab}$, two overlapping blocks generate $\so$ of
+their union, and $\operatorname{Lie}\langle\so(I_j)\rangle_j=\bigoplus_C\so(C)$, summed over the connected components
+$C$ of the hypergraph with vertices $\{1,\dots,n\}$ and hyperedges $I_j$. Two vertices share a component when a chain of
+hyperedges, each meeting the next, joins them. Butterfly factors connect this hypergraph only at full depth.
+
+\fbAusedin{\thmref{Theorem}{V.3}, Figure~\ref{fig:rebase}(b), the corollaries of \thmref{Theorem}{V.3}
+  (\S\ref{sec:base-rebase}), LOFT fixes one leaf (\S\ref{sec:erlangen-loft}). \textsf{Reading:}
+  \citet[Ch.~19]{xlee2013introduction}; \citet[Ch.~5]{xhall2015lie}.}
+
+\begin{bgfact}{D.9}{Yamabe's theorem}
+Every path-connected subgroup of a Lie group is a Lie subgroup. Consequently, if $H_1,\dots,H_p$ are connected Lie
+subgroups of $G$, the subgroup they generate is the connected Lie subgroup $H$ with
+$\operatorname{Lie}(H)=\operatorname{Lie}\langle\mathfrak h_1,\dots,\mathfrak h_p\rangle$ \citep{xyamabe1950arcwise}; a
+short proof is in \citet{xgoto1969arcwise}.
+\end{bgfact}
+
+The subgroup generated by the $H_i$ is path-connected, because products of paths are paths, so the theorem makes it a
+Lie subgroup and the correspondence of \bgref{D.8} names it. With \bgref{D.4}, this is why a re-merged action method
+whose cycles contain a neighbourhood of the identity in each $H_i$ reaches exactly the connected subgroup with Lie
+algebra $\operatorname{Lie}\langle\mathfrak h_1,\dots,\mathfrak h_p\rangle$, and why exact-Cayley block-orthogonal
+factors reach $\prod_C\SO(C)$.
+
+\fbAusedin{\thmref{Theorem}{V.3}, the corollaries of \thmref{Theorem}{V.3} (\S\ref{sec:base-rebase}).}
+
+\begin{bgentry}{D.10}{monoids, units, monoid orbits, homomorphisms}
+A \textbf{monoid} is a set with an associative product and an identity. Its invertible elements form its \textbf{group
+of units}. The submonoid \textbf{generated} by a subset $S$ consists of all finite products $s_1\cdots s_k$ of elements
+of $S$, the empty product being the identity. A monoid acts on a set when $1\cdot x=x$ and $s\cdot(t\cdot x)=(st)\cdot
+x$, and the \textbf{monoid orbit} of $x$ is $\{s\cdot x\}$. A \textbf{homomorphism} of monoids preserves products and
+the identity. Examples are $\mathrm{Diag}_m$, $M_2(\R)$ and $\operatorname{End}(\Theta)$ under multiplication, with
+units $T_m$, $\GL_2(\R)$ and $\GL(\Theta)$, and finite multisets under disjoint union $\uplus$. Additive monoids
+$\mathrm{Mon}(C)$ are in \bgref{B.14}.
+\end{bgentry}
+
+Merge-and-restart reaches the orbit of the monoid that one cycle generates, which is $\theta_0+\mathrm{Mon}(C)$ for an
+additive method $\rho=\theta_0+\delta$ with shape $C=\Im\delta$ (\bgref{B.14}) and $\langle S\rangle\cdot\theta_0$ for a
+method of action type (\bgref{D.12}) whose cycle applies elements of $S$. RoAd$_2$'s blocks range over $M_2(\R)$. For a
+fixed query, attention's pair (total weight, weighted sum of values) is a homomorphism from multisets of key--value
+pairs to $(\R_{\ge0}\times\R^{d_v},+)$ (\bgref{D.34}).
+
+\fbAusedin{\thmref{Theorem}{V.3}, restarting (\S\ref{sec:base-rebase}), DoRA (\S\ref{sec:erlangen-dora}),
+  \thmref{Proposition}{II.9}, \thmref{Theorem}{VI.5}, attention (\S\ref{sec:merge-attention}).}
+
+\begin{bgfact}{D.11}{Cartan--Dieudonné theorem; Scherk's sharp form}
+For nonzero $u\in\R^n$, the \textbf{reflection} $H_u=I-2uu\T/\|u\|^2$ fixes the hyperplane $u^\perp$ and has $\det
+H_u=-1$. Every $R\in\Ort(n)$ is a product of at most $n$ reflections (Cartan--Dieudonné). In Scherk's sharp form, if
+$k=\rk(R-I)$, then $R$ is a product of exactly $k$ reflections and of no fewer. Hence $\det R=(-1)^k$, and every
+$R\in\SO(n)$ is a product of $\rk(R-I)$ reflections, an even number. See \citet{xscherk1950decomposition} and
+\citet[Ch.~III]{xartin1957geometric}.
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+A product of $j$ reflections fixes an intersection of $j$ hyperplanes, so $\rk(R-I)\le j$. Conversely, pick $x$ with
+$Rx\ne x$ and put $u=Rx-x$. Then $H_u$ swaps $Rx$ and $x$ and fixes every fixed vector of $R$, so $H_uR$ fixes one more
+dimension, and induction on $k$ finishes.
+
+HRA multiplies $r$ reflections, so $\rk(R-I)\le r$, and $\det R=1$ for even $r$. Scherk's form gives the converse. For
+injective $W_0$ and even $r$, HRA reaches all of $(W_0+\Mr)\cap W_0\cdot\SO(n)$, padding with pairs $H_uH_u=I$, and
+re-merged HRA reaches $W_0\cdot\SO(n)$ within $\lceil n/r\rceil$ cycles.
+
+\fbAusedin{\thmref{Theorem}{II.7}, HRA is a meet (\S\ref{sec:erlangen-hra}), the corollaries of \thmref{Theorem}{V.3}
+  (\S\ref{sec:base-rebase}).}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Actions, orbits and invariants}
+
+\begin{bgentry}{D.12}{group actions}
+A (left) \textbf{action} of a group $G$ on a set $X$ is a map $(g,x)\mapsto g\cdot x$ with $e\cdot x=x$ and
+$g\cdot(h\cdot x)=(gh)\cdot x$. A \textbf{right} action $x\cdot g$ satisfies $x\cdot(gh)=(x\cdot g)\cdot h$, and $g\cdot
+x:=x\cdot g^{-1}$ turns it into a left one. The action is \textbf{smooth} if $G\times X\to X$ is smooth, and
+\textbf{linear} if $X$ is a vector space and each map $x\mapsto g\cdot x$ is linear.
+\end{bgentry}
+
+On weights, $W\mapsto WR$ is a right action of $\Ort(n)$ on the input side and $W\mapsto PW$ a left action of $\Ort(m)$
+on the output side, and $(g,h)\cdot W=gWh^{-1}$ is a left action of $\GL_m\times\GL_n$. On LoRA's factors,
+$g\cdot(B,A)=(Bg^{-1},gA)$ is a linear left action of $\GL_r$. A method is of \textbf{action type} when
+$\rho(q)=\gamma(q)\cdot\theta_0$ for a map $\gamma$ into a group acting on $\Theta$, as for OFT and HRA. (This $\gamma$
+follows the exposés and is unrelated to the cotangent signal $\gamma(t)$ of \bgref{C.2} and \bgref{D.26}.) (IA)$^3$ has
+the same form with the monoid $\mathrm{Diag}_m$ in place of a group, and DoRA's magnitude applies that monoid to LoRA's
+weight.
+
+\fbAusedin{\thmref{Definition}{I.2}, the notation (Table~\ref{tab:notation}), Erlangen (\S\ref{sec:erlangen}),
+  \thmref{Theorem}{II.5}, \thmref{Theorem}{III.5}.}
+
+\begin{bgentry}{D.13}{orbits, stabilisers, free actions}
+The \textbf{orbit} of $x$ is $G\cdot x=\{g\cdot x:g\in G\}$, its closure is the \textbf{orbit closure}, and its
+\textbf{stabiliser} is the closed subgroup $G_x=\{g:g\cdot x=x\}$. For a smooth action of a Lie group, $g\mapsto g\cdot
+x$ induces an injective immersion $G/G_x\to X$ with image $G\cdot x$, so the orbit is an immersed submanifold of
+dimension $\dim G-\dim G_x$. The \textbf{infinitesimal stabiliser} $\{\xi\in\mathfrak g:\xi\cdot x=0\}$ is the Lie
+algebra of $G_x$. The action is \textbf{free} if every stabiliser is trivial, and the \textbf{generic stabiliser} is the
+stabiliser at a generic point, one in a suitable dense open set. Each map $x\mapsto g\cdot x$ carries an orbit onto
+itself, so all its points look alike; orbits are \textbf{homogeneous}.
+\end{bgentry}
+
+$\GL_r$ acts freely on pairs with $\rk A=r$, since $gA=A$ forces $g=I$, so LoRA's generic fibre, a single orbit, has
+dimension $r^2$. LoHa's joint gauge $\GL_{r_1}\times\GL_{r_2}\times T_m\times T_n$ has a one-dimensional generic
+stabiliser, so its orbits have dimension $r_1^2+r_2^2+m+n-1$. By homogeneity, the two-sided torus orbit
+$\{\diag(a)W_0\diag(b)\}$ has dimension $m+n-c(W_0)$ at each of its points, with $c(W_0)$ the number of connected
+components of the support graph, the bipartite graph on the $m$ rows and $n$ columns with an edge $\{i,j\}$ where
+$(W_0)_{ij}\ne0$. The images of (IA)$^3$ and RoAd$_1$ are orbit closures.
+
+\fbAusedin{Erlangen (\S\ref{sec:erlangen}), \thmref{Theorem}{II.5}, \thmref{Proposition}{II.9}, the image germ
+  (Exposé~\ref{sec:image}), \thmref{Proposition}{II.12}, Rosetta entries 6 and 11 (Exposé~\ref{sec:rosetta}).
+  \textsf{Reading:} \citet[Ch.~7 and~21]{xlee2013introduction}.}
+
+\begin{bgentry}{D.14}{Haar measure; invariant measures on homogeneous spaces}
+A compact Lie group $K$ carries a unique invariant probability measure, its \textbf{Haar measure}. If $K$ acts
+transitively on $X$, so that $X\cong K/K_x$ is a \textbf{homogeneous space}, then $X$ carries a unique $K$-invariant
+probability measure, the image of Haar measure under $k\mapsto k\cdot x$. The Grassmannian $\Gr(r,n)$ of $r$-dimensional
+subspaces of $\R^n$ (\bgref{C.15}) is a homogeneous space of $\Ort(n)$.
+\end{bgentry}
+
+If $A_0\in\R^{r\times n}$ has i.i.d.\ Gaussian entries, its law is unchanged by $A_0\mapsto A_0R$ for $R\in\Ort(n)$, and
+$A_0$ has rank $r$ almost surely. So $\operatorname{row}A_0$ is an $\Ort(n)$-invariant random point of $\Gr(r,n)$, and
+by uniqueness it is Haar-distributed. Vanilla LoRA with a Gaussian $A_0$ therefore picks a Haar-random point of
+$\Gr(r,n)$, the space that classifies its stratum $\mathrm T_A$. Kaiming-uniform entries are not rotation invariant, so
+under HF's default the point is not exactly Haar-distributed.
+
+\fbAusedin{the three strata (\S\ref{sec:strata-three}), \thmref{Theorem}{II.2}. \textsf{Reading:}
+  \citet[Ch.~3]{xmattila1995geometry}.}
+
+\begin{bgentry}{D.15}{invariants and complete invariants}
+A map $f:X\to Y$ is \textbf{invariant} under an action if $f(g\cdot x)=f(x)$ for all $g$ and $x$, so it is constant on
+orbits. It is a \textbf{complete invariant} if moreover $f(x)=f(x')$ implies $x'\in G\cdot x$; it then identifies the
+orbit space $X/G$ with the image of $f$.
+
+\smallskip
+{\centering\small\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}XX@{}}
+  \toprule
+  \headrow \textbf{action on $W\in\R^{m\times n}$} & \textbf{complete invariant}\\
+  \midrule
+  $W\mapsto WR$, $R\in\Ort(n)$ (input side) & $K_{\mathrm{out}}=WW\T$\\
+  $W\mapsto PW$, $P\in\Ort(m)$ (output side) & $K_{\mathrm{in}}=W\T W$\\
+  $W\mapsto PWR$, $P\in\Ort(m)$, $R\in\Ort(n)$ & singular values with multiplicity\\
+  $W\mapsto DW$, $D\in T_m^+$, $W$ without zero rows & the rays $\R_{>0}w_i$ of the rows\\
+  $W\mapsto E\odot W$, $E\in(\R^\times)^{m\times n}$ & the zero pattern\\
+  \bottomrule
+\end{tabularx}\par}
+\end{bgentry}
+
+If a method's image lies in one orbit, every invariant of that action stays fixed through training and merging. This is
+why exactly orthogonal methods never change $K_{\mathrm{out}}$ or the spectrum (\thmref{Corollary}{II.6}). Isomorphism
+invariants of methods, such as $S_1$, $d(M)$ and the first-order deficit, play the same role one level up, since methods
+with different values cannot be isomorphic.
+
+\fbAusedin{\thmref{Theorem}{II.5}, complete invariants and the Gram lab (\S\ref{sec:erlangen-invariants}),
+  \thmref{Corollary}{II.6}, \thmref{Observation}{I.6}, the seven borrowed words (Exposé~\ref{sec:analogy}).}
+
+\begin{bgfact}{D.16}{first fundamental theorem for $\Ort(n)$; Witt's extension theorem}
+(First fundamental theorem.) Every polynomial in the rows $w_1,\dots,w_m\in\R^n$ of $W$ that is invariant under
+$W\mapsto WR$, $R\in\Ort(n)$, is a polynomial in the inner products $\langle w_i,w_j\rangle$, the entries of $WW\T$. For
+a compact group acting linearly, invariant polynomials separate orbits, so $WW\T$ is a complete invariant. (Witt's
+extension theorem, Euclidean case.) A linear isometry between two subspaces of $\R^n$ extends to an element of
+$\Ort(n)$. See \citet[Ch.~II]{xweyl1939classical} and \citet[Ch.~5]{xgoodman2009symmetry}.
+\end{bgfact}
+
+\paragraph{Witt gives the orbit separation directly}
+If $WW\T=W'{W'}\T$, the map $\sum_ic_iw_i\mapsto\sum_ic_iw_i'$ is well defined and isometric on the row spaces, because
+$\|\sum_ic_iw_i\|^2=c\T WW\T c$. Extend it by an isometry between the orthogonal complements to $R\T\in\Ort(n)$; then
+$W'=WR$.
+
+This is item (1) of \thmref{Theorem}{II.5}, the reason exactly orthogonal input-side methods are pinned to
+$K_{\mathrm{out}}(W_0)$. Applied to $W\T$, it gives $K_{\mathrm{in}}$ for the output side.
+
+\fbAusedin{\thmref{Theorem}{II.5}, the known results (Exposé~\ref{sec:analogy}).}
+
+\begin{bgentry}{D.17}{Klein's Erlangen programme}
+\citet{xklein1872vergleichende} proposed to define a geometry by a space together with a group acting on it, and to
+study the properties the group preserves. Euclidean geometry keeps lengths and angles, the invariants of rigid motions.
+Affine geometry keeps parallelism and ratios along parallel lines but not lengths or angles, because its group is
+larger. A larger group leaves fewer invariants.
+\end{bgentry}
+
+For a group-type method the reading is a theorem, because the image lies in one orbit and so the method can change
+nothing the group preserves. For a cone such as LoRA's image the word only names its \textbf{covariance group}, the
+largest $\mathcal G_M\subseteq\GL_m\times\GL_n$ with $\Im M(gW_0h^{-1})=g\,\Im M(W_0)\,h^{-1}$ (\bgref{D.18}). For LoRA
+this is all of $\GL_m\times\GL_n$, for (IA)$^3$ on keys and values it is $\mathrm{Mon}_m\times\GL_n$, and for the PiSSA
+split it is $\CO(m)\times\CO(n)$.
+
+\fbAusedin{Erlangen and what ``Erlangen'' means here (\S\ref{sec:erlangen}), \thmref{Definition}{II.14}, the borrowed
+  words (Exposé~\ref{sec:rosetta}), the seven borrowed words (Exposé~\ref{sec:analogy}). \textsf{Reading:}
+  \citet[Ch.~4]{xsharpe1997differential}.}
+
+\begin{bgentry}{D.18}{equivariance and invariance of maps, update rules and merge rules}
+A map $F:X\to Y$ between spaces with $G$-actions is \textbf{equivariant} if $F(g\cdot x)=g\cdot F(x)$, and
+\textbf{invariant} if $F(g\cdot x)=F(x)$. An update rule on parameters is equivariant under a subgroup $H$ of the gauge
+if, started from $h\cdot q$ with correspondingly transformed optimizer state, it produces $h$ applied to the iterates
+started from $q$. A rule that uses randomness is \textbf{equivariant in distribution} if $F(g\cdot x)$ and $g\cdot F(x)$
+have the same law for every $x$.
+\end{bgentry}
+
+On LoRA's full-rank locus, with channel-uniform hyperparameters, the largest such subgroup of $\GL_r$ is $\Ort(r)$ for
+SGD, $B_r$ for Adam and all of $\GL_r$ for undamped scaled GD (\bgref{D.23}, \thmref{Theorem}{III.12}). An equivariant
+rule started from gauge-related points traces the same weights, since $\rho(h\cdot q)=\rho(q)$. Merge rules should be
+invariant under each adapter's gauge. Task arithmetic \citep{ilharco2022editing} $\sum_iw_is_iB_iA_i$ is, while
+LoraHub's \citep{huang2023lorahub} $(\sum_iw_iB_i)(\sum_jw_jA_j)$ is not. On a weight space $\R^N$, DARE's
+\citep{yu2023language} random drop-and-rescale is equivariant under the invertible diagonal matrices $T_N$ for each
+fixed mask, and under the monomial matrices $\mathrm{Mon}_N$ (\bgref{D.3}) in distribution.
+
+\fbAusedin{\thmref{Definition}{II.14}, \thmref{Observation}{II.15}, \thmref{Theorem}{III.12},
+  \thmref{Corollary}{III.13}, Figure~\ref{fig:gauge}, \thmref{Proposition}{V.4}.}
+
+\begin{bgentry}{D.19}{multihomogeneous maps; multidegree}
+Split the parameters into blocks $q=(q_1,\dots,q_k)$. A map $\delta$ is \textbf{multihomogeneous} of
+\textbf{multidegree} $(d_1,\dots,d_k)$ if $\delta(c_1q_1,\dots,c_kq_k)=c_1^{d_1}\cdots c_k^{d_k}\,\delta(q)$ for all
+real $c_i$. LoRA's $BA$ has multidegree $(1,1)$, and LoHa's $(B_1A_1)\odot(B_2A_2)$ has multidegree $(1,1,1,1)$.
+\end{bgentry}
+
+If some $d_i\ge1$, the image of $\delta$ contains $0$ and is closed under multiplication by every nonnegative scalar, so
+it is a cone with vertex $0$ (\bgref{C.10}). For a method $\rho=\theta_b+s\,\delta$ started where $\delta(q_0)=0$, so
+that $\theta_b=\theta_0$, the image is the cone $\theta_0+s\,\Im\delta$ with vertex $\theta_0$. For $c\in\R^k_{>0}$, the
+change $q_i\mapsto c_iq_i$ together with $s\mapsto s\prod_ic_i^{-d_i}$ leaves $\rho$ unchanged. That rescaling is an
+isomorphism of methods and the source of the hyperparameter torus (\bgref{D.20}).
+
+\fbAusedin{the image germ (Exposé~\ref{sec:image}), \thmref{Theorem}{III.10}, the seven axes (\S\ref{sec:atlas-axes}).}
+
+\begin{bgentry}{D.20}{orbit space of a positive torus}
+Let $\R^k_{>0}$ act on positive variables $x\in\R^N_{>0}$ by $x_j\mapsto x_j\prod_ic_i^{a_{ji}}$, with a real weight
+matrix $a=(a_{ji})$. In logarithms this is translation by the column space of $a$, so the orbits are parallel affine
+subspaces and the orbit space is a vector space of dimension $N-\rk a$. The monomials $\prod_jx_j^{b_j}$ with $b\T a=0$
+are invariant, and a basis of such vectors $b$ gives a complete set of invariants.
+\end{bgentry}
+
+Under the hypotheses of \thmref{Theorem}{III.10}, taken with Adam at $\varepsilon=0$, no weight decay or clipping and a
+shared schedule (otherwise the per-block $\varepsilon$, decay and clipping thresholds rescale as well), the torus acts
+on LoRA's hyperparameters by $s\mapsto s/(c_Ac_B)$, $\eta_A\mapsto c_A\eta_A$, $\eta_B\mapsto c_B\eta_B$,
+$\sigma_A\mapsto c_A\sigma_A$, with $\sigma_A$ the scale of $A$'s initialisation, without changing the weight
+trajectory. The invariants are $s\eta_A\eta_B$ and $\sigma_A/\eta_A$, so only two of the four knobs matter. LoRA+
+\citep{hayou2024lora} with ratio $\lambda$ replaces $\eta_B$ by $\lambda\eta_B$, which changes the invariants exactly as
+replacing $\alpha$ by $\lambda\alpha$ does. Under SGD the rates scale by $c_i^2$, and the invariants become
+$s^2\eta_A\eta_B$ and $\sigma_A^2/\eta_A$.
+
+\fbAusedin{\thmref{Theorem}{III.10}, \thmref{Corollary}{III.11}, Figure~\ref{fig:orbit}, Rosetta entry 23
+  (Exposé~\ref{sec:rosetta}), \thmref{Prediction}{X.1}.}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Gauge, quotients and metrics}
+
+\begin{bgentry}{D.21}{gauge symmetry of a parametrisation}
+The \textbf{gauge group} of a method $\rho:Q\to\Theta$ is the group of diffeomorphisms $\varphi$ of $Q$ with
+$\rho\circ\varphi=\rho$. If a Lie group $G$ acts on $Q$ with $\rho(g\cdot q)=\rho(q)$, each orbit lies inside a fibre
+$\rho^{-1}(\theta)$ (\bgref{C.6}), so $d(M)\le\lvert M\rvert-\dim(\text{generic orbit})$. The action is \textbf{locally
+transitive} on a fibre when its orbits are open in the fibre, that is, when orbits and fibre have the same dimension
+there; on generic fibres this gives $d(M)=\lvert M\rvert-\dim(\text{generic orbit})$, and we then call $G$ the generic
+gauge. Here the word means only this symmetry group; no connection is involved.
+\end{bgentry}
+
+LoRA's $\GL_r$ acts freely and locally transitively on full-rank fibres, so $d=r(m+n)-r^2=r(m+n-r)$, and $r^2$
+parameters are gauge waste. HRA's generic fibres have dimension $r(r+1)/2$, while its $r$ scalings $u_i\mapsto c_iu_i$
+sweep out only $r$ of those dimensions, so the scalings do not fill the fibres; \thmref{Theorem}{II.7}(a) describes the
+rest of the gauge as non-linear. For $r=2$ the fibre through $(u_1,u_2)$ has dimension $3$, made up of the two scalings
+and of rotating $u_1$ and $u_2$ by a common angle inside their plane, which keeps the angle between them and hence
+$H_{u_1}H_{u_2}$, the rotation of that plane by twice the angle. The plane depends on the point, so this move is not a
+linear action on parameters. The \textbf{Hurwitz moves} $(u_i,u_{i+1})\mapsto(H_{u_i}u_{i+1},u_i)$ preserve the product
+of reflections, since $H_aH_b=H_{H_ab}H_a$, and they satisfy the braid relations, so the braid group on $r$ strands,
+unrelated to the signed permutations $B_r$, acts on HRA's parameters. These moves are discrete and add no dimension to
+the fibre.
+
+\fbAusedin{\thmref{Definition}{I.5}, invariants of a method (\S\ref{sec:slice-invariants}), the notation
+  (Table~\ref{tab:notation}), rank and dimension (\S\ref{sec:cut}), \thmref{Proposition}{II.12}, \thmref{Theorem}{II.7},
+  the analogy ``Noether; gauge'' (\S\ref{sec:fibres-charges}), the seven borrowed words (Exposé~\ref{sec:analogy}).}
+
+\begin{bgfact}{D.22}{quotients and descent; the quotient manifold theorem}
+For an action of $G$ on $X$, the \textbf{orbit space} $X/G$ is the set of orbits, with the map $\pi:x\mapsto G\cdot x$.
+A map $f:X\to Y$ that is constant on orbits factors uniquely as $f=\bar f\circ\pi$; this is \textbf{descent}. (Quotient
+manifold theorem.) If a Lie group acts smoothly, freely and properly on a manifold $X$, then $X/G$ is a manifold of
+dimension $\dim X-\dim G$, $\pi$ is a submersion, and $\bar f$ is smooth whenever $f$ is. Properness means that
+$(g,x)\mapsto(g\cdot x,x)$ is a proper map, one under which preimages of compact sets are compact
+\citep[Thm~21.10]{xlee2013introduction}.
+\end{bgfact}
+
+$\GL_r$ acts freely and properly on pairs $(B,A)$ of full rank, and $(B,A)\mapsto BA$ identifies the quotient with
+$\MM_r$, of dimension $r(m+n)-r^2$. A rule for combining LoRA factors is a function of the adapters exactly when it is
+constant on the fibres of $(B_i,A_i)\mapsto(B_iA_i)$, and a cometric on factors that depends only on $W$ descends to
+$\MM_r$.
+
+\fbAusedin{\thmref{Proposition}{V.4}, \thmref{Proposition}{III.4}, \thmref{Observation}{II.15}, when a change of chart
+  does not matter (\S\ref{sec:fibres-naturality}).}
+
+\begin{bgentry}{D.23}{metrics, cometrics and the pulled-back cometric}
+A \textbf{metric} on a vector space $V$ is a positive-definite inner product, equivalently a symmetric positive-definite
+map $g:V\to V^*$, that is, $\langle gv,v\rangle>0$ for $v\ne0$. A \textbf{cometric} is a symmetric positive semidefinite
+map $K:V^*\to V$. It turns a covector, such as a gradient $\nabla_\theta L$, into a velocity $-K\nabla_\theta L$. A
+metric gives the cometric $K=g^{-1}$, while a cometric may be degenerate. Metrics pull back along immersions, and
+cometrics push forward along any smooth map. For instance, gradient flow $\dot q=-\Lambda\nabla_q(L\circ\rho)$ moves the
+weights by $\dot\theta=-K_q\nabla_\theta L$, with
+\[K_q=D\rho_q\,\Lambda\,D\rho_q\T.\]
+\end{bgentry}
+
+For LoRA with \textbf{block-scalar rates}, one rate per factor, $\Lambda=\diag(\eta_BI,\eta_AI)$ on $(B,A)$ and
+$K(G)=s^2(\eta_BGA\T A+\eta_ABB\T G)$. Two points of one fibre give the same weight velocity for every loss exactly when
+their cometrics agree. At points where $A$ has full row rank and $r<n$, this holds for LoRA's linear gauge and plain
+gradient descent exactly along $\Ort(r)$. A rule descends to a cometric on weights when it gives the same weight
+velocity at all points of each fibre; with a point-dependent preconditioner in place of $\Lambda$, undamped scaled GD
+\citep{xtong2021accelerating,zhang2024riemannian} and the SGD variant of LoRA-Pro \citep{wang2024lorac} do, on the
+full-rank locus. Scaled GD multiplies the $B$-gradient by $(AA\T)^{-1}$ and the $A$-gradient by $(B\T B)^{-1}$, and
+undamped means that no ridge term $\delta I$ is added before inverting (\thmref{Proposition}{III.4}).
+
+\fbAusedin{\thmref{Definition}{III.1}, \thmref{Observation}{III.2}, \thmref{Theorem}{III.3},
+  \thmref{Proposition}{III.4}, the metric a method carries (\S\ref{sec:fibres-cometric}), the three invariants
+  (Exposé~\ref{sec:thesis}).}
+
+\begin{bgentry}{D.24}{Riemannian gradient flow; tangent projection; retraction}
+On a submanifold $N\subseteq\Theta$ with the metric induced by the Frobenius inner product, the Riemannian gradient of
+$L|_N$ at $\theta$ is the orthogonal projection $\Pi_{T_\theta N}\nabla L(\theta)$ of the ambient gradient onto the
+tangent space, and the \textbf{Riemannian gradient flow} is $\dot\theta=-\Pi_{T_\theta N}\nabla L(\theta)$. A discrete
+step along the tangent space leaves $N$, so it is followed by a \textbf{retraction}, a smooth map $R_\theta$ from a
+neighbourhood of $0$ in $T_\theta N$ to $N$ with $R_\theta(0)=\theta$ and $DR_\theta(0)=\id$.
+\end{bgentry}
+
+At $W=W_0+X$ with $X\in\MM_r$, $U=\operatorname{col}X$ and $V=\operatorname{row}X$, the tangent space is
+$\{D:P_{U^\perp}DP_{V^\perp}=0\}$ (\bgref{C.12}) and the projection is $P_UG+GP_V-P_UGP_V$. This is LoRA-Pro's
+equivalent gradient, so the SGD variant of LoRA-Pro follows the Riemannian gradient flow on $W_0+\MM_r$. Truncating the
+SVD of $X+\xi$ to rank $r$ is a retraction onto $\MM_r$, the one Riemannion \citep{bogachev2025lora} uses.
+
+\fbAusedin{\thmref{Proposition}{III.4}, when a change of chart does not matter (\S\ref{sec:fibres-naturality}),
+  \thmref{Theorem}{III.12}. \textsf{Reading:} \citet[Ch.~3 and~4]{xabsil2008optimization}.}
+
+\begin{bgfact}{D.25}{distributions, Lie brackets and Frobenius' theorem}
+A \textbf{distribution} $D$ of rank $k$ on an open set $U$ assigns to each point $\theta$ a $k$-dimensional subspace
+$D_\theta$ of directions, smoothly in $\theta$; the word is unrelated to probability distributions. The \textbf{Lie
+bracket} of vector fields is $[X,Y]=DY\cdot X-DX\cdot Y$; flowing along $X$, $Y$, $-X$, $-Y$ for time $t$ misses the
+starting point by $t^2[X,Y]+O(t^3)$. $D$ is \textbf{involutive} if $[X,Y]$ lies in $D$ whenever $X$ and $Y$ do.
+(Frobenius.) $D$ is involutive iff every point lies on a $k$-dimensional \textbf{integral manifold}, a submanifold whose
+tangent space at each of its points $\theta$ is $D_\theta$. A maximal connected integral manifold is a \textbf{leaf}
+\citep[Ch.~19]{xlee2013introduction}. The Frobenius algebras of \bgref{B.6} and the Frobenius norm share only the name.
+\end{bgfact}
+
+On $\R^3$, $D=\spanop\{\partial_x,\ \partial_y+x\,\partial_z\}$ is not involutive, since
+$[\partial_x,\partial_y+x\,\partial_z]=\partial_z\notin D$, so no surface is tangent to $D$. A backward method with
+anchor $a(\theta)$ chooses $D_\theta=\operatorname{im}a(\theta)$, and it reads as a forward method only along integral
+manifolds. GaLore \citep{zhao2024galore} with a projector fixed on each period, LISA \citep{pan2024lisa} and MeZO
+\citep{malladi2023fine} have constant distributions, which are involutive with affine leaves. Full-batch GaLore with
+$T=1$, read as $D_W=\operatorname{Hom}(\R^n,U_r(\nabla L(W)))$ wherever a singular-value gap exists, already fails to be
+involutive for $L=\tfrac12\|W\|_F^2$.
+
+\fbAusedin{when a backward method is a forward one (\S\ref{sec:lens-integrability}), \thmref{Proposition}{IV.3}.}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Conservation and balance}
+
+\begin{bgfact}{D.26}{Noether's theorem for gradient flows}
+Let a Lie group act linearly on $Q=\R^N$ with $\rho(k\cdot q)=\rho(q)$, let $\Lambda\succ0$ be a constant rate matrix,
+and let $\gamma(t)$ be any time-dependent covector on $\Theta$, a gradient or not. Along every solution of $\dot
+q=-\Lambda\,D\rho_q\T\gamma(t)$, and for every generator $\xi$ of the action with $\Lambda^{-1}\xi$ symmetric, the
+\textbf{charge}
+\[J_\xi(q)=\tfrac12\langle q,\Lambda^{-1}\xi\,q\rangle\]
+is constant \citep{kunin2020neural,zhao2022symmetries,marcotte2023abide}.
+\end{bgfact}
+
+\paragraph{The one-line proof}
+Invariance of $\rho$ gives $D\rho_q(\xi q)=0$. Hence $\tfrac{d}{dt}J_\xi=\langle\Lambda^{-1}\xi q,\dot
+q\rangle=-\langle\xi q,D\rho_q\T\gamma\rangle=-\langle D\rho_q\,\xi q,\gamma\rangle=0$.
+
+For scalar LoRA $w=w_0+ba$ with rates $\eta_B,\eta_A$, the charge $b^2/\eta_B-a^2/\eta_A$ is conserved, so every
+trajectory runs along a hyperbola, the Noether hyperbolas of Figure~\ref{fig:noether}(a). \citet{xnoether1918invariante}
+derived conservation laws from symmetries of a Lagrangian; this version needs no Lagrangian and holds for any loss and
+data. For LoRA with rates $\eta_B,\eta_A$, the generators $\xi_X(B,A)=(BX,-XA)$ pass the test exactly for symmetric $X$,
+and the $r(r+1)/2$ charges are the entries of $\Phi=B\T B/\eta_B-AA\T/\eta_A$. Minibatches, LoRA dropout, global-norm
+clipping and DoRA's detached norm keep the required form. Momentum and Adam do not, and under discrete SGD the charge
+drifts, by an amount relative to the charge of order $\eta^2$ per step.
+
+\fbAusedin{\thmref{Theorem}{III.5}, isometries and charges and the analogy ``Noether; gauge''
+  (\S\ref{sec:fibres-charges}), Figure~\ref{fig:noether}, the things one can check (Appendix~\ref{app:repro}),
+  \thmref{Prediction}{X.8}, the seven borrowed words (Exposé~\ref{sec:analogy}).}
+
+\begin{bgentry}{D.27}{Cartan decomposition; polar decomposition}
+The map $\vartheta(\xi)=-\xi\T$ is an automorphism of $\gl_r$ of order two, a \textbf{Cartan involution}. Its $+1$ and
+$-1$ eigenspaces give the \textbf{Cartan decomposition} $\gl_r=\so(r)\oplus\Sym_r$,
+$\xi=\tfrac12(\xi-\xi\T)+\tfrac12(\xi+\xi\T)$, with $[\so,\so]\subseteq\so$, $[\so,\Sym]\subseteq\Sym$ and
+$[\Sym,\Sym]\subseteq\so$. Its group version is the \textbf{polar decomposition}, which says that $(k,S)\mapsto
+k\,e^{S}$ is a diffeomorphism $\Ort(r)\times\Sym_r\to\GL_r$. Hence $g\mapsto g\T g$ identifies the cosets $\Ort(r)g$
+with the positive-definite matrices, $\Ort(r)\backslash\GL_r\cong\Sym^+_r$.
+\end{bgentry}
+
+With block-scalar rates (\bgref{D.23}), the antisymmetric generators $X\in\so(r)$ of LoRA's gauge act by rotations
+$(BO\T,OA)$ that preserve the rate metric, so the optimizer cannot feel them; they are \textbf{isometries}. The
+symmetric generators $X\in\Sym_r$ give the conserved charges of \bgref{D.26}. For general rates the split needs
+$\mathfrak g$ to be closed under $\xi\mapsto\Lambda\xi\T\Lambda^{-1}$. Gradient descent on LoRA is thus a family of
+dynamics indexed by $\Ort(r)\backslash\GL_r$, and the Kempf--Ness argument needs only curves $e^{t\xi}$ with $\xi$
+symmetric.
+
+\fbAusedin{\thmref{Theorem}{III.5}, isometries and charges (\S\ref{sec:fibres-charges}), the three invariants and the
+  thesis (Exposé~\ref{sec:thesis}), \thmref{Proposition}{III.7}, when a change of chart does not matter
+  (\S\ref{sec:fibres-naturality}). \textsf{Reading:} \citet[\S VI.2]{xknapp2002lie}; \citet[\S 7.3]{xhorn2013matrix}.}
+
+\begin{bgentry}{D.28}{balancedness; the conserved $B\T B-AA\T$}
+A factorisation $W=BA$ is \textbf{balanced} if $B\T B=AA\T$, and rate-weighted balanced if $\Phi=B\T
+B/\eta_B-AA\T/\eta_A=0$, that is, $B\T B=cAA\T$ with $c=\eta_B/\eta_A$. For a deep linear network $W=W_L\cdots W_1$ the
+same word means $W_{j+1}\T W_{j+1}=W_jW_j\T$ for every $j$.
+\end{bgentry}
+
+Under gradient flow with block-scalar rates, $\Phi$ is conserved (\bgref{D.26}), so rate-weighted balancedness, once it
+holds, holds forever; at equal rates the two notions agree. Zero-product starts $B_0A_0=0$ have $\langle B_0\T
+B_0,A_0A_0\T\rangle_F=0$, which makes them maximally unbalanced for given norms of the two Gram matrices, since the
+inner product of two positive semidefinite matrices is never negative. From $B_0=0$, conservation gives $B\T
+B=\tfrac{\eta_B}{\eta_A}(AA\T-A_0A_0\T)$, so $AA\T$ never drops below $A_0A_0\T$ in the Loewner order. HF's PiSSA starts
+with $B_0\T B_0=A_0A_0\T$. When $\Phi$ is isotropic, singular values of $\Delta W$ well above the crossover scale
+$\sigma^*$ of \thmref{Theorem}{III.9}, set by the charge, the scale and the rates, follow the balanced dynamics of
+\citet{arora2018optimization}.
+
+\fbAusedin{isometries and charges (\S\ref{sec:fibres-charges}), \thmref{Proposition}{III.7},
+  \thmref{Proposition}{III.8}, \thmref{Theorem}{III.9}, the bibliography. \textsf{Reading:}
+  \citet{arora2018optimization}; \citet{du2018algorithmic}.}
+
+\begin{bgentry}{D.29}{the moment map}
+Let a group $G\subseteq\GL(V)$ that is closed under transpose act on a real inner-product space $V$, and split
+$\mathfrak g=\mathfrak k\oplus\mathfrak p$ into its antisymmetric and symmetric elements. The (real) \textbf{moment map}
+$\mu:V\to\mathfrak p$ is defined by
+\[\langle\mu(v),\xi\rangle=\tfrac12\tfrac{d}{dt}\Big|_{t=0}\|e^{t\xi}v\|^2=\langle\xi v,v\rangle\qquad(\xi\in\mathfrak p).\]
+It records how the norm changes along the symmetric directions of the orbit; the antisymmetric directions preserve the
+norm.
+\end{bgentry}
+
+For LoRA's gauge, $\tfrac{d}{dt}\big|_{0}\big(\|Be^{-tX}\|^2+\|e^{tX}A\|^2\big)=-2\tr(X\mu)$ for symmetric $X$, with
+$\mu=B\T B-AA\T$, so this $\mu$ is the moment map up to sign. Its zero set is the balanced slice, and at equal rates
+$\eta_A=\eta_B=\eta$ it equals $\eta\Phi$, a multiple of the Noether charge.
+
+\fbAusedin{the balanced slice (\S\ref{sec:fibres-balance}), \thmref{Proposition}{III.7}, \thmref{Corollary}{III.6},
+  Figure~\ref{fig:noether}.}
+
+\begin{bgfact}{D.30}{Kempf--Ness theorem, real form}
+Let $G\subseteq\GL(V)$ be a real algebraic group, cut out by polynomial equations, that is closed under transpose (such
+a group is \textbf{reductive}), for instance $\GL_r$ acting on LoRA factors, and let $K=G\cap\Ort(V)$. For $v\in V$, (i)
+$g=e$ is a critical point of $g\mapsto\|g\cdot v\|^2$ iff $\mu(v)=0$, and then $v$ has least norm on $G\cdot v$; (ii)
+$G\cdot v$ is closed iff it contains a point with $\mu=0$; (iii) on a closed orbit, the points with $\mu=0$ form a
+single $K$-orbit; (iv) the closure of every orbit contains exactly one closed orbit
+\citep{xkempf1979length,xbirkes1971orbits,xrichardson1990minimum}.
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+For symmetric $\xi$, $\|e^{t\xi}v\|^2=\sum_ie^{2t\lambda_i}\|v_i\|^2$ in an eigenbasis of $\xi$, which is convex in $t$.
+By the polar decomposition every orbit point is $k\,e^{\xi}v$ with $k\in K$ norm-preserving, so critical points are
+minima and two minima differ by an element of $K$.
+
+For $m=n=r=1$, $t\in\R^\times$ acts by $t\cdot(b,a)=(b/t,ta)$ and $\mu=b^2-a^2$. The orbits are the hyperbolas
+$ba=c\ne0$, which are closed and meet $\mu=0$ in the two points $\pm(b,a)$ with $\lvert b\rvert=\lvert a\rvert$, one
+$\Ort(1)$-orbit; the two punctured axes, which are not closed and avoid $\mu=0$; and the origin. For LoRA in general,
+$K=\Ort(r)$, and a full-rank orbit is closed, being a whole fibre of $(B,A)\mapsto BA$. The least-norm factorisations of
+a fixed $BA$ are the balanced ones, they form one $\Ort(r)$-orbit, and there $\|B\|_F^2+\|A\|_F^2=2\|BA\|_*$. Weight
+decay adds a norm to the loss (\thmref{Corollary}{III.6}). With learning-rate-coupled decay, which multiplies the decay
+of each factor by its rate, $\dot\Phi=-2\lambda\mu$, so the equilibria lie on $\mu=0$, and $\mu$ decays exponentially at
+equal rates. With per-time decay, the same $\lambda$ for both factors, $\dot\Phi=-2\lambda\Phi$, so $\Phi\to0$.
+
+\fbAusedin{the balanced slice (\S\ref{sec:fibres-balance}), \thmref{Proposition}{III.7}, \thmref{Corollary}{III.6},
+  combining (\S\ref{sec:base-combine}), the known results (Exposé~\ref{sec:analogy}), the classification
+  (Exposé~\ref{sec:atlas}).}
+
+\begin{bgfact}{D.31}{the closed orbit in each fibre of $(B,A)\mapsto BA$}
+For $\GL_r$ acting on factor pairs, fix $W$ of rank $k\le r$. Among the pairs with $BA=W$, those with $\rk B=\rk A=k$
+form a single orbit. It is closed, and it lies in the closure of every orbit in the fibre $\{BA=W\}$. Consequently a
+continuous $\GL_r$-invariant function is constant on each fibre of $(B,A)\mapsto BA$. For a complex reductive group
+acting on a vector space, every fibre of the quotient map likewise contains exactly one closed orbit
+\citep[Ch.~1]{xmumford1994geometric}.
+\end{bgfact}
+
+For $m=n=r=1$ (\bgref{D.30}), the fibre $\{ba=0\}$ consists of the origin and the two punctured axes, and the origin,
+its only closed orbit, lies in the closure of both axes. This is the step behind \thmref{Proposition}{V.4}(a). A
+continuous rule for combining LoRA factors that is invariant under each adapter's $\GL_r$ is automatically a function of
+the adapters $B_iA_i$, also off the full-rank locus. Continuity matters. The projector onto $\operatorname{row}A$,
+defined where $\rk A=r$, is invariant, yet it differs at $(0,A)$ and $(0,A')$, which have the same product $0$.
+
+\fbAusedin{\thmref{Proposition}{V.4}, combining (\S\ref{sec:base-combine}).}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection*{Matrix and convexity tools}
+
+\begin{bgfact}{D.32}{Ky Fan's maximum principle}
+Let $S\in\R^{n\times n}$ be symmetric with eigenvalues $\lambda_1\ge\dots\ge\lambda_n$, and let $1\le k\le n$. Then
+\[\max\{\tr(PSP\T):P\in\R^{k\times n},\ PP\T=I_k\}=\lambda_1+\dots+\lambda_k,\]
+attained when the rows of $P$ span a top-$k$ eigenspace. For any matrix $X$ with singular values
+$\sigma_1\ge\sigma_2\ge\cdots$, applying this to $S=X\T X$ gives $\max_P\|XP\T\|_F^2=\sigma_1^2+\dots+\sigma_k^2$, and
+for square $X$ also $\|PXP\T\|_F^2\le\|XP\T\|_F^2\le\sigma_1^2+\dots+\sigma_k^2$. See \citet{xfan1949theorem} and
+\citet[Ch.~III]{xbhatia1997matrix}.
+\end{bgfact}
+
+Among $A_0$ with $A_0A_0\T=cI$, LoRA's initial rate $\|GA_0\T\|_F^2$ under gradient flow is largest when
+$\operatorname{row}A_0$ is the top-$r$ right singular space of $G$, which is LoRA-GA's \citep{wang2024lorab} choice for
+$A_0$. For LOFT, the squared norm of the pulled-back gradient $P_r\skewop(W_0\T G)P_r\T$ is at most $2\sum_{k\le\lfloor
+r/2\rfloor}\mu_k^2$, where $\pm i\mu_k$ are the eigenvalues of the skew matrix $\skewop(W_0\T G)$, whose singular values
+are $\mu_1,\mu_1,\mu_2,\mu_2,\dots$. The floor appears because a skew matrix compressed to an odd-dimensional subspace
+has a zero eigenvalue, and Cauchy interlacing bounds the rest.
+
+\fbAusedin{LOFT (\S\ref{sec:erlangen-loft}), \thmref{Proposition}{II.3}.}
+
+\begin{bgfact}{D.33}{Sylvester equations}
+For $S\in\R^{p\times p}$, $T\in\R^{q\times q}$ and $C\in\R^{p\times q}$, the \textbf{Sylvester equation} $SX+XT=C$ has a
+unique solution $X$ for every $C$ iff $S$ and $-T$ have no eigenvalue in common, since the eigenvalues of $X\mapsto
+SX+XT$ are the sums $\lambda_i(S)+\lambda_j(T)$. If $S$ and $T$ are symmetric positive definite, this holds and
+$X=\int_0^\infty e^{-tS}Ce^{-tT}\,dt$. The Bartels--Stewart algorithm \citep{xbartels1972algorithm} solves the equation
+through Schur forms of $S$ and $T$ \citep[Ch.~4]{xhorn1991topics}.
+\end{bgfact}
+
+LoRA-Pro's equivalent gradient leaves a free $r\times r$ matrix $X$. The published method picks it by solving $B\T
+B\,X+X\,AA\T=C$, with $C$ built from the gradient. On the full-rank locus both Gram matrices are positive definite, so
+$X$ exists and is unique. The first-order weight velocity does not depend on $X$, while the resulting parameter update
+is only $\Ort(r)$-equivariant.
+
+\fbAusedin{\thmref{Theorem}{III.12}, when a change of chart does not matter (\S\ref{sec:fibres-naturality}),
+  Figure~\ref{fig:gauge}.}
+
+\begin{bgentry}{D.34}{the perspective map; convex combinations}
+The \textbf{perspective map} is $\pi(Z,S)=S/Z$ on $\{(Z,S)\in\R\times\R^d:Z>0\}$. It is constant on rays,
+$\pi(tZ,tS)=\pi(Z,S)$ for $t>0$, and it turns sums into convex combinations,
+\[\pi(Z_1+Z_2,S_1+S_2)=\lambda\,\pi(Z_1,S_1)+(1-\lambda)\,\pi(Z_2,S_2),\qquad\lambda=\frac{Z_1}{Z_1+Z_2}.\]
+\end{bgentry}
+
+For a fixed query $q$, attention is $\mathrm{Attn}_q(K)=\pi(\Sigma_q(K))$, where
+\[\Sigma_q(K)=\Big(\sum e^{\langle q,k\rangle/\sqrt d},\ \sum e^{\langle q,k\rangle/\sqrt d}\,v\Big)\]
+is a monoid homomorphism on multisets of key--value pairs (\bgref{D.10}). With a prefix $P$ before the content $C$, the
+identity above gives
+\[\mathrm{Attn}_q(P\uplus C)=(1-\lambda_q)\,\mathrm{Attn}_q(C)+\lambda_q\,\mathrm{Attn}_q(P),\]
+with $\mathrm{Attn}_q(P)$ in the convex hull $\operatorname{conv}V_P$ of the prefix values, so a prefix acts as a
+parallel branch gated by its share of the mass.
+
+\fbAusedin{\thmref{Theorem}{VI.5}, attention (\S\ref{sec:merge-attention}), Figure~\ref{fig:prefix}. \textsf{Reading:}
+  \citet[\S 2.3.3 and \S 3.2.6]{xboyd2004convex}.}
+

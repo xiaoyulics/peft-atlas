@@ -1,0 +1,39 @@
+{
+ "hash": "0cb09df4b152b66c",
+ "seconds": 31.56,
+ "pauses": [
+  [
+   0.0,
+   0.279
+  ],
+  [
+   4.858,
+   5.246
+  ],
+  [
+   10.382,
+   10.913
+  ],
+  [
+   15.77,
+   16.826
+  ],
+  [
+   21.027,
+   21.421
+  ],
+  [
+   23.929,
+   24.236
+  ],
+  [
+   26.296,
+   26.866
+  ],
+  [
+   31.206,
+   31.56
+  ]
+ ],
+ "text": "Maps like this form what mathematicians call a slice category. An arrow from one method to another means the second can simulate the first; in particular, wherever the first can take theta-zero, the second can follow. At one end sits the frozen model, which can't move at all. At the other sits full fine-tuning, which can simulate everything. Every method that starts exactly at theta-zero lives in between."
+}

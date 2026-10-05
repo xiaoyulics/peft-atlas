@@ -1,0 +1,15 @@
+LoRA+ is $\alpha$ in disguise (\thmref{Theorem}{III.10}, \thmref{Corollary}{III.11}). A seeded toy LoRA regression
+($W_0\in\R^{8\times6}$, a rank-two target update, $r=2$, $B_0=0$) is trained for 300 steps of a hand-written,
+bias-corrected Adam in float64, once as LoRA+ with ratio $\lambda=16$ (scale $s$, $\eta_B=16\,\eta_A$) and once as plain
+LoRA with $\alpha$ multiplied by $16$ (scale $16s$, $\eta_B=\eta_A$), at the same $\eta_A$ and $A_0$. (a)~At
+$\varepsilon=0$, without weight decay or clipping, the two loss curves coincide and both reach $2.7\times10^{-7}$; the
+control, plain LoRA at the uncompensated scale $s$, ends at $5.7\times10^{-2}$. (b)~The weight gap
+$\lVert W_t-W'_t\rVert_F$ between the two runs at every step, on a log scale above an exact-zero floor. At
+$\varepsilon=0$ the runs are bit-identical at all 301 steps: the torus element relating them, $c=(1,1/16)$, is a power
+of two and rescales floating-point numbers exactly. Each red curve switches on one ingredient with a single value shared
+by both parameter groups: Adam's $\varepsilon=10^{-8}$ or $10^{-6}$ (the gap is proportional to $\varepsilon$),
+PyTorch-style decoupled weight decay $0.01$, or global-norm clipping at $1$, which clips 8 steps of the LoRA+ run and 37
+of the LoRA run. Each breaks the hyperparameter torus, with maximal gaps $4\times10^{-8}$, $4\times10^{-6}$,
+$7\times10^{-3}$ and $0.43$, against $2.0$ for the control (dotted). Rescaling the same ingredients per block, as
+\thmref{Theorem}{III.10} prescribes ($\varepsilon_B=16\,\varepsilon$, decay $16\times0.01$ on $B$, per-block clipping
+with $B$'s threshold multiplied by $16$), restores the exact zero (green floor).

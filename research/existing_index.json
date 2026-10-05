@@ -1,0 +1,3116 @@
+{
+"methods": [
+{
+"id": "residual-adapter",
+"name": "Residual Adapters",
+"arxiv": "1705.08045",
+"title": "Learning multiple visual domains with residual adapters",
+"year": 2017
+},
+{
+"id": "houlsby-adapter",
+"name": "Adapter (Houlsby)",
+"arxiv": "1902.00751",
+"title": "Parameter-Efficient Transfer Learning for NLP",
+"year": 2019
+},
+{
+"id": "pfeiffer-adapter",
+"name": "Pfeiffer Adapter",
+"arxiv": "2005.00247",
+"title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+"year": 2020
+},
+{
+"id": "mad-x",
+"name": "MAD-X",
+"arxiv": "2005.00052",
+"title": "MAD-X: An Adapter-Based Framework for Multi-Task Cross-Lingual Transfer",
+"year": 2020
+},
+{
+"id": "adapterfusion",
+"name": "AdapterFusion",
+"arxiv": "2005.00247",
+"title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+"year": 2020
+},
+{
+"id": "adapterdrop",
+"name": "AdapterDrop",
+"arxiv": "2010.11918",
+"title": "AdapterDrop: On the Efficiency of Adapters in Transformers",
+"year": 2020
+},
+{
+"id": "k-adapter",
+"name": "K-Adapter",
+"arxiv": "2002.01808",
+"title": "K-Adapter: Infusing Knowledge into Pre-Trained Models with Adapters",
+"year": 2020
+},
+{
+"id": "compacter",
+"name": "Compacter",
+"arxiv": "2106.04647",
+"title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+"year": 2021
+},
+{
+"id": "hyperformer",
+"name": "HyperFormer",
+"arxiv": "2106.04489",
+"title": "Parameter-efficient Multi-task Fine-tuning for Transformers via Shared Hypernetworks",
+"year": 2021
+},
+{
+"id": "parallel-adapter",
+"name": "Parallel Adapter",
+"arxiv": "2110.04366",
+"title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+"year": 2021
+},
+{
+"id": "mam-adapter",
+"name": "MAM Adapter",
+"arxiv": "2110.04366",
+"title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+"year": 2021
+},
+{
+"id": "unipelt",
+"name": "UniPELT",
+"arxiv": "2110.07577",
+"title": "UniPELT: A Unified Framework for Parameter-Efficient Language Model Tuning",
+"year": 2021
+},
+{
+"id": "adamix",
+"name": "AdaMix",
+"arxiv": "2205.12410",
+"title": "AdaMix: Mixture-of-Adaptations for Parameter-efficient Model Tuning",
+"year": 2022
+},
+{
+"id": "llama-adapter",
+"name": "LLaMA-Adapter",
+"arxiv": "2303.16199",
+"title": "LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention",
+"year": 2023
+},
+{
+"id": "llama-adapter-v2",
+"name": "LLaMA-Adapter V2",
+"arxiv": "2304.15010",
+"title": "LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model",
+"year": 2023
+},
+{
+"id": "side-tuning",
+"name": "Side-Tuning",
+"arxiv": "1912.13503",
+"title": "Side-Tuning: A Baseline for Network Adaptation via Additive Side Networks",
+"year": 2019
+},
+{
+"id": "ladder-side-tuning",
+"name": "LST",
+"arxiv": "2206.06522",
+"title": "LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning",
+"year": 2022
+},
+{
+"id": "res-tuning",
+"name": "Res-Tuning",
+"arxiv": "2310.19859",
+"title": "Res-Tuning: A Flexible and Efficient Tuning Paradigm via Unbinding Tuner from Backbone",
+"year": 2023
+},
+{
+"id": "controlnet",
+"name": "ControlNet",
+"arxiv": "2302.05543",
+"title": "Adding Conditional Control to Text-to-Image Diffusion Models",
+"year": 2023
+},
+{
+"id": "t2i-adapter",
+"name": "T2I-Adapter",
+"arxiv": "2302.08453",
+"title": "T2I-Adapter: Learning Adapters to Dig out More Controllable Ability for Text-to-Image Diffusion Models",
+"year": 2023
+},
+{
+"id": "ip-adapter",
+"name": "IP-Adapter",
+"arxiv": "2308.06721",
+"title": "IP-Adapter: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models",
+"year": 2023
+},
+{
+"id": "adaptformer",
+"name": "AdaptFormer",
+"arxiv": "2205.13535",
+"title": "AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition",
+"year": 2022
+},
+{
+"id": "convpass",
+"name": "Convpass",
+"arxiv": "2207.07039",
+"title": "Convolutional Bypasses Are Better Vision Transformer Adapters",
+"year": 2022
+},
+{
+"id": "st-adapter",
+"name": "ST-Adapter",
+"arxiv": "2206.13559",
+"title": "ST-Adapter: Parameter-Efficient Image-to-Video Transfer Learning",
+"year": 2022
+},
+{
+"id": "aim",
+"name": "AIM",
+"arxiv": "2302.03024",
+"title": "AIM: Adapting Image Models for Efficient Video Action Recognition",
+"year": 2023
+},
+{
+"id": "repadapter",
+"name": "RepAdapter",
+"arxiv": "2302.08106",
+"title": "Towards Efficient Visual Adaption via Structural Re-parameterization",
+"year": 2023
+},
+{
+"id": "mona",
+"name": "Mona",
+"arxiv": "2408.08345",
+"title": "5%>100%: Breaking Performance Shackles of Full Fine-Tuning on Visual Recognition Tasks",
+"year": 2024
+},
+{
+"id": "clip-adapter",
+"name": "CLIP-Adapter",
+"arxiv": "2110.04544",
+"title": "CLIP-Adapter: Better Vision-Language Models with Feature Adapters",
+"year": 2021
+},
+{
+"id": "tip-adapter",
+"name": "Tip-Adapter",
+"arxiv": "2207.09519",
+"title": "Tip-Adapter: Training-free Adaption of CLIP for Few-shot Classification",
+"year": 2022
+},
+{
+"id": "adapter-plus",
+"name": "Adapter+",
+"arxiv": "2406.06820",
+"title": "Adapters Strike Back",
+"year": 2024
+},
+{
+"id": "shadow-peft",
+"name": "ShadowPEFT",
+"arxiv": "2604.19254",
+"title": "ShadowPEFT: Shadow Network for Parameter-Efficient Fine-Tuning",
+"year": 2026
+},
+{
+"id": "loft-orthogonal",
+"name": "LOFT",
+"arxiv": "2605.11872",
+"title": "LOFT: Low-Rank Orthogonal Fine-Tuning via Task-Aware Support Selection",
+"year": 2026
+},
+{
+"id": "preft",
+"name": "PreFT",
+"arxiv": "2605.14217",
+"title": "PreFT: Prefill-only finetuning for efficient inference",
+"year": 2026
+},
+{
+"id": "orthomerge",
+"name": "OrthoMerge",
+"arxiv": "2602.05943",
+"title": "Orthogonal Model Merging",
+"year": 2026
+},
+{
+"id": "prism-dp-lora",
+"name": "PRISM",
+"arxiv": "2606.00944",
+"title": "PRISM: Gauge-Invariant Tangent-Space Differentially Private LoRA",
+"year": 2026
+},
+{
+"id": "keeplora",
+"name": "KeepLoRA",
+"arxiv": "2601.19659",
+"title": "KeepLoRA: Continual Learning with Residual Gradient Adaptation",
+"year": 2026
+},
+{
+"id": "lora-pre",
+"name": "LoRA-Pre",
+"arxiv": "2602.24283",
+"title": "Taming Momentum: Rethinking Optimizer States Through Low-Rank Approximation",
+"year": 2026
+},
+{
+"id": "structlora",
+"name": "StructLoRA",
+"arxiv": "2603.14228",
+"title": "Not All Directions Matter: Towards Structured and Task-Aware Low-Rank Model Adaptation",
+"year": 2026
+},
+{
+"id": "fedrot-lora",
+"name": "FedRot-LoRA",
+"arxiv": "2602.23638",
+"title": "FedRot-LoRA: Mitigating Rotational Misalignment in Federated LoRA",
+"year": 2026
+},
+{
+"id": "rlpo-rlmo",
+"name": "LoRA-RLPO / LoRA-RLMO",
+"arxiv": "2606.31813",
+"title": "Geometry-Preserving Orthonormal Initialization for Low-Rank Adaptation in RLVR",
+"year": 2026
+},
+{
+"id": "nara",
+"name": "NaRA",
+"arxiv": "2605.29716",
+"title": "NaRA: Noise-Aware LoRA for Parameter-Efficient Fine-Tuning of Diffusion LLMs",
+"year": 2026
+},
+{
+"id": "lime",
+"name": "LiME",
+"arxiv": "2604.02338",
+"title": "LiME: Lightweight Mixture of Experts for Efficient Multimodal Multi-task Learning",
+"year": 2026
+},
+{
+"id": "agzo",
+"name": "AGZO",
+"arxiv": "2601.17261",
+"title": "AGZO: Activation-Guided Zeroth-Order Optimization for LLM Fine-Tuning",
+"year": 2026
+},
+{
+"id": "zo-muon",
+"name": "ZO-Muon",
+"arxiv": "2602.17155",
+"title": "Powering Up Zeroth-Order Training via Subspace Gradient Orthogonalization",
+"year": 2026
+},
+{
+"id": "flexlora-entropy",
+"name": "FlexLoRA",
+"arxiv": "2601.22905",
+"title": "FlexLoRA: Entropy-Guided Flexible Low-Rank Adaptation",
+"year": 2026
+},
+{
+"id": "fouriermoe",
+"name": "FourierMoE",
+"arxiv": "2604.01762",
+"title": "FourierMoE: Fourier Mixture-of-Experts Adaptation of Large Language Models",
+"year": 2026
+},
+{
+"id": "smoa",
+"name": "SMoA",
+"arxiv": "2605.21147",
+"title": "SMoA: Spectrum Modulation Adapter for Parameter-Efficient Fine-Tuning",
+"year": 2026
+},
+{
+"id": "bayesian-lora-sgp",
+"name": "Bayesian-LoRA",
+"arxiv": "2601.21003",
+"title": "Bayesian-LoRA: Probabilistic Low-Rank Adaptation of Large Language Models",
+"year": 2026
+},
+{
+"id": "florg",
+"name": "FLoRG",
+"arxiv": "2602.17095",
+"title": "FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment",
+"year": 2026
+},
+{
+"id": "loda-cl",
+"name": "LoDA",
+"arxiv": "2603.00191",
+"title": "Task-Driven Subspace Decomposition for Knowledge Sharing and Isolation in LoRA-based Continual Learning",
+"year": 2026
+},
+{
+"id": "lragent",
+"name": "LRAgent",
+"arxiv": "2602.01053",
+"title": "LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents",
+"year": 2026
+},
+{
+"id": "geora",
+"name": "GeoRA",
+"arxiv": "2601.09361",
+"title": "GeoRA: Geometry-Aware Low-Rank Adaptation for RLVR",
+"year": 2026
+},
+{
+"id": "matryoshka-lora",
+"name": "MatryoshkaLoRA",
+"arxiv": "2605.07850",
+"title": "MatryoshkaLoRA: Learning Accurate Hierarchical Low-Rank Representations for LLM Fine-Tuning",
+"year": 2026
+},
+{
+"id": "loco-orthogonal",
+"name": "LoCO",
+"arxiv": "2605.15916",
+"title": "LoCO: Low-rank Compositional Rotation Fine-tuning",
+"year": 2026
+},
+{
+"id": "compress-then-merge",
+"name": "Compress-then-Merge (CtM)",
+"arxiv": "2606.03723",
+"title": "Compress then Merge: From Multiple LoRAs into One Low-Rank Adapter",
+"year": 2026
+},
+{
+"id": "srr",
+"name": "SRR (Structured Residual Reconstruction)",
+"arxiv": "2602.02001",
+"title": "Preserve-Then-Quantize: Balancing Rank Budgets for Quantization Error Reconstruction in LLMs",
+"year": 2026
+},
+{
+"id": "prompt2effect",
+"name": "Prompt2Effect",
+"arxiv": "2606.13971",
+"title": "Prompt2Effect: Training-Free Image-to-Video Model Specialization via LoRA Generation",
+"year": 2026
+},
+{
+"id": "giva",
+"name": "GiVA",
+"arxiv": "2604.21901",
+"title": "GiVA: Gradient-Informed Bases for Vector-Based Adaptation",
+"year": 2026
+},
+{
+"id": "activation-prompt",
+"name": "AP (Activation Prompt)",
+"arxiv": "2604.06440",
+"title": "Visual prompting reimagined: The power of the Activation Prompts",
+"year": 2023
+},
+{
+"id": "stable-lora",
+"name": "Stable-LoRA",
+"arxiv": "2603.05204",
+"title": "Stable-LoRA: Stabilizing Feature Learning of Low-Rank Adaptation",
+"year": 2025
+},
+{
+"id": "mdpd",
+"name": "MDPD",
+"arxiv": "2604.09088",
+"title": "Memory-Efficient Transfer Learning with Fading Side Networks via Masked Dual Path Distillation",
+"year": 2026
+},
+{
+"id": "model-soups",
+"name": "Model Soups",
+"arxiv": "2203.05482",
+"title": "Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time",
+"year": 2022
+},
+{
+"id": "fisher-merging",
+"name": "Fisher Merging",
+"arxiv": "2111.09832",
+"title": "Merging Models with Fisher-Weighted Averaging",
+"year": 2021
+},
+{
+"id": "regmean",
+"name": "RegMean",
+"arxiv": "2212.09849",
+"title": "Dataless Knowledge Fusion by Merging Weights of Language Models",
+"year": 2022
+},
+{
+"id": "task-arithmetic",
+"name": "Task Arithmetic",
+"arxiv": "2212.04089",
+"title": "Editing Models with Task Arithmetic",
+"year": 2022
+},
+{
+"id": "ties-merging",
+"name": "TIES-Merging",
+"arxiv": "2306.01708",
+"title": "TIES-Merging: Resolving Interference When Merging Models",
+"year": 2023
+},
+{
+"id": "dare",
+"name": "DARE",
+"arxiv": "2311.03099",
+"title": "Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch",
+"year": 2023
+},
+{
+"id": "adamerging",
+"name": "AdaMerging",
+"arxiv": "2310.02575",
+"title": "AdaMerging: Adaptive Model Merging for Multi-Task Learning",
+"year": 2023
+},
+{
+"id": "tsv-merge",
+"name": "TSV-Merge",
+"arxiv": "2412.00081",
+"title": "Task Singular Vectors: Reducing Task Interference in Model Merging",
+"year": 2024
+},
+{
+"id": "knots",
+"name": "KnOTS",
+"arxiv": "2410.19735",
+"title": "Model merging with SVD to tie the Knots",
+"year": 2024
+},
+{
+"id": "pem-arithmetic",
+"name": "PEM Arithmetic",
+"arxiv": "2306.14870",
+"title": "Composing Parameter-Efficient Modules with Arithmetic Operations",
+"year": 2023
+},
+{
+"id": "adaptersoup",
+"name": "AdapterSoup",
+"arxiv": "2302.07027",
+"title": "AdapterSoup: Weight Averaging to Improve Generalization of Pretrained Language Models",
+"year": 2023
+},
+{
+"id": "lorahub",
+"name": "LoraHub",
+"arxiv": "2307.13269",
+"title": "LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition",
+"year": 2023
+},
+{
+"id": "lora-soups",
+"name": "LoRA Soups (CAT)",
+"arxiv": "2410.13025",
+"title": "LoRA Soups: Merging LoRAs for Practical Skill Composition Tasks",
+"year": 2024
+},
+{
+"id": "lora-lego",
+"name": "LoRA-LEGO",
+"arxiv": "2409.16167",
+"title": "Merging LoRAs like Playing LEGO: Pushing the Modularity of LoRA to Extremes Through Rank-Wise Clustering",
+"year": 2024
+},
+{
+"id": "ziplora",
+"name": "ZipLoRA",
+"arxiv": "2311.13600",
+"title": "ZipLoRA: Any Subject in Any Style by Effectively Merging LoRAs",
+"year": 2023
+},
+{
+"id": "mix-of-show",
+"name": "Mix-of-Show",
+"arxiv": "2305.18292",
+"title": "Mix-of-Show: Decentralized Low-Rank Adaptation for Multi-Concept Customization of Diffusion Models",
+"year": 2023
+},
+{
+"id": "orthogonal-adaptation",
+"name": "Orthogonal Adaptation",
+"arxiv": "2312.02432",
+"title": "Orthogonal Adaptation for Modular Customization of Diffusion Models",
+"year": 2023
+},
+{
+"id": "multi-lora-composition",
+"name": "LoRA Switch / LoRA Composite",
+"arxiv": "2402.16843",
+"title": "Multi-LoRA Composition for Image Generation",
+"year": 2024
+},
+{
+"id": "polytropon",
+"name": "Polytropon (Poly)",
+"arxiv": "2202.13914",
+"title": "Combining Parameter-efficient Modules for Task-level Generalisation",
+"year": 2022
+},
+{
+"id": "mhr",
+"name": "MHR",
+"arxiv": "2211.03831",
+"title": "Multi-Head Adapter Routing for Cross-Task Generalization",
+"year": 2022
+},
+{
+"id": "smear",
+"name": "SMEAR",
+"arxiv": "2306.03745",
+"title": "Soft Merging of Experts with Adaptive Routing",
+"year": 2023
+},
+{
+"id": "mov",
+"name": "MoV / MoLoRA",
+"arxiv": "2309.05444",
+"title": "Pushing Mixture of Experts to the Limit: Extremely Parameter Efficient MoE for Instruction Tuning",
+"year": 2023
+},
+{
+"id": "loramoe",
+"name": "LoRAMoE",
+"arxiv": "2312.09979",
+"title": "LoRAMoE: Alleviating World Knowledge Forgetting in Large Language Models via MoE-Style Plugin",
+"year": 2023
+},
+{
+"id": "moelora",
+"name": "MOELoRA",
+"arxiv": "2310.18339",
+"title": "When MOE Meets LLMs: Parameter Efficient Fine-tuning for Multi-task Medical Applications",
+"year": 2023
+},
+{
+"id": "mole",
+"name": "MoLE",
+"arxiv": "2404.13628",
+"title": "Mixture of LoRA Experts",
+"year": 2024
+},
+{
+"id": "mixlora",
+"name": "MixLoRA",
+"arxiv": "2404.15159",
+"title": "MixLoRA: Enhancing Large Language Models Fine-Tuning with LoRA-based Mixture of Experts",
+"year": 2024
+},
+{
+"id": "x-lora",
+"name": "X-LoRA",
+"arxiv": "2402.07148",
+"title": "X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Molecular Design",
+"year": 2024
+},
+{
+"id": "hydralora",
+"name": "HydraLoRA",
+"arxiv": "2404.19245",
+"title": "HydraLoRA: An Asymmetric LoRA Architecture for Efficient Fine-Tuning",
+"year": 2024
+},
+{
+"id": "lily",
+"name": "Lily",
+"arxiv": "2407.09946",
+"title": "Low-Rank Interconnected Adaptation across Layers",
+"year": 2024
+},
+{
+"id": "phatgoose",
+"name": "PHATGOOSE",
+"arxiv": "2402.05859",
+"title": "Learning to Route Among Specialized Experts for Zero-Shot Generalization",
+"year": 2024
+},
+{
+"id": "arrow",
+"name": "Arrow",
+"arxiv": "2405.11157",
+"title": "Towards Modular LLMs by Building and Reusing a Library of LoRAs",
+"year": 2024
+},
+{
+"id": "loraretriever",
+"name": "LoraRetriever",
+"arxiv": "2402.09997",
+"title": "LoraRetriever: Input-Aware LoRA Retrieval and Composition for Mixed Tasks in the Wild",
+"year": 2024
+},
+{
+"id": "lora-flow",
+"name": "LoRA-Flow",
+"arxiv": "2402.11455",
+"title": "LoRA-Flow: Dynamic LoRA Fusion for Large Language Models in Generative Tasks",
+"year": 2024
+},
+{
+"id": "s-lora",
+"name": "S-LoRA",
+"arxiv": "2311.03285",
+"title": "S-LoRA: Serving Thousands of Concurrent LoRA Adapters",
+"year": 2023
+},
+{
+"id": "punica",
+"name": "Punica",
+"arxiv": "2310.18547",
+"title": "Punica: Multi-Tenant LoRA Serving",
+"year": 2023
+},
+{
+"id": "hyperdreambooth",
+"name": "HyperDreamBooth",
+"arxiv": "2307.06949",
+"title": "HyperDreamBooth: HyperNetworks for Fast Personalization of Text-to-Image Models",
+"year": 2023
+},
+{
+"id": "text-to-lora",
+"name": "Text-to-LoRA (T2L)",
+"arxiv": "2506.06105",
+"title": "Text-to-LoRA: Instant Transformer Adaption",
+"year": 2025
+},
+{
+"id": "drag-and-drop-llms",
+"name": "DnD",
+"arxiv": "2506.16406",
+"title": "Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights",
+"year": 2025
+},
+{
+"id": "doc-to-lora",
+"name": "Doc-to-LoRA (D2L)",
+"arxiv": "2602.15902",
+"title": "Doc-to-LoRA: Learning to Instantly Internalize Contexts",
+"year": 2026
+},
+{
+"id": "tina",
+"name": "Tina",
+"arxiv": "2504.15777",
+"title": "Tina: Tiny Reasoning Models via LoRA",
+"year": 2025
+},
+{
+"id": "qerl",
+"name": "QeRL",
+"arxiv": "2510.11696",
+"title": "QeRL: Beyond Efficiency -- Quantization-enhanced Reinforcement Learning for LLMs",
+"year": 2025
+},
+{
+"id": "plop",
+"name": "PLoP",
+"arxiv": "2506.20629",
+"title": "PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models",
+"year": 2025
+},
+{
+"id": "lori",
+"name": "LoRI",
+"arxiv": "2504.07448",
+"title": "LoRI: Reducing Cross-Task Interference in Multi-Task Low-Rank Adaptation",
+"year": 2025
+},
+{
+"id": "singlora",
+"name": "SingLoRA",
+"arxiv": "2507.05566",
+"title": "SingLoRA: Low Rank Adaptation Using a Single Matrix",
+"year": 2025
+},
+{
+"id": "shine",
+"name": "SHINE",
+"arxiv": "2602.06358",
+"title": "SHINE: A Scalable In-Context Hypernetwork for Mapping Context to LoRA in a Single Pass",
+"year": 2026
+},
+{
+"id": "generative-adapter",
+"name": "GenerativeAdapter",
+"arxiv": "2411.05877",
+"title": "Generative Adapter: Contextualizing Language Models in Parameters with A Single Forward Pass",
+"year": 2024
+},
+{
+"id": "goat",
+"name": "GOAT",
+"arxiv": "2502.16894",
+"title": "Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment",
+"year": 2025
+},
+{
+"id": "core-space-merging",
+"name": "Core Space",
+"arxiv": "2509.17786",
+"title": "Accurate and Efficient Low-Rank Model Merging in Core Space",
+"year": 2025
+},
+{
+"id": "k-lora",
+"name": "K-LoRA",
+"arxiv": "2502.18461",
+"title": "K-LoRA: Unlocking Training-Free Fusion of Any Subject and Style LoRAs",
+"year": 2025
+},
+{
+"id": "ominicontrol",
+"name": "OminiControl",
+"arxiv": "2411.15098",
+"title": "OminiControl: Minimal and Universal Control for Diffusion Transformer",
+"year": 2024
+},
+{
+"id": "easycontrol",
+"name": "EasyControl",
+"arxiv": "2503.07027",
+"title": "EasyControl: Adding Efficient and Flexible Control for Diffusion Transformer",
+"year": 2025
+},
+{
+"id": "icedit",
+"name": "ICEdit",
+"arxiv": "2504.20690",
+"title": "In-Context Edit: Enabling Instructional Image Editing with In-Context Generation in Large Scale Diffusion Transformer",
+"year": 2025
+},
+{
+"id": "sd-lora",
+"name": "SD-LoRA",
+"arxiv": "2501.13198",
+"title": "SD-LoRA: Scalable Decoupled Low-Rank Adaptation for Class Incremental Learning",
+"year": 2025
+},
+{
+"id": "sparse-memory-finetuning",
+"name": "Sparse Memory Finetuning",
+"arxiv": "2510.15103",
+"title": "Continual Learning via Sparse Memory Finetuning",
+"year": 2025
+},
+{
+"id": "seal",
+"name": "SEAL",
+"arxiv": "2506.10943",
+"title": "Self-Adapting Language Models",
+"year": 2025
+},
+{
+"id": "sparselora",
+"name": "SparseLoRA",
+"arxiv": "2506.16500",
+"title": "SparseLoRA: Accelerating LLM Fine-Tuning with Contextual Sparsity",
+"year": 2025
+},
+{
+"id": "loreft",
+"name": "LoReFT",
+"arxiv": "2404.03592",
+"title": "ReFT: Representation Finetuning for Language Models",
+"year": 2024
+},
+{
+"id": "longlora",
+"name": "LongLoRA",
+"arxiv": "2309.12307",
+"title": "LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models",
+"year": 2023
+},
+{
+"id": "o-lora",
+"name": "O-LoRA",
+"arxiv": "2310.14152",
+"title": "Orthogonal Subspace Learning for Language Model Continual Learning",
+"year": 2023
+},
+{
+"id": "inflora",
+"name": "InfLoRA",
+"arxiv": "2404.00228",
+"title": "InfLoRA: Interference-Free Low-Rank Adaptation for Continual Learning",
+"year": 2024
+},
+{
+"id": "textual-inversion",
+"name": "Textual Inversion",
+"arxiv": "2208.01618",
+"title": "An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion",
+"year": 2022
+},
+{
+"id": "custom-diffusion",
+"name": "Custom Diffusion",
+"arxiv": "2212.04488",
+"title": "Multi-Concept Customization of Text-to-Image Diffusion",
+"year": 2022
+},
+{
+"id": "esft",
+"name": "ESFT",
+"arxiv": "2407.01906",
+"title": "Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models",
+"year": 2024
+},
+{
+"id": "intruder-dimension-reduction",
+"name": "Intruder-dimension reduction",
+"arxiv": "2410.21228",
+"title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+"year": 2024
+},
+{
+"id": "coda-prompt",
+"name": "CODA-Prompt",
+"arxiv": "2211.13218",
+"title": "CODA-Prompt: COntinual Decomposed Attention-based Prompting for Rehearsal-Free Continual Learning",
+"year": 2022
+},
+{
+"id": "trans-lora",
+"name": "Trans-LoRA",
+"arxiv": "2405.17258",
+"title": "Trans-LoRA: towards data-free Transferable Parameter Efficient Finetuning",
+"year": 2024
+},
+{
+"id": "lora-x",
+"name": "LoRA-X",
+"arxiv": "2501.16559",
+"title": "LoRA-X: Bridging Foundation Models with Training-Free Cross-Model Adaptation",
+"year": 2025
+},
+{
+"id": "lofit",
+"name": "LoFiT",
+"arxiv": "2406.01563",
+"title": "LoFiT: Localized Fine-tuning on LLM Representations",
+"year": 2024
+},
+{
+"id": "moslora",
+"name": "MoSLoRA",
+"arxiv": "2406.11909",
+"title": "Mixture-of-Subspaces in Low-Rank Adaptation",
+"year": 2024
+},
+{
+"id": "noah",
+"name": "NOAH",
+"arxiv": "2206.04673",
+"title": "Neural Prompt Search",
+"year": 2022
+},
+{
+"id": "autopeft",
+"name": "AutoPEFT",
+"arxiv": "2301.12132",
+"title": "AutoPEFT: Automatic Configuration Search for Parameter-Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "laplace-lora",
+"name": "Laplace-LoRA",
+"arxiv": "2308.13111",
+"title": "Bayesian Low-rank Adaptation for Large Language Models",
+"year": 2023
+},
+{
+"id": "blob",
+"name": "BLoB",
+"arxiv": "2406.11675",
+"title": "BLoB: Bayesian Low-Rank Adaptation by Backpropagation for Large Language Models",
+"year": 2024
+},
+{
+"id": "loraprune",
+"name": "LoRAPrune",
+"arxiv": "2305.18403",
+"title": "LoRAPrune: Structured Pruning Meets Low-Rank Parameter-Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "modulora",
+"name": "ModuLoRA",
+"arxiv": "2309.16119",
+"title": "ModuLoRA: Finetuning 2-Bit LLMs on Consumer GPUs by Integrating with Modular Quantizers",
+"year": 2023
+},
+{
+"id": "sltrain",
+"name": "SLTrain",
+"arxiv": "2406.02214",
+"title": "SLTrain: a sparse plus low-rank approach for parameter and memory efficient pretraining",
+"year": 2024
+},
+{
+"id": "meft",
+"name": "MEFT",
+"arxiv": "2306.00477",
+"title": "Make Pre-trained Model Reversible: From Parameter to Memory Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "spectrum",
+"name": "Spectrum",
+"arxiv": "2406.06623",
+"title": "Spectrum: Targeted Training on Signal to Noise Ratio",
+"year": 2024
+},
+{
+"id": "lora-dash",
+"name": "LoRA-Dash",
+"arxiv": "2409.01035",
+"title": "Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning",
+"year": 2024
+},
+{
+"id": "lcm-lora",
+"name": "LCM-LoRA",
+"arxiv": "2311.05556",
+"title": "LCM-LoRA: A Universal Stable-Diffusion Acceleration Module",
+"year": 2023
+},
+{
+"id": "concept-sliders",
+"name": "Concept Sliders",
+"arxiv": "2311.12092",
+"title": "Concept Sliders: LoRA Adaptors for Precise Control in Diffusion Models",
+"year": 2023
+},
+{
+"id": "ic-lora",
+"name": "IC-LoRA",
+"arxiv": "2410.23775",
+"title": "In-Context LoRA for Diffusion Transformers",
+"year": 2024
+},
+{
+"id": "proxy-tuning",
+"name": "Proxy-Tuning",
+"arxiv": "2401.08565",
+"title": "Tuning Language Models by Proxy",
+"year": 2024
+},
+{
+"id": "eft",
+"name": "EFT",
+"arxiv": "2310.12962",
+"title": "An Emulator for Fine-Tuning Large Language Models using Small Language Models",
+"year": 2023
+},
+{
+"id": "wise-ft",
+"name": "WiSE-FT",
+"arxiv": "2109.01903",
+"title": "Robust fine-tuning of zero-shot models",
+"year": 2021
+},
+{
+"id": "linear-probing",
+"name": "Linear probing",
+"arxiv": "1310.1531",
+"title": "DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition",
+"year": 2013
+},
+{
+"id": "lp-ft",
+"name": "LP-FT",
+"arxiv": "2202.10054",
+"title": "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution",
+"year": 2022
+},
+{
+"id": "ffa-lora",
+"name": "FFA-LoRA",
+"arxiv": "2403.12313",
+"title": "Improving LoRA in Privacy-preserving Federated Learning",
+"year": 2024
+},
+{
+"id": "flora-federated",
+"name": "FLoRA (federated)",
+"arxiv": "2409.05976",
+"title": "FLoRA: Federated Fine-Tuning Large Language Models with Heterogeneous Low-Rank Adaptations",
+"year": 2024
+},
+{
+"id": "hetlora",
+"name": "HetLoRA",
+"arxiv": "2401.06432",
+"title": "Heterogeneous LoRA for Federated Fine-tuning of On-Device Foundation Models",
+"year": 2024
+},
+{
+"id": "tinytl",
+"name": "TinyTL",
+"arxiv": "2007.11622",
+"title": "TinyTL: Reduce Memory, Not Parameters for Efficient On-Device Learning",
+"year": 2020
+},
+{
+"id": "autoprompt",
+"name": "AutoPrompt",
+"arxiv": "2010.15980",
+"title": "AutoPrompt: Eliciting Knowledge from Language Models with Automatically Generated Prompts",
+"year": 2020
+},
+{
+"id": "lora",
+"name": "LoRA",
+"arxiv": "2106.09685",
+"title": "LoRA: Low-Rank Adaptation of Large Language Models",
+"year": 2021
+},
+{
+"id": "adalora",
+"name": "AdaLoRA",
+"arxiv": "2303.10512",
+"title": "AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "adamss",
+"name": "AdaMSS",
+"arxiv": "",
+"title": "AdaMSS: Adaptive Multi-Subspace Approach for Parameter-Efficient Fine-Tuning",
+"year": 2025
+},
+{
+"id": "beft",
+"name": "BEFT",
+"arxiv": "2509.15974",
+"title": "BEFT: Bias-Efficient Fine-Tuning of Language Models in Low-Data Regimes",
+"year": 2025
+},
+{
+"id": "boft",
+"name": "BOFT",
+"arxiv": "2311.06243",
+"title": "Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization",
+"year": 2023
+},
+{
+"id": "c3a",
+"name": "C3A",
+"arxiv": "2407.19342",
+"title": "Parameter-Efficient Fine-Tuning via Circular Convolution",
+"year": 2024
+},
+{
+"id": "cartridges",
+"name": "Cartridges",
+"arxiv": "2506.06266",
+"title": "Cartridges: Lightweight and general-purpose long context representations via self-study",
+"year": 2025
+},
+{
+"id": "cpt",
+"name": "CPT",
+"arxiv": "2410.17222",
+"title": "Context-aware Prompt Tuning: Advancing In-Context Learning with Adversarial Methods",
+"year": 2024
+},
+{
+"id": "deft",
+"name": "DEFT",
+"arxiv": "2509.22793",
+"title": "DEFT: Decompositional Efficient Fine-Tuning for Text-to-Image Models",
+"year": 2025
+},
+{
+"id": "para",
+"name": "PaRa",
+"arxiv": "2406.05641",
+"title": "PaRa: Personalizing Text-to-Image Diffusion via Parameter Rank Reduction",
+"year": 2024
+},
+{
+"id": "delora",
+"name": "DeLoRA",
+"arxiv": "2503.18225",
+"title": "DeLoRA: Decoupling Angles and Strength in Low-rank Adaptation",
+"year": 2025
+},
+{
+"id": "fourierft",
+"name": "FourierFT",
+"arxiv": "2405.03003",
+"title": "Parameter-Efficient Fine-Tuning with Discrete Fourier Transform",
+"year": 2024
+},
+{
+"id": "frod",
+"name": "FRoD",
+"arxiv": "2512.23485",
+"title": "FRoD: Full-Rank Efficient Fine-Tuning with Rotational Degrees for Fast Convergence",
+"year": 2025
+},
+{
+"id": "glora",
+"name": "GLoRA",
+"arxiv": "2306.07967",
+"title": "One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning",
+"year": 2023
+},
+{
+"id": "gralora",
+"name": "GraLoRA",
+"arxiv": "2505.20355",
+"title": "GraLoRA: Granular Low-Rank Adaptation for Parameter-Efficient Fine-Tuning",
+"year": 2025
+},
+{
+"id": "hira",
+"name": "HiRA",
+"arxiv": "",
+"title": "HiRA: Parameter-Efficient Hadamard High-Rank Adaptation for Large Language Models",
+"year": 2025
+},
+{
+"id": "hra",
+"name": "HRA",
+"arxiv": "2405.17484",
+"title": "Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation",
+"year": 2024
+},
+{
+"id": "ia3",
+"name": "(IA)³",
+"arxiv": "2205.05638",
+"title": "Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning",
+"year": 2022
+},
+{
+"id": "ln-tuning",
+"name": "LN Tuning",
+"arxiv": "2312.11420",
+"title": "Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning",
+"year": 2023
+},
+{
+"id": "loha",
+"name": "LoHa",
+"arxiv": "2108.06098",
+"title": "FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning",
+"year": 2021
+},
+{
+"id": "lokr",
+"name": "LoKr",
+"arxiv": "2309.14859",
+"title": "Navigating Text-To-Image Customization: From LyCORIS Fine-Tuning to Model Evaluation",
+"year": 2023
+},
+{
+"id": "miss",
+"name": "MiSS (formerly Bone)",
+"arxiv": "2409.15371",
+"title": "MiSS: Revisiting the Trade-off in LoRA with an Efficient Shard-Sharing Structure",
+"year": 2024
+},
+{
+"id": "multitask-prompt-tuning",
+"name": "MPT",
+"arxiv": "2303.02861",
+"title": "Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning",
+"year": 2023
+},
+{
+"id": "oft",
+"name": "OFT",
+"arxiv": "2306.07280",
+"title": "Controlling Text-to-Image Diffusion by Orthogonal Finetuning",
+"year": 2023
+},
+{
+"id": "oftv2",
+"name": "OFTv2",
+"arxiv": "2506.19847",
+"title": "Orthogonal Finetuning Made Scalable",
+"year": 2025
+},
+{
+"id": "osf",
+"name": "OSF",
+"arxiv": "2504.07097",
+"title": "Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning",
+"year": 2025
+},
+{
+"id": "p-tuning",
+"name": "P-Tuning",
+"arxiv": "2103.10385",
+"title": "GPT Understands, Too",
+"year": 2021
+},
+{
+"id": "peanut",
+"name": "PEANuT",
+"arxiv": "2410.01870",
+"title": "PEANuT: Parameter-Efficient Adaptation with Weight-aware Neural Tweakers",
+"year": 2024
+},
+{
+"id": "prefix-tuning",
+"name": "Prefix-Tuning",
+"arxiv": "2101.00190",
+"title": "Prefix-Tuning: Optimizing Continuous Prompts for Generation",
+"year": 2021
+},
+{
+"id": "prompt-tuning",
+"name": "Prompt Tuning",
+"arxiv": "2104.08691",
+"title": "The Power of Scale for Parameter-Efficient Prompt Tuning",
+"year": 2021
+},
+{
+"id": "psoft",
+"name": "PSOFT",
+"arxiv": "2505.11235",
+"title": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+"year": 2025
+},
+{
+"id": "pvera",
+"name": "PVeRA",
+"arxiv": "2512.07703",
+"title": "PVeRA: Probabilistic Vector-Based Random Matrix Adaptation",
+"year": 2025
+},
+{
+"id": "randlora",
+"name": "RandLoRA",
+"arxiv": "2502.00987",
+"title": "RandLoRA: Full-rank parameter-efficient fine-tuning of large models",
+"year": 2025
+},
+{
+"id": "road",
+"name": "RoAd",
+"arxiv": "2409.00119",
+"title": "3-in-1: 2D Rotary Adaptation for Efficient Finetuning, Efficient Batching and Composability",
+"year": 2024
+},
+{
+"id": "shira",
+"name": "SHiRA",
+"arxiv": "2406.13175",
+"title": "Sparse High Rank Adapters",
+"year": 2024
+},
+{
+"id": "super-tuning",
+"name": "Super-Tuning (Super / Supra)",
+"arxiv": "2607.09287",
+"title": "Super-Tuning: From Activation-Aware Pruning to Sparse Fine-Tuning",
+"year": 2026
+},
+{
+"id": "tinylora",
+"name": "TinyLoRA",
+"arxiv": "2602.04118",
+"title": "Learning to Reason in 13 Parameters",
+"year": 2026
+},
+{
+"id": "trainable-tokens",
+"name": "Trainable Tokens",
+"arxiv": "",
+"title": "",
+"year": 2025
+},
+{
+"id": "uni-lora",
+"name": "Uni-LoRA",
+"arxiv": "2506.00799",
+"title": "Uni-LoRA: One Vector is All You Need",
+"year": 2025
+},
+{
+"id": "vb-lora",
+"name": "VB-LoRA",
+"arxiv": "2405.15179",
+"title": "VB-LoRA: Extreme Parameter Efficient Fine-Tuning with Vector Banks",
+"year": 2024
+},
+{
+"id": "vera",
+"name": "VeRA",
+"arxiv": "2310.11454",
+"title": "VeRA: Vector-based Random Matrix Adaptation",
+"year": 2023
+},
+{
+"id": "waveft",
+"name": "WaveFT",
+"arxiv": "2505.12532",
+"title": "Exploring Sparsity for Parameter Efficient Fine Tuning Using Wavelets for Vision",
+"year": 2025
+},
+{
+"id": "dora",
+"name": "DoRA",
+"arxiv": "2402.09353",
+"title": "DoRA: Weight-Decomposed Low-Rank Adaptation",
+"year": 2024
+},
+{
+"id": "rslora",
+"name": "rsLoRA",
+"arxiv": "2312.03732",
+"title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA",
+"year": 2023
+},
+{
+"id": "pissa",
+"name": "PiSSA",
+"arxiv": "2404.02948",
+"title": "PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models",
+"year": 2024
+},
+{
+"id": "olora",
+"name": "OLoRA",
+"arxiv": "2406.01775",
+"title": "OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models",
+"year": 2024
+},
+{
+"id": "loftq",
+"name": "LoftQ",
+"arxiv": "2310.08659",
+"title": "LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large Language Models",
+"year": 2023
+},
+{
+"id": "eva",
+"name": "EVA",
+"arxiv": "2410.07170",
+"title": "Parameter Efficient Fine-tuning via Explained Variance Adaptation",
+"year": 2024
+},
+{
+"id": "corda",
+"name": "CorDA",
+"arxiv": "2406.05223",
+"title": "CorDA: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning",
+"year": 2024
+},
+{
+"id": "astra",
+"name": "Astra",
+"arxiv": "2602.19111",
+"title": "Astra: Activation-Space Tail-Eigenvector Low-Rank Adaptation of Large Language Models",
+"year": 2026
+},
+{
+"id": "mica",
+"name": "MiCA",
+"arxiv": "2604.01694",
+"title": "MiCA Learns More Knowledge Than LoRA and Full Fine-Tuning",
+"year": 2026
+},
+{
+"id": "lora-ga",
+"name": "LoRA-GA",
+"arxiv": "2407.05000",
+"title": "LoRA-GA: Low-Rank Adaptation with Gradient Approximation",
+"year": 2024
+},
+{
+"id": "kasa",
+"name": "KaSA",
+"arxiv": "2412.06071",
+"title": "KaSA: Knowledge-Aware Singular-Value Adaptation of Large Language Models",
+"year": 2024
+},
+{
+"id": "alora",
+"name": "aLoRA",
+"arxiv": "2504.12397",
+"title": "Activated LoRA: Fine-tuned LLMs for Intrinsics",
+"year": 2025
+},
+{
+"id": "qa-lora",
+"name": "QA-LoRA",
+"arxiv": "2309.14717",
+"title": "QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models",
+"year": 2023
+},
+{
+"id": "monteclora",
+"name": "MonteCLoRA",
+"arxiv": "2411.04358",
+"title": "Robust and Efficient Fine-tuning of LLMs with Bayesian Reparameterization of Low-Rank Adaptation",
+"year": 2024
+},
+{
+"id": "velora",
+"name": "VeLoRA",
+"arxiv": "2405.17991",
+"title": "VeLoRA: Memory Efficient Training using Rank-1 Sub-Token Projections",
+"year": 2024
+},
+{
+"id": "bd-lora",
+"name": "BD-LoRA",
+"arxiv": "2510.23346",
+"title": "Block-Diagonal LoRA for Eliminating Communication Overhead in Tensor Parallel LoRA Serving",
+"year": 2025
+},
+{
+"id": "genknowsub",
+"name": "GenKnowSub",
+"arxiv": "2505.10939",
+"title": "GenKnowSub: Improving Modularity and Reusability of LLMs through General Knowledge Subtraction",
+"year": 2025
+},
+{
+"id": "lora-plus",
+"name": "LoRA+",
+"arxiv": "2402.12354",
+"title": "LoRA+: Efficient Low Rank Adaptation of Large Models",
+"year": 2024
+},
+{
+"id": "lora-fa",
+"name": "LoRA-FA",
+"arxiv": "2308.03303",
+"title": "LoRA-FA: Memory-efficient Low-rank Adaptation for Large Language Models Fine-tuning",
+"year": 2023
+},
+{
+"id": "riemannian-preconditioned-lora",
+"name": "Riemannian LoRA",
+"arxiv": "2402.02347",
+"title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models",
+"year": 2024
+},
+{
+"id": "qlora",
+"name": "QLoRA",
+"arxiv": "2305.14314",
+"title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+"year": 2023
+},
+{
+"id": "layer-replication",
+"name": "LoRA layer replication (DUS)",
+"arxiv": "2312.15166",
+"title": "SOLAR 10.7B: Scaling Large Language Models with Simple yet Effective Depth Up-Scaling",
+"year": 2023
+},
+{
+"id": "kappatune",
+"name": "KappaTune",
+"arxiv": "2506.16289",
+"title": "The Condition Number as a Scale-Invariant Proxy for Information Encoding in Neural Units",
+"year": 2025
+},
+{
+"id": "milora",
+"name": "MiLoRA",
+"arxiv": "2406.09044",
+"title": "MiLoRA: Harnessing Minor Singular Components for Parameter-Efficient LLM Finetuning",
+"year": 2024
+},
+{
+"id": "lora-one",
+"name": "LoRA-One",
+"arxiv": "2502.01235",
+"title": "LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently",
+"year": 2025
+},
+{
+"id": "gora",
+"name": "GoRA",
+"arxiv": "2502.12171",
+"title": "GoRA: Gradient-driven Adaptive Low Rank Adaptation",
+"year": 2025
+},
+{
+"id": "lora-sb",
+"name": "LoRA-SB",
+"arxiv": "2411.19557",
+"title": "Initialization using Update Approximation is a Silver Bullet for Extremely Efficient Low-Rank Fine-Tuning",
+"year": 2024
+},
+{
+"id": "lora-null",
+"name": "LoRA-Null",
+"arxiv": "2503.02659",
+"title": "Put the Space of LoRA Initialization to the Extreme to Preserve Pre-trained Knowledge",
+"year": 2025
+},
+{
+"id": "dylora",
+"name": "DyLoRA",
+"arxiv": "2210.07558",
+"title": "DyLoRA: Parameter Efficient Tuning of Pre-trained Models using Dynamic Search-Free Low-Rank Adaptation",
+"year": 2022
+},
+{
+"id": "sora",
+"name": "SoRA",
+"arxiv": "2311.11696",
+"title": "Sparse Low-rank Adaptation of Pre-trained Language Models",
+"year": 2023
+},
+{
+"id": "increlora",
+"name": "IncreLoRA",
+"arxiv": "2308.12043",
+"title": "IncreLoRA: Incremental Parameter Allocation Method for Parameter-Efficient Fine-tuning",
+"year": 2023
+},
+{
+"id": "alora-allocating",
+"name": "ALoRA",
+"arxiv": "2403.16187",
+"title": "ALoRA: Allocating Low-Rank Adaptation for Fine-tuning Large Language Models",
+"year": 2024
+},
+{
+"id": "autolora",
+"name": "AutoLoRA",
+"arxiv": "2403.09113",
+"title": "AutoLoRA: Automatically Tuning Matrix Ranks in Low-Rank Adaptation Based on Meta Learning",
+"year": 2024
+},
+{
+"id": "elalora",
+"name": "ElaLoRA",
+"arxiv": "2504.00254",
+"title": "ElaLoRA: Elastic & Learnable Low-Rank Adaptation for Efficient Model Fine-Tuning",
+"year": 2025
+},
+{
+"id": "lora-drop",
+"name": "LoRA-drop",
+"arxiv": "2402.07721",
+"title": "LoRA-drop: Efficient LoRA Parameter Pruning based on Output Evaluation",
+"year": 2024
+},
+{
+"id": "dora-dynamic-rank",
+"name": "DoRA (dynamic rank)",
+"arxiv": "2405.17357",
+"title": "DoRA: Enhancing Parameter-Efficient Fine-Tuning with Dynamic Rank Distribution",
+"year": 2024
+},
+{
+"id": "lora-rite",
+"name": "LoRA-RITE",
+"arxiv": "2410.20625",
+"title": "LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization",
+"year": 2024
+},
+{
+"id": "lora-pro",
+"name": "LoRA-Pro",
+"arxiv": "2407.18242",
+"title": "LoRA-Pro: Are Low-Rank Adapters Properly Optimized?",
+"year": 2024
+},
+{
+"id": "relora",
+"name": "ReLoRA",
+"arxiv": "2307.05695",
+"title": "ReLoRA: High-Rank Training Through Low-Rank Updates",
+"year": 2023
+},
+{
+"id": "delta-lora",
+"name": "Delta-LoRA",
+"arxiv": "2309.02411",
+"title": "Delta-LoRA: Fine-Tuning High-Rank Parameters with the Delta of Low-Rank Matrices",
+"year": 2023
+},
+{
+"id": "cola",
+"name": "COLA",
+"arxiv": "2401.04151",
+"title": "Chain of LoRA: Efficient Fine-tuning of Language Models via Residual Learning",
+"year": 2024
+},
+{
+"id": "periodic-lora",
+"name": "PeriodicLoRA",
+"arxiv": "2402.16141",
+"title": "PeriodicLoRA: Breaking the Low-Rank Bottleneck in LoRA Optimization",
+"year": 2024
+},
+{
+"id": "lora-dropout",
+"name": "LoRA Dropout",
+"arxiv": "2404.09610",
+"title": "LoRA Dropout as a Sparsity Regularizer for Overfitting Control",
+"year": 2024
+},
+{
+"id": "asylora",
+"name": "AsyLoRA",
+"arxiv": "2402.16842",
+"title": "Asymmetry in Low-Rank Adapters of Foundation Models",
+"year": 2024
+},
+{
+"id": "lora-without-regret",
+"name": "LoRA Without Regret",
+"arxiv": "",
+"title": "LoRA Without Regret",
+"year": 2025
+},
+{
+"id": "flat-lora",
+"name": "Flat-LoRA",
+"arxiv": "2409.14396",
+"title": "Flat-LoRA: Low-Rank Adaptation over a Flat Loss Landscape",
+"year": 2024
+},
+{
+"id": "altlora",
+"name": "AltLoRA",
+"arxiv": "2505.12455",
+"title": "AltLoRA: Towards Better Gradient Approximation in Low-Rank Adaptation with Alternating Projections",
+"year": 2025
+},
+{
+"id": "loft",
+"name": "LoFT",
+"arxiv": "2505.21289",
+"title": "LoFT: Low-Rank Adaptation That Behaves Like Full Fine-Tuning",
+"year": 2025
+},
+{
+"id": "polar",
+"name": "PoLAR",
+"arxiv": "2506.03133",
+"title": "PoLAR: Polar-Decomposed Low-Rank Adapter Representation",
+"year": 2025
+},
+{
+"id": "goft",
+"name": "GOFT",
+"arxiv": "2404.04316",
+"title": "Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation",
+"year": 2024
+},
+{
+"id": "qgoft",
+"name": "qGOFT",
+"arxiv": "2404.04316",
+"title": "Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation",
+"year": 2024
+},
+{
+"id": "ether",
+"name": "ETHER",
+"arxiv": "2405.20271",
+"title": "ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections",
+"year": 2024
+},
+{
+"id": "ether-plus",
+"name": "ETHER+",
+"arxiv": "2405.20271",
+"title": "ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections",
+"year": 2024
+},
+{
+"id": "spectral-adapter-r",
+"name": "Spectral Adapter^R",
+"arxiv": "2405.13952",
+"title": "Spectral Adapter: Fine-Tuning in Spectral Space",
+"year": 2024
+},
+{
+"id": "spectral-adapter-a",
+"name": "Spectral Adapter^A",
+"arxiv": "2405.13952",
+"title": "Spectral Adapter: Fine-Tuning in Spectral Space",
+"year": 2024
+},
+{
+"id": "svdiff",
+"name": "SVDiff",
+"arxiv": "2303.11305",
+"title": "SVDiff: Compact Parameter Space for Diffusion Fine-Tuning",
+"year": 2023
+},
+{
+"id": "svf",
+"name": "SVF (Transformer²)",
+"arxiv": "2501.06252",
+"title": "Transformer-Squared: Self-adaptive LLMs",
+"year": 2025
+},
+{
+"id": "svft",
+"name": "SVFT",
+"arxiv": "2405.19597",
+"title": "SVFT: Parameter-Efficient Fine-Tuning with Singular Vectors",
+"year": 2024
+},
+{
+"id": "bidora",
+"name": "BiDoRA",
+"arxiv": "2410.09758",
+"title": "BiDoRA: Bi-level Optimization-Based Weight-Decomposed Low-Rank Adaptation",
+"year": 2024
+},
+{
+"id": "ssf",
+"name": "SSF",
+"arxiv": "2210.08823",
+"title": "Scaling & Shifting Your Features: A New Baseline for Efficient Model Tuning",
+"year": 2022
+},
+{
+"id": "red",
+"name": "RED",
+"arxiv": "2402.15179",
+"title": "Advancing Parameter Efficiency in Fine-tuning via Representation Editing",
+"year": 2024
+},
+{
+"id": "difffit",
+"name": "DiffFit",
+"arxiv": "2304.06648",
+"title": "DiffFit: Unlocking Transferability of Large Diffusion Models via Simple Parameter-Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "liera",
+"name": "LieRA",
+"arxiv": "2504.00851",
+"title": "Generalized Tensor-based Parameter-Efficient Fine-Tuning via Lie Group Transformations",
+"year": 2025
+},
+{
+"id": "flora-batched",
+"name": "FLoRA",
+"arxiv": "2312.05677",
+"title": "Batched Low-Rank Adaptation of Foundation Models",
+"year": 2023
+},
+{
+"id": "quantum-peft",
+"name": "Quantum-PEFT",
+"arxiv": "2503.05431",
+"title": "Quantum-PEFT: Ultra parameter-efficient fine-tuning",
+"year": 2025
+},
+{
+"id": "p-tuning-v2",
+"name": "P-Tuning v2",
+"arxiv": "2110.07602",
+"title": "P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks",
+"year": 2021
+},
+{
+"id": "warp",
+"name": "WARP",
+"arxiv": "2101.00121",
+"title": "WARP: Word-level Adversarial ReProgramming",
+"year": 2021
+},
+{
+"id": "ppt",
+"name": "PPT",
+"arxiv": "2109.04332",
+"title": "PPT: Pre-trained Prompt Tuning for Few-shot Learning",
+"year": 2021
+},
+{
+"id": "spot",
+"name": "SPoT",
+"arxiv": "2110.07904",
+"title": "SPoT: Better Frozen Model Adaptation through Soft Prompt Transfer",
+"year": 2021
+},
+{
+"id": "attempt",
+"name": "ATTEMPT",
+"arxiv": "2205.11961",
+"title": "ATTEMPT: Parameter-Efficient Multi-task Tuning via Attentional Mixtures of Soft Prompts",
+"year": 2022
+},
+{
+"id": "dept",
+"name": "DePT",
+"arxiv": "2309.05173",
+"title": "DePT: Decomposed Prompt Tuning for Parameter-Efficient Fine-tuning",
+"year": 2023
+},
+{
+"id": "residual-prompt-tuning",
+"name": "Residual Prompt Tuning",
+"arxiv": "2305.03937",
+"title": "Residual Prompt Tuning: Improving Prompt Tuning with Residual Reparameterization",
+"year": 2023
+},
+{
+"id": "late-prompt-tuning",
+"name": "LPT",
+"arxiv": "2210.11292",
+"title": "Late Prompt Tuning: A Late Prompt Could Be Better Than Many Prompts",
+"year": 2022
+},
+{
+"id": "idpg",
+"name": "IDPG",
+"arxiv": "2204.04497",
+"title": "IDPG: An Instance-Dependent Prompt Generation Method",
+"year": 2022
+},
+{
+"id": "xprompt",
+"name": "XPrompt",
+"arxiv": "2210.04457",
+"title": "XPrompt: Exploring the Extreme of Prompt Tuning",
+"year": 2022
+},
+{
+"id": "black-box-tuning",
+"name": "BBT",
+"arxiv": "2201.03514",
+"title": "Black-Box Tuning for Language-Model-as-a-Service",
+"year": 2022
+},
+{
+"id": "vpt",
+"name": "VPT",
+"arxiv": "2203.12119",
+"title": "Visual Prompt Tuning",
+"year": 2022
+},
+{
+"id": "visual-prompting",
+"name": "Visual Prompting",
+"arxiv": "2203.17274",
+"title": "Exploring Visual Prompts for Adapting Large-Scale Models",
+"year": 2022
+},
+{
+"id": "coop",
+"name": "CoOp",
+"arxiv": "2109.01134",
+"title": "Learning to Prompt for Vision-Language Models",
+"year": 2021
+},
+{
+"id": "cocoop",
+"name": "CoCoOp",
+"arxiv": "2203.05557",
+"title": "Conditional Prompt Learning for Vision-Language Models",
+"year": 2022
+},
+{
+"id": "maple",
+"name": "MaPLe",
+"arxiv": "2210.03117",
+"title": "MaPLe: Multi-modal Prompt Learning",
+"year": 2022
+},
+{
+"id": "l2p",
+"name": "L2P",
+"arxiv": "2112.08654",
+"title": "Learning to Prompt for Continual Learning",
+"year": 2021
+},
+{
+"id": "dualprompt",
+"name": "DualPrompt",
+"arxiv": "2204.04799",
+"title": "DualPrompt: Complementary Prompting for Rehearsal-free Continual Learning",
+"year": 2022
+},
+{
+"id": "initial-state-tuning",
+"name": "Initial State Tuning",
+"arxiv": "2410.09016",
+"title": "Parameter-Efficient Fine-Tuning of State Space Models",
+"year": 2024
+},
+{
+"id": "state-offset-tuning",
+"name": "State-offset Tuning",
+"arxiv": "2503.03499",
+"title": "State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models",
+"year": 2025
+},
+{
+"id": "lq-lora",
+"name": "LQ-LoRA",
+"arxiv": "2311.12023",
+"title": "LQ-LoRA: Low-rank Plus Quantized Matrix Decomposition for Efficient Language Model Finetuning",
+"year": 2023
+},
+{
+"id": "ir-qlora",
+"name": "IR-QLoRA",
+"arxiv": "2402.05445",
+"title": "Accurate LoRA-Finetuning Quantization of LLMs via Information Retention",
+"year": 2024
+},
+{
+"id": "l4q",
+"name": "L4Q",
+"arxiv": "2402.04902",
+"title": "L4Q: Parameter Efficient Quantization-Aware Fine-Tuning on Large Language Models",
+"year": 2024
+},
+{
+"id": "peqa",
+"name": "PEQA",
+"arxiv": "2305.14152",
+"title": "Memory-Efficient Fine-Tuning of Compressed Large Language Models via sub-4-bit Integer Quantization",
+"year": 2023
+},
+{
+"id": "apiq",
+"name": "ApiQ",
+"arxiv": "2402.05147",
+"title": "ApiQ: Finetuning of 2-Bit Quantized Large Language Model",
+"year": 2024
+},
+{
+"id": "efficientqat",
+"name": "EfficientQAT",
+"arxiv": "2407.11062",
+"title": "EfficientQAT: Efficient Quantization-Aware Training for Large Language Models",
+"year": 2024
+},
+{
+"id": "loqt",
+"name": "LoQT",
+"arxiv": "2405.16528",
+"title": "LoQT: Low-Rank Adapters for Quantized Pretraining",
+"year": 2024
+},
+{
+"id": "galore",
+"name": "GaLore",
+"arxiv": "2403.03507",
+"title": "GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection",
+"year": 2024
+},
+{
+"id": "galore-2",
+"name": "GaLore 2",
+"arxiv": "2504.20437",
+"title": "GaLore 2: Large-Scale LLM Pre-Training by Gradient Low-Rank Projection",
+"year": 2025
+},
+{
+"id": "q-galore",
+"name": "Q-GaLore",
+"arxiv": "2407.08296",
+"title": "Q-GaLore: Quantized GaLore with INT4 Projection and Layer-Adaptive Low-Rank Gradients",
+"year": 2024
+},
+{
+"id": "flora-opt",
+"name": "Flora",
+"arxiv": "2402.03293",
+"title": "Flora: Low-Rank Adapters Are Secretly Gradient Compressors",
+"year": 2024
+},
+{
+"id": "fira",
+"name": "Fira",
+"arxiv": "2410.01623",
+"title": "Fira: Can We Achieve Full-rank Training of LLMs Under Low-rank Constraint?",
+"year": 2024
+},
+{
+"id": "apollo",
+"name": "APOLLO",
+"arxiv": "2412.05270",
+"title": "APOLLO: SGD-like Memory, AdamW-level Performance",
+"year": 2024
+},
+{
+"id": "online-subspace-descent",
+"name": "Online Subspace Descent",
+"arxiv": "2408.12857",
+"title": "Memory-Efficient LLM Training with Online Subspace Descent",
+"year": 2024
+},
+{
+"id": "adam-mini",
+"name": "Adam-mini",
+"arxiv": "2406.16793",
+"title": "Adam-mini: Use Fewer Learning Rates To Gain More",
+"year": 2024
+},
+{
+"id": "mezo",
+"name": "MeZO",
+"arxiv": "2305.17333",
+"title": "Fine-Tuning Language Models with Just Forward Passes",
+"year": 2023
+},
+{
+"id": "lomo",
+"name": "LOMO",
+"arxiv": "2306.09782",
+"title": "Full Parameter Fine-tuning for Large Language Models with Limited Resources",
+"year": 2023
+},
+{
+"id": "adalomo",
+"name": "AdaLomo",
+"arxiv": "2310.10195",
+"title": "AdaLomo: Low-memory Optimization with Adaptive Learning Rate",
+"year": 2023
+},
+{
+"id": "badam",
+"name": "BAdam",
+"arxiv": "2404.02827",
+"title": "BAdam: A Memory Efficient Full Parameter Optimization Method for Large Language Models",
+"year": 2024
+},
+{
+"id": "lisa",
+"name": "LISA",
+"arxiv": "2403.17919",
+"title": "LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning",
+"year": 2024
+},
+{
+"id": "bitfit",
+"name": "BitFit",
+"arxiv": "2106.10199",
+"title": "BitFit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models",
+"year": 2021
+},
+{
+"id": "diff-pruning",
+"name": "Diff Pruning",
+"arxiv": "2012.07463",
+"title": "Parameter-Efficient Transfer Learning with Diff Pruning",
+"year": 2020
+},
+{
+"id": "fish-mask",
+"name": "FISH Mask",
+"arxiv": "2111.09839",
+"title": "Training Neural Networks with Fixed Sparse Masks",
+"year": 2021
+},
+{
+"id": "child-tuning",
+"name": "Child-Tuning",
+"arxiv": "2109.05687",
+"title": "Raise a Child in Large Language Model: Towards Effective and Generalizable Fine-tuning",
+"year": 2021
+},
+{
+"id": "lt-sft",
+"name": "LT-SFT",
+"arxiv": "2110.07560",
+"title": "Composable Sparse Fine-Tuning for Cross-Lingual Transfer",
+"year": 2021
+},
+{
+"id": "spt",
+"name": "SPT",
+"arxiv": "2303.08566",
+"title": "Sensitivity-Aware Visual Parameter-Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "pafi",
+"name": "PaFi",
+"arxiv": "2305.16742",
+"title": "Parameter-Efficient Fine-Tuning without Introducing New Latency",
+"year": 2023
+},
+{
+"id": "smt",
+"name": "SMT",
+"arxiv": "2405.15525",
+"title": "SMT: Fine-Tuning Large Language Models with Sparse Matrices",
+"year": 2024
+},
+{
+"id": "spiel",
+"name": "SpIEL",
+"arxiv": "2401.16405",
+"title": "Scaling Sparse Fine-Tuning to Large Language Models",
+"year": 2024
+},
+{
+"id": "gps",
+"name": "GPS",
+"arxiv": "2312.10136",
+"title": "Gradient-based Parameter Selection for Efficient Fine-Tuning",
+"year": 2023
+},
+{
+"id": "s2ft",
+"name": "S²FT",
+"arxiv": "2412.06289",
+"title": "S²FT: Efficient, Scalable and Generalizable LLM Fine-tuning by Structured Sparsity",
+"year": 2024
+},
+{
+"id": "sift",
+"name": "SIFT",
+"arxiv": "2312.11875",
+"title": "Sparse is Enough in Fine-tuning Pre-trained Large Language Models",
+"year": 2023
+},
+{
+"id": "hift",
+"name": "HiFT",
+"arxiv": "2401.15207",
+"title": "HiFT: A Hierarchical Full Parameter Fine-Tuning Strategy",
+"year": 2024
+},
+{
+"id": "surgical-fine-tuning",
+"name": "Surgical FT",
+"arxiv": "2210.11466",
+"title": "Surgical Fine-Tuning Improves Adaptation to Distribution Shifts",
+"year": 2022
+},
+{
+"id": "masking",
+"name": "Masking",
+"arxiv": "2004.12406",
+"title": "Masking as an Efficient Alternative to Finetuning for Pretrained Language Models",
+"year": 2020
+},
+{
+"id": "piggyback",
+"name": "Piggyback",
+"arxiv": "1801.06519",
+"title": "Piggyback: Adapting a Single Network to Multiple Tasks by Learning to Mask Weights",
+"year": 2018
+},
+{
+"id": "sam-sparse",
+"name": "SAM (sparse)",
+"arxiv": "2211.15583",
+"title": "On the Effectiveness of Parameter-Efficient Fine-Tuning",
+"year": 2022
+},
+{
+"id": "lift",
+"name": "LIFT",
+"arxiv": "2506.00772",
+"title": "LIFT the Veil for the Truth: Principal Weights Emerge after Rank Reduction for Reasoning-Focused Supervised Fine-Tuning",
+"year": 2025
+},
+{
+"id": "rosa",
+"name": "RoSA",
+"arxiv": "2401.04679",
+"title": "RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation",
+"year": 2024
+},
+{
+"id": "abba",
+"name": "ABBA",
+"arxiv": "2505.14238",
+"title": "ABBA-Adapters: Efficient and Expressive Fine-Tuning of Foundation Models",
+"year": 2025
+},
+{
+"id": "krona",
+"name": "KronA",
+"arxiv": "2212.10650",
+"title": "KronA: Parameter Efficient Tuning with Kronecker Adapter",
+"year": 2022
+},
+{
+"id": "phm-adapter",
+"name": "PHM-Adapter",
+"arxiv": "2106.04647",
+"title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+"year": 2021
+},
+{
+"id": "kadaptation",
+"name": "KAdaptation",
+"arxiv": "2203.16329",
+"title": "Parameter-efficient Model Adaptation for Vision Transformers",
+"year": 2022
+},
+{
+"id": "kradapter",
+"name": "KRAdapter",
+"arxiv": "2508.00230",
+"title": "Towards Higher Effective Rank in Parameter-efficient Fine-tuning using Khatri--Rao Product",
+"year": 2025
+},
+{
+"id": "loretta",
+"name": "LoRETTA",
+"arxiv": "2402.11417",
+"title": "LoRETTA: Low-Rank Economic Tensor-Train Adaptation for Ultra-Low-Parameter Fine-Tuning of Large Language Models",
+"year": 2024
+},
+{
+"id": "tt-lora",
+"name": "TT-LoRA",
+"arxiv": "2408.01008",
+"title": "Tensor Train Low-rank Approximation (TT-LoRA): Democratizing AI with Accelerated LLMs",
+"year": 2024
+},
+{
+"id": "lotr",
+"name": "LoTR",
+"arxiv": "2402.01376",
+"title": "LoTR: Low Tensor Rank Weight Adaptation",
+"year": 2024
+},
+{
+"id": "fact",
+"name": "FacT",
+"arxiv": "2212.03145",
+"title": "FacT: Factor-Tuning for Lightweight Adaptation on Vision Transformer",
+"year": 2022
+},
+{
+"id": "flora-tucker",
+"name": "FLoRA (Tucker core)",
+"arxiv": "2405.14739",
+"title": "Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning",
+"year": 2024
+},
+{
+"id": "lorta",
+"name": "LoRTA",
+"arxiv": "2410.04060",
+"title": "LoRTA: Low Rank Tensor Adaptation of Large Language Models",
+"year": 2024
+},
+{
+"id": "metatt",
+"name": "MetaTT",
+"arxiv": "2506.09105",
+"title": "MetaTT: A Global Tensor-Train Adapter for Parameter-Efficient Fine-Tuning",
+"year": 2025
+},
+{
+"id": "quanta",
+"name": "QuanTA",
+"arxiv": "2406.00132",
+"title": "QuanTA: Efficient High-Rank Fine-Tuning of LLMs with Quantum-Informed Tensor Adaptation",
+"year": 2024
+},
+{
+"id": "mora",
+"name": "MoRA",
+"arxiv": "2405.12130",
+"title": "MoRA: High-Rank Updating for Parameter-Efficient Fine-Tuning",
+"year": 2024
+},
+{
+"id": "melora",
+"name": "MELoRA",
+"arxiv": "2402.17263",
+"title": "MELoRA: Mini-Ensemble Low-Rank Adapters for Parameter-Efficient Fine-Tuning",
+"year": 2024
+},
+{
+"id": "more",
+"name": "MoRe",
+"arxiv": "2408.17383",
+"title": "MoRe Fine-Tuning with 10x Fewer Parameters",
+"year": 2024
+},
+{
+"id": "dsee",
+"name": "DSEE",
+"arxiv": "2111.00160",
+"title": "DSEE: Dually Sparsity-embedded Efficient Tuning of Pre-trained Language Models",
+"year": 2021
+},
+{
+"id": "sine-lora",
+"name": "Sine-LoRA",
+"arxiv": "2403.19243",
+"title": "Efficient Learning With Sine-Activated Low-rank Matrices",
+"year": 2024
+},
+{
+"id": "nola",
+"name": "NOLA",
+"arxiv": "2310.02556",
+"title": "NOLA: Compressing LoRA using Linear Combination of Random Basis",
+"year": 2023
+},
+{
+"id": "intrinsic-said",
+"name": "Intrinsic SAID",
+"arxiv": "2012.13255",
+"title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning",
+"year": 2020
+},
+{
+"id": "tied-lora",
+"name": "Tied-LoRA",
+"arxiv": "2311.09578",
+"title": "Tied-LoRA: Enhancing parameter efficiency of LoRA with Weight Tying",
+"year": 2023
+},
+{
+"id": "sharelora",
+"name": "ShareLoRA",
+"arxiv": "2406.10785",
+"title": "ShareLoRA: Parameter Efficient and Robust Large Language Model Fine-tuning via Shared Low-Rank Adaptation",
+"year": 2024
+},
+{
+"id": "prolora",
+"name": "PRoLoRA",
+"arxiv": "2402.16902",
+"title": "PRoLoRA: Partial Rotation Empowers More Parameter-Efficient LoRA",
+"year": 2024
+},
+{
+"id": "mos",
+"name": "MoS",
+"arxiv": "2410.00938",
+"title": "MoS: Unleashing Parameter Efficiency of Low-Rank Adaptation with Mixture of Shards",
+"year": 2024
+},
+{
+"id": "rasa",
+"name": "RaSA",
+"arxiv": "2503.12576",
+"title": "RaSA: Rank-Sharing Low-Rank Adaptation",
+"year": 2025
+},
+{
+"id": "lora-xs",
+"name": "LoRA-XS",
+"arxiv": "2405.17604",
+"title": "LoRA-XS: Low-Rank Adaptation with Extremely Small Number of Parameters",
+"year": 2024
+},
+{
+"id": "lamda",
+"name": "LaMDA",
+"arxiv": "2406.12832",
+"title": "LaMDA: Large Model Fine-Tuning via Spectrally Decomposed Low-Dimensional Adaptation",
+"year": 2024
+},
+{
+"id": "lora-mini",
+"name": "LoRA-Mini",
+"arxiv": "2411.15804",
+"title": "LoRA-Mini : Adaptation Matrices Decomposition and Selective Training",
+"year": 2024
+},
+{
+"id": "mosa",
+"name": "MoSA",
+"arxiv": "",
+"title": "MoSA: Mosaic Shared Adaptation of Large Language Models",
+"year": 2026
+},
+{
+"id": "ssh",
+"name": "SSH",
+"arxiv": "2502.05539",
+"title": "SSH: Sparse Spectrum Adaptation via Discrete Hartley Transformation",
+"year": 2025
+},
+{
+"id": "loca",
+"name": "LoCA",
+"arxiv": "2502.06820",
+"title": "LoCA: Location-Aware Cosine Adaptation for Parameter-Efficient Fine-Tuning",
+"year": 2025
+}
+],
+"papers": [
+{
+"id": "unified-view-peft",
+"arxiv": "2110.04366",
+"title": "Towards a Unified View of Parameter-Efficient Transfer Learning"
+},
+{
+"id": "adapter-effectiveness",
+"arxiv": "2106.03164",
+"title": "On the Effectiveness of Adapter-based Tuning for Pretrained Language Model Adaptation"
+},
+{
+"id": "adapterhub",
+"arxiv": "2007.07779",
+"title": "AdapterHub: A Framework for Adapting Transformers"
+},
+{
+"id": "adapters-library",
+"arxiv": "2311.11077",
+"title": "Adapters: A Unified Library for Parameter-Efficient and Modular Transfer Learning"
+},
+{
+"id": "llm-adapters",
+"arxiv": "2304.01933",
+"title": "LLM-Adapters: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models"
+},
+{
+"id": "modular-deep-learning",
+"arxiv": "2302.11529",
+"title": "Modular Deep Learning"
+},
+{
+"id": "vl-adapter",
+"arxiv": "2112.06825",
+"title": "VL-Adapter: Parameter-Efficient Transfer Learning for Vision-and-Language Tasks"
+},
+{
+"id": "delta-tuning",
+"arxiv": "2203.06904",
+"title": "Parameter-efficient fine-tuning of large-scale pre-trained language models"
+},
+{
+"id": "peft-design-spaces",
+"arxiv": "2301.01821",
+"title": "Parameter-Efficient Fine-Tuning Design Spaces"
+},
+{
+"id": "peft-survey-han",
+"arxiv": "2403.14608",
+"title": "Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey"
+},
+{
+"id": "lora-lr-scaling-across-ranks",
+"arxiv": "2602.06204",
+"title": "Learning Rate Scaling across LoRA Ranks and Transfer to Full Finetuning"
+},
+{
+"id": "lora-alpha-signal-drift",
+"arxiv": "2606.12883",
+"title": "The Hidden Power of Scaling Factor in LoRA Optimization"
+},
+{
+"id": "muon-lora-uniform-spectral-growth",
+"arxiv": "2602.06385",
+"title": "Uniform Spectral Growth and Convergence of Muon in LoRA-Style Matrix Factorization"
+},
+{
+"id": "weight-updates-as-activation-shifts",
+"arxiv": "2603.00425",
+"title": "Weight Updates as Activation Shifts: A Principled Framework for Steering"
+},
+{
+"id": "diffract-spectral-domain-adaptation",
+"arxiv": "2608.10850",
+"title": "Diffract: Spectral View of LLM Domain Adaptation"
+},
+{
+"id": "recycling-loras-adaptive-merging",
+"arxiv": "2602.12323",
+"title": "The Appeal and Reality of Recycling LoRAs with Adaptive Merging"
+},
+{
+"id": "zo-learning-dynamics-kernel",
+"arxiv": "2605.03373",
+"title": "Learning Dynamics of Zeroth-Order Optimization: A Kernel Perspective"
+},
+{
+"id": "lora-knowledge-memory",
+"arxiv": "2603.01097",
+"title": "Understanding LoRA as Knowledge Memory: An Empirical Analysis"
+},
+{
+"id": "tangent-task-arithmetic",
+"arxiv": "2305.12827",
+"title": "Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models"
+},
+{
+"id": "git-re-basin",
+"arxiv": "2209.04836",
+"title": "Git Re-Basin: Merging Models modulo Permutation Symmetries"
+},
+{
+"id": "linear-mode-connectivity",
+"arxiv": "1912.05671",
+"title": "Linear Mode Connectivity and the Lottery Ticket Hypothesis"
+},
+{
+"id": "model-merging-survey",
+"arxiv": "2408.07666",
+"title": "Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities"
+},
+{
+"id": "merging-at-scale",
+"arxiv": "2410.03617",
+"title": "What Matters for Model Merging at Scale?"
+},
+{
+"id": "hypernetworks",
+"arxiv": "1609.09106",
+"title": "HyperNetworks"
+},
+{
+"id": "neural-network-diffusion",
+"arxiv": "2402.13144",
+"title": "Neural Network Diffusion"
+},
+{
+"id": "rl-finetunes-small-subnetworks",
+"arxiv": "2505.11711",
+"title": "Reinforcement Learning Finetunes Small Subnetworks in Large Language Models"
+},
+{
+"id": "path-not-taken-rlvr",
+"arxiv": "2511.08567",
+"title": "The Path Not Taken: RLVR Provably Learns Off the Principals"
+},
+{
+"id": "rls-razor",
+"arxiv": "2509.04259",
+"title": "RL's Razor: Why Online Reinforcement Learning Forgets Less"
+},
+{
+"id": "evaluating-peft-rlvr",
+"arxiv": "2512.23165",
+"title": "Evaluating Parameter Efficient Methods for RLVR"
+},
+{
+"id": "lora-knowledge-capacity",
+"arxiv": "2502.14502",
+"title": "How Much Knowledge Can You Pack into a LoRA Adapter without Harming LLM?"
+},
+{
+"id": "gradient-projection-memory",
+"arxiv": "2103.09762",
+"title": "Gradient Projection Memory for Continual Learning"
+},
+{
+"id": "orthogonal-gradient-descent",
+"arxiv": "1910.07104",
+"title": "Orthogonal Gradient Descent for Continual Learning"
+},
+{
+"id": "distributed-alignment-search",
+"arxiv": "2303.02536",
+"title": "Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations"
+},
+{
+"id": "axbench",
+"arxiv": "2501.17148",
+"title": "AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders"
+},
+{
+"id": "representation-engineering",
+"arxiv": "2310.01405",
+"title": "Representation Engineering: A Top-Down Approach to AI Transparency"
+},
+{
+"id": "inference-time-intervention",
+"arxiv": "2306.03341",
+"title": "Inference-Time Intervention: Eliciting Truthful Answers from a Language Model"
+},
+{
+"id": "laplace-redux",
+"arxiv": "2106.14806",
+"title": "Laplace Redux -- Effortless Bayesian Deep Learning"
+},
+{
+"id": "bayes-by-backprop",
+"arxiv": "1505.05424",
+"title": "Weight Uncertainty in Neural Networks"
+},
+{
+"id": "revnet",
+"arxiv": "1707.04585",
+"title": "The Reversible Residual Network: Backpropagation Without Storing Activations"
+},
+{
+"id": "laser-layer-selective-rank-reduction",
+"arxiv": "2312.13558",
+"title": "The Truth is in There: Improving Reasoning in Language Models with Layer-Selective Rank Reduction"
+},
+{
+"id": "taylor-importance-pruning",
+"arxiv": "1906.10771",
+"title": "Importance Estimation for Neural Network Pruning"
+},
+{
+"id": "linear-classifier-probes",
+"arxiv": "1610.01644",
+"title": "Understanding intermediate layers using linear classifier probes"
+},
+{
+"id": "dexperts",
+"arxiv": "2105.03023",
+"title": "DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts"
+},
+{
+"id": "universal-adversarial-triggers",
+"arxiv": "1908.07125",
+"title": "Universal Adversarial Triggers for Attacking and Analyzing NLP"
+},
+{
+"id": "fedpetuning",
+"arxiv": "2212.10025",
+"title": "FedPETuning: When Federated Learning Meets the Parameter-Efficient Tuning Methods of Pre-trained Language Models"
+},
+{
+"id": "fedit",
+"arxiv": "2305.05644",
+"title": "Towards Building the Federated GPT: Federated Instruction Tuning"
+},
+{
+"id": "group-diffusion-transformers",
+"arxiv": "2410.15027",
+"title": "Group Diffusion Transformers are Unsupervised Multitask Learners"
+},
+{
+"id": "intrinsic-dimensionality",
+"arxiv": "2012.13255",
+"title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning"
+},
+{
+"id": "expressive-power-lora",
+"arxiv": "2310.17513",
+"title": "The Expressive Power of Low-Rank Adaptation"
+},
+{
+"id": "lora-illusion-of-equivalence",
+"arxiv": "2410.21228",
+"title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence"
+},
+{
+"id": "task-arithmetic",
+"arxiv": "2212.04089",
+"title": "Editing Models with Task Arithmetic"
+},
+{
+"id": "lora-learns-less-forgets-less",
+"arxiv": "2405.09673",
+"title": "LoRA Learns Less and Forgets Less"
+},
+{
+"id": "hayou-lora-init-dynamics",
+"arxiv": "2406.08447",
+"title": "The Impact of Initialization on LoRA Finetuning Dynamics"
+},
+{
+"id": "lora-without-regret",
+"arxiv": "",
+"title": "LoRA Without Regret"
+},
+{
+"id": "scaling-down-to-scale-up",
+"arxiv": "2303.15647",
+"title": "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning"
+},
+{
+"id": "nystrom-init-matrix-factorization",
+"arxiv": "2410.18965",
+"title": "On the Crucial Role of Initialization for Matrix Factorization"
+},
+{
+"id": "asymmetry-lora",
+"arxiv": "2402.16842",
+"title": "Asymmetry in Low-Rank Adapters of Foundation Models"
+},
+{
+"id": "unified-lora-variants-study",
+"arxiv": "2601.22708",
+"title": "A Unified Study of LoRA Variants: Taxonomy, Review, Codebase, and Empirical Evaluation"
+},
+{
+"id": "intrinsic-dimension-objective-landscapes",
+"arxiv": "1804.08838",
+"title": "Measuring the Intrinsic Dimension of Objective Landscapes"
+},
+{
+"id": "kernel-view-lm-finetuning",
+"arxiv": "2210.05643",
+"title": "A Kernel-Based View of Language Model Fine-Tuning"
+},
+{
+"id": "lora-ntk-no-spurious-minima",
+"arxiv": "2402.11867",
+"title": "LoRA Training in the NTK Regime has No Spurious Local Minima"
+},
+{
+"id": "lora-converges-or-fails-loudly",
+"arxiv": "2502.09376",
+"title": "LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)"
+},
+{
+"id": "lora-gradient-flow-matrix-factorization",
+"arxiv": "2503.06982",
+"title": "Understanding the Learning Dynamics of LoRA: A Gradient Flow Perspective on Low-Rank Adaptation in Matrix Factorization"
+},
+{
+"id": "lr-matters-vanilla-lora",
+"arxiv": "2602.04998",
+"title": "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+},
+{
+"id": "lora-meets-dropout",
+"arxiv": "2403.00812",
+"title": "LoRA Meets Dropout under a Unified Framework"
+},
+{
+"id": "minimum-hyperspherical-energy",
+"arxiv": "1805.09298",
+"title": "Learning towards Minimum Hyperspherical Energy"
+},
+{
+"id": "orthogonal-over-parameterized-training",
+"arxiv": "2004.04690",
+"title": "Orthogonal Over-Parameterized Training"
+},
+{
+"id": "weight-normalization",
+"arxiv": "1602.07868",
+"title": "Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks"
+},
+{
+"id": "film",
+"arxiv": "1709.07871",
+"title": "FiLM: Visual Reasoning with a General Conditioning Layer"
+},
+{
+"id": "butterfly-factorization",
+"arxiv": "1903.05895",
+"title": "Learning Fast Algorithms for Linear Transforms Using Butterfly Factorizations"
+},
+{
+"id": "cheap-orthogonal-constraints",
+"arxiv": "1901.08428",
+"title": "Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group"
+},
+{
+"id": "householder-orthogonal-rnn",
+"arxiv": "1612.00188",
+"title": "Efficient Orthogonal Parametrisation of Recurrent Neural Networks Using Householder Reflections"
+},
+{
+"id": "primacy-of-magnitude",
+"arxiv": "2507.06558",
+"title": "The Primacy of Magnitude in Low-Rank Adaptation"
+},
+{
+"id": "prefix-tuning-capabilities-limitations",
+"arxiv": "2310.19698",
+"title": "When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations"
+},
+{
+"id": "wang-2023-prompt-universality",
+"arxiv": "2305.18787",
+"title": "Universality and Limitations of Prompt Tuning"
+},
+{
+"id": "petrov-2024-prefix-universal",
+"arxiv": "2402.14753",
+"title": "Prompting a Pretrained Transformer Can Be a Universal Approximator"
+},
+{
+"id": "oymak-2023-attention-prompt-tuning",
+"arxiv": "2306.03435",
+"title": "On the Role of Attention in Prompt-tuning"
+},
+{
+"id": "galim-2025-ssm-prefix-equivalence",
+"arxiv": "2410.09016",
+"title": "Parameter-Efficient Fine-Tuning of State Space Models"
+},
+{
+"id": "le-2025-revisiting-prefix",
+"arxiv": "2410.02200",
+"title": "Revisiting Prefix-tuning: Statistical Benefits of Reparameterization among Prompts"
+},
+{
+"id": "qin-2021-intrinsic-task-subspace",
+"arxiv": "2110.07867",
+"title": "Exploring Universal Intrinsic Task Subspace via Prompt Tuning"
+},
+{
+"id": "su-2022-prompt-transferability",
+"arxiv": "2111.06719",
+"title": "On Transferability of Prompt Tuning for Natural Language Processing"
+},
+{
+"id": "khashabi-2022-prompt-waywardness",
+"arxiv": "2112.08348",
+"title": "Prompt Waywardness: The Curious Case of Discretized Interpretation of Continuous Prompts"
+},
+{
+"id": "liu-2023-pretrain-prompt-predict",
+"arxiv": "2107.13586",
+"title": "Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing"
+},
+{
+"id": "chen-2022-inducer-tuning",
+"arxiv": "2210.14469",
+"title": "Inducer-tuning: Connecting Prefix-tuning and Adapter-tuning"
+},
+{
+"id": "gradient-descent-tiny-subspace",
+"arxiv": "1812.04754",
+"title": "Gradient Descent Happens in a Tiny Subspace"
+},
+{
+"id": "adafactor",
+"arxiv": "1804.04235",
+"title": "Adafactor: Adaptive Learning Rates with Sublinear Memory Cost"
+},
+{
+"id": "8bit-optimizers",
+"arxiv": "2110.02861",
+"title": "8-bit Optimizers via Block-wise Quantization"
+},
+{
+"id": "golore-subspace-convergence",
+"arxiv": "2410.11289",
+"title": "Subspace Optimization for Large Language Models with Convergence Guarantees"
+},
+{
+"id": "zo-bench",
+"arxiv": "2402.11592",
+"title": "Revisiting Zeroth-Order Optimization for Memory-Efficient LLM Fine-Tuning: A Benchmark"
+},
+{
+"id": "lottery-ticket-hypothesis",
+"arxiv": "1803.03635",
+"title": "The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks"
+},
+{
+"id": "batchnorm-only",
+"arxiv": "2003.00152",
+"title": "Training BatchNorm and Only BatchNorm: On the Expressive Power of Random Features in CNNs"
+},
+{
+"id": "effectiveness-of-peft-sparse-view",
+"arxiv": "2211.15583",
+"title": "On the Effectiveness of Parameter-Efficient Fine-Tuning"
+},
+{
+"id": "skill-localization-grafting",
+"arxiv": "2302.06600",
+"title": "Task-Specific Skill Localization in Fine-tuned Language Models"
+},
+{
+"id": "elsa-freezing-layers",
+"arxiv": "1911.03090",
+"title": "What Would Elsa Do? Freezing Layers During Transformer Fine-Tuning"
+},
+{
+"id": "phm-layer",
+"arxiv": "2102.08597",
+"title": "Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters"
+},
+{
+"id": "kronecker-approximation",
+"arxiv": "",
+"title": "Approximation with Kronecker Products"
+},
+{
+"id": "tensor-train-decomposition",
+"arxiv": "",
+"title": "Tensor-Train Decomposition"
+},
+{
+"id": "tensor-decompositions-applications",
+"arxiv": "",
+"title": "Tensor Decompositions and Applications"
+},
+{
+"id": "tensor-networks-dimensionality-reduction",
+"arxiv": "1609.00893",
+"title": "Low-Rank Tensor Networks for Dimensionality Reduction and Large-Scale Optimization Problems: Perspectives and Challenges PART 1"
+},
+{
+"id": "monarch",
+"arxiv": "2204.00595",
+"title": "Monarch: Expressive Structured Matrices for Efficient and Accurate Training"
+},
+{
+"id": "compute-better-spent",
+"arxiv": "2406.06248",
+"title": "Compute Better Spent: Replacing Dense Layers with Structured Matrices"
+},
+{
+"id": "tensor-networks-meet-neural-networks",
+"arxiv": "2302.09019",
+"title": "Tensor Networks Meet Neural Networks: A Survey and Future Perspectives"
+},
+{
+"id": "pranc",
+"arxiv": "2206.08464",
+"title": "PRANC: Pseudo RAndom Networks for Compacting deep models"
+},
+{
+"id": "hashednets",
+"arxiv": "1504.04788",
+"title": "Compressing Neural Networks with the Hashing Trick"
+},
+{
+"id": "subspace-tuning-decomposition-view",
+"arxiv": "2407.05417",
+"title": "See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition"
+},
+{
+"id": "lora-plus-width-scaling",
+"arxiv": "2402.12354",
+"title": "LoRA+: Efficient Low Rank Adaptation of Large Models"
+},
+{
+"id": "rslora-rank-stabilization",
+"arxiv": "2312.03732",
+"title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA"
+},
+{
+"id": "scaling-llm-finetuning",
+"arxiv": "2402.17193",
+"title": "When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method"
+},
+{
+"id": "peft-critical-review",
+"arxiv": "2312.12148",
+"title": "Parameter-Efficient Fine-Tuning Methods for Pretrained Language Models: A Critical Review and Assessment"
+},
+{
+"id": "lora-survey-mao",
+"arxiv": "2407.11046",
+"title": "A Survey on LoRA of Large Language Models"
+},
+{
+"id": "visual-peft-survey",
+"arxiv": "2402.02242",
+"title": "Parameter-Efficient Fine-Tuning for Pre-Trained Vision Models: A Survey and Benchmark"
+},
+{
+"id": "lora-redux",
+"arxiv": "2604.21905",
+"title": "Low-Rank Adaptation Redux for Large Models"
+},
+{
+"id": "implicit-acceleration-overparameterization",
+"arxiv": "1802.06509",
+"title": "On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization"
+},
+{
+"id": "layers-automatically-balanced",
+"arxiv": "1806.00900",
+"title": "Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced"
+},
+{
+"id": "implicit-regularization-deep-matrix-factorization",
+"arxiv": "1905.13655",
+"title": "Implicit Regularization in Deep Matrix Factorization"
+},
+{
+"id": "neural-mechanics-symmetry",
+"arxiv": "2012.04728",
+"title": "Neural Mechanics: Symmetry and Broken Conservation Laws in Deep Learning Dynamics"
+},
+{
+"id": "symmetries-conserved-quantities-gradient-flow",
+"arxiv": "2210.17216",
+"title": "Symmetries, Flat Minima, and the Conserved Quantities of Gradient Flow"
+},
+{
+"id": "conservation-laws-gradient-flows",
+"arxiv": "2307.00144",
+"title": "Abide by the Law and Follow the Flow: Conservation Laws for Gradient Flows"
+},
+{
+"id": "fixed-rank-riemannian-quotient",
+"arxiv": "1209.0430",
+"title": "Fixed-rank matrix factorizations and Riemannian low-rank optimization"
+},
+{
+"id": "riemannian-preconditioned-lora",
+"arxiv": "2402.02347",
+"title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models"
+},
+{
+"id": "lora-rite-transformation-invariance",
+"arxiv": "2410.20625",
+"title": "LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization"
+},
+{
+"id": "learning-on-loras-gl-equivariance",
+"arxiv": "2410.04207",
+"title": "Learning on LoRAs: GL-Equivariant Processing of Low-Rank Weight Spaces for Large Finetuned Models"
+},
+{
+"id": "balanced-lora",
+"arxiv": "2605.31484",
+"title": "Balanced LoRA: Removing Parameter Invariance to Accelerate Convergence"
+},
+{
+"id": "backprop-as-functor",
+"arxiv": "1711.10455",
+"title": "Backprop as Functor: A compositional perspective on supervised learning"
+},
+{
+"id": "lenses-and-learners",
+"arxiv": "1903.03671",
+"title": "Lenses and Learners"
+},
+{
+"id": "reverse-derivative-categories",
+"arxiv": "1910.07065",
+"title": "Reverse Derivative Categories"
+},
+{
+"id": "categorical-foundations-gradient-learning",
+"arxiv": "2103.01931",
+"title": "Categorical Foundations of Gradient-Based Learning"
+},
+{
+"id": "categorical-cybernetics",
+"arxiv": "2105.06332",
+"title": "Towards Foundations of Categorical Cybernetics"
+},
+{
+"id": "category-theory-in-ml-survey",
+"arxiv": "2106.07032",
+"title": "Category Theory in Machine Learning"
+},
+{
+"id": "categorical-deep-learning",
+"arxiv": "2402.15332",
+"title": "Position: Categorical Deep Learning is an Algebraic Theory of All Architectures"
+},
+{
+"id": "fundamental-components-deep-learning-thesis",
+"arxiv": "2403.13001",
+"title": "Fundamental Components of Deep Learning: A category-theoretic approach"
+},
+{
+"id": "geometric-deep-learning",
+"arxiv": "2104.13478",
+"title": "Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges"
+}
+]
+}

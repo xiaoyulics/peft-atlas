@@ -1,0 +1,149 @@
+<section class="expose" id="cite" data-toc="§" data-toc-title="Cite and colophon">
+  <header class="expose-head"><span class="label">§ Colophon</span><h2>How to cite, and how it was made</h2><p class="summary">The entry to cite, the thirty-two papers the atlas leans on most, and how the catalogue and the theorems were built and checked.</p></header>
+  <blockquote class="epigraph"><p>Every harvest grows from seeds that other hands have sown. Naming the sowers is part of the work.</p><footer>after Grothendieck, <em>Récoltes et semailles</em></footer></blockquote>
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>Cite the atlas with the entry in <a href="#fig-cite">the citation panel</a>, and a result by its number. For a result marked <em>Known</em>, cite the authors named beside it.</li>
+    <li>The 382 methods and 138 papers were checked against arXiv, their venues, the papers themselves and the Hugging Face PEFT source, and 905 corrections were logged.</li>
+    <li>Two referees attacked each of the 41 numbered results; 14 stood and 27 were repaired. A second round re-examined 26 of the repaired ones, and its reports are in <code>theory/</code>.</li>
+    <li><code>python3 theory/framework_checks.py</code> re-runs the numerical checks in under a minute.</li>
+  </ul></div>
+  <div class="prose">
+
+    <h3 id="cite-how">How to cite</h3>
+
+    <p>Cite the atlas with the entry in the panel below, and give the number of any result you use. “Thm III.10” names the same statement here, in <code>theory/framework.md</code> and in <code>theory/propositions.json</code>. A result marked <em>Known</em> is due to the authors in its margin. We add only its re-derivation and its reading for fine-tuning, so please cite them for the result itself.</p>
+
+    <figure class="figure wide" id="fig-cite">
+      <div data-figure="cite" data-authors="Xiaoyu Li and Zhizhou Sha and Chiwun Yang and Dai Shi" aria-label="Cite this atlas. The BibTeX entry for the atlas with a copy button, and a copyable bibliography of every method and paper in the catalogue, filterable by search, year, modification kind and availability in Hugging Face PEFT."></div>
+      <figcaption>Cite this atlas. The top panel gives the atlas entry in BibTeX or plain text with a Copy button, beside counts of methods, papers, methods in Hugging Face PEFT and numbered results by referee status. Below is a bibliography of the catalogue, built from each entry's BibTeX record. Its chart counts entries per year, with earlier years pooled in one bar; methods stand above the line, stacked by modification kind, and papers hang hatched below. Search, or click years and kinds, to narrow it; the kind and library filters apply to methods only. Three buttons copy the methods, the papers or both, and the preview shows the exact text. Records that share a citation key are written once, so the pasted file compiles. All counts are computed from the catalogue at load.</figcaption>
+    </figure>
+
+    <h3 id="cite-refs">Key references</h3>
+
+    <p>These thirty-two papers carry most of the weight, and each note says where one enters. <a href="#fig-cite">The citation panel</a> has the full bibliography, and <a href="#catalog">the catalogue</a> a card for every method.</p>
+
+    <h4>Categorical foundations</h4>
+    <ol class="refs">
+      <li>Brendan Fong, David I. Spivak and Rémy Tuyéras. <a href="https://arxiv.org/abs/1711.10455">Backprop as Functor: a compositional perspective on supervised learning</a>. LICS 2019. <span class="muted">Learners as parametrised lenses (<a href="#thm-I-1">Definition I.1</a>, <a href="#lens">Exposé IV</a>).</span></li>
+      <li>G. S. H. Cruttwell, Bruno Gavranović, Neil Ghani, Paul Wilson and Fabio Zanasi. <a href="https://arxiv.org/abs/2103.01931">Categorical Foundations of Gradient-Based Learning</a>. ESOP 2022. <span class="muted">The bicategory \(\mathbf{Para}\) and its 2-cells (<a href="#thm-I-1">Definition I.1</a>).</span></li>
+      <li>Junxian He, Chunting Zhou, Xuezhe Ma, Taylor Berg-Kirkpatrick and Graham Neubig. <a href="https://arxiv.org/abs/2110.04366">Towards a Unified View of Parameter-Efficient Transfer Learning</a>. ICLR 2022. <span class="muted">Prefix tuning as a gated parallel adapter (<a href="#thm-VI-5">Thm VI.5(b)</a>).</span></li>
+    </ol>
+
+    <h4>Symmetry and dynamics</h4>
+    <ol class="refs" start="4">
+      <li>Simon S. Du, Wei Hu and Jason D. Lee. <a href="https://arxiv.org/abs/1806.00900">Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced</a>. NeurIPS 2018. <span class="muted">Balancedness, the principle behind <a href="#thm-III-5">Thm III.5</a>.</span></li>
+      <li>Sanjeev Arora, Nadav Cohen and Elad Hazan. <a href="https://arxiv.org/abs/1802.06509">On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization</a>. ICML 2018. <span class="muted">Balanced deep linear dynamics, one regime of <a href="#thm-III-9">Thm III.9</a>.</span></li>
+      <li>Bo Zhao, Iordan Ganev, Robin Walters, Rose Yu and Nima Dehmamy. <a href="https://arxiv.org/abs/2210.17216">Symmetries, Flat Minima, and the Conserved Quantities of Gradient Flow</a>. ICLR 2023. <span class="muted"><a href="#thm-III-5">Thm III.5</a> is their Prop. 5.1, re-derived for PEFT; see also <a href="https://arxiv.org/abs/2307.00144">Marcotte, Gribonval and Peyré, 2023</a>.</span></li>
+      <li>Salma Tarmoun, Guilherme França, Benjamin D. Haeffele and René Vidal. <a href="https://proceedings.mlr.press/v139/tarmoun21a.html">Understanding the Dynamics of Gradient Flow in Overparameterized Linear Models</a>. ICML 2021. <span class="muted">The closed form behind <a href="#thm-III-9">Thm III.9</a>.</span></li>
+      <li>Hancheng Min, Salma Tarmoun, René Vidal and Enrique Mallada. <a href="https://proceedings.mlr.press/v139/min21c.html">On the Explicit Role of Initialization on the Convergence and Implicit Bias of Overparametrized Linear Networks</a>. ICML 2021. <span class="muted">The role of initial imbalance (<a href="#thm-III-9">Thm III.9</a>).</span></li>
+      <li>George Kempf and Linda Ness. <a href="https://doi.org/10.1007/BFb0066647">The length of vectors in representation spaces</a>. Algebraic Geometry, Lecture Notes in Mathematics 732, Springer, 1979. <span class="muted">Least-norm points of closed orbits; for LoRA, the balanced factorisations (<a href="#thm-III-7">Prop III.7</a>).</span></li>
+      <li>Bamdev Mishra, Gilles Meyer, Silvère Bonnabel and Rodolphe Sepulchre. <a href="https://arxiv.org/abs/1209.0430">Fixed-rank matrix factorizations and Riemannian low-rank optimization</a>. Computational Statistics, 2014. <span class="muted">The quotient geometry of fixed-rank factorisations (<a href="#thm-III-4">Prop III.4</a>).</span></li>
+      <li>Tian Tong, Cong Ma and Yuejie Chi. <a href="https://arxiv.org/abs/2005.08898">Accelerating Ill-Conditioned Low-Rank Matrix Estimation via Scaled Gradient Descent</a>. JMLR, 2021. <span class="muted">Scaled gradient descent (<a href="#thm-III-4">Prop III.4</a>, <a href="#thm-III-12">Thm III.12</a>).</span></li>
+      <li>Fangzhao Zhang and Mert Pilanci. <a href="https://arxiv.org/abs/2402.02347">Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models</a>. ICML 2024. <span class="muted">Scaled GD for LoRA, equivariant under \(GL_r\) undamped, \(O(r)\) damped and \(B_r\) inside AdamW (<a href="#thm-III-12">Thm III.12</a>).</span></li>
+      <li>Soufiane Hayou, Nikhil Ghosh and Bin Yu. <a href="https://arxiv.org/abs/2402.12354">LoRA+: Efficient Low Rank Adaptation of Large Models</a>. ICML 2024. <span class="muted">Under Adam with \(\varepsilon=0\), no decay or clipping and one schedule, its learning-rate ratio acts exactly as a rescaling of \(\alpha\) (<a href="#thm-III-11">Cor III.11</a>).</span></li>
+      <li>John Schulman and Thinking Machines Lab. <a href="https://thinkingmachines.ai/blog/lora/">LoRA Without Regret</a>. Thinking Machines Lab: Connectionism, 2025. <span class="muted">The LoRA/Adam case of <a href="#thm-III-10">Thm III.10</a> and <a href="#thm-III-11">Cor III.11</a>; the general torus and the SGD law are added here.</span></li>
+    </ol>
+
+    <h4>The image of a method</h4>
+    <ol class="refs" start="15">
+      <li>Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang and Weizhu Chen. <a href="https://arxiv.org/abs/2106.09685">LoRA: Low-Rank Adaptation of Large Language Models</a>. ICLR 2022. <span class="muted">Zero-initialised, it starts at the apex of its cone (<a href="#thm-II-2">Thm II.2</a>).</span></li>
+      <li>Soufiane Hayou, Nikhil Ghosh and Bin Yu. <a href="https://arxiv.org/abs/2406.08447">The Impact of Initialization on LoRA Finetuning Dynamics</a>. NeurIPS 2024. <span class="muted">Zero-\(B\) and zero-\(A\) starts, the strata \(\mathrm T_A\) and \(\mathrm T_B\) of <a href="#thm-II-2">Thm II.2</a>.</span></li>
+      <li>Fanxu Meng, Zhaohui Wang and Muhan Zhang. <a href="https://arxiv.org/abs/2404.02948">PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models</a>. NeurIPS 2024. <span class="muted">A split start, the stratum \(\mathrm S\) of <a href="#thm-II-2">Thm II.2</a>; its conversion to LoRA rests on <a href="#thm-II-1">Thm II.1</a>.</span></li>
+      <li>Shih-Yang Liu, Chien-Yi Wang, Hongxu Yin, Pavlo Molchanov, Yu-Chiang Frank Wang, Kwang-Ting Cheng and Min-Hung Chen. <a href="https://arxiv.org/abs/2402.09353">DoRA: Weight-Decomposed Low-Rank Adaptation</a>. ICML 2024. <span class="muted">For \(W_0\) with no zero row, the same image as LoRA followed by a per-row scale (<a href="#thm-II-8">Prop II.8</a>).</span></li>
+      <li>Zeju Qiu, Weiyang Liu, Haiwen Feng et al. <a href="https://arxiv.org/abs/2306.07280">Controlling Text-to-Image Diffusion by Orthogonal Finetuning</a>. NeurIPS 2023. <span class="muted">What exactly orthogonal OFT keeps (<a href="#thm-II-6">Cor II.6</a>); HF's default Cayley–Neumann form is not covered.</span></li>
+      <li>Weiyang Liu, Zeju Qiu, Yao Feng et al. <a href="https://arxiv.org/abs/2311.06243">Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization</a>. ICLR 2024. <span class="muted">What its output scale changes (<a href="#thm-II-6">Cor II.6</a>) and what re-merging reaches (<a href="#thm-V-3">Thm V.3</a>).</span></li>
+      <li>Shen Yuan, Haotian Liu and Hongteng Xu. <a href="https://arxiv.org/abs/2405.17484">Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation</a>. NeurIPS 2024. <span class="muted">Under the hypotheses of <a href="#thm-II-7">Thm II.7</a>, its image is the intersection of LoRA's image with the rotation orbit \(W_0\cdot SO(n)\), and HF's paired start is an apex.</span></li>
+      <li>Nam Hyeon-Woo, Moon Ye-Bin and Tae-Hyun Oh. <a href="https://arxiv.org/abs/2108.06098">FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning</a>. ICLR 2022. <span class="muted">LoHa, rank against dimension at the budget of LoRA\(_{2r}\) (<a href="#thm-II-12">Prop II.12</a>).</span></li>
+      <li>Charles F. Van Loan and Nikos Pitsianis. <a href="https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17">Approximation with Kronecker Products</a>. In <em>Linear Algebra for Large Scale and Real-Time Applications</em>, Springer, 1993. <span class="muted">The rearrangement behind <a href="#thm-II-11">Thm II.11</a>.</span></li>
+    </ol>
+
+    <h4>Base change and the cotangent side</h4>
+    <ol class="refs" start="24">
+      <li>Tim Dettmers, Artidoro Pagnoni, Ari Holtzman and Luke Zettlemoyer. <a href="https://arxiv.org/abs/2305.14314">QLoRA: Efficient Finetuning of Quantized LLMs</a>. NeurIPS 2023. <span class="muted">LoRA pointed at \(\kappa\theta_0\), with defect \(\kappa\theta_0-\theta_0\) (<a href="#thm-V-2">Prop V.2</a>).</span></li>
+      <li>Vladislav Lialin, Namrata Shivagunde, Sherin Muckatira and Anna Rumshisky. <a href="https://arxiv.org/abs/2307.05695">ReLoRA: High-Rank Training Through Low-Rank Updates</a>. ICLR 2024. <span class="muted">\(K\) cycles reach exactly the updates of rank \(\le\min(Kr,m,n)\) (<a href="#thm-V-3">Thm V.3</a>).</span></li>
+      <li>Jiawei Zhao, Zhenyu Zhang, Beidi Chen, Zhangyang Wang, Anima Anandkumar and Yuandong Tian. <a href="https://arxiv.org/abs/2403.03507">GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection</a>. ICML 2024. <span class="muted">With no weight decay or global clipping, one-sided LoRA re-based each period, with optimizer state carried over (<a href="#thm-IV-2">Prop IV.2</a>).</span></li>
+      <li>Lucas Torroba-Hennigen, Hunter Lang, Han Guo and Yoon Kim. <a href="https://arxiv.org/abs/2502.13811">On the Duality between Gradient Transformations and Adapters</a>. arXiv, 2025. <span class="muted">The duality at the core of <a href="#thm-IV-2">Prop IV.2</a>.</span></li>
+    </ol>
+
+    <h4>Extensions and merging</h4>
+    <ol class="refs" start="28">
+      <li>Neil Houlsby, Andrei Giurgiu, Stanisław Jastrzębski et al. <a href="https://arxiv.org/abs/1902.00751">Parameter-Efficient Transfer Learning for NLP</a>. ICML 2019. <span class="muted">Bottleneck adapters, the model case of an extension (<a href="#merge">Exposé VI</a>).</span></li>
+      <li>Xiang Lisa Li and Percy Liang. <a href="https://aclanthology.org/2021.acl-long.353/">Prefix-Tuning: Optimizing Continuous Prompts for Generation</a>. ACL 2021. <span class="muted">Trainable keys and values at every layer (<a href="#thm-VI-5">Thm VI.5</a>).</span></li>
+      <li>Aleksandar Petrov, Philip H. S. Torr and Adel Bibi. <a href="https://arxiv.org/abs/2310.19698">When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations</a>. ICLR 2024. <span class="muted">Per-layer rigidity, and the soft prompt as a deep prefix (<a href="#thm-VI-5">Thm VI.5(c), (e)</a>).</span></li>
+      <li>Haokun Liu, Derek Tam, Mohammed Muqeeth, Jay Mohta, Tenghao Huang, Mohit Bansal and Colin Raffel. <a href="https://arxiv.org/abs/2205.05638">Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning</a>. NeurIPS 2022. <span class="muted">(IA)\(^3\), whose feed-forward scale always folds into \(W_{\rm down}\) and, for some activations, into \(W_{\rm up}\) (<a href="#thm-VI-3">Thm VI.3</a>).</span></li>
+      <li>Chengsong Huang, Qian Liu, Bill Yuchen Lin, Tianyu Pang, Chao Du and Min Lin. <a href="https://arxiv.org/abs/2307.13269">LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition</a>. COLM 2024. <span class="muted">Factor-wise composition, which depends on how each adapter is factored (<a href="#thm-V-4">Prop V.4</a>).</span></li>
+    </ol>
+
+    <h3 id="cite-catalogue">How the catalogue was built</h3>
+
+    <p>Every entry was written once and then attacked once, by a separate reader looking for what the first got wrong. The literature was split into the thirteen families below, plus four gap-filling batches and two addenda. The 2026 sweep was run in two passes on 2 October 2026, after the authors reported methods missing.</p>
+    <aside class="note"><span class="label">Credit</span>The family boundaries owe much to earlier maps of the field: the unified view of <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>, the delta-tuning study of <a href="https://www.nature.com/articles/s42256-023-00626-4">Ding et al., 2023</a>, the guide of <a href="https://arxiv.org/abs/2303.15647">Lialin et al., 2023</a>, the survey of <a href="https://arxiv.org/abs/2403.14608">Han et al., 2024</a> and the modular view of <a href="https://arxiv.org/abs/2302.11529">Pfeiffer et al., 2023</a>.</aside>
+
+    <p>Titles, authors and first-version years were checked against the arXiv metadata, and venues against the official records. Formulas and parameter counts were checked against the papers, and against the official code where an initialisation was in doubt. Claims about Hugging Face PEFT were checked against its source at <a href="https://github.com/huggingface/peft/tree/85be3f3a1a58c4d153ffc4631c57196430af87a4">commit 85be3f3</a> of 30 September 2026. Every change was logged with its reason, 905 in all.</p>
+    <aside class="note"><span class="label">Credit</span>This work leans on the arXiv API, OpenReview, the ACL Anthology, PMLR, CVF open access, Crossref, Semantic Scholar and DBLP. The source of <a href="https://github.com/huggingface/peft">Hugging Face PEFT</a> settled many questions of convention, such as the side of \(W\) a rotation acts on.</aside>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Family</th><th>What it covers</th><th class="num">Methods</th><th class="num">Papers</th><th class="num">Corrections</th></tr></thead>
+      <tbody>
+        <tr><td>LoRA core</td><td>LoRA and its variants</td><td class="num">20</td><td class="num">12</td><td class="num">21</td></tr>
+        <tr><td>Initialisation and rank</td><td>Base-point splits; rank allocation</td><td class="num">25</td><td class="num">6</td><td class="num">46</td></tr>
+        <tr><td>Shape</td><td>Kronecker, Hadamard, tensor and sparse shapes</td><td class="num">29</td><td class="num">9</td><td class="num">49</td></tr>
+        <tr><td>Multiplicative</td><td>Group and monoid actions on \(W_0\)</td><td class="num">32</td><td class="num">9</td><td class="num">54</td></tr>
+        <tr><td>Sharing</td><td>Shared or random bases</td><td class="num">28</td><td class="num">4</td><td class="num">46</td></tr>
+        <tr><td>Selective</td><td>Subsets of existing weights</td><td class="num">26</td><td class="num">7</td><td class="num">37</td></tr>
+        <tr><td>Adapters</td><td>Inserted modules and side networks</td><td class="num">31</td><td class="num">10</td><td class="num">30</td></tr>
+        <tr><td>Prompts</td><td>Soft prompts, prefixes and learned states</td><td class="num">27</td><td class="num">13</td><td class="num">39</td></tr>
+        <tr><td>Quantisation and memory</td><td>Quantised bases, gradient memory</td><td class="num">24</td><td class="num">5</td><td class="num">44</td></tr>
+        <tr><td>Composition</td><td>Merging, routing, mixtures</td><td class="num">42</td><td class="num">8</td><td class="num">61</td></tr>
+        <tr><td>HF PEFT</td><td>The library's tuners and utilities</td><td class="num">74</td><td class="num">10</td><td class="num">53</td></tr>
+        <tr><td>Frontier</td><td>2025–2026: RL, reasoning, diffusion</td><td class="num">21</td><td class="num">5</td><td class="num">48</td></tr>
+        <tr><td>Theory</td><td>Theory and foundations</td><td class="num">0</td><td class="num">50</td><td class="num">23</td></tr>
+        <tr><td>Gap-filling (4 batches)</td><td>Methods a completeness review found missing</td><td class="num">36</td><td class="num">18</td><td class="num">62</td></tr>
+        <tr><td>Addendum (2 Oct 2026)</td><td>Methods the authors reported missing</td><td class="num">1</td><td class="num">0</td><td class="num">2</td></tr>
+        <tr><td>Addendum (2026 sweep, pass 1)</td><td>arXiv from January to September 2026, and ICLR and ICML 2026</td><td class="num">29</td><td class="num">8</td><td class="num">126</td></tr>
+        <tr><td>Addendum (2026 sweep, pass 2)</td><td>Further candidates from the same sweep, mostly ICLR, ICML and NeurIPS 2026</td><td class="num">32</td><td class="num">6</td><td class="num">164</td></tr>
+        <tr><td><strong>All records</strong></td><td>Before merging</td><td class="num"><strong>477</strong></td><td class="num"><strong>180</strong></td><td class="num"><strong>905</strong></td></tr>
+        <tr><td><strong>Catalogue</strong></td><td>After merging duplicates</td><td class="num"><strong>382</strong></td><td class="num"><strong>138</strong></td><td class="num"></td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The families overlap, so methods were merged on a canonical identifier and a table of aliases, since matching by name would fold LoRA+ into LoRA and O-LoRA into OLoRA. The BibTeX in the citation panel comes from the arXiv metadata of 493 identifiers, with full author lists, and from hand-written records for the nine entries without one.</p>
+
+    <p>Each method then received the seven coordinates of <a href="#atlas">Exposé VIII</a>, read off its formula. The atlas records 403 arrows between methods, each with an explicit map \(h\) satisfying \(\rho_N\circ h=\rho_M\), and 485 obstructions, each naming the test that rules an arrow out.</p>
+
+    <h3 id="cite-referees">How the theorems were checked</h3>
+
+    <p>Each statement was checked twice, for its proof and for its fit to the methods as published and as coded. The framework was synthesised from four proposals and three judge reports. Two independent model referees then attacked each of its 41 numbered statements. Fourteen stood as first written, and 27 were repaired; only the repaired forms appear here.</p>
+
+    <p>A second round re-examined 26 of the repaired statements in 48 reports. It raised a major objection to 18, mostly to a side clause: a missing hypothesis, a remark that went past its proof, or a description of a method that matched only one implementation. For example, HF PEFT's LoftQ initialiser turned out to ignore the LoRA scale \(\alpha/r\) (<a href="#thm-V-2">Prop V.2</a>). The statements shown here were revised to what that round supports.</p>
+
+    <p>Statuses and first-round notes are in <code>theory/propositions.json</code>, and the second-round reports in <code>theory/round2_verdicts.json</code>. The <a href="#rosetta">Rosetta stone</a> shows a result's status when you hover its number.</p>
+
+    <h3 id="cite-reproduce">Reproducing the numbers</h3>
+
+    <p><code>python3 theory/framework_checks.py</code> re-runs the [Num] computations (sections 1 to 11 of the script) and the main numbers of the referee round (section 12). It uses float64 PyTorch autograd, measures the dimension of an image as a Jacobian rank, and runs optimizers step by step. It is seeded and takes under a minute. The few remaining numbers come from the referees' scripts and those in <code>theory/proposals/</code>.</p>
+
+    <p>Each line prints a value beside its prediction, and some are controls that should fail. Under Adam with \(\varepsilon=0\), LoRA+ with ratio \(\lambda=8\) and plain LoRA with \(\alpha\) multiplied by \(\lambda\) differ by exactly \(0.0\) over 200 steps, bit for bit since \(\lambda\) is a power of two; without the rescaling they differ by \(0.93\). Adam's first step has a defect near \(10^{-15}\) under signed permutations of the rank coordinates, and \(6.6\) and \(11.3\) under a rotation and a diagonal rescaling, as <a href="#thm-III-12">Thm III.12</a> predicts.</p>
+
+    <h3 id="cite-legend">Status legend</h3>
+
+    <p>Labels on results and the referee chips are explained in <a href="#status-legend">How to read the labels</a>. The catalogue's chips mean the following.</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Mark</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip hf">HF</span></td><td>In Hugging Face PEFT at the pinned commit (82 of 382 methods).</td></tr>
+        <tr><td><span class="chip yes">mergeable</span> <span class="chip cond">conditional</span> <span class="chip no">not mergeable</span></td><td>Whether the trained update folds back into the frozen weights, always (250), under stated conditions (41) or not at all (91).</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="colophon">Colophon</h3>
+
+    <p>The site is one static page that runs from a web host, from disk or in a sandboxed artifact. Its data file is generated from <code>research/</code> and <code>theory/</code>. MathJax 3.2.2 sets the mathematics, and D3 7.9.0 with a small linear-algebra kernel in plain JavaScript draws the figures. Type is Source Serif 4 for text, headings and the title, IBM Plex Sans for labels and controls, and IBM Plex Mono for numbers and code. Moss marks what holds or merges, seal an obstruction, ochre a condition.</p>
+
+    <p>The chapters are called exposés after the numbered talks of Grothendieck's seminars, whose habit we also borrow, of studying the morphism and letting the right generality do the work.</p>
+
+    <p class="muted">Thanks go to the authors of the 382 methods and 138 papers catalogued here and to the maintainers of Hugging Face PEFT.</p>
+
+  </div>
+</section>

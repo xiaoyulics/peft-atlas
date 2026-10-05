@@ -1,0 +1,1374 @@
+{
+ "batch": 3,
+ "methods": [
+  {
+   "id": "quanta",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\rho=(W_0-S)+T_\\theta\\) with \\(T_\\theta=\\prod_\\alpha T^{(\\alpha)}\\) multilinear in the two-axis gates and \\(S=T_{\\theta_0}\\) a generic point of the circuit cone: a cone translated to the apex \\(W_0-S\\neq\\theta_0\\) (Type II, like PiSSA).",
+    "base_point": "Random gates are a generic point, so rank \\(d\\rho_{q_0}\\) equals the generic rank (Jacobian check: 37 = 37 for three gates on \\(2\\times2\\times2\\); also 37 at identity gates).",
+    "gauge": "\\(GL(d_n)\\) slides on every internal axis segment between consecutive gates that share an axis (fibre \\(11=3\\cdot 4-1\\) in the check): a product of GL on bonds.",
+    "covariance": "The reshape \\(\\mathbb R^d\\cong\\bigotimes_n\\mathbb R^{d_n}\\) and the gate layout are imposed structure \\(\\Pi_\\otimes\\).",
+    "merge": "The contracted \\(T_\\theta-S\\) is a dense matrix added to \\(W_0\\) (fold \\(W_0-S\\), not the paper's printed \\(W_0+S\\)).",
+    "rebasing": "The span of a connected two-axis circuit contains every \\(a\\otimes b\\otimes c\\), hence \\(\\Theta\\); re-pointing each cycle adds \\(C-C\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "QuanTA is a split (Type II) pointing of a tensor-network cone: \\(\\rho=(W_0-T_{\\theta_0})+T_\\theta\\), so \\(\\theta_0\\) is a smooth point of a translated circuit variety whose apex \\(W_0-T_{\\theta_0}\\) lies elsewhere. Its high rank is a cut statement about the circuit (Thm II.10), bought with an imposed reshape \\(\\Pi_\\otimes\\) of the hidden wire.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A connected gate circuit reaches full rank (its min-cut avoids an r-bottleneck), while the maximum rank of LoRA_r is r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived from rho = (W_0 - S) + T_theta with T_theta multilinear in the gates: Cone* (S invertible), regular, product of GL on bonds, Pi, M1, span. Jacobian check (three gates on 2x2x2): rank 37 = generic at both random and identity gates, fibre 11. O2 against LoRA verified. No changes."
+  },
+  {
+   "id": "mora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=I_{d/\\hat r}\\otimes M\\) (reshape) or a block diagonal of rotated copies of \\(M\\) (RoPE variant): linear and injective in \\(M\\), dimension \\(\\hat r^2\\); agrees with VIII.B.",
+    "covariance": "The fixed compression/decompression operators (block tying, truncation, sharing, RoPE rotations) are imposed structure (VIII.B: Pi, blocks).",
+    "rebasing": "With fixed operators the shape is a subspace, so cycles gain nothing (Thm V.3 cor. 2); ReMoRA's alternating operators would gain."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "MoRA is a linear method: the trainable square \\(M\\) is pushed into weight space by fixed linear operators, e.g. \\(\\Delta W=I_{d/\\hat r}\\otimes M\\), a subspace of dimension \\(\\hat r^2\\) in a transported frame. Its 'high rank' is a cut property of that frame (rank up to \\(d\\)), not an increase of \\(d(M)\\) beyond \\(|M|\\).",
+   "arrows": [
+    {
+     "target": "krona",
+     "rule": "A2",
+     "h": "M\\mapsto(A_k,B_k)=(I_{d/\\hat r},\\ M/s)",
+     "note": "Reshape variant only; KronA re-pointed at (I, 0) in its zero-factor stratum (its default pointing has a Kaiming-random non-zero factor)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "The rank of I (x) M reaches (d/r_hat) r_hat = d > r; conversely LoRA does not map to MoRA (O1), since a generic rank-one update is not block-tied."
+    },
+    {
+     "target": "melora",
+     "test": "O2",
+     "reason": "MoRA's maximum rank (up to d) exceeds MELoRA_r's maximum rank r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: linear and injective in M (Lin, regular, none, Pi, M1, idempotent with fixed operators), as in VIII.B. KronA arrow checked: rho_KronA(I, M/s) = W_0 + I (x) M, pointed at (I, 0). O2 obstructions verified (rank d > r). No changes."
+  },
+  {
+   "id": "melora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Product of \\(n\\) diagonal-block determinantal cones \\(\\bigoplus_i\\mathcal M_{\\le r/n}(\\tfrac{d_{out}}n\\times\\tfrac{d_{in}}n)\\); total rank \\(\\le r\\).",
+    "base_point": "\\(B_i=0\\) with Gaussian \\(A_i\\): every block is in the \\(\\mathrm T_A\\) stratum, deficit \\(\\sum_i\\tfrac rn(\\tfrac{d_{in}}n-\\tfrac rn)\\).",
+    "gauge": "\\(\\prod_{i=1}^nGL_{r/n}\\subset GL_r\\).",
+    "covariance": "A fixed block partition of both sides (Pi, blocks).",
+    "rebasing": "The span of the shape is the block-diagonal subspace, so \\(R_\\infty=W_0+\\{\\text{block-diagonal}\\}\\), reached after \\(\\lceil d/r\\rceil\\) cycles; not \\(\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "MELoRA is the sub-object of \\(\\mathrm{LoRA}_r\\) obtained by freezing the off-block entries of \\(B\\) and \\(A\\) at \\(0\\): \\(\\Delta W=\\mathrm{blockdiag}(B_i)\\,\\mathrm{blockdiag}(A_i)\\). It keeps rank \\(r\\) at \\(1/n\\) of the budget by giving up every update that is not block-diagonal, and its rebasing closure is the block-diagonal subspace, not \\(\\Theta\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "(B_i,A_i)_i\\mapsto\\big(\\mathrm{blockdiag}(B_1,\\dots,B_n),\\ \\mathrm{blockdiag}(A_1,\\dots,A_n)\\big)",
+     "note": "LoRA_r pointed at (0, blockdiag(A_{i,0})), a T_A point; off-block entries frozen at their base value 0."
+    },
+    {
+     "target": "gralora",
+     "rule": "A2",
+     "h": "(B_i,A_i)_i\\mapsto\\big(B_{ii}=B_i,\\ A_{ii}=A_i^\\top;\\ (B_{ij},A_{ij})=(0,A_{ij,0})\\ (i\\neq j)\\big)",
+     "note": "GraLoRA with k = n blocks per side of rank r/k; off-diagonal blocks frozen at their base values, scales matched."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "mora",
+     "test": "O1",
+     "reason": "MoRA ties all diagonal blocks to one M, so a block-diagonal update with distinct blocks is not in Im MoRA."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian check at d=8, n=2, r=4: generic 24, S_1 = 16, deficit 8 = r(d_in/n - r/n), as stated. Both A2 arrows checked (GraLoRA's A_ij is (d_in/k) x (r/k), so the transpose A_ii = A_i^T is right). The MoRA O1 obstruction was verified. No changes."
+  },
+  {
+   "id": "more",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "torus",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=P_1LP_2R\\), bilinear in the block-diagonal \\(L,R\\): a cone of rank \\(\\le Nr_{blk}\\) (\\(N=1\\) is LoRA).",
+    "base_point": "The official code's LoRA-style zero factor (or zero output scaler) puts it at an apex, as LoRA; the paper is silent.",
+    "gauge": "A slide \\(g\\) on the middle wire must lie in \\(\\bigoplus GL_{r_{blk}}\\cap P_2(\\bigoplus GL_{r_{blk}})P_2^{-1}\\), which the Monarch shuffle cuts to the diagonal torus (Jacobian rank \\(28=|M|-Nr_{blk}\\) at \\(d=8\\), \\(N=r_{blk}=2\\)); \\(N=1\\) restores \\(GL_{r_{blk}}\\).",
+    "covariance": "Block partitions and the fixed permutations \\(P_1,P_2\\) are imposed (Pi).",
+    "rebasing": "Span: all of \\(\\Theta\\) when the shuffle connects every block pair (\\(r_{blk}\\ge N\\)), otherwise a block-sparse subspace."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "MoRe is a sub-object of \\(\\mathrm{LoRA}_{Nr_{blk}}\\) in which \\(B=P_1LP_2\\) and \\(A=R\\) are forced into Monarch block patterns. The permutation \\(P_2\\) breaks LoRA's \\(GL\\) gauge down to a torus and caps the rank of each block of the update, as in GraLoRA (Prop II.12(c)).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "(L,R)\\mapsto(P_1LP_2,\\ R)",
+     "note": "LoRA_{N r_blk} pointed at (0, R_0) with R_0 block-diagonal (taking L as the zero factor); entries outside the Monarch patterns frozen at 0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "melora",
+     "test": "O1",
+     "reason": "The shuffle P_2 couples off-diagonal blocks, which MELoRA's block-diagonal image never reaches (MELoRA is MoRe with P_1 = P_2 = I, a different object)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian check at d=8, N=r_blk=2: generic 28, fibre 4 (torus N r_blk), S_1 = 16 at L=0 (apex). The span of the image is all 64 dimensions, so rebasing reaches Theta. LoRA arrow and MELoRA obstruction verified. No changes."
+  },
+  {
+   "id": "dsee",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The training phase is \\(\\mathrm{LoRA}_r\\oplus\\mathrm{Sparse}_\\Omega\\) on the original box. The later pruning \\(W_0\\mapsto W_0\\odot\\mathcal M\\) is a non-function-preserving base change with defect \\(W_0\\odot\\mathcal M-W_0\\), after which the same method is re-tuned.",
+    "shape": "Minkowski sum of the determinantal cone and the coordinate subspace \\(L_\\Omega\\) (\\(c=16\\) entries): a non-linear cone with vertex \\(\\theta_0\\).",
+    "base_point": "One LoRA factor is zero (the text and Algorithm 2 disagree which), so the LoRA summand sits at an apex; the sparse summand is linear and regular.",
+    "gauge": "\\(GL_r\\) on the LoRA wire; for generic \\(\\Omega\\), \\(T\\mathcal M_r\\cap L_\\Omega=0\\), so there is no extra slack.",
+    "covariance": "The support Omega (top-c entries of the robust-PCA residual of W_0) and the pruning mask are coordinatewise: exact under signed permutations; non-uniform scalings can change the top-c selection.",
+    "rebasing": "The LoRA summand alone reaches \\(\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "DSEE is the \\(\\oplus\\)-word \\(\\mathrm{LoRA}_r\\oplus\\mathrm{Sparse}_\\Omega\\) (Obs I.7), like RoSA but with \\(\\Omega\\) read off a robust-PCA split of \\(W_0\\) instead of gradients. Its pruning stage is a base change \\(\\kappa(\\theta)=\\theta\\odot\\mathcal M\\) that moves the base point (Def V.1(b)).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "(U,V,S)\\mapsto\\big([\\,U\\mid E_I\\,\\mathrm{diag}(S_\\Omega)\\,],\\ [\\,V;\\ E_J^\\top\\,]\\big),\\quad E_I=[e_{i_1}\\cdots e_{i_c}],\\ E_J=[e_{j_1}\\cdots e_{j_c}]",
+     "note": "Into LoRA_{r+c} pointed at (0, [V_0; E_J^T]) (Algorithm-2 convention U_0 = 0): the sparse part is a sum of c coordinate rank-ones. LoRA's scale s is absorbed into the factors. [V_0; E_J^T] has full row rank only when the column indices of Omega are distinct; otherwise the pointing lies outside the three strata."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Against \\(\\mathrm{LoRA}_r\\) at equal rank: the maximum rank \\(r+c\\) exceeds \\(r\\). (The arrow above lands in \\(\\mathrm{LoRA}_{r+c}\\).)"
+    },
+    {
+     "target": "rosa",
+     "test": "O1",
+     "reason": "Generically, at comparable LoRA rank, Im DSEE is not contained in Im RoSA unless Omega lies inside RoSA's gradient mask (DSEE's support comes from robust PCA of W_0). The obstruction needs that rank condition: if RoSA's rank exceeds r by at least |Omega minus mask|, each off-mask entry is absorbed as a rank-one term and the inclusion holds."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived all seven coordinates; agree. Changes: (1) RoSA obstruction reason now states the rank condition it needs (with RoSA rank >= r + |Omega minus mask| the inclusion holds); (2) LoRA arrow note: scale absorbed, and full row rank of the pointed A_0 needs distinct column indices in Omega. Consolidation (2026-10-01): obstruction -/-> lora: instance qualifier added."
+  },
+  {
+   "id": "sine-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\rho=W_0+\\varphi(BA)\\) with \\(\\varphi(X)=\\sin(\\omega X)/g\\) entrywise, a local diffeomorphism of \\(\\Theta\\) at \\(0\\); the germ at \\(\\theta_0\\) is \\(\\varphi\\) of the determinantal cone (vertex \\(\\theta_0\\)). Globally the image is not a cone and exceeds rank \\(r\\).",
+    "base_point": "\\(B=0\\) and \\(d\\varphi_0=(\\omega/g)\\,\\mathrm{id}\\), so \\(S_1=\\{XA_0\\}\\) with deficit \\(r(n-r)\\), exactly as LoRA.",
+    "gauge": "\\(\\varphi\\) sees only \\(BA\\), so the gauge is LoRA's \\(GL_r\\).",
+    "covariance": "Entrywise sine commutes with signed permutations on both sides (sin is odd) but not with scalings: only \\(B_m\\times B_n\\subset\\mathrm{Mon}\\times\\mathrm{Mon}\\).",
+    "rebasing": "Each stage is confined to the box \\(\\|\\Delta W\\|_{\\max}\\le1/g\\); the generated monoid is still \\(\\Theta\\) (it contains all small multiples of each \\(E_{ij}\\))."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Sine-LoRA post-composes LoRA's update with the entrywise diffeomorphism germ \\(\\varphi=\\sin(\\omega\\,\\cdot)/g\\), an automorphism of the slice like transport (Prop II.13) but non-linear. It keeps LoRA's apex, gauge and first-order image at \\(\\theta_0\\), while globally it trades the rank bound for the box \\(|\\Delta W_{ij}|\\le1/g\\) and loses every covariance except signed permutations.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "The rank of sin(omega BA)/g grows with omega beyond r; conversely LoRA does not map to Sine-LoRA (O1), since Sine-LoRA never leaves |Delta W_ij| <= 1/g."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian check at (7,6,2): S_1 = 14 = mr against generic 22 = r(m+n-r), fibre 4 = r^2. A generic sin(omega BA) has full rank 6 (O2 holds). Cone is read as the germ, which is diffeomorphic to the determinantal cone. No changes."
+  },
+  {
+   "id": "boft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Sat",
+    "base_point": "regular",
+    "gauge": "nonlinear",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "HF: \\(W=\\mathrm{diag}(s)W_0R^\\top\\) with \\(R\\) a product of butterfly block-Cayley factors: a torus saturation of an orthogonal-orbit method (VIII.B).",
+    "base_point": "Regular when the factors' plane sets are disjoint (b = 2) and at the HF default factor 1 (block OFT times a scale). For two factors it is regular even when blocks overlap: \\(S_1\\) contains \\(\\mathfrak g_1+\\mathfrak g_2\\) and the generic fibre is \\(G_1\\cap G_2\\) (Jacobian 29 = 29 at \\(d=8\\), \\(b=4\\), with scale). Deeper overlapping products were not checked.",
+    "gauge": "VIII.B 'inter-factor': elements of \\(G_i\\cap G_{i+1}\\) slide between consecutive factors and act non-linearly on the Cayley generators; trivial at the HF default factor 1 and for \\(b=2\\). Check: fibre 4 = dim \\(SO(2)^4=G_1\\cap G_2\\) at \\(d=8\\), \\(b=4\\), two factors; fibre 0 for \\(b=2\\) at full depth.",
+    "covariance": "VIII.B: Mon x Pi. Mon on the output side from boft_s; the butterfly blocks are imposed on the input side. axes.json also lists 'BOFT as in HF PEFT' under MonxGL, which is wrong on the input side.",
+    "rebasing": "Iterated BOFT reaches \\(\\mathrm{diag}(\\mathbb R^m)\\cdot W_0\\cdot P\\big(\\prod SO(b\\,2^{m'-1})\\big)P^\\top\\) for a fixed permutation \\(P\\), and, for injective \\(W_0\\), \\(\\mathrm{diag}(\\mathbb R^m)\\cdot W_0\\cdot SO(n)\\) only at full depth (Thm V.3 cor. 4)."
+   },
+   "table_row": "R-action",
+   "table_col": "Sat",
+   "categorical_reading": "BOFT (HF) is the torus saturation \\(\\mathrm{Diag}_m\\cdot\\mathrm{Im}(\\text{butterfly OFT})\\): an orthogonal action on the input side assembled from sparse block factors, plus a free output scale that weakens the Gram invariant to \\(|\\cos|\\) between neurons (Cor II.6 remarks). Butterfly permutations connect the block hypergraph, and the rebasing closure is the group generated by its components.",
+   "arrows": [
+    {
+     "target": "boft",
+     "rule": "A2",
+     "h": "(Q_1,\\dots,Q_{m'},s)\\mapsto(Q_1,\\dots,Q_{m'},0,s)",
+     "note": "BOFT with m' butterfly factors into m'+1 factors of the same block size, the extra factor frozen at its base value R = I."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "boft_s rescales neurons, while exact OFT preserves K_out = W W^T (Cor II.6)."
+    },
+    {
+     "target": "goft",
+     "test": "O2",
+     "reason": "Full-depth BOFT(log2 d, 2) has (d/2) log2 d angles plus a scale, so d(BOFT) > d(GOFT) = d - 1."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates agree (Sat, Pi as the closest value to VIII.B's Mon x Pi). Change: the base-point note said overlapping blocks 'can lower S_1'. A two-factor b=4 Jacobian check gives 29 = 29 (regular), so the note now says this, and the gauge note records the checked fibre (4 = dim G_1 cap G_2). The GOFT O2 obstruction was checked: full-depth b=2 BOFT has d = 22 with the scale (12 without) at d=8, against 7. Sync with the refereed paper (2026-10-03): rebasing note now has the permutation conjugation P(...)P^T and the injective-W_0 hypothesis for the full-depth clause (Thm V.3 cor. 4; fails for W_0 = 0)."
+  },
+  {
+   "id": "deft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(W=W_0+P(R-\\mathrm{relu}(P)^\\top W_0)\\) (HF default; \\(Q(P)\\) for the paper's QR). For each \\(P\\) the second factor ranges over all of \\(\\mathbb R^{r\\times n}\\), so \\(\\mathrm{Im}=W_0+\\mathcal M_{\\le r}\\), LoRA's cone.",
+    "base_point": "HF sets \\(R_0=\\mathrm{relu}(P_0)^\\top W_0\\) with random \\(P_0\\), so the effective LoRA point is \\((P_0,0)\\), the \\(\\mathrm T_B\\) stratum: \\(S_1=\\{P_0Y\\}\\) of dimension \\(nr\\), deficit \\(r(m-r)\\) (Jacobian 12 against \\(d=22\\) at \\((m,n,r)=(7,6,2)\\)).",
+    "gauge": "The shear \\((P,R)\\mapsto(P,R-\\mathrm{relu}(P)^\\top W_0)\\) conjugates DEFT to LoRA, so the generic gauge is LoRA's \\(GL_r\\), acting non-linearly in DEFT's coordinates (QR variant: \\(B_r^+\\) on \\(P\\) and an \\(O(r)\\) remnant on \\(R\\)).",
+    "covariance": "The image \\(W_0+\\mathcal M_{\\le r}\\) is \\(GL\\times GL\\)-covariant.",
+    "rebasing": "As LoRA: \\(\\to\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "DEFT's 'forget a subspace, then write into it' is LoRA in disguise: the shear \\((P,R)\\mapsto(P,R-\\mathrm{relu}(P)^\\top W_0)\\) identifies it, as germs at the HF initialisation, with \\(\\mathrm{LoRA}_r\\) pointed at \\((P_0,0)\\) in the \\(\\mathrm T_B\\) stratum of Thm II.2. What separates it from default LoRA is the stratum of its pointing, not its image.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "(P,R)\\mapsto\\big(P,\\ R-\\mathrm{relu}(P)^\\top W_0\\big)\\quad(\\text{QR: }(Q(P),\\ R-Q(P)^\\top W_0))",
+     "note": "LoRA_r (scale absorbed) pointed at (P_0, 0), the T_B stratum; for the relu default an isomorphism of germs (relu is smooth away from zero entries of P_0)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Against LoRA's default T_A pointing (0, A_0): S_1(DEFT) = {P_0 Y} and S_1(LoRA) = {X A_0} are incomparable, so neither simulates the other despite equal images (Thm II.2(a))."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian check at (7,6,2) with the HF relu init: S_1 = 12 = nr (T_B stratum) against generic 22, fibre 4. The shear arrow to LoRA pointed at (P_0, 0) and the O3 obstruction against T_A-pointed LoRA were verified. QR-variant gauge dimension r(r+1)/2 + r(r-1)/2 = r^2 checks. No changes."
+  },
+  {
+   "id": "para",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "\\(W=(I-\\Pi_U)W_0\\) with \\(U=\\mathrm{col}\\,B\\): the conjugacy class of corank-\\(r\\) orthogonal projectors (in the monoid \\(\\mathrm{End}\\,\\mathbb R^m\\)) acting on \\(W_0\\). For \\(W_0\\) of full row rank the image is a copy of \\(\\mathrm{Gr}(r,m)\\), dimension \\(r(m-r)\\); it has no germ at \\(\\theta_0\\).",
+    "base_point": "\\(\\theta_0\\notin\\mathrm{Im}\\): \\((I-\\Pi_U)W_0=W_0\\) would need \\(\\Pi_UW_0=0\\). HF's relu projector is pointed only at \\(P=0\\), where \\(d\\rho=0\\) (\\(S_1=0\\)) and training cannot leave; its random init is a defect. This assumes \\(W_0\\) of full row rank (e.g. square attention layers). On a tall layer with \\(d_{out}-\\operatorname{rank}W_0\\ge r\\) the image does contain \\(\\theta_0\\), at any \\(B\\) with \\(\\mathrm{col}\\,B\\perp\\mathrm{col}\\,W_0\\). There \\(\\dim S_1=rd_{in}<r(d_{out}-r)=d\\) (Jacobian 8 against 16 at \\((10,4,2)\\)), a deficient pointing the method does not use.",
+    "gauge": "The projector depends only on \\(\\mathrm{col}\\,B\\), so \\(GL_r\\) acts linearly by \\(B\\mapsto Bg\\) (fibre \\(r^2\\)).",
+    "covariance": "Output side: \\(g\\Pi_Ug^{-1}\\) is an orthogonal projector for every \\(U\\) iff \\(g\\in CO(m)\\); input side \\(GL(n)\\). This is the mirror of GLxCO, i.e. \\(CO(m)\\times GL(n)\\).",
+    "rebasing": "Re-merging composes corank-r projectors; the generated monoid consists of contractions, and each cycle can only shrink norms and ranks (a monoid, not a group)."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "PaRa is an unpointed object of action type: \\(\\rho(B)=(I-\\Pi_{\\mathrm{col}B})W_0\\) is the orbit of \\(W_0\\) under the Grassmannian of corank-\\(r\\) projectors, a compact set at positive distance from \\(\\theta_0\\). It is DEFT restricted to \\(R=0\\), but only as a weak morphism, since no parameter value reproduces the frozen model.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "deft",
+     "test": "O3",
+     "reason": "PaRa has no base point over theta_0, so only the weak morphism B -> (B, 0) into DEFT exists (its image lies in W_0 + M_{<=r})."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates agree (Jacobian: generic rank r(m-r), fibre r^2, checked at (6,8,2), (6,6,2), (10,4,2)). Change: base-point note now records the tall-layer exception, where theta_0 is in the image at col B perp col W_0 but with dim S_1 = r d_in < d. Kept: Orb (monoid orbit), GLxCO as the output-side mirror CO(m) x GL(n), rebasing 'group' for the generated monoid, and core=false (PaRa is a flag of DeftConfig, consistent with other config-flag entries)."
+  },
+  {
+   "id": "delora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=\\tfrac{\\lambda}{r}\\sum_i\\hat b_i\\hat a_i^\\top D_w\\) (unit rank-ones, one global \\(\\lambda\\), per-input-column norms \\(D_w\\) of \\(W_0\\) in the official and HF code): image \\(W_0+\\mathcal M_{\\le r}\\), with \\(\\|\\Delta W\\|\\) controlled by \\(\\lambda\\); the Jacobian rank equals \\(r(m+n-r)\\).",
+    "base_point": "HF: \\(B=0\\) with the norm clamp \\(10^{-4}\\), so near \\(q_0\\) the map is LoRA with a constant scale: \\(S_1=\\{X\\hat A_0D_w\\}\\) of dimension \\(mr\\) (checked 7, 14, 21), an apex. The paper's subtract-a-copy init is split (Cone*, regular).",
+    "gauge": "axes.json and VIII.B list per-term scalings (a \\(2r\\) torus), but the generic fibre has dimension \\(r^2+1\\) (Jacobian 22 of 27 at \\((7,6,2)\\), 30 of 40 at \\(r=3\\)). Beyond the torus there is an \\((r-1)^2\\)-dimensional non-linear part, which redistributes a rank-\\(r\\) update among \\(r\\) equal-weight unit rank-ones. For r = 1 the fibre is just the 2-dimensional torus (Jacobian 12 of 14), so the deviation from the axes.json torus label starts at r = 2.",
+    "covariance": "\\(D_w\\) is invertible and \\(\\lambda\\) is free, so the image is \\(W_0+\\mathcal M_{\\le r}\\): \\(GL\\times GL\\) (agrees with VIII.B).",
+    "rebasing": "As LoRA: \\(\\to\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "DeLoRA normalises each rank-one term and puts the strength in one scalar \\(\\lambda\\). Its image is still LoRA's cone, and under HF's \\(B=0\\) initialisation it starts at the same apex, so LoRA simulates it through an explicit normalising \\(h\\). The normalisation changes the fibre (a non-linear gauge of dimension \\(r^2+1\\)) and hence the training geometry, not the expressivity.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "(B,A,\\lambda)\\mapsto\\Big(\\tfrac{\\lambda}{r}\\,B\\,\\mathrm{diag}\\big(1/\\max(\\|b_i\\|,\\varepsilon)\\big),\\ \\mathrm{diag}\\big(1/\\|a_i\\|\\big)\\,A\\,D_w\\Big)",
+     "note": "LoRA_r (scale 1) pointed at (0, diag(1/||a_{i,0}||) A_0 D_w), a T_A point; D_w = diagonal of the column norms of W_0, epsilon = 1e-4. h is smooth near q_0, where ||b_i|| < epsilon, and away from ||b_i|| = epsilon. It is a germ arrow, as HF's clamped rho itself is."
+    },
+    {
+     "target": "dora",
+     "rule": "A3",
+     "h": "(B,A,\\lambda)\\mapsto\\big(B',A',\\ \\mu=(\\|(W_0+B'A')_{i,:}\\|)_i\\big),\\ (B',A')\\ \\text{as in the LoRA arrow}",
+     "note": "Composite of DeLoRA -> LoRA with LoRA -> DoRA (magnitudes set to the current row norms); DoRA pointed at A_0' = diag(1/||a_{i,0}||) A_0 D_w."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ether",
+     "test": "O1",
+     "reason": "ETHER's image is a compact set of reflections W_0 H^B inside W_0 O(n): it excludes theta_0 and preserves K_out, which DeLoRA's additive updates change. DeLoRA is derived from ETHER, but neither simulates the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian checks match: generic rank r(m+n-r), fibre r^2+1 (12/14, 22/27, 30/40 at r = 1, 2, 3); S_1 = 7, 14, 21 at the HF B=0 init, so apex. The image W_0 + M_{<=r} was confirmed by Schur-Horn (equal-weight unit rank-ones always exist). Keeps 'nonlinear' against the axes.json torus label. Changes: gauge note records that r = 1 is still a torus; LoRA arrow note says the clamp makes h a germ arrow."
+  },
+  {
+   "id": "glora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Every path is linear in \\(W_0,b_0\\) and folds into \\(W_{uni}=W_0+W_0\\odot A+B\\) and \\(b_{uni}=b_0+b_0\\odot D+E+W_0C\\).",
+    "shape": "With PEFT defaults (A, B, C low-rank; D, E scalar): the Minkowski sum of HiRA\\(_r\\)'s transported cone \\(W_0\\odot\\mathcal M_{\\le r}\\), LoRA\\(_r\\)'s cone and a linear bias part \\(\\mathrm{span}\\{b_0,\\mathbf 1\\}+\\mathrm{col}\\,W_0\\).",
+    "base_point": "Zero-initialised down-projections put every low-rank path at its zero factor: an apex.",
+    "gauge": "\\(GL_r\\) on each low-rank wire (HiRA and LoRA paths). The C path factors a vector, \\(C=C_uC_d\\) with \\(C_u\\in\\mathbb R^{n\\times r}\\), \\(C_d\\in\\mathbb R^{r\\times1}\\). Its fibre has dimension \\(nr+r-n\\): \\(GL_r\\) plus the linear unipotent slack \\(C_u\\mapsto C_u+x(JC_d)^\\top\\) (\\(J\\) skew), which adds \\((n-r)(r-1)\\). Jacobian check: fibre \\(26=2r^2+nr+r-n\\) at \\((m,n,r)=(20,16,2)\\).",
+    "covariance": "The Hadamard path restricts the image to \\(\\mathrm{Mon}\\times\\mathrm{Mon}\\) (Prop II.9(e)); the scalar bias shift \\(E\\mathbf 1\\) further cuts the output side to permutations in the PEFT default.",
+    "rebasing": "The Hadamard and LoRA summands each reach \\(\\Theta\\) (for \\(W_0\\) without zeros)."
+   },
+   "table_row": "R-Hadamard",
+   "table_col": "Cone",
+   "categorical_reading": "GLoRA is an \\(\\oplus\\)-word on the slice: \\(\\mathrm{HiRA}_r\\oplus\\mathrm{LoRA}_r\\oplus(\\text{bias paths})\\), where HiRA \\(=(D_{W_0})_*\\mathrm{LoRA}\\) supplies the coupling to \\(\\theta_0\\). Its 'unification' is the statement that the torus ladder \\(W_0\\odot(J+Z)\\) of Prop II.9 plus an additive term simulates (IA)\\(^3\\), SSF-type scalings, DoRA and LoRA.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "The W_0 (.) A path alone reaches rank min(m, n, r rank W_0), generically full rank (the rank of a Hadamard product is at most the product of the ranks). That is beyond LoRA_r, and beyond LoRA_{2r} at the same budget."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates agree (Jacobian: rank 68 at the zero-init point against generic 154 at (20,16,2), so apex). Changes: (1) the LoRA obstruction now says the rank is min(m,n,r rank W_0) instead of 'r rank W_0 > 2r'; (2) gauge note made precise: the C path adds a linear unipotent slack of dimension (n-r)(r-1) on top of GL_r (fibre 26 checked). Gauge value GL kept."
+  },
+  {
+   "id": "hra",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Meet",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "Thm II.7(a), for injective \\(W_0\\), even \\(r\\le n-2\\) and no Gram–Schmidt (HF's default): \\(\\mathrm{Im}=(W_0+\\mathcal M_{\\le r})\\cap W_0\\,SO(n)\\), an image-level meet (not a product), \\(d=rn-r(r+1)/2\\).",
+    "base_point": "HF's paired init has \\(\\dim S_1=kn-k(k+1)/2<d\\) (\\(k=r/2\\)): an apex (Thm II.7(b,c)).",
+    "gauge": "Generic fibre of dimension \\(r(r+1)/2\\), non-linear; the only exhibited Lie gauge is the \\(r\\) scalings of \\(u_i\\).",
+    "covariance": "A right orthogonal action on the input side: \\(GL\\times CO(n)\\).",
+    "rebasing": "Re-HRA (injective \\(W_0\\), even \\(r\\)) reaches \\(W_0\\,SO(n)\\) in \\(\\lceil n/r\\rceil\\) cycles (Thm V.3 cor. 5)."
+   },
+   "table_row": "R-action",
+   "table_col": "Meet",
+   "categorical_reading": "HRA is the image-level meet of \\(\\mathrm{LoRA}_r\\) with the full orthogonal orbit \\(W_0\\cdot SO(n)\\), and HF's paired initialisation is an apex, the multiplicative twin of LoRA's dead \\(A\\)-direction. Rebasing commutes with the meet, so re-merged HRA walks \\(W_0\\cdot SO(n)\\) as ReLoRA walks \\(\\Theta\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "u\\mapsto\\big(W_0B(u),\\ A(u)\\big),\\quad B(u)=\\big[-2H_{u_1}\\cdots H_{u_{i-1}}\\hat u_i\\big]_{i=1}^r,\\ A(u)=\\big[\\hat u_1^\\top;\\dots;\\hat u_r^\\top\\big]",
+     "note": "Telescoping R - I = sum_i H_1...H_{i-1}(H_i - I); LoRA_r pointed at h(q_0), where B_0 A_0 = 0 with both factors non-zero (outside the three strata)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "HRA reaches rotations with eigenvalue -1 (e.g. H_{e1} H_{e2}), which the Cayley map never produces; for block OFT its moved planes also break the partial Grams (Thm II.7(d)). The eigenvalue argument is at image level for injective W_0 (out_features >= in_features), the setting of Thm II.7."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates agree with VIII.B and Thm II.7. Paired-init Jacobian 8/15 (r=2) and 15/26 (r=4) at n=9 checked. The telescoping LoRA arrow was verified algebraically. Change: the OFT obstruction now states that its eigenvalue -1 argument assumes injective W_0. Sync with the refereed paper (2026-10-03): shape and rebasing notes carry the hypotheses of Thm II.7 and Thm V.3 cor. 5."
+  },
+  {
+   "id": "ia3",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\mathrm{diag}(\\ell)W_0\\) on \\(k,v\\) and \\(W_0\\mathrm{diag}(\\ell)\\) on \\(W_{\\rm down}\\): the closure of a torus orbit, a linear space.",
+    "covariance": "\\(\\mathrm{Mon}\\times GL\\) on output-scaled boxes, \\(GL\\times\\mathrm{Mon}\\) on \\(W_{\\rm down}\\) (Prop II.9(e)).",
+    "merge": "Fuses into \\(W_K,W_V,W_{\\rm down}\\) for every \\(\\sigma\\); into \\(W_{\\rm up}\\) only under SwiGLU (any \\(\\ell\\)) or ReLU (\\(\\ell>0\\)), never GELU (Thm VI.3)."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "(IA)\\(^3\\) is the left (or right) torus acting on \\(W_0\\); its orbit closure is linear, keeps the zeros of \\(W_0\\), and fixes row lines while scales are non-zero (Thm II.5(4)). It is the lowest rung \\(W_0\\odot(J+Z)\\) of the torus ladder, a sub-object of HiRA\\(_1\\) at a non-default pointing, and it merges only into a neighbouring box by the calculus of Thm VI.3.",
+   "arrows": [
+    {
+     "target": "hira",
+     "rule": "A3",
+     "h": "\\ell\\mapsto(\\ell-\\mathbf 1,\\ \\mathbf 1^\\top)\\ \\ (k,v);\\qquad \\ell\\mapsto(\\mathbf 1,\\ (\\ell-\\mathbf 1)^\\top)\\ \\ (W_{\\rm down})",
+     "note": "HiRA_1 pointed at (0, 1^T) resp. (1, 0), not HiRA's random-A default pointing (Prop II.9(b))."
+    },
+    {
+     "target": "dora",
+     "rule": "A2",
+     "h": "\\ell\\mapsto\\big(B=0,\\ A=A_0,\\ \\mu=\\ell\\odot(\\|w_{0,i}\\|)_i\\big)",
+     "note": "On the output-scaled k, v boxes only: DoRA with B, A frozen at their base values is the output-scaling method; on W_down (IA)^3 scales the input side, which DoRA's magnitude cannot."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "The rank of diag(l - 1) W_0 reaches rank W_0 > r; conversely LoRA does not map to (IA)^3 (O1)."
+    },
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "Scales change neuron norms, which exact OFT preserves."
+    },
+    {
+     "target": "road",
+     "test": "O1",
+     "reason": "RoAd_1 ties the scale within each rotated output pair, so independent scalings of the two rows of a pair lie outside Im RoAd_1 (they lie in RoAd_2/4)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; agrees with VIII.B. HiRA arrow checked: W_0 (.) ((l-1)1^T) = diag(l-1) W_0, and the transposed form for W_down. The DoRA arrow holds for the k,v boxes. The OFT, LoRA and RoAd_1 obstructions were verified. No changes."
+  },
+  {
+   "id": "ln-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Trains a coordinate block of \\(\\theta_0\\) itself: \\(\\gamma,\\beta\\) of the targeted norm layers.",
+    "shape": "The identity method on the coordinate subspace of norm parameters.",
+    "covariance": "VIII.B: Mon. The gain is a diagonal (privileged-basis) parameter; folded into the next box it is an input-side scaling, \\(GL\\times\\mathrm{Mon}\\) (Prop II.9(b)).",
+    "merge": "Trivially mergeable as a selective method (it replaces the norm parameters); folding gamma, beta into the next linear box (M1->) needs a pre-norm block and a bias slot, and never works into a tied embedding/LM head (Thm VI.3)."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "LN-tuning is a selective sub-object of full fine-tuning: it frees the coordinates \\((\\gamma,\\beta)\\) of the norm layers. By norm absorption (R6) a pre-norm gain is an input-side scaling of the consuming projections, tied across all of them: the transpose of (IA)\\(^3\\)'s output scaling.",
+   "arrows": [
+    {
+     "target": "ssf",
+     "rule": "A3",
+     "h": "(\\gamma,\\beta)\\mapsto\\big(\\gamma'=\\gamma\\oslash\\gamma_0,\\ \\beta'=\\beta-(\\gamma\\oslash\\gamma_0)\\odot\\beta_0\\big)\\ \\text{on SSF's post-norm wrappers; other wrappers at }(\\mathbf 1,0)",
+     "note": "Requires gamma_0 without zero entries and an SSF that wraps every norm that LN-tuning trains; SSF pointed at its exact identity (its official N(1, 0.02) init is a small defect). rho_SSF o h = rho_LN holds in Theta when SSF's post-norm scale-shift is realised by folding into that norm's (gamma, beta). If it is folded into the next linear box instead, the identity holds only at function level."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "bitfit",
+     "test": "O1",
+     "reason": "LN-gain edits act as column scalings of the consuming boxes (and move different coordinates of Theta), not as bias translations; neither image contains the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates agree (VIII.B: Mon, M1/M1->). Change: SSF arrow note now says which realisation of SSF in Theta makes rho_SSF o h = rho_LN hold. The (gamma,beta) formula itself checks."
+  },
+  {
+   "id": "oft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Exact Cayley: \\(W_0\\cdot C(\\mathfrak{so}(b)^{n/b})^\\top\\), an orbit of \\(\\prod SO(b)\\) in the \\(K_{\\rm out}\\) level set.",
+    "base_point": "Cayley is a local diffeomorphism at 0 and the orbit map is injective for injective W_0.",
+    "gauge": "VIII.B 'stabiliser': the stabiliser of \\(W_0\\) in \\(\\prod SO(b)\\). It is trivial when \\(W_0\\) is injective (out_features \\(\\ge\\) in_features, since HF acts on in_features). For wide \\(W_0\\) it is still trivial for generic \\(W_0\\) when \\(b\\le\\) out_features, because a generic kernel meets no \\(b\\)-dimensional coordinate block.",
+    "covariance": "The block normaliser in \\(CO(n)\\) on the input side, \\(GL\\) on the output side.",
+    "rebasing": "With a fixed partition and exact Cayley: idempotent up to closure (gains only the measure-zero eigenvalue \\(-1\\) set). HF's default Cayley-Neumann drifts (see oftv2)."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "OFT is an action-type object \\(\\rho(Q)=W_0\\,C(Q)^\\top\\) whose image is an orbit of the block-orthogonal group. It can never change \\(K_{\\rm out}\\), the spectrum or the block partial Grams (Cor II.6), however often it is re-merged. Its expressivity is that of a group orbit, regular at \\(\\theta_0\\), with the block normaliser as covariance.",
+   "arrows": [
+    {
+     "target": "boft",
+     "rule": "A2",
+     "h": "Q\\mapsto(Q,\\ s=\\mathbf 1)\\ \\text{in BOFT}(1,b)",
+     "note": "BOFT with one butterfly factor and boft_s frozen at its base value 1."
+    },
+    {
+     "target": "goft",
+     "rule": "A3",
+     "h": "t\\mapsto\\big(\\theta^{(1)}_k=2\\arctan t_k,\\ \\theta^{(\\ell)}=0\\ (\\ell\\ge2)\\big)",
+     "note": "Block size b = 2 only: the 2x2 Cayley blocks are GOFT's first Givens layer on the pairs (2k, 2k+1) (up to GOFT's sign convention)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oftv2",
+     "test": "O1",
+     "reason": "HF's Cayley-Neumann R = C(Q)(I - Q^4) is orthogonal only when Q^4 has eigenvalues in {0, 2}, so near theta_0 the two images meet only at theta_0."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "rank(R - I) reaches n > r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates and arrows agree (the 2x2 Cayley block is the rotation by 2 arctan t, so the GOFT arrow holds). Change: the gauge note wrongly implied that out >= in always holds under HF. It now says injectivity needs out_features >= in_features, and that for generic wide W_0 the stabiliser is still trivial when b <= out_features."
+  },
+  {
+   "id": "oftv2",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "kind": "The input-centric evaluation \\(W_0(R^\\top x)\\) is the same \\(\\rho\\) as \\(W_0R^\\top\\); evaluation order is invisible to Meth.",
+    "shape": "Action type: \\(\\gamma(Q)=C(Q)(I-Q^4)\\in GL^+(b)^{n/b}\\) acting on \\(W_0\\); the image is a \\(b(b-1)/2\\)-per-block slice through \\(GL^+(b)\\), not a subgroup orbit (axes.json: Orb, only approximately orthogonal).",
+    "base_point": "\\(d\\gamma_0=2\\,\\mathrm{id}\\) on skew matrices.",
+    "covariance": "The Neumann map is a polynomial, so conjugation by the orthogonal block normaliser commutes with it: \\(GL\\times N_{\\rm blk}\\).",
+    "merge": "M1 for a full-precision base; QOFT on a quantised base is Mq (dequantise, merge, requantise).",
+    "rebasing": "Cayley-Neumann factors generate \\(\\prod GL^+(b)\\) (\\(\\prod CO^+(2)\\) for \\(b=2\\)): \\(K_{\\rm out}\\) and the spectrum drift over merges (Thm V.3 cor. 4)."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "OFTv2 (HF's default OFTConfig) is OFT with the Cayley map replaced by its truncated Neumann series, \\(R=C(Q)(I-Q^4)\\). This is a quasi-orthogonal action whose image leaves the \\(K_{\\rm out}\\) level set at order \\(\\|Q\\|^4\\) and whose rebasing closure is \\(\\prod GL^+(b)\\) rather than \\(\\prod SO(b)\\). With exact Cayley it is the same object as OFT.",
+   "arrows": [
+    {
+     "target": "qgoft",
+     "rule": "A3",
+     "h": "t\\mapsto\\Big(\\tilde G^{(1)}_k=(1-t_k^2)\\begin{pmatrix}1-t_k^2&-2t_k\\\\2t_k&1-t_k^2\\end{pmatrix},\\ \\tilde G^{(\\ell)}=I\\ (\\ell\\ge2)\\Big)",
+     "note": "Block size b = 2 only: a 2x2 Cayley-Neumann block is a scaled rotation in CO^+(2), i.e. a quasi-Givens block of qGOFT's first layer."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "Cayley-Neumann images are not orthogonal (R^T R = (I - Q^4)^2), so they change K_out; near theta_0 the images of OFT and OFTv2 meet only at theta_0."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. For b = 2, C(Q)(I - Q^4) = (1 - t^2)[[1-t^2, -2t],[2t, 1-t^2]], so the qGOFT arrow holds exactly. R^T R = (I - Q^4)^2 gives the OFT obstruction. The generated group is prod GL^+(b) (CO^+(2) at b=2) because the symmetric part has non-zero trace and traceless parts. No changes."
+  },
+  {
+   "id": "osf",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "nonlinear",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The forward map \\(W_{hi}+U_{lo}\\Sigma_{lo}V_{lo}^\\top\\) is a reparametrisation; the projected gradients are optimizer data (a backward compression \\(c_t\\)).",
+    "shape": "With \\(U_{lo}\\perp U_{hi}\\), \\(V_{lo}\\perp V_{hi}\\) enforced and \\(k=\\min(m,n)-e\\), the image is \\(\\theta_0+\\{U_\\perp ZV_\\perp^\\top\\}\\), a linear block of dimension \\((m-e)(n-e)\\) in the SVD frame (rank \\(\\le k\\) is automatic). This holds for SGD-type rules; Adam's elementwise preconditioner leaves the projected subspace, and the object is then the split cone \\(W_{hi}+\\mathcal M_{\\le k}\\) (Cone*).",
+    "base_point": "Initialised at \\(W_0\\)'s own SVD with \\(\\Sigma_{lo}\\) invertible: regular.",
+    "gauge": "\\(U\\Sigma V^\\top\\) with a trainable diagonal \\(\\Sigma\\): the generic fibre has dimension \\(k^2+k\\); only the torus \\((D_1,D_1^{-1}\\Sigma D_2^{-1},D_2)\\) acts linearly, the rest is absorption of \\(\\Sigma\\), as in AdaLoRA's \\(P\\Lambda Q\\).",
+    "covariance": "SVD frame of \\(W_0\\): \\(CO\\times CO\\).",
+    "rebasing": "Frames are frozen within a task, so idempotent; the continual-learning protocol recomputes the SVD per task and shrinks the trainable block (a schedule across tasks)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "OSF is a split (MiLoRA-type) pointing of \\(\\mathrm{LoRA}_k\\) with \\(k\\) half the rank, plus a backward projection that confines the factors to the complements of the frozen top singular subspaces. Under that projection its reach is the linear minor block \\(\\theta_0+U_\\perp(\\cdot)V_\\perp^\\top\\) of the SVD frame, the exact dual of PSOFT, which adapts only inside the principal block.",
+   "arrows": [
+    {
+     "target": "milora",
+     "rule": "A3",
+     "h": "(U,\\Sigma,V)\\mapsto\\big(U\\,\\Sigma\\,S_{lo}^{-1/2},\\ S_{lo}^{1/2}V^\\top\\big)",
+     "note": "MiLoRA_k with k = min(m,n) - effective_rank, pointed at (U_lo S_lo^{1/2}, S_lo^{1/2} V_lo^T); holds with or without the gradient projection."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "psoft",
+     "test": "O1",
+     "reason": "OSF moves only the minor block U_perp (x) V_perp, PSOFT only the principal block U_r (x) V_r: near theta_0 the images meet only at theta_0. This needs PSOFT's rank r <= effective_rank e, so that PSOFT's principal block lies inside OSF's frozen top block."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian checks: unconstrained fibre k^2+k = 12 at (7,6,k=3); constrained image (m-e)(n-e) = 12, regular. MiLoRA arrow checked. Change: the PSOFT obstruction now states its condition r <= e. Unresolved judgment: shape Lin and rebasing 'idempotent' describe the reach under projected SGD. Im rho alone, and AdamW, whose elementwise preconditioner leaves the projected subspace, give Cone* with rebasing 'span'. The classifier's note already flags this; kept."
+  },
+  {
+   "id": "psoft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Sat",
+    "base_point": "apex",
+    "gauge": "scalar",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=B(D_\\beta C(Q)^\\top D_\\alpha-I)A\\) in the top-\\(r\\) SVD frame: the core ranges over \\(D_\\beta\\,SO(r)\\,D_\\alpha\\), a two-sided torus saturation of the principal-subspace orthogonal orbit, of dimension \\(r(r-1)/2+2r-1\\).",
+    "base_point": "At \\(R=I\\) the two diagonal scalings coincide: \\(\\dim S_1=r(r-1)/2+r\\) against \\(d=r(r-1)/2+2r-1\\), a deficit \\(r-1>0\\) (Jacobian 3/4, 6/8, 10/13 at \\(r=2,3,4\\)): an apex. With \\(\\alpha=\\beta=\\mathbf 1\\) frozen the method is an orbit with a regular base point.",
+    "gauge": "\\((\\beta,\\alpha)\\mapsto(c\\beta,\\alpha/c)\\): one scalar slide (fibre dimension 1).",
+    "covariance": "Top-\\(r\\) SVD frame of \\(W_0\\): \\(CO\\times CO\\).",
+    "rebasing": "With frozen frames the core generates \\(GL(r)\\) (signs allowed), so re-merging fills the \\(r^2\\)-dimensional principal block \\(W_{res}+U_r\\,\\mathbb R^{r\\times r}\\,V_r^\\top\\). The additive reading gives the same limit: with B and A frozen, the increments \\(B(M-I)A\\) span the same \\(r^2\\)-dimensional block."
+   },
+   "table_row": "R-action",
+   "table_col": "Sat",
+   "categorical_reading": "PSOFT is OFT restricted to the principal singular block and saturated by two diagonal tori: \\(\\Delta W=U_r\\Sigma_r(D_\\beta C(Q)^\\top D_\\alpha-I)V_r^\\top\\). Its image lies in LoRA-XS's linear core (hence in PiSSA's cone), and its default pointing is an apex, because the two relaxation tori are first-order indistinguishable at \\(R=I\\).",
+   "arrows": [
+    {
+     "target": "lora-xs",
+     "rule": "A3",
+     "h": "(Q,\\alpha,\\beta)\\mapsto\\Sigma_r\\big(D_\\beta C(Q)^\\top D_\\alpha-I\\big)\\Sigma_r^{-1}",
+     "note": "The LoRA-XS core R in the frames B_0 = U_r, A_0 = Sigma_r V_r^T (up to its transpose convention), pointed at R = 0."
+    },
+    {
+     "target": "pissa",
+     "rule": "A3",
+     "h": "(Q,\\alpha,\\beta)\\mapsto\\big(U_r\\Sigma_rD_\\beta C(Q)^\\top D_\\alpha\\Sigma_r^{-1/2},\\ \\Sigma_r^{1/2}V_r^\\top\\big)",
+     "note": "PiSSA_r at its own point (U_r Sigma_r^{1/2}, Sigma_r^{1/2} V_r^T): the composite of the LoRA-XS arrow with LoRA-XS -> PiSSA."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "spectral-adapter-r",
+     "test": "O1",
+     "reason": "alpha, beta change the principal singular values, which Spectral Adapter^R preserves; only at alpha = beta = 1 is PSOFT a one-sided Spectral Adapter^R."
+    },
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "The scalings change K_out, and even at alpha = beta = 1 the rotation of the principal input subspace is not block-aligned, so it breaks OFT's partial Grams."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian checks of S_1/d match exactly: 3/4, 6/8, 10/13 at r = 2, 3, 4, fibre 1 (scalar). Both arrows (into LoRA-XS and PiSSA) verified algebraically. Change: the rebasing note now says the additive and action readings both converge to the principal block."
+  },
+  {
+   "id": "road",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "RoAd\\(_1\\) (paper main, HF road_1): the left action of \\(CO^+(2)^{m/2}\\cong(\\mathbb C^\\times)^{m/2}\\) on output pairs. Its orbit closure is a real-linear space of dimension \\(m\\) (Prop II.9(d)), the same situation as (IA)\\(^3\\), which axes.json files under Lin; kept Orb as in axes.json and VIII.B.",
+    "base_point": "Polar coordinates \\((\\alpha,\\theta)\\) at \\((1,0)\\) span \\(\\mathbb C\\) in each pair.",
+    "covariance": "Pair-monomial on the output side \\(\\times\\ GL\\) (VIII.B).",
+    "rebasing": "The generated group's orbit closure is the orbit closure itself: idempotent."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "RoAd\\(_1\\) is (IA)\\(^3\\) over \\(\\mathbb C\\): the torus \\((\\mathbb C^\\times)^{m/2}\\) of scaled 2D rotations acting on pairs of output neurons, with a linear orbit closure of dimension \\(m\\). It multiplies each pair's input Gram by \\(\\alpha_i^2\\); RoAd\\(_{2,4}\\) enlarge the torus to the non-abelian block monoid \\(M_2(\\mathbb R)^{m/2}\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "Pair rotations move row lines, which (IA)^3 fixes while its scales are non-zero."
+    },
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "The alpha_i rescale neuron pairs and change K_out; OFT acts on the input side and preserves it."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (RoAd_1). Jacobian check: rank m = |M| at q_0 and generically (regular, no gauge). The (IA)^3 and OFT obstructions were verified. Orb kept, as in axes.json and VIII.B, although the orbit closure is linear. No changes."
+  },
+  {
+   "id": "dora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Sat",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Prop II.8: \\(\\mathrm{Im}=\\mathrm{Diag}_m\\cdot(W_0+\\mathcal M_{\\le r})\\), dimension \\(\\min(mn,r(m+n-r)+m)\\) for generic \\(W_0\\).",
+    "base_point": "\\(B=0\\), \\(\\mu=\\) row norms: inherits LoRA's deficit through the torus factor.",
+    "covariance": "Contains \\(\\mathrm{Mon}_m\\times GL_n\\) (per-output magnitude)."
+   },
+   "table_row": "R-action",
+   "table_col": "Sat",
+   "categorical_reading": "DoRA's image is \\(\\mathrm{Diag}_m\\cdot(W_0+\\mathcal M_{\\le r})\\), exactly LoRA followed by a trainable output scale (Prop II.8): a torus saturation of LoRA's cone that inherits LoRA's apex and \\(GL_r\\) gauge. What it adds beyond that image is training geometry (the row-normalised metric, or HF's detached, non-gradient backward).",
+   "arrows": [
+    {
+     "target": "bidora",
+     "rule": "A3",
+     "h": "\\mathrm{id}",
+     "note": "Same parametrisation (scale absorbed): an isomorphism; BiDoRA differs only in its bi-level training."
+    },
+    {
+     "target": "glora",
+     "rule": "A3",
+     "h": "(B,A,\\mu)\\mapsto\\big(B_A=c-\\mathbf 1,\\ A_A=\\mathbf 1^\\top;\\ B_B=\\mathrm{diag}(c)\\,sB,\\ A_B=A\\big),\\quad c=\\mu\\oslash\\big(\\|(W_0+sBA)_{i,:}\\|\\big)_i",
+     "note": "GLoRA (A path rank >= 1, B path rank r) re-pointed at (0, 1^T; 0, A_0), since diag(c)(W_0 + sBA) = W_0 + W_0 (.) ((c - 1) 1^T) + diag(c) sBA."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Output rescalings diag(mu) W_0 have rank up to rank W_0, outside LoRA_r's image (axes.json O1 example)."
+    },
+    {
+     "target": "delora",
+     "test": "O1",
+     "reason": "DeLoRA's image is LoRA's cone, which misses DoRA's output rescalings; DeLoRA normalises the update, DoRA the weight."
+    },
+    {
+     "target": "loft-orthogonal",
+     "test": "O1",
+     "reason": "LOFT keeps the neuron Gram matrix W W^T exactly (Cor II.6), and DoRA changes it."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; agrees with Prop II.8 and VIII.B. GLoRA arrow checked: diag(c)(W_0 + sBA) = W_0 + W_0 (.) ((c-1)1^T) + diag(c) sBA, with c = 1 at q_0. BiDoRA isomorphism, LoRA and DeLoRA obstructions verified. No changes."
+  },
+  {
+   "id": "goft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "A product of \\(d-1\\) Givens rotations in \\(\\log_2d\\) parallel layers: action type into \\(SO(d)\\), image of dimension \\(d-1\\) (Jacobian rank 7 = \\(|M|\\) at \\(d=8\\)).",
+    "gauge": "Distinct planes give independent generators, at theta = 0 and generically: none (VIII.B '-').",
+    "covariance": "VIII.B: GL x Pi. The fixed plane pairing is imposed on the input side (axes.json also lists 'GOFT (plane structure)' under GLxCO, meaning the normaliser of that pairing).",
+    "rebasing": "The butterfly plane graph is connected, so re-merging reaches \\(W_0\\,SO(n)\\) (Thm V.3(c))."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "GOFT writes an element of \\(SO(d)\\) as a log-depth circuit of \\(d-1\\) Givens rotations: an action-type object, regular at \\(\\theta_0\\), whose image is a thin \\((d-1)\\)-dimensional slice of the orbit \\(W_0\\cdot SO(d)\\). A single run stays far from the orbit; rebasing walks all of it because the plane graph is connected.",
+   "arrows": [
+    {
+     "target": "qgoft",
+     "rule": "A3",
+     "h": "\\theta\\mapsto\\Big(\\tilde G_t=\\begin{pmatrix}\\cos\\theta_t&-\\sin\\theta_t\\\\ \\sin\\theta_t&\\cos\\theta_t\\end{pmatrix}\\Big)_t",
+     "note": "Each Givens rotation is a particular quasi-Givens block; identity at theta = 0."
+    },
+    {
+     "target": "boft",
+     "rule": "A3",
+     "h": "\\theta\\mapsto\\big(t=\\tan(\\theta/2)\\ \\text{on the kept }2\\times2\\text{ blocks},\\ 0\\ \\text{on the others},\\ s=\\mathbf 1\\big)",
+     "note": "BOFT(log2 d, 2) with the non-GOFT rotations and boft_s frozen at their base values; up to factor-ordering and permutation conventions; a germ arrow (Cayley excludes the angle pi)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "GOFT's layers couple coordinates across OFT's blocks (breaking its partial Grams) and can produce eigenvalue -1, which exact Cayley never does."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Planes (2^l k, 2^(l-1)(2k+1)) form a spanning tree. Jacobian rank 7 = d-1 at 0 and generically at d=8 (regular, no gauge); rebasing reaches SO(n). qGOFT and BOFT arrows checked (2 arctan conventions). OFT obstruction verified for injective W_0. No changes."
+  },
+  {
+   "id": "qgoft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "torus",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "A product of d - 1 free 2x2 blocks in GOFT's layout: action type into the monoid of matrices (axes.json: 'monoid of arbitrary 2x2 blocks').",
+    "base_point": "At identity blocks \\(S_1\\) is spanned by every \\(E_{ab}\\) inside each plane: \\(2(d-1)\\) off-diagonal plus \\(d\\) diagonal \\(=3d-2=d(\\mathrm{qGOFT})\\).",
+    "gauge": "VIII.B lists '-', but a diagonal scalar slides along each internal index segment between two blocks that share an index, \\((D,D^{-1})\\): a \\((d-2)\\)-dimensional torus (Jacobian rank \\(22=28-6\\) at \\(d=8\\)).",
+    "covariance": "The pairing is imposed (Pi).",
+    "rebasing": "Connected planes: \\(\\to W_0\\,\\mathbb R^{n\\times n}\\), the closure of \\(W_0\\cdot GL(n)\\). The free \\(2\\times2\\) blocks include singular ones and ones of negative determinant, and on GOFT's connected planes they generate the monoid of all \\(n\\times n\\) matrices (Thm V.3(b))."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "qGOFT relaxes each Givens rotation to an arbitrary \\(2\\times2\\) block, so it is the action of a monoid circuit rather than a group. It leaves the \\(K_{\\rm out}\\) level set at first order, carries a torus gauge on internal index wires, and rebasing walks \\(W_0\\,\\mathbb R^{n\\times n}\\), the closure of \\(W_0\\cdot GL(n)\\), instead of \\(W_0\\cdot SO(n)\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "goft",
+     "test": "O1",
+     "reason": "Non-conformal blocks change neuron norms and angles, which GOFT's rotations preserve."
+    },
+    {
+     "target": "boft",
+     "test": "O1",
+     "reason": "BOFT preserves |cos| between neurons (Cor II.6 remarks), qGOFT does not."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian check at d=8: generic 22 = 3d-2 = dim S_1 at identity blocks, fibre 6 = d-2, which confirms the torus gauge (a deviation from VIII.B's '-'). GOFT and BOFT obstructions verified (Cor II.6). No changes. Sync with the refereed paper (2026-10-03): the rebasing note and the categorical reading said GL^+(n). qGOFT's 2x2 blocks are arbitrary matrices (arXiv 2404.04316), singular and negative-determinant ones included, and on GOFT's connected planes they generate the monoid of all n x n matrices (Thm V.3(b)), so re-merging reaches W_0 R^{n x n}, the closure of W_0 GL(n) (paper, note 16 to the method table). Coordinate 'group' kept."
+  },
+  {
+   "id": "ether",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "shape": "\\(W_0H^B\\) with \\(H^B=\\mathrm{diag}(I-2u_ju_j^\\top/\\|u_j\\|^2)\\): the orbit of \\(W_0\\) under the reflection class in each block (\\(\\prod\\mathbb{RP}^{b-1}\\)), action type in \\(O(n)\\).",
+    "base_point": "A reflection is never \\(I\\) (\\(\\|H_j-I\\|_F=2\\)), so \\(\\theta_0\\notin\\mathrm{Im}\\) for injective \\(W_0\\): \\(\\|W_0H-W_0\\|=2\\|W_0\\hat u\\|>0\\). The official code starts at a random reflection.",
+    "gauge": "\\(H\\) depends on \\(u_j/\\|u_j\\|\\): per-block scalings \\((\\mathbb R^\\times)^n\\).",
+    "covariance": "A block-diagonal right action: the block normaliser in \\(CO(n)\\) on the input side, as for block OFT.",
+    "rebasing": "Products of reflections generate \\(O(b)\\) in each block (Cartan-Dieudonne), so re-merging reaches \\(W_0\\cdot\\prod O(b)\\), both determinant classes included."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "ETHER is an unpointed action-type object: its image is a compact set of block reflections \\(W_0H^B\\subset W_0\\cdot O(n)\\) at fixed distance from \\(\\theta_0\\). It preserves \\(K_{\\rm out}\\) and the spectrum (Cor II.6) but has no base point over \\(\\theta_0\\); its 'bounded deviation' is literally \\(\\|H_j-I\\|_F=2\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "hra",
+     "test": "O3",
+     "reason": "ETHER is unpointed: for an even number n of blocks its image lies in Im HRA_n (n reflections with disjoint supports), but only through a weak morphism, never a pointed one."
+    },
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "Reflections have eigenvalue -1, which the Cayley map never produces."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: an unpointed orbit of the reflection class, ||H_j - I||_F = 2, torus gauge (one scaling per block vector), block normaliser covariance; Cartan-Dieudonne gives rebasing to prod O(b). HRA (O3) and OFT (O1) obstructions verified. No changes."
+  },
+  {
+   "id": "ether-plus",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "torus",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "kind": "A two-sided action \\(\\tilde H^+W_0H^+\\) by matrices \\(I-uu^\\top+vv^\\top\\) that leave \\(O(d)\\).",
+    "shape": "At the base point \\(v=-u\\) (coinciding hyperplanes) each factor set \\(\\{I-uu^\\top+vv^\\top\\}\\) has the germ of the non-linear cone \\(\\{xy^\\top+yx^\\top:x\\perp y\\}\\); the image germ at \\(\\theta_0\\) is a cone with vertex \\(\\theta_0\\), not a group orbit.",
+    "base_point": "\\(S_1\\) per block and side has dimension \\(b-1\\) against \\(2(b-1)\\) generically: an apex (Jacobian 10 vs 20 for one block per side at \\(m=n=6\\); 8 vs 16 for two).",
+    "gauge": "\\(H^+\\) depends only on \\(u/\\|u\\|\\), \\(v/\\|v\\|\\): per-vector scalings, a torus (fibre = number of vectors in the check).",
+    "covariance": "Two-sided block normalisers \\(N_{\\rm blk}(CO(m))\\times N_{\\rm blk}(CO(n))\\), with no SVD frame; with one block per side exactly \\(CO\\times CO\\).",
+    "rebasing": "The tangent cone spans the traceless symmetric matrices, whose brackets give \\(\\mathfrak{so}(b)\\): the generated monoid has Lie algebra \\(\\supseteq\\mathfrak{sl}(b)\\) per block and side, and \\(\\det=\\cos^2\\varphi\\le1\\) adds contractions."
+   },
+   "table_row": "R-action",
+   "table_col": "Cone",
+   "categorical_reading": "ETHER+ is a two-sided action by rank-2 symmetric perturbations of the identity. Its default pointing (\\(v=-u\\)) is the vertex of the cone of such perturbations, so unlike ETHER it is pointed, but it sits at an apex, like zero-init LoRA. Its update has rank \\(\\le2\\) per block and side, so LoRA of that rank simulates it.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "q\\mapsto\\Big(\\big[\\,[\\hat{\\tilde v}_j,-\\hat{\\tilde u}_j]_j,\\ W_0[\\hat v_j,-\\hat u_j]_j\\,\\big],\\ \\big[\\,[\\hat{\\tilde v}_j,\\hat{\\tilde u}_j]_j^\\top W_0H^+;\\ [\\hat v_j,\\hat u_j]_j^\\top\\,\\big]\\Big)",
+     "note": "From Delta W = (H~+ - I) W_0 H+ + W_0 (H+ - I); LoRA of rank 2(#left blocks + #right blocks), pointed at h(q_0) with B_0 A_0 = 0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "The factors I - uu^T + vv^T are not orthogonal (singular when u is orthogonal to v), so ETHER+ changes K_out (Cor II.6 remarks)."
+    },
+    {
+     "target": "ether",
+     "test": "O1",
+     "reason": "ETHER's image consists of exact block reflections and excludes theta_0; ETHER+ reaches theta_0 and non-orthogonal matrices."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian checks match: 10 vs 20 (one block per side, m=n=6) and 8 vs 16 (two blocks of 3), so apex; fibre equals the number of vectors (torus). The LoRA arrow was verified from Delta W = (H~ - I) W_0 H + W_0 (H - I) with H - I = [v,-u][v,u]^T. No changes."
+  },
+  {
+   "id": "spectral-adapter-r",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\tilde UW_0\\tilde V^\\top\\) with \\(\\tilde U=I+U_1(R_U-I)U_1^\\top\\): the orbit of \\(W_0\\) under \\(SO(r)\\times SO(r)\\) embedded on the top-\\(r\\) singular subspaces; isospectral (Thm II.5(3)).",
+    "base_point": "\\((\\Omega_U,\\Omega_V)\\mapsto\\Omega_US_1-S_1\\Omega_V\\) is injective for distinct top singular values: regular.",
+    "gauge": "None on the skew generators; the stored generators \\(A\\) with \\(Q=(A-A^\\top)/2\\) carry linear null directions (their symmetric part).",
+    "covariance": "SVD frame: \\(CO\\times CO\\).",
+    "rebasing": "The rotations stay inside the top-r subspaces and keep the spectrum, so even a recomputed SVD returns the same subspaces: idempotent up to closure."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "Spectral Adapter\\(^R\\) is a two-sided orthogonal orbit confined to the principal singular block: it rotates the top singular frames and keeps every singular value, so the spectrum and the principal subspaces are absolute invariants. Through the SVD frame it factors through LoRA-XS's linear core.",
+   "arrows": [
+    {
+     "target": "lora-xs",
+     "rule": "A3",
+     "h": "(Q_U,Q_V)\\mapsto C(Q_U)\\,S_1\\,C(Q_V)^\\top S_1^{-1}-I",
+     "note": "LoRA-XS core in the frames (U_1, S_1 V_1^T), pointed at 0."
+    },
+    {
+     "target": "pissa",
+     "rule": "A3",
+     "h": "(Q_U,Q_V)\\mapsto\\big(U_1C(Q_U)S_1C(Q_V)^\\top S_1^{-1/2},\\ S_1^{1/2}V_1^\\top\\big)",
+     "note": "PiSSA_r at its own point (U_1 S_1^{1/2}, S_1^{1/2} V_1^T)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "svdiff",
+     "test": "O1",
+     "reason": "SVDiff moves singular values with frames fixed, Spectral Adapter^R moves frames with values fixed: near theta_0 the images meet only at theta_0."
+    },
+    {
+     "target": "oft",
+     "test": "O1",
+     "reason": "The left rotation R_U changes K_out = W W^T, which input-side OFT preserves."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. Jacobian rank r(r-1) = 6 at 0 and generically (regular, r=3). LoRA-XS and PiSSA arrows verified algebraically; SVDiff and OFT obstructions verified. No changes."
+  },
+  {
+   "id": "spectral-adapter-a",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(W=W_{res}+(U_1+A_U)S_1(V_1+A_V)^\\top\\): the affine change \\(B=(U_1+A_U)S_1^{1/2}\\), \\(A=S_1^{1/2}(V_1+A_V)^\\top\\) identifies it with PiSSA, a Type II translated cone.",
+    "base_point": "A smooth point (split pointing).",
+    "gauge": "\\(GL_r\\), transported from PiSSA.",
+    "covariance": "SVD frame: \\(CO\\times CO\\), as PiSSA.",
+    "rebasing": "As PiSSA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "Spectral Adapter\\(^A\\) is PiSSA in affine coordinates: \\((A_U,A_V)\\mapsto((U_1+A_U)S_1^{1/2},S_1^{1/2}(V_1+A_V)^\\top)\\) is a pointed isomorphism, so its 'twice the rank capacity' is Thm II.1(c) for split pointings. The coordinate change alters only the induced cometric (rates weighted by \\(S_1\\)), not the object.",
+   "arrows": [
+    {
+     "target": "pissa",
+     "rule": "A3",
+     "h": "(A_U,A_V)\\mapsto\\big((U_1+A_U)S_1^{1/2},\\ S_1^{1/2}(V_1+A_V)^\\top\\big)",
+     "note": "A pointed isomorphism (affine and invertible)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "At equal rank \\(r\\), against LoRA's Type I apex: a Type II smooth point, and the images are incomparable (Thm II.2(d)), so there is no arrow either way at that rank. (Via PiSSA it does map into \\(\\mathrm{LoRA}_{2r}\\) at a degenerate pointing, Thm II.1.)"
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: the affine invertible change to PiSSA's factors is a pointed isomorphism, so the coordinates are PiSSA's (Cone*, regular, GL, OxO, M1, span). O3 against LoRA matches the axes.json example. No changes. Consolidation (2026-10-01): obstruction -/-> lora: instance qualifier added."
+  },
+  {
+   "id": "svdiff",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(U\\mathrm{diag}(\\mathrm{ReLU}(\\sigma+\\delta))V^\\top\\) is the closure of the positive-torus orbit on the spectrum in the frozen SVD frame (a polyhedral cone with vertex 0); \\(\\theta_0\\) is interior (\\(\\sigma>0\\)), so the germ at \\(\\theta_0\\) is the linear space \\(U\\,\\mathrm{diag}(\\mathbb R^{\\min})\\,V^\\top\\).",
+    "base_point": "ReLU is the identity near \\(\\delta=0\\).",
+    "gauge": "Injective near \\(\\theta_0\\).",
+    "covariance": "SVD frame: \\(CO\\times CO\\) (positive scalings preserve the orthant).",
+    "rebasing": "Re-merging keeps the frames (up to reordering): idempotent."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "SVDiff is the positive torus acting on the singular values of \\(W_0\\) in its frozen SVD frame; its image is the orbit closure \\(\\{U\\mathrm{diag}(s)V^\\top:s\\ge0\\}\\), linear at \\(\\theta_0\\). It is the spectral analogue of (IA)\\(^3\\): frames are absolute invariants, singular values move.",
+   "arrows": [
+    {
+     "target": "svft",
+     "rule": "A3",
+     "h": "\\delta\\mapsto\\mathrm{ReLU}(\\sigma+\\delta)-\\sigma",
+     "note": "SVFT with the plain (diagonal) pattern, pointed at M = 0 (SVFT's official init is a small defect); piecewise smooth, smooth near delta = 0."
+    },
+    {
+     "target": "svf",
+     "rule": "A3",
+     "h": "\\delta\\mapsto\\mathrm{ReLU}(\\sigma+\\delta)\\oslash\\sigma",
+     "note": "SVF in the paper's form U diag(sigma (.) z) V^T, pointed at z = 1."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "spectral-adapter-r",
+     "test": "O1",
+     "reason": "SVDiff changes singular values with fixed frames, while Spectral Adapter^R preserves the spectrum."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: the germ at an interior theta_0 (sigma > 0) is linear in the SVD frame, regular, no gauge, idempotent. SVFT and SVF arrows checked, both pointed (h(0) = 0, resp. 1). Spectral-R obstruction verified. No changes."
+  },
+  {
+   "id": "svf",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Trained experts are points of the method; Transformer\\(^2\\)'s test-time mixing \\(z'=\\sum\\alpha_kz_k\\) is a family over the task simplex (\\(F_T\\)) built on it.",
+    "shape": "The paper's form \\(z\\mapsto U\\mathrm{diag}(\\sigma\\odot z)V^\\top\\) is linear and injective: the full torus closure on the spectrum, dimension \\(\\min(m,n)\\).",
+    "base_point": "\\(z=\\mathbf 1\\). The official code's sigmoid and \\(\\sum\\sigma/\\sum\\sigma z\\) renormalisation fix the nuclear norm (\\(d\\) drops by 1 and a 1-dimensional non-linear fibre appears), and its near-uniform init is a small defect.",
+    "covariance": "SVD frame: \\(CO\\times CO\\).",
+    "rebasing": "The image is a linear space in the frozen SVD frame. A merge recovers the frames up to sign and order, so re-merging gains nothing: idempotent."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "SVF trains a torus element acting on the spectrum of \\(W_0\\) in its frozen SVD frame; for \\(\\sigma>0\\) it is isomorphic to diagonal SVFT and, near \\(\\theta_0\\), to SVDiff. Transformer\\(^2\\)'s self-adaptation is a \\(T\\)-point of this linear method over the simplex of expert mixtures, where mixing parameters is legitimate because the map is of degree one.",
+   "arrows": [
+    {
+     "target": "svft",
+     "rule": "A3",
+     "h": "z\\mapsto\\sigma\\odot(z-\\mathbf 1)",
+     "note": "A pointed isomorphism onto diagonal SVFT (pointed at M = 0)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "svdiff",
+     "test": "O1",
+     "reason": "z_i < 0 flips the sign of sigma_i u_i v_i^T, which SVDiff's ReLU(sigma + delta) >= 0 never reaches; the two agree only as germs at theta_0."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates, SVFT arrow and SVDiff obstruction agree. Change: added the missing rebasing note."
+  },
+  {
+   "id": "bidora",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Sat",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Same \\(\\rho\\) as DoRA; the bi-level program (magnitude on a validation split by hypergradient) and the orthogonality penalty change only the update rule.",
+    "shape": "As DoRA (Prop II.8)."
+   },
+   "table_row": "R-action",
+   "table_col": "Sat",
+   "categorical_reading": "BiDoRA is a training recipe on the DoRA object: the same \\(\\rho=\\mathrm{diag}(m)N(W_0+BA)\\), with magnitude and direction assigned to different levels of a bi-level program and an orthogonality penalty on the direction. Image germ, fibre and merge type are unchanged; only the cotangent signal (hypergradient-driven, non-gradient) differs.",
+   "arrows": [
+    {
+     "target": "dora",
+     "rule": "A3",
+     "h": "\\mathrm{id}",
+     "note": "Same parametrisation: an isomorphism."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "As DoRA: output rescalings lie outside LoRA_r's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: same rho as DoRA, so DoRA's coordinates; the bi-level program and the orthogonality penalty are training data. entry_type 'recipe' is sensible. No changes."
+  },
+  {
+   "id": "ssf",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "After a linear op, \\(W=\\mathrm{diag}(\\gamma)W_0\\), \\(b=\\gamma\\odot b_0+\\beta\\): the closure of an orbit of the diagonal affine group, linear.",
+    "base_point": "The exactly pointed variant \\((\\gamma,\\beta)=(\\mathbf 1,0)\\); the official init \\(N(1,0.02)\\), \\(N(0,0.02)\\) is a small defect.",
+    "merge": "Re-parametrised into the preceding linear box when it has a bias slot; in bias-free LLaMA-type layers the shift needs a new bias (Thm VI.3)."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "SSF is the diagonal affine group \\((\\mathbb R^\\times)^d\\ltimes\\mathbb R^d\\) acting on output channels after every operation. Its orbit closure is linear: the output-side torus of (IA)\\(^3\\) plus a BitFit-type shift. It fuses into the preceding box only under the side conditions of Thm VI.3.",
+   "arrows": [
+    {
+     "target": "glora",
+     "rule": "A3",
+     "h": "(\\gamma,\\beta)\\mapsto\\big(B_A=\\gamma-\\mathbf 1,\\ A_A=\\mathbf 1^\\top;\\ D=\\gamma-\\mathbf 1;\\ E=\\beta\\big)\\ \\text{(other paths at zero)}",
+     "note": "Post-linear wrappers only; GLoRA with D, E in vector mode (not the PEFT default), re-pointed at A_A = 1^T."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "The shift beta and the scaling of every output channel (including the outputs of W_up) lie outside (IA)^3's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; agrees with VIII.B (Lin, regular for the exactly pointed variant, none, MonxGL, M1->, idempotent). GLoRA arrow checked with D, E in vector mode: diag(gamma) W_0 and gamma (.) b_0 + beta. (IA)^3 obstruction verified. No changes."
+  },
+  {
+   "id": "red",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(W_{\\rm down}=\\mathrm{diag}(\\ell_s)W^0_{\\rm down}\\), \\(b=\\ell_s\\odot b^0+\\ell_b\\): a torus-orbit closure plus a shift, linear.",
+    "merge": "The scale always fuses into W_down; the shift needs a bias slot, which LLaMA-type down-projections lack."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "RED is SSF's scale-and-shift restricted to the FFN outputs of an LLM: an output-side diagonal affine action on \\(W_{\\rm down}\\) and its bias, linear and regular at \\(\\theta_0\\). The scale always fuses into \\(W_{\\rm down}\\); the shift needs a bias slot.",
+   "arrows": [
+    {
+     "target": "ssf",
+     "rule": "A2",
+     "h": "(\\ell_s,\\ell_b)\\mapsto\\big((\\gamma,\\beta)_{\\rm FFN\\ out}=(\\ell_s,\\ell_b);\\ \\text{all other SSF wrappers at }(\\mathbf 1,0)\\big)",
+     "note": "SSF pointed at its exact identity."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "RED scales the output side of W_down (and shifts it), (IA)^3 its input side: {diag(l) W} and {W diag(l')} meet only in scalar multiples."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; agrees with VIII.B. SSF arrow (A2, other wrappers at (1,0)) and (IA)^3 obstruction verified (diag(l) W = W diag(l') only for scalar l). No changes."
+  },
+  {
+   "id": "difffit",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "\\(\\gamma\\odot(\\text{branch output})\\) slides through DiT's adaLN gate (R4) into the branch's output projection: a reparametrisation of the rows of \\(W_o,W_2\\), plus selective tuning of biases, norm parameters and the class embedding.",
+    "shape": "Row scalings (torus-orbit closure), bias translations and freed coordinates: linear.",
+    "base_point": "\\(\\gamma=\\mathbf 1\\) and pretrained values: exactly pointed, regular.",
+    "covariance": "Output-side torus on the scaled projections (\\(\\mathrm{Mon}\\times GL\\)); \\(GL\\times GL\\) for the biases.",
+    "merge": "gamma fuses into the neighbouring output projection (R4 through the gate); biases and norms replace their old values."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "DiffFit is BitFit plus an output-side torus on each residual branch: \\(\\gamma\\odot\\mathrm{Attn}(x)\\) becomes \\(\\mathrm{diag}(\\gamma)W_o\\) after a spider slide through the adaLN gate, so the whole method is linear, regular and idempotent. It sits in the selective row because most of its coordinates are existing biases and norms.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "bitfit",
+     "test": "O1",
+     "reason": "The gamma row scalings change W_o and W_2, outside BitFit's bias-translation image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: gamma commutes with DiT's elementwise adaLN gate and folds into the rows of W_o and W_2; together with selective tuning of biases and norms this gives Lin, regular, none, M1->, idempotent. BitFit obstruction verified. No changes."
+  }
+ ]
+}

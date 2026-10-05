@@ -1,0 +1,1309 @@
+{
+ "batch": 4,
+ "methods": [
+  {
+   "id": "liera",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Weight-space: the trained layer is \\(W_0\\odot\\exp_\\odot(BA)\\) (first-order form \\(W_0+W_0\\odot BA\\)) with the original architecture.",
+    "shape": "Classified in the evaluated first-order form, which is HiRA: \\(\\mathrm{Im}=W_0+D_{W_0}(\\mathcal M_{\\le r})\\), the determinantal cone transported by \\(D_{W_0}:X\\mapsto W_0\\odot X\\) (Prop II.9(a)). The defining form is \\(\\Psi_*\\) of the same germ for the pointed diffeomorphism \\(\\Psi(W)=W_0\\odot\\exp_\\odot((W-W_0)\\oslash W_0)\\), with \\(d\\Psi_{\\theta_0}=\\mathrm{id}\\); it escapes HiRA's rank bound \\(r\\operatorname{rk}W_0\\).",
+    "base_point": "\\(B_0=0\\), \\(A_0\\) Gaussian: only \\(B\\) moves to first order (Lemma II.4); the deficit is LoRA's \\(r(n-r)\\), transported by \\(D_{W_0}\\) (and unchanged by \\(\\Psi\\), since \\(d\\Psi_{\\theta_0}=\\mathrm{id}\\)).",
+    "gauge": "\\(GL_r\\) on the internal wire, \\((Bg^{-1},gA)\\); \\(\\exp_\\odot\\) is injective, so the exponential form has the same fibres.",
+    "covariance": "Hadamard product with \\(W_0\\): covariant under monomial pairs only, never \\(GL\\times GL\\) (Prop II.9(e), HiRA).",
+    "rebasing": "First-order form = HiRA: \\(R_\\infty=W_0\\odot\\Theta=\\{W:Z(W_0)\\subseteq Z(W)\\}\\) (\\(=\\Theta\\) if \\(W_0\\) has no zeros), i.e. \\(\\theta_0+\\mathrm{span}\\,C\\), but not transported ReLoRA. The defining form is a genuine action of the positive Hadamard torus: \\(W_0\\odot e^{Z_1}\\odot e^{Z_2}=W_0\\odot e^{Z_1+Z_2}\\), so it converges to the group orbit \\(W_0\\odot(\\mathbb R_{>0})^{m\\times n}\\) and never changes the sign or zero pattern of \\(W_0\\) (Thm II.5(5))."
+   },
+   "table_row": "R-Hadamard",
+   "table_col": "Cone",
+   "categorical_reading": "As evaluated, LieRA is HiRA, \\((D_{W_0})_*\\mathrm{LoRA}\\) inside the slice at \\(\\theta_0\\). Its defining form \\(W_0\\odot\\exp_\\odot(BA)\\) is the further non-linear transport \\(\\Psi_*\\) of that object: an action of the positive Hadamard torus \\((\\mathbb R_{>0})^{m\\times n}\\), with Lie algebra \\(\\Theta\\), restricted to \\(\\exp_\\odot\\) of a determinantal cone. That action preserves both the sign and the zero pattern of \\(W_0\\), however often it is merged.",
+   "arrows": [
+    {
+     "target": "hira",
+     "rule": "A3",
+     "h": "h(B,A)=(B,A)",
+     "note": "Isomorphism: the first-order LieRA map \\(W_0\\odot(J+BA)\\) is HiRA's \\(\\rho\\), with the same pointing \\(B_0=0\\)."
+    },
+    {
+     "target": "flora-batched",
+     "rule": "A3",
+     "h": "h(B,A)=\\big([\\mathbf 1_m\\;B],\\,[\\mathbf 1_n^\\top;A]\\big)",
+     "note": "\\(W_0\\odot(J+BA)=W_0\\odot([\\mathbf 1\\,B][\\mathbf 1^\\top;A])\\): lands in FLoRA\\(_{r+1}\\) pointed at \\(([\\mathbf 1,0],[\\mathbf 1^\\top;A_0])\\), a factorisation of \\(J\\). FLoRA's \\(1/(r+1)\\) mean reduction is absorbed by scaling both factors by \\(\\sqrt{r+1}\\)."
+    },
+    {
+     "target": "loha",
+     "rule": "A3",
+     "h": "h(B,A)=(B,A,U_0,V_0^\\top),\\quad U_0V_0^\\top=W_0",
+     "note": "HiRA/LieRA is LoHa with its second Hadamard factor frozen at a rank-\\(\\operatorname{rk}W_0\\) factorisation of \\(W_0\\): \\(W_0+(BA)\\odot W_0\\). Lands in LoHa\\(_{r,\\operatorname{rk}W_0}\\) pointed at \\((0,A_0,U_0,V_0^\\top)\\), not HF's default pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "\\(\\operatorname{rank}(W_0\\odot BA)\\) reaches \\(r\\operatorname{rk}W_0>r\\) (Prop II.9(a)); the exponential form reaches full rank, so neither embeds in LoRA\\(_r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived all coordinates on the evaluated first-order form (=HiRA): Cone/apex/GL/MonxMon/M1/span confirmed. [Num (m,n,r)=(7,6,3): d=30=r(m+n-r), dim S1=21, deficit 9=r(n-r).] Arrows checked (rho_N o h = rho_M, pointed): HiRA iso, FLoRA_{r+1} (with sqrt(r+1) for the mean reduction), LoHa_{r,rk W0} with frozen W0 factor. O2 to LoRA confirmed. No changes."
+  },
+  {
+   "id": "flora-batched",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "kind": "Per adapter a weight-space reparametrisation \\(W_0\\odot BA\\); per-request heterogeneous batching makes the serving layer an \\(F_U\\) family (as S-LoRA/Punica), but each adapter is an object of \\(\\mathsf{Meth}\\).",
+    "shape": "Global image \\(D_{W_0}(\\mathcal M_{\\le r})\\): a cone whose vertex is the zero matrix, not \\(\\theta_0\\). \\(\\theta_0=W_0\\odot J\\) corresponds to \\(J\\), a rank-one point, so the germ at \\(\\theta_0\\) is \\(\\mathbb R^{m+n-1}\\times\\mathcal M_{\\le r-1}\\): non-linear and singular at \\(\\theta_0\\) for \\(r\\ge2\\). For \\(r=1\\) it is the two-sided torus orbit \\(\\mathrm{diag}(b)W_0\\mathrm{diag}(a)\\) (Orb, regular; Prop II.9(c)).",
+    "base_point": "The paper does not state an initialisation; \\(\\theta_0\\) is reached only at \\(B_0A_0=J\\). Any such pointing lies on the rank-one stratum, and \\(\\dim S_1=m\\operatorname{rk}A_0+n\\operatorname{rk}B_0-\\operatorname{rk}A_0\\operatorname{rk}B_0\\) with \\(\\operatorname{rk}A_0+\\operatorname{rk}B_0\\le r+1\\), so the deficit is at least \\((r-1)(\\min(m,n)-r)>0\\) for \\(2\\le r<\\min(m,n)\\). This is an apex in the deficit sense, though not the vertex: a degenerate pointing, like HF's orthogonal LoRA init. A random init would be a defect.",
+    "gauge": "\\(GL_r\\) on the internal wire, \\((Bg^{-1},gA)\\); the mean reduction is a constant.",
+    "covariance": "Hadamard modulation of \\(W_0\\): \\((D_1PW_0QD_2)\\odot X=D_1P(W_0\\odot P^{-1}XQ^{-1})QD_2\\), so monomial pairs only.",
+    "rebasing": "Pure action of the Hadamard monoid \\((\\Theta,\\odot)\\) (Thm V.3(b)): \\(R_K=W_0\\odot(\\mathcal M_{\\le r})^{\\odot K}\\subseteq W_0\\odot\\mathcal M_{\\le r^K}\\), so rank grows multiplicatively, not as \\(Kr\\). For \\(r\\ge2\\), the elements \\(J+tE_{ij}\\in\\mathcal M_{\\le2}\\) generate, so \\(R_\\infty=W_0\\odot\\Theta=\\{W:Z(W_0)\\subseteq Z(W)\\}\\) and zeros of \\(W_0\\) are never filled. For \\(r=1\\), rank-one matrices are closed under \\(\\odot\\), so FLoRA\\(_1\\) is idempotent (the closure of the two-sided torus orbit)."
+   },
+   "table_row": "R-Hadamard",
+   "table_col": "Cone",
+   "categorical_reading": "FLoRA is the Hadamard action \\(\\rho(B,A)=W_0\\odot BA\\) of the multiplicative monoid \\((\\Theta,\\odot)\\) on \\(W_0\\), pointed at a factorisation of \\(J\\). Rank one is the two-sided torus orbit, rank \\(r\\) is the transported determinantal cone with vertex at \\(0\\), and it and HiRA simulate each other with a one-step rank shift (\\(\\mathrm{FLoRA}_r\\to\\mathrm{HiRA}_{r+1}\\to\\mathrm{FLoRA}_{r+2}\\)). Its batching advantage is a property of the realisation (one shared matmul), not of the object.",
+   "arrows": [
+    {
+     "target": "hira",
+     "rule": "A3",
+     "h": "h(B,A)=\\big([\\tfrac1rB\\;\\,{-\\mathbf 1_m}],\\,[A;\\mathbf 1_n^\\top]\\big)",
+     "note": "With the paper's mean reduction \\(\\rho(B,A)=W_0\\odot\\tfrac1rBA\\): \\(W_0\\odot\\tfrac1rBA=W_0\\odot(J+[\\tfrac1rB,-\\mathbf 1][A;\\mathbf 1^\\top])\\), so it lands in HiRA\\(_{r+1}\\) pointed at \\(([\\tfrac1rB_0,-\\mathbf 1],[A_0;\\mathbf 1^\\top])\\), whose product \\(\\tfrac1rB_0A_0-J\\) vanishes (drop the \\(\\tfrac1r\\) for a plain sum). This is not HiRA's default \\(B=0\\) pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "\\(W_0\\odot BA-W_0=W_0\\odot(BA-J)\\) has rank up to \\((r+1)\\operatorname{rk}W_0\\), far above \\(r\\)."
+    },
+    {
+     "target": "s-lora",
+     "test": "O2",
+     "reason": "Both serve per-request adapters over one shared matmul, but the LoRAs S-LoRA serves have \\(\\operatorname{rank}\\Delta W\\le r\\), while FLoRA's updates reach rank \\((r+1)\\operatorname{rk}W_0\\)."
+    },
+    {
+     "target": "flora-opt",
+     "test": "O1",
+     "reason": "A name clash only. Per period, Flora (Hao et al.) is the linear one-sided method \\(\\{W_k+XA_t\\}\\), with the rows of \\(\\Delta W\\) confined to \\(\\mathrm{row}\\,A_t\\); FLoRA's \\(W_0\\odot BA\\) has unconfined rows and a curved Hadamard image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Coordinates confirmed. [Num (7,6,3) at a J-pointing: dim S1=24 vs d=30, deficit 6=(r-1)(min(m,n)-r); other endpoint deficit 8=(r-1)(m-r).] Change: arrow to HiRA rescaled by FLoRA's 1/r mean reduction (h now uses B/r), otherwise rho_HiRA o h = W0 (.) BA, not FLoRA's W0 (.) BA/r. Rebasing 'group' kept (pure Hadamard-monoid action), noting R_inf = W0 (.) Theta is the same set LieRA/HiRA reach, filed under 'span' by the axes.json HiRA precedent."
+  },
+  {
+   "id": "residual-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Inserted as a linear residual box \\(I+\\alpha\\) with domain-specific BN (a pointed extension, neutral at \\(\\alpha=0\\)). Every piece is affine and sits between a frozen \\(3\\times3\\) conv and the ReLU, so it descends along the merge \\(\\mu\\) to a weight-space object, as SSF and (IA)\\(^3\\) do in VIII.B.",
+    "shape": "Merged, per tap: \\(W'=D_2(I+\\alpha D_1)W_0=G\\,W_0\\), with \\(G\\) ranging over all of \\(M_C(\\mathbb R)\\). The image is the linear left ideal \\(\\{GW_0\\}\\) (the closure of the \\(GL_C\\) orbit), of dimension \\(C^2\\) when the unfolding \\(W_0\\in\\mathbb R^{C\\times9C}\\) has full row rank.",
+    "base_point": "\\(G\\mapsto GW_0\\) is linear and injective, so every point, including \\(\\alpha=0\\), is regular.",
+    "gauge": "The two BN scales \\(D_1,D_2\\) are redundant with \\(\\alpha\\): \\((\\alpha,D_1,D_2)\\mapsto D_2(I+\\alpha D_1)\\) has a \\(2C\\)-dimensional generic fibre swept by a diagonal torus acting affinely on \\(\\alpha\\). The two BN shifts collapse to one bias.",
+    "covariance": "\\(M_C\\,gW_0h^{-1}=g\\,(M_C W_0)\\,h^{-1}\\) for all \\(g,h\\): the left ideal is basis-free.",
+    "merge": "Folds into the neighbouring frozen \\(3\\times3\\) conv by R1 (\\(W'=D_2(I+\\alpha D_1)W\\)), with the BN shift in the conv bias. The paper keeps it unmerged so that one backbone is shared across domains.",
+    "rebasing": "\\(G_2(G_1W_0)=(G_2G_1)W_0\\): the shape is the full monoid \\(M_C\\), independent of the base, so cycles gain nothing."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "A linear pointed extension that descends along the merge to the R-action object \\(W_0\\mapsto G\\,W_0\\), the orbit closure of \\(GL_C\\) acting on output channels. It is LoRA-FA whose frozen down-projection is \\(W_0\\) itself, and the full-matrix ancestor of the diagonal methods (IA)\\(^3\\) and SSF.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(\\alpha,D_1,D_2)=D_2(I+\\alpha D_1)-I\\ \\ \\text{as the trainable }B,\\ \\text{with }A_0=W_0,\\ r=C",
+     "note": "\\(GW_0=W_0+(G-I)W_0\\), so it is LoRA-FA with frozen \\(A_0=W_0\\) (unfolded, \\(C\\times9C\\)), pointed at \\(B=0\\). Here \\(W_0\\) is the base conv with the base BN affine maps folded in (so \\(D_1^0=D_2^0=I\\) and \\(h(q_0)=0\\)); the merged BN shift is a bias change, so the exact target is LoRA-FA\\((W_0)\\oplus\\) BitFit (A5). Composing with LoRA-FA\\((A_0)\\hookrightarrow\\) LoRA (A2) gives residual adapter \\(\\to\\) LoRA\\(_C\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "\\((G-I)W_0\\) has rank up to \\(C\\), so no LoRA\\(_r\\) with \\(r<C\\) simulates it."
+    },
+    {
+     "target": "houlsby-adapter",
+     "test": "O2",
+     "reason": "Houlsby's correction \\(U\\sigma(D\\,\\cdot)\\) lies in the \\(r\\)-dimensional \\(\\mathrm{col}\\,U\\); the residual adapter's full-rank linear correction \\(\\alpha x\\) does not, for \\(r<C\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Coordinates confirmed (merge descends to the R-action G -> G W0, as SSF/(IA)^3 in VIII.B). [Num C=5: |M|=35, d=25=C^2, fibre 10=2C (BN-scale torus).] Change: LoRA-FA(A0=W0) arrow note now states the pointing normalisation (base BN folded into W0, h(q0)=0) and that the BN shift needs (+) BitFit. Obstructions confirmed."
+  },
+  {
+   "id": "houlsby-adapter",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "New serial boxes \\(\\mathrm{id}+U\\sigma(D\\,\\cdot)\\) after the attention and FFN projections; \\(U=0\\) makes them the identity.",
+    "shape": "No weight-space image: the boxes are non-linear and sit on an extension, compared through \\(\\Phi_{\\tilde f}\\).",
+    "base_point": "Neutral at \\(U=0\\), \\(b=0\\); only \\(U\\) moves to first order (Lemma II.4, function-level). The paper's init (std \\(10^{-2}\\), truncated) is near-neutral: the \\(\\approx\\) convention, classifying the exactly pointed variant as VIII.B does.",
+    "gauge": "The reference implementation (google-research/adapter-bert, feedforward_adapter) uses GELU, and AdapterHub's Houlsby default is swish, so by Lemma VI.2(c) only the discrete \\(S_r\\) on hidden units survives: no continuous gauge. VIII.B's 'perm \\(\\ltimes\\mathbb R_{>0}^r\\)' is the ReLU case (the positive per-unit slide R3 through \\((D,b_{down},U)\\)), which applies to Pfeiffer-type ReLU bottlenecks, not to Houlsby as published.",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire. VIII.B leaves this cell blank.",
+    "merge": "Thm VI.3(c): for generic \\(U,D\\) the modified box function is non-affine in the box input, so no box-local merge exists.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained adapter into an enlarged base, insert a fresh one) the stages compose, \\(R_K=S^K\\circ F\\) with \\(S=\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\): the action-type closure (generated monoid)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A pointed extension that post-composes each frozen sublayer with the near-identity endomorphism \\(\\mathrm{id}+U\\sigma(D\\,\\cdot)\\), so it is of action type on the extension, and other methods meet it only through the realisation. The non-affine \\(\\sigma\\) is exactly the M∞ obstruction of Thm VI.3(c); with \\(\\sigma=\\mathrm{id}\\) it would be the serial linear adapter of Prop VI.4(b), isomorphic to LoRA when \\(W_0\\) is invertible.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "For generic \\(U,D\\) the edit \\(y\\mapsto y+U\\sigma(Dy)\\) is non-affine, so the realised sublayer \\((\\mathrm{id}+U\\sigma(D\\,\\cdot))\\circ F\\) is not box-locally mergeable (Thm VI.3(c)), while LoRA's realisations keep every linear box linear."
+    },
+    {
+     "target": "parallel-adapter",
+     "test": "O1",
+     "reason": "The serial correction \\(U\\sigma(D\\,F(x))\\) reads the sublayer output, a parallel correction \\(U'\\sigma(D'x)\\) reads its input. For a non-linear FFN \\(F\\) the two families are generically disjoint off \\(U=0\\) (the serial/parallel split of He et al.)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Change: gauge torus -> none. The reference code (adapter-bert feedforward_adapter) uses GELU and AdapterHub's Houlsby default is swish, so only discrete S_r survives (Lemma VI.2(c)); VIII.B's positive torus is the ReLU case. Other coordinates and both obstructions confirmed; covariance is the function-level analogue (VIII.B leaves it blank). Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "pfeiffer-adapter",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "One serial ReLU bottleneck per layer after the FFN; \\(U=0\\) is the identity.",
+    "shape": "Function-level only (non-linear inserted box).",
+    "base_point": "Neutral at \\(U=0\\); AdapterHub's default \\(\\mathcal N(0,0.02^2)\\) init is near-neutral (\\(\\approx\\) convention).",
+    "gauge": "ReLU: the positive per-unit slide \\(\\mathbb R_{>0}^r\\) (R3) on \\((D,b_{down},U)\\), times \\(S_r\\).",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "Thm VI.3(c): for generic \\(U,D\\) the modified box function is non-affine in the box input, so no box-local merge exists.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained adapter into an enlarged base, insert a fresh one) the stages compose, \\(R_K=S^K\\circ F\\) with \\(S=\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\): the action-type closure (generated monoid)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "The same serial bottleneck extension as Houlsby, at one site per layer, but it reads the post-LN block output \\(\\mathrm{LN}(x+F(x))\\) and writes into \\(F(x)\\). That is a different wire, so it is Houlsby's sibling in VIII.B rather than a sub-object: no freezing of Houlsby's coordinates produces it.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "houlsby-adapter",
+     "test": "O1",
+     "reason": "Pfeiffer's correction depends on \\(x\\) through \\(\\mathrm{LN}(x+F(x))\\), Houlsby's FFN correction only through \\(F(x)\\). A width-\\(r\\) bottleneck of \\(F(x)\\) cannot recover the residual \\(x\\), so Houlsby generically does not reproduce Pfeiffer's functions."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Non-affine inserted box (Thm VI.3(c)); no weight of the original architecture realises it."
+    }
+   ],
+   "verified": true,
+   "check_notes": "All coordinates confirmed (ReLU per the catalog formula gives the positive per-unit torus). Obstructions confirmed: Pfeiffer reads LN(x+F(x)), Houlsby's FFN adapter only F(x). No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "mad-x",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "Pi",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Stacked serial ReLU bottlenecks \\(\\mathrm{TA}\\circ\\mathrm{LA}\\) plus an invertible NICE coupling on the embeddings, with its inverse before the tied output embedding; all are the identity at \\(U=0\\), \\(F=G=0\\).",
+    "shape": "Function-level (non-linear adapters and coupling layers).",
+    "base_point": "Neutral at \\(U_{LA}=U_{TA}=0\\), \\(F=G=0\\); the paper uses the small random Pfeiffer init (\\(\\approx\\) convention).",
+    "gauge": "ReLU positive per-unit slides in both bottlenecks (R3).",
+    "covariance": "The additive coupling \\(o_1=F(e_2)+e_1\\), \\(o_2=G(o_1)+e_2\\) needs a fixed split of the embedding coordinates into halves. This block partition is not in the network and breaks neuron permutations across halves: \\(\\Pi\\).",
+    "merge": "Thm VI.3(c): for generic \\(U,D\\) the modified box function is non-affine in the box input, so no box-local merge exists. The coupling must also be executed.",
+    "rebasing": "n/a (M∞). At function level MAD-X already is two stages of serial composition (LA then TA), and NICE couplings compose as a group of bijections."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A word in the composition monoid of serial extensions: \\(\\mathrm{TA}\\circ\\mathrm{LA}\\) is two composition stages, and swapping \\(\\mathrm{LA}^{src}\\) for \\(\\mathrm{LA}^{tgt}\\) re-bases the task adapter on a different language stage. The invertible adapter conjugates the whole network by a NICE coupling, \\(E^\\top A_{inv}^{-1}\\circ\\mathrm{body}\\circ A_{inv}E\\), an honest group element whose coordinate split is imposed structure.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "adapterfusion",
+     "test": "O1",
+     "reason": "MAD-X composes adapters (input-independent stacking); AdapterFusion's output is, per token, a softmax-convex combination of \\(V\\)-projected adapter outputs. A composite \\(\\mathrm{TA}(\\mathrm{LA}(h))\\) is generically not such a combination."
+    },
+    {
+     "target": "pfeiffer-adapter",
+     "test": "O1",
+     "reason": "The invertible adapter edits the tied input and output embeddings, which a per-layer Pfeiffer adapter never touches. So MAD-X's realisations leave Pfeiffer's image, even with LA neutral."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed; Pi comes from the NICE coupling's fixed half split. Obstructions confirmed. Also checked that freezing gives no Pfeiffer -> MAD-X arrow: TA at its neutral point outputs r_l and discards LA. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "adapterfusion",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "\\(T=X\\) (\\(F_X\\) in VIII.B): per token, a softmax point of the simplex \\(\\Delta^{N-1}\\) mixes the \\(V\\)-projected outputs of \\(N\\) frozen adapters, so the effective adapter depends on the input.",
+    "shape": "Function-level: an input-dependent mixture of non-linear adapters on an extension.",
+    "base_point": "A neutral point exists (\\(V=0\\) kills the fusion output), but the init is \\(V\\approx I\\), random \\(Q,K\\). At init the layer outputs an attention average of the frozen adapters' outputs, not the base model. VIII.B leaves this blank.",
+    "gauge": "\\(Q,K\\) enter only through the bilinear form \\(h^\\top QK^\\top z\\), so \\(GL_d\\) acts by \\((Q,K)\\mapsto(Qg,Kg^{-\\top})\\): the query–key gauge on an internal wire.",
+    "covariance": "\\(Q,K,V\\) are dense \\(d\\times d\\) maps, so the mixer is basis-free on the hidden wire.",
+    "merge": "Input-dependent softmax mixing; even a constant gate would leave a mixture of non-linear adapters, so it is M∞ in all cases (VIII.B, axes.json).",
+    "rebasing": "n/a: a family over inputs with nothing merged into the base."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A family over inputs: \\(x\\mapsto s(x)\\in\\Delta^{N-1}\\) picks, per token, a point of the simplex over \\(N\\) frozen adapters, a \\(T\\)-point of the \\(N\\)-fold adapter extension with \\(T=X\\), not an object of \\(\\mathsf{Meth}\\). It separates knowledge extraction (the frozen adapters) from composition (the \\(T\\)-point), and its only continuous gauge is the query–key slide.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "adamix",
+     "test": "O1",
+     "reason": "AdaMix deploys one adapter with input-independent weights; it cannot realise AdapterFusion's input-dependent softmax mixtures of \\(N\\) adapters."
+    },
+    {
+     "target": "lorahub",
+     "test": "O1",
+     "reason": "LoraHub's composition weights are constants chosen post hoc (and act on weight-space LoRAs); AdapterFusion's are a function of the token, so its realisations lie outside any constant combination."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed F_X kind, defect base point (V~I init), query-key GL_d gauge, M-inf, and both obstructions. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "adapterdrop",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A placement and dropping recipe on Pfeiffer/Houlsby adapters; the coordinates are those of the underlying adapter.",
+    "shape": "Function-level, as the underlying adapter (non-linear inserted boxes).",
+    "base_point": "Inherited from the adapter; the dropped bottom layers are exactly the backbone.",
+    "gauge": "Inherited: the ReLU per-unit slide for Pfeiffer adapters (the coordinates recorded here); with Houlsby's GELU adapters only discrete \\(S_r\\) survives.",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "The remaining adapters are ordinary non-linear bottlenecks (Thm VI.3(c)).",
+    "rebasing": "n/a (M∞), as for the underlying adapter."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "Specialised AdapterDrop is the sub-object of the adapter extension obtained by freezing the bottom-\\(n\\) adapters at their neutral point (A2). That also truncates the backprop cone (Obs IV.4) and makes the frozen bottom segment shared across tasks. Robust AdapterDrop is a family over the drop depth \\(n\\in\\{0,\\dots,11\\}\\), trained jointly.",
+   "arrows": [
+    {
+     "target": "pfeiffer-adapter",
+     "rule": "A2",
+     "h": "h(q_{>n})=\\big((U_l{=}0,\\,D_l{=}D_l^0)_{l\\le n},\\ q_{>n}\\big)",
+     "note": "Specialised AdapterDrop is the Pfeiffer adapter with the bottom-\\(n\\) adapters frozen at the neutral point; pointed, since all-neutral maps to all-neutral."
+    },
+    {
+     "target": "houlsby-adapter",
+     "rule": "A2",
+     "h": "h(q_{>n})=\\big((U_l{=}0,\\,D_l{=}D_l^0)_{l\\le n},\\ q_{>n}\\big)",
+     "note": "The same freezing when AdapterDrop is applied to Houlsby adapters (two per layer)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Confirmed as a recipe on Pfeiffer adapters; the A2 arrows are pointed (bottom adapters frozen at U=0). Changes: added shape note; gauge note now says the Houlsby (GELU) instantiation has no continuous gauge. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "k-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A side network of Transformer layers reads backbone layers \\(\\{0,11,23\\}\\) and never writes back; the output is the product \\([h_L;a_K]\\).",
+    "shape": "Function-level: a separate network whose features are concatenated.",
+    "base_point": "Neutral up to the projection \\(\\pi_1\\): \\(h_L\\) is kept as a product factor, so any head that ignores \\(a_K\\) (a zero head block) recovers \\(f\\). The adapters themselves start random. Strictly the codomain changes (\\([h_L;a_K]\\) instead of \\(h_L\\)), so this is neutrality in the product sense, \\(\\pi_1\\circ\\tilde f=f\\) at every parameter value, not a neutral point of Def VI.1; a randomly initialised head on \\(a_K\\) is not neutral at the start.",
+    "gauge": "The side Transformer's internal gauges: per-head \\(GL\\) on the query–key and value–output wires.",
+    "covariance": "Dense down- and up-projections read the backbone states, so the family is basis-free on the hidden wire.",
+    "merge": "A separate network runs at inference.",
+    "rebasing": "n/a (M∞). Further knowledge adapters are added by further products \\([h_L;a_K;a'_K]\\), which a linear head reads additively."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A side extension that never writes back: the representation is the product \\(h_L\\times a_K\\), so the base function survives as the projection \\(\\pi_1\\), and knowledge sources are added by further products. Downstream the paper fine-tunes the backbone with the adapters frozen, so only the knowledge-infusion stage is a PEFT method in this framework.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "ladder-side-tuning",
+     "test": "O2",
+     "reason": "K-Adapter's features contain the full \\(d\\)-dimensional \\(h_L\\), whose values span \\(\\mathbb R^d\\) over inputs; LST's pre-head output \\(\\mathrm{Up}(h^g_N)\\) always lies in \\(\\mathrm{col}\\,\\mathrm{Up}\\), of dimension \\(\\le d/r<d\\) (a cut of rank \\(d/r\\), Thm II.10). A cut-rank argument across different codomains, so heuristic as an arrow test."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. base_point kept 'neutral' only in the product sense (pi_1 o f~ = f at every parameter); added the caveat that the codomain changes and a random head on a_K is not neutral at init. Change: O2 reason to LST reworded (span of LST's pre-head output <= d/r), flagged as heuristic across codomains. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "hyperformer",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A \\(T\\)-point of the bottleneck-adapter extension, \\(T\\) = (task, layer, position) embeddings: \\(a(z)=(W^Uh_I(z),W^Dh_I(z))\\) (VIII.B row 'Text-to-LoRA / HyperFormer').",
+    "shape": "Per task the generated module is a non-linear adapter on an extension (function-level).",
+    "base_point": "No zero init: random hypernetworks generate \\(U_\\tau\\ne0\\), so each task starts with a defect. A neutral point exists (\\(U_\\tau=0\\) and a zero output-LN shift). VIII.B leaves this blank.",
+    "gauge": "\\(GL_t\\) on the task-embedding wire, \\((W^Ug^{-1},W^Dg^{-1},g\\circ h_I)\\), and another \\(GL\\) on the \\(z\\)-wire before \\(h_I\\)'s first layer. The generated adapter adds only \\(S_r\\) (GeLU).",
+    "covariance": "Generated \\(U_\\tau,D_\\tau\\) are dense: basis-free on the hidden wire.",
+    "merge": "VIII.B writes 'M1 per task' for the shared Text-to-LoRA/HyperFormer row. That holds for Text-to-LoRA, but HyperFormer's generated module \\(x\\mapsto x+\\mathrm{LN}_\\tau(U_\\tau\\mathrm{GeLU}(D_\\tau x))\\) is non-affine (Thm VI.3(c)), so it is M∞ even for a fixed task.",
+    "rebasing": "n/a: a family over tasks, nothing merged."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "HyperFormer is a \\(T\\)-point \\(a:T\\to Q_{\\rm adapter}\\) of the adapter extension, given by a linear hypernetwork whose \\(GL_t\\) slide on the task-embedding wire is its gauge. Tasks share \\(a\\) and specialise through \\(z_\\tau\\). Unlike Text-to-LoRA, each fibre \\(a(z_\\tau)\\) is a non-linear adapter with an output LayerNorm, so no task's model lifts to \\(\\Theta\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "text-to-lora",
+     "test": "O1",
+     "reason": "For each task Text-to-LoRA's realisation is a weight-space LoRA, which keeps every linear box linear; HyperFormer's per-task box functions are non-affine, so they lie outside T2L's image."
+    },
+    {
+     "target": "compacter",
+     "test": "O2",
+     "reason": "Compacter's \\(U,D\\) are sums of \\(n\\) Kronecker products (\\(\\Pi_\\otimes\\)); HyperFormer's generated \\(U_\\tau,D_\\tau\\) are dense, with Kronecker rank up to \\(\\min(m_1n_1,m_2n_2)>n\\) (Thm II.11)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed F_T, defect, GL_t gauge (task projector ends linear; LN hypernetworks share I_tau), M-inf (correctly disagrees with VIII.B's 'M1 per task', which only fits Text-to-LoRA). Obstructions confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "parallel-adapter",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "The sublayer \\(F\\) is replaced by \\(F+s\\,U\\sigma(D\\,\\cdot)\\), a sum of two morphisms with a common domain; \\(U=0\\) is neutral.",
+    "shape": "Function-level for non-linear \\(\\sigma\\); with \\(\\sigma=\\mathrm{id}\\) it is LoRA, with image \\(W_0+\\mathcal M_{\\le r}\\) (Prop VI.4(a)).",
+    "base_point": "Exactly neutral as implemented (LoRA-style init, \\(W_{up}=0\\)).",
+    "gauge": "He et al.'s implementation (petl_factory Adapter_Layer) uses ReLU, so VIII.B's 'same' as Houlsby reads here as the ReLU per-unit slide (R3) \\(\\times S_r\\); the scale \\(s\\) is a fixed constant.",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "VIII.B: M∞ (M1 if linear). \\(\\sigma\\) is non-affine (Thm VI.3(c)), and \\(F\\) is a non-linear FFN.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze and re-insert) parallel bottlenecks add, \\(F+\\sum_kU_k\\sigma(D_k\\,\\cdot)\\) = one bottleneck of width \\(Kr\\): the additive closure (span of the bottleneck cone), as for LoRA."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "The additive dual of the serial adapter: \\(F+s\\,U\\sigma(D\\,\\cdot)\\) is a Minkowski sum on an extension, so at function level its stages add like LoRA's. Around a single linear map, \\(\\sigma=\\mathrm{id}\\) gives LoRA (Prop VI.4(a)), and with ReLU \\(\\mathrm{LoRA}_r\\to\\mathrm{PA}_{2r}\\) via \\(h(B,A)=([B,-B],[A;-A])\\), since \\(\\mathrm{ReLU}(t)-\\mathrm{ReLU}(-t)=t\\). A GELU parallel bottleneck would embed by freezing (A2) in AIM's joint MLP adapter and in Res-Tuning's FFN Res-Adapter, but He et al.'s PA is ReLU, so those are not arrows out of this object.",
+   "arrows": [
+    {
+     "target": "adaptformer",
+     "rule": "A3",
+     "h": "h(W_{down},b_{down},W_{up},b_{up})=\\big(W_{down},b_{down},\\tfrac{s}{0.1}W_{up},\\tfrac{s}{0.1}b_{up}\\big)",
+     "note": "An isomorphism: the same ReLU bottleneck on the FFN input, differing only in the fixed scale (\\(s\\) against AdaptFormer's \\(0.1\\))."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "For non-affine \\(\\sigma\\) the realised box \\(F+sU\\sigma(D\\,\\cdot)\\) is outside \\(\\Phi_f(\\mathrm{Im}\\,\\mathrm{LoRA})\\) (Thm VI.3(c)); only \\(\\sigma=\\mathrm{id}\\) gives LoRA."
+    },
+    {
+     "target": "houlsby-adapter",
+     "test": "O1",
+     "reason": "A parallel correction \\(U\\sigma(Dx)\\) of the sublayer input is generically not a serial correction \\(U'\\sigma(D'F(x))\\) of its output."
+    },
+    {
+     "target": "mam-adapter",
+     "test": "O1",
+     "reason": "MAM contains a parallel adapter, yet PA is not a sub-object of it: \\(f\\in\\mathrm{Im}\\,\\mathrm{PA}\\) at \\(U=0\\), but no MAM parameter realises \\(f\\), because the prefix summand is unpointed (Thm VI.5(f))."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed ReLU and zero-init up_proj in He et al.'s code (torus, neutral). Changes: removed arrows PA -> AIM and PA -> Res-Tuning. AIM's adapters and Res-Tuning's Res-Adapter are GELU, so no h gives rho_N o h = rho_PA for the ReLU PA (the embeddings hold only for a GELU parallel adapter, now said in categorical_reading). Also qualified the LoRA_r -> PA_2r remark as 'around a single linear map'. AdaptFormer isomorphism and the three obstructions confirmed. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "mam-adapter",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "VIII.B lists 'E with input-dependent gates'. MAM has no gates; it is prefix tuning (\\(\\ell=30\\)) on attention plus a scaled parallel adapter on the FFN. The E/E° test of axes.json, solving \\(\\tilde f(\\theta_0,p,-)=f(\\theta_0,-)\\), fails because on a head with \\(W_oW_v\\ne0\\) no prefix leaves the output unchanged (Thm VI.5(f)). So it is E°.",
+    "shape": "Function-level (prefix and non-linear adapter).",
+    "base_point": "VIII.B: 'mixed'. The adapter part is neutral at \\(W_{up}=0\\), but the prefix has no neutral value, so the sum has no point realising \\(f\\): unpointed.",
+    "gauge": "The prefix is trained through Li-Liang's MLP reparametrisation (an embedding \\(E\\in\\mathbb R^{\\ell\\times d}\\) fed to Linear(\\(d\\to800\\))-Tanh-Linear), whose first internal wire carries the slide \\((E,W_1)\\mapsto(Eg^\\top,W_1g^{-1})\\), \\(g\\in GL_d\\). The parallel adapter adds its ReLU per-unit torus (R3). Only the materialised inference parametrisation (free prefix vectors, discrete \\(S_\\ell\\)) would leave the torus alone.",
+    "covariance": "The prefix keys and values are free vectors in each head's key and value space, and transform with the query–key gauge; the adapter is dense. Basis-free.",
+    "merge": "The prefix is a softmax-gated parallel branch (generically non-affine, Thm VI.5(f)) and the adapter is non-linear.",
+    "rebasing": "n/a (M∞). At function level both summands are additive: prefixes concatenate in the \\(\\uplus\\)-monoid of key–value multisets (Thm VI.5(a)) and bottlenecks add."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "A sum, on an extension, of a prefix on attention and a scaled parallel adapter on the FFN. Because the prefix summand is unpointed, the sum is an unpointed extension, and not a \\(\\oplus\\)-word in \\(\\mathsf{Meth}\\) (Exposé I). Prefix tuning embeds in it by freezing the adapter at \\(U=0\\) (A2), but the parallel adapter does not embed, since no prefix value is neutral.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "For \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generic prefix's input-dependent gate \\(\\lambda_q\\) makes the head non-affine (Thm VI.5(f)), so no weight-space realisation exists."
+    },
+    {
+     "target": "unipelt",
+     "test": "O1",
+     "reason": "MAM's FFN correction is parallel, \\(U\\sigma(Dx)\\) of the FFN input; UniPELT's only bottleneck is serial after the FFN, and its LoRA acts on \\(W_q,W_v\\), not on the FFN. A parallel FFN correction is generically not reproduced."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed the E-degree deviation from VIII.B (no gates; prefix unpointed, Thm VI.5(f)) and the obstructions. Change: gauge torus -> GL. The prefix is trained through the MLP reparametrisation, whose embedding wire carries a GL_d slide (E g^T, W1 g^-1), on top of the adapter's ReLU torus. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "unipelt",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "VIII.B lists 'E with input-dependent gates (\\(F_X\\))'. The gates \\(\\mathcal G_m=\\mathrm{sigmoid}(\\mathrm{FFN}_m(\\cdot))\\) do make it a family over \\(X\\). But the prefix gate scales \\(P_K,P_V\\), not the prefix's softmax mass: as \\(\\mathcal G_P\\to0\\) the prefix keys go to \\(0\\), and the prefix still takes weight \\(\\ell/(\\ell+Z_q(C))\\) of the attention. So no parameter value reproduces \\(f\\), and by axes.json's E/E° test it is E°.",
+    "shape": "Function-level; not a \\(\\oplus\\)-word (Exposé I).",
+    "base_point": "VIII.B: 'mixed'. LoRA (\\(B=0\\)) and the adapter (\\(U=0\\)) are neutral, but the gated prefix has no neutral value (and \\(\\mathcal G_P\\in(0,1)\\) never vanishes): unpointed.",
+    "gauge": "The LoRA summand keeps \\(GL_r\\), \\((Bg^{-1},gA)\\), since its gate multiplies \\(BA\\) as a whole. The adapter adds only discrete or per-unit symmetries.",
+    "covariance": "All parts are dense (LoRA \\(GL\\times GL\\), dense bottleneck, free prefix vectors, gate FFNs): basis-free.",
+    "merge": "VIII.B says 'M∞ (LoRA part M1)'. Here even the LoRA part is M∞: \\(W_0x+\\mathcal G_L(x)BAx\\) is non-affine in \\(x\\) because the gate depends on the input (Thm VI.3(c)).",
+    "rebasing": "n/a: nothing merges. At function level the parts close differently (serial adapter by composition, prefix in the \\(\\uplus\\)-monoid, LoRA additively), so there is no single closure."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "An input-gated combination of three summands (serial adapter, gated prefix, LoRA): a family over inputs \\(X\\) of points of \\(\\mathrm{Ad}\\oplus\\mathrm{Prefix}\\oplus\\mathrm{LoRA}\\) on an extension. Gating the prefix keys and values does not gate its softmax mass, so no gate value is neutral and the object is unpointed. Input-dependence also costs LoRA its mergeability.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Even the LoRA summand realises the non-affine \\(W_0x+\\mathcal G_L(x)BAx\\); with the prefix and adapter, UniPELT's realisations lie outside \\(\\Phi_f(\\mathrm{Im}\\,\\mathrm{LoRA})\\)."
+    },
+    {
+     "target": "mam-adapter",
+     "test": "O1",
+     "reason": "UniPELT's serial post-FFN correction \\(U\\sigma(D\\,\\cdot)\\) of the FFN output is generically not MAM's parallel correction of the FFN input, and MAM has no LoRA on \\(W_q,W_v\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed E-degree (gating P_K, P_V does not gate the softmax mass), GL from the LoRA summand, M-inf including the LoRA part (input-dependent gate), and the obstructions. F_X (VIII.B) would be an equally valid kind; E-degree is kept because unpointedness decides. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "adamix",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A training recipe whose deployed object is one Houlsby adapter, the weight average of \\(M\\) experts; the coordinates are the adapter's. Instantiated on LoRA, it would carry LoRA's coordinates.",
+    "shape": "Function-level, as the deployed Houlsby adapter (non-linear inserted box).",
+    "base_point": "Inherited (near-neutral Houlsby init; exactly neutral when built on zero-init LoRA).",
+    "gauge": "Inherited from the Houlsby adapter: the paper leaves \\(f\\) unspecified and the Houlsby reference adapter is GELU, so only the discrete \\(S_r\\) survives (a ReLU instantiation would give the positive torus). The factor-wise average is defined only up to that \\(S_r\\), and the shared up-projection is a joint gauge fixing (cf. Prop V.4(b)).",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "The averaged adapter is still a non-linear bottleneck (M1 only for the LoRA instantiation).",
+    "rebasing": "n/a (M∞)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "At training time AdaMix is a family over random routes \\((j,k)\\in[M]^2\\) of adapters; for inference it is collapsed by the factor-wise averaging map, an A3 arrow into a single adapter. Like LoraHub's factor-wise rule, the average depends on the gauge. Sharing one up-projection pins the hidden-unit permutations of all experts to a common gauge, which is why weight averaging is meaningful here.",
+   "arrows": [
+    {
+     "target": "houlsby-adapter",
+     "rule": "A3",
+     "h": "h\\big((W^{down}_k)_{k\\le M},\\,W^{up}\\big)=\\big(\\tfrac1M\\textstyle\\sum_kW^{down}_k,\\ W^{up}\\big)",
+     "note": "The inference collapse is a linear pointed map into one Houlsby adapter; experts at the neutral point (\\(W^{up}=0\\)) go to the neutral point. Average the \\(W^{up}_j\\) too when they are not shared."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adapterfusion",
+     "test": "O1",
+     "reason": "AdapterFusion trains only \\(Q,K,V\\) over \\(N\\) frozen adapters, so its realisations are softmax mixtures of fixed adapter outputs. The new averaged adapter that AdaMix trains is generically not among them; conversely, AdaMix does not route at inference."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Change: gauge torus -> none, for consistency with Houlsby (f unspecified in the paper, Houlsby reference adapter is GELU); added shape note. The factor-wise averaging arrow into Houlsby holds for the deployed object and is pointed. Obstruction confirmed. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "llama-adapter",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Adds a separately normalised prompt branch \\(\\tanh(g)\\,\\mathrm{Attn}_q(P)\\) in the top \\(L'\\) layers; \\(g=0\\) makes it the identity (Thm VI.5(d)).",
+    "shape": "VIII.B: Fun (a separately normalised prefix).",
+    "base_point": "Neutral at \\(g=0\\) (VIII.B); only the gate moves to first order (Lemma II.4, function-level).",
+    "gauge": "No continuous gauge: the prompts pass through the frozen \\(W_k,W_v\\), and a gate per head is injective near generic points. Only the discrete \\(S_\\ell\\) permuting prompt tokens remains. VIII.B leaves this blank.",
+    "covariance": "The prompts are free residual-stream vectors fed straight into the frozen \\(W_k,W_v\\) (no norm), so a change of basis is absorbed by \\(P\\mapsto Pg^\\top\\): basis-free. VIII.B leaves this blank.",
+    "merge": "Extra attention slots with their own softmax: non-affine in the input once the prompt has two or more tokens (generic prompts, Thm VI.5(f)); with one prompt token the head stays affine.",
+    "rebasing": "n/a (M∞). At function level separately normalised branches add: \\(\\mathrm{Attn}_q(C)+\\sum_k\\tanh(g_k)\\mathrm{Attn}_q(P_k)\\)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A separately normalised prefix, \\(\\mathrm{Attn}_q(C)+\\tanh(g)\\,\\mathrm{Attn}_q(P)\\), uses two perspective maps (Thm VI.5(d)): content attention is untouched, and \\(g=0\\) is a neutral point. So its categorical contribution over prefix tuning is pointedness. At \\(g=0\\) only the gate moves to first order.",
+   "arrows": [
+    {
+     "target": "llama-adapter-v2",
+     "rule": "A2",
+     "h": "h(P,g)=\\big(P,\\,g,\\ s=\\mathbf 1,\\ b=0,\\ \\gamma=\\gamma_0,\\ \\text{visual branch at its zero gate}\\big)",
+     "note": "V1 is V2 with the bias/scale, norm and early visual-fusion parameters frozen at their neutral base values. This assumes V2 keeps V1's zero-gated adaption prompts in the last \\(L'\\) layers."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "prefix-tuning",
+     "test": "O1",
+     "reason": "\\(f\\in\\mathrm{Im}\\) (at \\(g=0\\)), but prefix tuning is unpointed (Thm VI.5(f)). Moreover LLaMA-Adapter never rescales content attention, while a prefix multiplies it by \\(1-\\lambda_q\\) (Thm VI.5(b),(d))."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Gated extra softmax slots are non-affine in the input once the prompt has two or more tokens (generic prompts, Thm VI.5(f); one prompt token stays affine); no weight-space realisation exists."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. [Num: Jacobian of the gated prompt branch (d=8, 2 heads, l=3) has full rank 26 = |M|, so no continuous gauge.] A2 arrow to V2 and both obstructions confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "llama-adapter-v2",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "MonxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A hybrid: a weight-space part (per-layer scale and bias, unfrozen norms) plus LLaMA-Adapter's zero-gated prompts and early visual tokens. The extension part decides the kind.",
+    "shape": "Function-level, because of the gated prompt branches; the scale/bias part alone would be Lin.",
+    "base_point": "Exactly neutral at init: \\(b=0\\), \\(s=\\mathbf 1\\), zero attention gates.",
+    "gauge": "Norm gains and the consumers' input scales are related by a diagonal slide (R4/R6): \\((\\gamma,s_q,s_k,s_v)\\mapsto(\\gamma t,s_q/t,s_k/t,s_v/t)\\), a \\(d\\)-dimensional torus. Prompts add only \\(S_\\ell\\).",
+    "covariance": "The released code scales each linear layer's input (\\(y=W_0(s\\odot x)+b\\)): a one-sided torus, \\(GL\\times\\mathrm{Mon}\\) per box. The paper's \\(s\\odot(W_0x+b)\\) is the mirror \\(\\mathrm{Mon}\\times GL\\).",
+    "merge": "The scale/bias part merges (M1→, as (IA)\\(^3\\)/BitFit), but the gated prompt and visual branches do not.",
+    "rebasing": "n/a (M∞ overall). The scale/bias part alone is idempotent, and the prompt branches add at function level."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A pointed extension that sums an R-part (a per-layer torus-and-translation action of (IA)\\(^3\\)/BitFit type, which merges) with LLaMA-Adapter's zero-gated prefix (which does not). The norm gains and the consumers' input scales are related by a diagonal slide, which is its torus gauge. The disjoint parameter groups trained on different data are a training recipe, not a change of object.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "llama-adapter",
+     "test": "O1",
+     "reason": "V1 provably leaves content attention and all lower-layer computation unchanged (Thm VI.5(d)), an absolute invariant; V2's bias and scale on every linear layer break it."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. The torus slide (gamma, s_q, s_k, s_v) holds for the released input-scale code, and the MonxGL key covers the one-sided torus. Obstruction confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "side-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A late-fusion side network: \\(R=\\alpha B+(1-\\alpha)S\\), with \\(S\\) trainable.",
+    "shape": "Function-level: a separate network blended with the frozen one.",
+    "base_point": "Neutral at \\(\\alpha=1\\) (the schedule \\(\\alpha(N)=k/(k+N)\\) starts there), or for any \\(\\alpha\\) when \\(S\\) is a copy of \\(B\\). By the zero-gate lemma, \\(S\\) is dead to first order at \\(\\alpha=1\\).",
+    "gauge": "The side network's own symmetries: positive per-unit (ReLU) or per-channel (BN) rescalings. \\(\\alpha\\) and \\(S\\) have no exact joint slide, because a sum of two networks is not one network of the same class.",
+    "covariance": "The blend is basis-free on the representation wire whenever \\(S\\) ends in a dense layer.",
+    "merge": "The side network is a separate forward computation.",
+    "rebasing": "n/a (M∞). At function level side networks add: \\(\\alpha'(\\alpha B+(1-\\alpha)S)+(1-\\alpha')S'\\)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A late-fusion side extension \\(R=\\alpha B+(1-\\alpha)S\\), pointed at \\(\\alpha=1\\). With \\(S\\) a copy of \\(B\\) and \\(\\alpha=0\\) it contains full fine-tuning at the function level: Full FT \\(\\to\\) side-tuning pointed at \\((0,B)\\), \\(h(\\theta)=(0,\\theta)\\). So it sits above the terminal object of \\(\\mathsf{Meth}\\) and is not an object of it.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "ladder-side-tuning",
+     "test": "O2",
+     "reason": "Side-tuning's output contains the full-width \\(B(x)\\); LST's prediction sees the backbone only through ladders into a side state of width \\(d/r\\), a cut of rank \\(d/r<d\\) (Thm II.10)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed: neutral at alpha=1 or with S a copy of B, side-network torus, M-inf. O2 to LST is the same heuristic cut-rank argument as K-Adapter's. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "ladder-side-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "VIII.B: E with base point '\\(\\approx\\)'. The prediction is \\(\\mathrm{LMHead}(\\mathrm{Up}(h^g_N))\\), and \\(h^g_N\\) has width \\(d/r\\). Solving \\(\\tilde f(\\theta_0,p,-)=f(\\theta_0,-)\\) would need \\(\\mathrm{Up}(h^g_N(x))=h^f_N(x)\\) for all \\(x\\), impossible because \\(\\mathrm{Up}\\) has rank \\(\\le d/r<d\\) while the backbone's final states span \\(\\mathbb R^d\\) (cut-rank, Thm II.10). So no neutral point exists, even approximately for generic inputs: E°.",
+    "shape": "VIII.B: Fun (a side network via trainable down-projection ladders).",
+    "base_point": "Unpointed by the cut-rank argument; the pruning-based init only approximates \\(f\\) and cannot reach it.",
+    "gauge": "The side Transformer's internal gauges (per-head query–key and value–output \\(GL\\)).",
+    "covariance": "The ladders \\(\\mathrm{Down}_i\\) and \\(\\mathrm{Up}\\) are dense linear maps: basis-free on the backbone's hidden wire. VIII.B leaves this blank.",
+    "merge": "The side network produces the prediction at inference.",
+    "rebasing": "n/a: no merge, and a second side network would replace the first one's prediction rather than compose with it."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "An extension whose prediction factors through a side network of width \\(d/r\\). By the cut-rank bound, \\(\\mathrm{LMHead}\\circ\\mathrm{Up}\\) has rank \\(\\le d/r\\), so no parameter value reproduces \\(f\\): LST is unpointed, not merely near-pointed. Its contribution is on the cotangent side: the ladders cut the backprop cone, so the backbone's backward pass never runs (Obs IV.4).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "parallel-adapter",
+     "test": "O3",
+     "reason": "A pointed arrow would send LST's base point to PA's neutral point, so both would realise \\(f\\); LST's base point cannot (cut-rank \\(d/r\\)). The same holds for every neutral-pointed extension."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed the E-degree deviation from VIII.B ('E, approx') by cut rank. This needs an injective LM head (V >= d), and the method would be pointed at reduction factor r=1. O3 obstruction confirmed: a pointed arrow would force LST's base to realise f. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "res-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Tuners are attached in parallel to frozen operations, \\(x'=\\mathrm{OP}(x)+\\text{Res-Tuner}(x)\\), with zero-initialised output projections. The Bypass variant is a ladder side network (unpointed, like LST).",
+    "shape": "Function-level (attention or MLP tuners).",
+    "base_point": "Neutral in the attached form (zero output projection); the Bypass variant does not reproduce the backbone at init.",
+    "gauge": "Tuner-dependent; recorded for the default bottleneck Res-Adapter, which is GELU (ModelScope SWIFT), so only discrete \\(S_r\\). Its optional channel-wise output scaling adds a torus (as Adapter+), and the separately normalised Res-Prefix tuner with free keys has a continuous key-translation gauge \\(K_P\\mapsto K_P+\\mathbf 1c^\\top\\) (a softmax over the prefix tokens alone is shift-invariant; Jacobian deficiency \\(d_k\\) per head), absent from joint-softmax prefix tuning.",
+    "covariance": "Dense tuner projections: basis-free.",
+    "merge": "Non-linear tuners, and the Bypass variant is a separate network.",
+    "rebasing": "n/a (M∞). At function level parallel tuners add."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "'Unbinding' rewrites every tuner as a parallel summand \\(\\mathrm{OP}+\\mathrm{Tuner}\\), moving it into the additive, parallel-adapter form. For prefix and prompt tuning this replaces the single softmax by a separately normalised branch, which is a different object (Thm VI.5(b) against (d)), not an equivalent one. The Bypass variant is an LST-type ladder.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "prefix-tuning",
+     "test": "O1",
+     "reason": "The unbound prefix tuner is a separately normalised branch: its family contains \\(f\\) and never rescales content attention. Prefix tuning is unpointed and multiplies content weights by \\(1-\\lambda_q\\). The 'equivalence' is empirical, not an isomorphism."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Gauge kept 'none' for the default GELU Res-Adapter. Change: corrected the note's claim that the prefix tuner has no continuous gauge. The separately normalised Res-Prefix with free keys has a key-translation gauge [Num: Jacobian deficiency d_k=4, vs 0 for a joint-softmax prefix], and the optional channel scaling adds a torus. Unresolved: the default tuner mix is tuner-dependent. Incoming PA arrow removed (sigma mismatch). Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "controlnet",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A trainable copy of the encoder, connected by zero \\(1\\times1\\) convolutions, that also extends the input object \\(X\\to X\\times C\\) (the condition \\(c\\)). It is pointed at the zero convolutions.",
+    "shape": "Function-level: a side copy adds residuals to skip and middle features.",
+    "base_point": "Exactly neutral: both zero convolutions output \\(0\\). At step one only the outer zero conv \\(\\mathcal Z_2\\) has non-zero gradient; the copy and \\(\\mathcal Z_1\\) are dead to first order (zero-gate lemma).",
+    "gauge": "Internal gauges of the copy (per-head \\(GL\\) in its attention blocks); the zero convolutions are dense channel maps.",
+    "covariance": "\\(1\\times1\\) zero convolutions are dense on channels at both ends: basis-free on the U-Net feature wires.",
+    "merge": "The copy processes the extra input \\(c\\) and must run at inference.",
+    "rebasing": "n/a (M∞). At function level ControlNets add (multi-ControlNet sums residuals)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A pointed side extension over the enlarged input \\(X\\times C\\): a copy of the encoder joined at both ends by zero convolutions. At initialisation the copy is dead to first order, and only the outer zero convolution moves. Its corrections are additive residuals on skip features, so several ControlNets compose by \\(\\oplus\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "t2i-adapter",
+     "test": "O1",
+     "reason": "T2I-Adapter's correction \\(F_c=\\mathcal F_{AD}(C)\\) is independent of the latent and the timestep, an invariant of its image. ControlNet's residuals depend on \\(x\\) through the copy, so they lie outside T2I's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. Checked the zero-gate first-order claim: only Z2 has nonzero gradient at init. Obstruction confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "t2i-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "An external condition encoder whose multi-scale features are added to the frozen encoder states; the extension also enlarges the input to \\(X\\times C\\).",
+    "shape": "Function-level, over the condition object.",
+    "base_point": "No zero init, so at the start \\(F_c\\ne0\\): a pointing defect. A neutral point exists (\\(\\omega=0\\), or adapter output \\(0\\)).",
+    "gauge": "Positive per-unit slides through the ReLU residual blocks of the condition encoder.",
+    "covariance": "The output convolutions are dense on channels: basis-free on the U-Net feature wire. Pixel-unshuffle structures only the condition input.",
+    "merge": "For fixed \\(C\\) the edit is a constant translation of four encoder feature maps, but it varies over space. A bias slot is position-uniform, so nothing absorbs it (Thm VI.3(a)). It is computed once per generation.",
+    "rebasing": "n/a (M∞). Multi-condition use is literally additive: \\(F_c=\\sum_k\\omega_k\\mathcal F^k_{AD}(C_k)\\)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "An additive feature-injection extension over the condition object \\(C\\). The correction \\(F_c\\) is independent of the latent and the timestep, so for fixed \\(C\\) it is a constant, spatially varying translation of four encoder states, and multi-condition use is the \\(\\oplus\\) of adapters weighted by \\(\\omega_k\\). It is not zero-initialised, so it starts with a pointing defect.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "controlnet",
+     "test": "O3",
+     "reason": "Base-point mismatch: T2I's initial point does not realise the frozen model (no zero init), while ControlNet's does (zero convolutions). So no pointed arrow T2I \\(\\to\\) ControlNet exists, and their injection sites differ (encoder states against skip and middle outputs)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed: ReLU residual-block torus, defect (no zero init), and the base-point (O3) obstruction to ControlNet. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "ip-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A decoupled cross-attention branch \\(\\lambda\\,\\mathrm{Attn}(Q,c_iW'_k,c_iW'_v)\\) over a new input object (image-prompt tokens).",
+    "shape": "Function-level: an extra softmax branch.",
+    "base_point": "\\(W'_v=0\\) (or \\(\\lambda=0\\)) is neutral, because the branch has its own softmax; but \\(W'_{k,v}\\) are initialised as copies of \\(W_{k,v}\\), so the branch is active from the start: a defect.",
+    "gauge": "The trained image projection (Linear + LayerNorm) feeds only the trainable \\(W'_k,W'_v\\), so the LN slide \\((\\gamma,\\beta,W'_k,W'_v)\\mapsto(t\\gamma,t\\beta,W'_k\\mathrm{diag}(t)^{-1},W'_v\\mathrm{diag}(t)^{-1})\\) is an exact gauge (R6). LN's mean-zero output adds a key-translation gauge through \\(W'_k\\) alone, \\(W'_k\\mapsto W'_k+c\\,a^\\top/(\\beta\\cdot a)\\) with \\(a=\\mathbf 1\\oslash\\gamma\\), plus LN's input scale and centring invariances on the projection. [Num: both slides exact to \\(10^{-14}\\); Jacobian deficiency \\(44\\) of \\(168\\), and \\(4=d_k\\) of \\(48\\) with the projection frozen.]",
+    "covariance": "\\(W'_k,W'_v\\) are dense and transform with the frozen head's query–key gauge: basis-free.",
+    "merge": "Extra attention over input-dependent tokens: non-affine (Thm VI.5).",
+    "rebasing": "n/a (M∞). Several decoupled branches add at function level."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "Structurally LLaMA-Adapter's separately normalised branch, \\(\\mathrm{Attn}(Q,K,V)+\\lambda\\,\\mathrm{Attn}(Q,K',V')\\), but with keys and values computed from an auxiliary input: an extension over \\(X\\times C_{\\rm img}\\). \\(V'=0\\) is neutral, but the copy initialisation starts it with a defect.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "llama-adapter",
+     "test": "O1",
+     "reason": "IP-Adapter's branch keys and values are functions of the image input \\(c_i\\); LLaMA-Adapter's prompt keys and values are constants, so it cannot realise image-dependent branches."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Change: gauge none -> torus. The trained image projection's LayerNorm gain/bias slides exactly into W'_k, W'_v, and LN's mean-zero output also gives a key-translation gauge through W'_k alone. [Num: both slides exact to 1e-14; Jacobian deficiency 44/168, and 4/48 with the projection frozen.] Other coordinates and the obstruction confirmed. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "adaptformer",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A scaled parallel ReLU bottleneck next to the ViT MLP; \\(W_{up}=0\\) is neutral.",
+    "shape": "Function-level, as the parallel adapter.",
+    "base_point": "Exactly neutral: \\(W_{up}\\) and the biases are zero-initialised.",
+    "gauge": "ReLU positive per-unit slide (R3) \\(\\times S_r\\).",
+    "covariance": "Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "Thm VI.3(c): for generic \\(U,D\\) the modified box function is non-affine in the box input, so no box-local merge exists.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze and re-insert) parallel bottlenecks add, \\(F+\\sum_kU_k\\sigma(D_k\\,\\cdot)\\) = one bottleneck of width \\(Kr\\): the additive closure (span of the bottleneck cone), as for LoRA."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "The scaled parallel adapter at the FFN with \\(s=0.1\\), isomorphic to He et al.'s parallel adapter by rescaling \\(W_{up}\\). It is the vision instance of the additive extension.",
+   "arrows": [
+    {
+     "target": "parallel-adapter",
+     "rule": "A3",
+     "h": "h(W_{down},b_{down},W_{up},b_{up})=\\big(W_{down},b_{down},\\tfrac{0.1}{s}W_{up},\\tfrac{0.1}{s}b_{up}\\big)",
+     "note": "An isomorphism: the same ReLU bottleneck reading the MLP input \\(\\mathrm{LN}(x')\\); only the fixed scale differs."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vpt",
+     "test": "O1",
+     "reason": "\\(f\\in\\mathrm{Im}\\,\\mathrm{AdaptFormer}\\) (at \\(W_{up}=0\\)), but VPT's prompt tokens always take attention mass, so VPT is unpointed and cannot simulate it."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Non-affine parallel branch (Thm VI.3(c))."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed (ReLU, zero-init W_up and biases). Isomorphism to PA (scale rescaling) and obstructions confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "convpass",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Parallel convolutional bottlenecks (\\(1\\times1\\)–\\(3\\times3\\)–\\(1\\times1\\) on the patch grid) next to both MHSA and MLP; a zero up-projection is neutral.",
+    "shape": "Function-level: non-linear and token-mixing.",
+    "base_point": "Exactly neutral in the official code (zero up-projection weights and biases).",
+    "gauge": "Both activations are GELU and the \\(3\\times3\\) conv is channel-dense, so only discrete \\(S_r\\) survives (Lemma VI.2(c)).",
+    "covariance": "Channel-dense projections and convolution: basis-free on the channel wire. The \\(2\\)D grid is structure imposed on token positions, which Def II.14's channel groups do not see; it is what blocks merging.",
+    "merge": "The \\(3\\times3\\) convolution mixes neighbouring tokens, so the edit is not position-uniform and no per-token linear box can absorb it (Thm VI.3(a)); it is also non-affine.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze and re-insert) parallel bottlenecks add, \\(F+\\sum_kU_k\\sigma(D_k\\,\\cdot)\\) = one bottleneck of width \\(Kr\\): the additive closure (span of the bottleneck cone), as for LoRA."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A parallel extension whose bottleneck contains a \\(3\\times3\\) convolution over the patch grid, so its correction at a token depends on the token's neighbours: a token-mixing edit outside every per-token method. With the convolution frozen at its centre-tap identity init it becomes a per-token parallel adapter with activation \\(\\mathrm{GELU}\\circ\\mathrm{GELU}\\) (an A2 sub-object).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "parallel-adapter",
+     "test": "O1",
+     "reason": "PA's correction at token \\(i\\) depends only on \\(x_i\\), an invariant of its image (token locality); Convpass's depends on the \\(3\\times3\\) grid neighbourhood."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Token mixing and non-affinity put its realisations outside \\(\\Phi_f(\\mathrm{Im}\\,\\mathrm{LoRA})\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed: GELU gives only S_r; token mixing gives M-inf; obstructions confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "st-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A serial residual bottleneck before each MHSA, with a depthwise \\(3\\times1\\times1\\) spatio-temporal convolution in the compressed space.",
+    "shape": "Function-level. The official code has no activation after the convolution, which makes the adapter an affine but token-mixing operator \\(X\\mapsto X+\\mathrm{DWConv3D}(XW_{down})W_{up}\\); still no weight-space image.",
+    "base_point": "Exactly neutral in the official code (depthwise kernels and all biases zero).",
+    "gauge": "Per-channel slide between \\(W_{down}\\) and the depthwise convolution, both linear: a torus on bottleneck channels, times \\(S_r\\). In the official activation-free code a second channel torus sits between the depthwise convolution and \\(W_{up}\\), and the conv bias trades against \\(b_{up}\\) [Num: Jacobian deficiency \\(9=2r+r\\) at \\(r=3\\)].",
+    "covariance": "\\(W_{down},W_{up}\\) are dense, so the outer wire is basis-free; the depthwise convolution privileges only the internal bottleneck basis (gauge).",
+    "merge": "The edit mixes tokens across frames and positions, so it is not position-uniform, and no per-token box absorbs it (Thm VI.3(a)), even in the activation-free version.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained adapter, insert a fresh one) the stages compose, \\(R_K=S^K\\circ F\\) with \\(S=\\{\\mathrm{id}+W_{up}\\,\\mathrm{DWConv}(W_{down}\\,\\cdot)\\}\\): the action-type closure."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A serial bottleneck extension whose bottleneck contains a depthwise temporal convolution: a linear, token-mixing operator in the compressed space. It is M∞ because it is not a per-token edit, not because of an activation. The per-channel convolution privileges only the bottleneck basis (a torus gauge), not the residual wire.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "houlsby-adapter",
+     "test": "O1",
+     "reason": "Houlsby's correction is per-token; ST-Adapter's mixes neighbouring frames, so it lies outside Houlsby's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Coordinates confirmed. Changes: gauge note adds the second torus and the bias translation of the activation-free official code [Num: Jacobian deficiency 9 = 2r + r]; rebasing note now uses the ST family instead of the generic bottleneck. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "aim",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Inserts a new box, a temporal attention pass whose weights are tied to the frozen spatial attention, neutralised by a zero-initialised adapter without skip. It adds a serial spatial adapter and a scaled parallel MLP adapter.",
+    "shape": "Function-level (non-linear adapters and an extra attention pass).",
+    "base_point": "Exactly neutral: every adapter's second FC is zero, so the temporal and joint branches output \\(0\\) and the spatial adapter (with skip) is the identity.",
+    "gauge": "GELU adapters: only the discrete \\(S_r\\) per adapter.",
+    "covariance": "Dense adapters, and the reused attention keeps the base geometry: basis-free.",
+    "merge": "An extra attention pass along time plus non-linear adapters.",
+    "rebasing": "n/a (M∞). At function level the parts close differently (serial \\(\\mathrm{Ad}_S\\) by composition, residual \\(\\mathrm{Ad}_T\\) and parallel \\(\\mathrm{Ad}_J\\) additively)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "An extension that inserts a new box, temporal attention, with weights tied to the frozen spatial attention and neutralised by a zero-initialised adapter, together with a serial spatial adapter and a scaled parallel MLP adapter. A GELU parallel adapter embeds in AIM by freezing the temporal and spatial adapters at zero (A2); He et al.'s ReLU PA does not, since AIM's adapters are GELU (official vit_clip.py).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "adaptformer",
+     "test": "O1",
+     "reason": "AIM's temporal pass re-applies the frozen attention across frames, so its realisations mix tokens over time. AdaptFormer is per-token on a frame-wise ViT and cannot reproduce them."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed (GELU per official vit_clip.py, exact neutrality, temporal mixing). Change: categorical_reading now says only a GELU parallel adapter embeds by A2, not He et al.'s ReLU PA. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "repadapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1->",
+    "rebasing": "group"
+   },
+   "coord_notes": {
+    "kind": "An activation-free serial adapter before frozen projections. It descends along the merge to the weight-space object \\(W_0\\mapsto W_0(I+sW_uW_d)\\), with \\(b_0'=b_0+sW_0(W_ub_d+b_u)\\): kind R, as for SSF in VIII.B.",
+    "shape": "\\(\\rho-\\theta_0=sW_0W_uW_d\\) is bilinear: a cone with vertex \\(\\theta_0\\), the transport by \\(W_0\\cdot\\) of \\(\\{UD:U\\ \\text{group-wise}\\}\\subseteq\\mathcal M_{\\le r}\\).",
+    "base_point": "\\(W_u=0\\), \\(W_d\\) Xavier: only \\(W_u\\) moves to first order (Lemma II.4). \\(\\dim S_1=rd/k\\) against \\(d=rd/k+rd-r^2/k\\), a positive deficit.",
+    "gauge": "\\((W_ug^{-1},gW_d)\\) with \\(g\\in\\prod_{j=1}^kGL_{r/k}\\) block-diagonal, so that \\(W_u\\) stays group-wise (as GraLoRA's \\(\\prod GL_{r/k}\\)).",
+    "covariance": "\\(\\mathrm{Im}\\,M(gW_0h^{-1})=g\\,\\mathrm{Im}\\,M(W_0)\\,h^{-1}\\) requires \\(h\\,\\mathrm{BlkDiag}=\\mathrm{BlkDiag}\\) up to right gauge, i.e. \\(h\\) in the block normaliser. So \\(GL\\) on the output side and \\(N_{\\rm blk}\\) on the input side: imposed groups, \\(\\Pi\\). With \\(k=1\\) it would be \\(GL\\times GL\\).",
+    "merge": "Fuses into the consumer projections \\(W_q,W_k,W_v\\) (or \\(W_1\\)) by Thm VI.3(a). Side conditions: all consumers unshared, and a bias slot for the shift. One adapter feeds \\(q,k,v\\) together.",
+    "rebasing": "An action: \\(W_0(I+sU_1D_1)(I+sU_2D_2)\\cdots\\). The shape contains \\(I+tE_{ab}\\) for every \\(a,b\\) and every real \\(t\\) (a rank-one matrix inside one row block), so already one factor can have \\(\\det<0\\) (\\(t=-2\\)) or be singular (\\(t=-1\\)). The generated Lie algebra is \\(\\mathfrak{gl}(d)\\) (Thm V.3(b)) and the generated monoid is all of \\(M_d(\\mathbb R)\\): \\(R_\\infty=W_0\\cdot M_d(\\mathbb R)\\) (the closure of \\(W_0\\cdot GL(d)\\); \\(=\\Theta\\) for invertible \\(W_0\\)), with relative update rank \\(\\le Kr\\) after \\(K\\) cycles. Because one adapter feeds \\(q,k,v\\), the reach is the tied set \\(\\{(W_qM,W_kM,W_vM)\\}\\), not \\(\\Theta^3\\)."
+   },
+   "table_row": "R-action",
+   "table_col": "Cone",
+   "categorical_reading": "A linear serial adapter that descends along the merge to the R-action object \\(W_0\\mapsto W_0(I+sW_uW_d)\\). That object is a constrained LoRA with \\(B=sW_0W_u\\) tied to \\(W_0\\), group-wise \\(W_u\\), and one \\(A=W_d\\) shared by every projection the adapter feeds. Rebasing composes right multiplications and walks the generated monoid, reaching \\(W_0\\cdot M_d(\\mathbb R)\\), tied across the projections one adapter feeds.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(W_u,W_d)=\\big((sW_0^{(x)}W_u,\\ W_d)\\big)_{x\\in\\{q,k,v\\}}",
+     "note": "The merged update \\(\\Delta W^{(x)}=sW_0^{(x)}W_uW_d\\) is a point of LoRA\\(_r^{\\times3}\\) pointed at \\((0,W_d^0)\\) (\\(\\mathrm T_A\\) stratum); the bias shift needs \\(\\oplus\\) BitFit (A5). With a shared \\(A\\) and tied \\(B\\) it is a constrained LoRA, not an equivalent one."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Confirmed Cone/apex/GL(prod GL_{r/k})/Pi/M1->. [Num (d,r,k)=(8,4,2): |M|=48, dim S1=16=rd/k, d=40=rd/k+rd-r^2/k.] Change: rebasing note corrected. One factor I+X can already have det<0 (X=-2E_11 lies in the shape) or be singular, so the generated monoid is M_d(R) and R_inf = W0 M_d(R), not W0 GL^+(d); the reach is also tied across q, k, v. 'group' kept. LoRA arrow confirmed (exact target needs (+) BitFit for the bias shift, as noted)."
+  },
+  {
+   "id": "mona",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "torus",
+    "covariance": "MonxMon",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A serial residual bottleneck with a learned input blend and multi-scale depthwise convolutions; \\(U=0\\) would be neutral.",
+    "shape": "Function-level (non-linear and token-mixing).",
+    "base_point": "The official code leaves \\(U^l\\) at the default Kaiming-uniform init, so the adapter output is non-zero at the start: a defect, although a neutral point (\\(U=0\\)) exists.",
+    "gauge": "The per-channel \\(s_1,s_2\\) and the columns of the dense \\(D\\) are related by a diagonal slide \\((s_1,s_2,D)\\mapsto(s_1t,s_2t,D\\,\\mathrm{diag}(t)^{-1})\\): a \\(d\\)-dimensional torus.",
+    "covariance": "The per-channel blend \\(s_1\\odot\\mathrm{LN}(x)+s_2\\odot x\\) and a coordinate LayerNorm fix the standard basis of the wire; only neuron permutations survive. \\(U\\) is dense, but the wire is a single endomorphism: Mon on both sides.",
+    "merge": "Token-mixing convolutions and a non-linear bottleneck (Thm VI.3(a),(c)).",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained module, insert a fresh one) the stages compose, \\(R_K=S^K\\circ F\\) with \\(S\\) the family of Mona modules: the action-type closure."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A serial bottleneck extension whose input is a learned blend \\(s_1\\odot\\mathrm{LN}(x)+s_2\\odot x\\) and whose bottleneck runs multi-scale depthwise convolutions. Token mixing makes it M∞, and the per-channel blend fixes the standard basis of the wire (coordinate geometry). The default up-projection is not zero, so it starts with a pointing defect.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "houlsby-adapter",
+     "test": "O1",
+     "reason": "Mona's depthwise \\(3/5/7\\) convolutions mix neighbouring tokens; Houlsby's correction is per-token, an invariant of its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed (defect from the default Kaiming U; the two-scale input blend gives Mon on the wire and the d-dim torus with D). Change: rebasing wording. No coordinate changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "clip-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A residual-blended bottleneck MLP post-composed with the frozen encoder on the output embedding.",
+    "shape": "Function-level (a non-linear endomorphism of the embedding space).",
+    "base_point": "After CLIP's feature normalisation, \\(W_2=0\\) gives \\((1-\\alpha)f/\\lVert(1-\\alpha)f\\rVert=f/\\lVert f\\rVert\\), a neutral point. The bottleneck is randomly initialised, so it starts with a defect controlled by \\(\\alpha\\).",
+    "gauge": "The ReLU positive per-unit slide between \\(W_1\\) and \\(W_2\\).",
+    "covariance": "\\(W_1,W_2\\) are dense and the blend \\(\\alpha A+(1-\\alpha)\\mathrm{id}\\) is basis-free on the embedding wire. This is the paper's form; the official code adds a second ReLU after \\(W_2\\), which privileges the embedding basis and would cut the covariance to positive monomials (Mon\\(\\times\\)Mon).",
+    "merge": "A non-linear MLP after the encoder (negligible cost, but not foldable).",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained adapter, insert a fresh one) the stages compose on the embedding, \\(R_K=S^K\\circ\\mathrm{enc}\\) with \\(S=\\{\\mathrm{id}+\\tfrac{\\alpha}{1-\\alpha}A_v\\}\\) (after normalisation): the action-type closure."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A serial residual extension on the output embedding: \\(f^\\star=\\alpha A_v(f)+(1-\\alpha)f\\), which after CLIP's normalisation is \\((\\mathrm{id}+\\tfrac{\\alpha}{1-\\alpha}A_v)\\circ\\mathrm{enc}\\). That is a single Houlsby-type block at the end of the encoder. \\(W_2=0\\) is neutral, but the random initialisation is not.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "coop",
+     "test": "O1",
+     "reason": "CoOp moves only the class weight vectors, so its logits stay linear functionals of the frozen normalised image embedding. CLIP-Adapter's logits are non-linear in that embedding."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed for the paper's form. Changes: covariance note flags that the official code's second ReLU would cut covariance to MonxMon; rebasing wording made specific. Obstruction confirmed. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "tip-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A key–value cache module added in logit space, \\(\\alpha\\,\\varphi(fF^\\top)L+fW_c^\\top\\); \\(\\alpha=0\\) (or an empty cache) recovers zero-shot CLIP.",
+    "shape": "Function-level: a kernel expansion over cached features.",
+    "base_point": "The base point \\(q_0=F_{train}\\) (cached features) does not realise zero-shot CLIP: a defect by design, since the training-free cache already is the adaptation (compare LoRA-SB). Tip-Adapter-F trains the keys from there. With \\(\\alpha\\) fixed (a hyperparameter), no key value makes the cache term vanish (\\(\\varphi>0\\)); equal keys make it class-uniform, so the softmax output equals zero-shot CLIP while the logits differ by a shift. Exact pointedness needs \\(\\alpha=0\\).",
+    "gauge": "No continuous gauge: \\(\\varphi=\\exp(-\\beta(1-\\cdot))\\) is non-homogeneous and the keys are free rows. Only the discrete permutations of cache entries, together with the label rows, remain.",
+    "covariance": "A cosine-similarity kernel on L2-normalised features, with keys built from data: covariant (with the data transformed) under \\(CO(d)\\), not \\(GL\\).",
+    "merge": "The cache is stored and queried at inference; \\(\\exp\\) of inner products is non-affine.",
+    "rebasing": "n/a (M∞). Appending cache entries adds kernel terms in logit space."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A cache extension in logit space whose keys are set from data: its base point is a pointing defect by design, and Tip-Adapter-F descends from that point rather than from \\(f\\). The exponential cosine kernel on normalised features makes its geometry orthogonal (\\(CO\\times CO\\)), not \\(GL\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "clip-adapter",
+     "test": "O1",
+     "reason": "CLIP-Adapter moves only the normalised image feature, so its logit vector always lies on \\(\\tau\\,W(S^{d-1})\\), the image of the unit sphere under the fixed class matrix. Tip's additive kernel term leaves that surface."
+    },
+    {
+     "target": "coop",
+     "test": "O1",
+     "reason": "CoOp's logits stay linear in the frozen normalised image embedding; Tip adds a non-linear kernel term in that embedding."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. Change: base-point note adds that with alpha fixed, equal keys make the cache term class-uniform, so softmax outputs match zero-shot CLIP while exact logits need alpha=0. Obstructions confirmed (the 'surface' wording is exact when #classes >= d). Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "adapter-plus",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A serial post-block bottleneck (GELU) with a channel-wise scale on its output; \\(W_{up}=0\\) is neutral.",
+    "shape": "Function-level (non-linear inserted box).",
+    "base_point": "Houlsby init (std \\(0.01\\), truncated) is near-neutral: the \\(\\approx\\) convention, classifying the exactly pointed variant.",
+    "gauge": "\\(s\\) is pure gauge on the function family: \\((s,W_{up},b_{up})\\mapsto(st,\\mathrm{diag}(t)^{-1}W_{up},\\mathrm{diag}(t)^{-1}b_{up})\\), a \\(d\\)-dimensional torus. GELU allows no hidden-unit slide.",
+    "covariance": "\\(\\mathrm{diag}(s)W_{up}\\) ranges over the same dense matrices as \\(W_{up}\\), so the family, and hence its covariance, is that of a plain dense bottleneck. Function-level analogue of Def II.14: \\(U,D\\) are dense, so the inserted family \\(\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\) is invariant under conjugation by any \\(g\\in GL_d\\) on the wire, \\(g(\\mathrm{id}+U\\sigma(Dg^{-1}\\cdot))=\\mathrm{id}+(gU)\\sigma((Dg^{-1})\\cdot)\\). \\(\\sigma\\) privileges only the internal bottleneck basis (gauge), not the wire.",
+    "merge": "Thm VI.3(c): for generic \\(U,D\\) the modified box function is non-affine in the box input, so no box-local merge exists.",
+    "rebasing": "n/a: M∞, so merge-and-restart into \\(\\Theta\\) is undefined. At function level (freeze the trained adapter into an enlarged base, insert a fresh one) the stages compose, \\(R_K=S^K\\circ F\\) with \\(S=\\{\\mathrm{id}+U\\sigma(D\\,\\cdot)\\}\\): the action-type closure (generated monoid)."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A serial post-block bottleneck whose channel-wise scale \\(s\\) is pure gauge on the function family, since \\(\\mathrm{diag}(s)W_{up}\\) ranges over the same matrices as \\(W_{up}\\). Like LoRA+'s ratio, \\(s\\) can only change the metric (training dynamics), not what is expressible.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Non-affine serial box (Thm VI.3(c)); no weight-space realisation."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. [Num: Jacobian deficiency 6 = d, the s torus, with a GELU bottleneck.] Obstruction confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "shadow-peft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A shadow state is carried through depth and injects \\(\\alpha W_{up}W_{down}(h-s)\\) into each block input; \\(W_{up}=0\\) leaves the base pathway unchanged.",
+    "shape": "Function-level: an input-dependent, stateful side network.",
+    "base_point": "Exactly neutral for the base pathway (\\(W_{up}=0\\)); only \\(W_{up}\\) moves to first order (zero-gate lemma).",
+    "gauge": "The bias-free bottleneck \\(W_{up}W_{down}\\) carries LoRA's \\(GL_r\\), \\((W_{up}g^{-1},gW_{down})\\).",
+    "covariance": "The GRU-like update \\((1-g)\\odot s+g\\odot T(h)\\) is Hadamard on the residual wire, and \\(s\\) must live in the residual space to form \\(h-s\\). That fixes the standard basis; diagonals and permutations commute with \\(\\odot\\): Mon on both sides.",
+    "merge": "The correction depends on an evolving input-dependent state and edits the residual stream (Thm VI.3(a) excludes residual-stream edits). HF PEFT raises an error on merge.",
+    "rebasing": "n/a: a stateful coupled network with no merge."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "A two-way coupled side extension: a shadow state evolves through depth by Hadamard-gated convex updates and feeds a low-rank correction of \\(h-s\\) into each frozen block. \\(W_{up}=0\\) is neutral, the bias-free bottleneck carries LoRA's \\(GL_r\\) gauge, and the input-dependent state makes it M∞.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "ladder-side-tuning",
+     "test": "O1",
+     "reason": "\\(f\\in\\mathrm{Im}\\,\\mathrm{ShadowPEFT}\\) (at \\(W_{up}=0\\)), but LST's prediction passes through a width-\\(d/r\\) side state and can never realise \\(f\\) (cut-rank)."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Input-dependent stateful corrections on the residual stream lie outside \\(\\Phi_f(\\mathrm{Im}\\,\\mathrm{LoRA})\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Confirmed. The GL_r gauge holds for rho (eval mode); training-time dropout on the bottleneck reduces it to Mon_r in law. Obstructions confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  }
+ ]
+}

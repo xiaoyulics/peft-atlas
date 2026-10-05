@@ -1,0 +1,63 @@
+{
+ "hash": "1df5ea1aea041390",
+ "seconds": 56.92,
+ "pauses": [
+  [
+   0.0,
+   0.392
+  ],
+  [
+   3.373,
+   3.777
+  ],
+  [
+   5.073,
+   5.395
+  ],
+  [
+   6.958,
+   7.254
+  ],
+  [
+   12.639,
+   13.08
+  ],
+  [
+   14.207,
+   14.696
+  ],
+  [
+   15.208,
+   16.334
+  ],
+  [
+   21.917,
+   22.65
+  ],
+  [
+   23.821,
+   24.164
+  ],
+  [
+   29.586,
+   29.845
+  ],
+  [
+   31.54,
+   32.598
+  ],
+  [
+   40.115,
+   41.013
+  ],
+  [
+   44.554,
+   45.202
+  ],
+  [
+   56.619,
+   56.92
+  ]
+ ],
+ "text": "Where you start on an image matters. At a smooth point, the directions you can move in, to first order, form a flat plane as large as the image itself. At the tip of a cone, they don't. <short pause> Zero-initialised LoRA, the usual default, starts exactly at the tip. With B at zero, nudging A changes nothing, so at first only B can move the weights, and fewer directions are open. Split initialisations, which carve a low-rank piece out of the frozen weight, start at a smooth point instead. <short pause> The same lens finds tips where you might not expect them: HRA, a method built from reflections, also starts at one at Hugging Face's default initialisation, when r is even and the frozen weight has full column rank."
+}

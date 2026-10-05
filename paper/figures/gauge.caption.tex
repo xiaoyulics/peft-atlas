@@ -1,0 +1,18 @@
+Who sees the gauge? (\thmref{Theorem}{III.12}, \thmref{Proposition}{III.4}, \thmref{Proposition}{V.4}.) (a)~At a fixed
+seeded LoRA state $B\in\R^{5\times2}$, $A\in\R^{2\times4}$ with loss gradient $G$, each cell is the relative gauge defect
+$\lVert\delta W(g)-\delta W(I)\rVert_F/\lVert\delta W(I)\rVert_F$ of one update rule: the change in the first-order
+weight update $\delta W=\delta B\,A+B\,\delta A$ when the factors are replaced by the gauge-equivalent pair
+$(Bg^{-1},gA)$. The columns are a rotation by $30^\circ$, the stretch $\diag(e^{0.5},e^{-0.4})$, the signed permutation
+that swaps the two rank channels and flips one, and a generic $g\in\GL_2$; under each name is the smallest of the groups
+$B_2=\Ort(2)\cap\mathrm{Mon}_2$, $\Ort(2)$, $\mathrm{Mon}_2$ (monomial matrices) and $\GL_2$ that contains it. Green
+cells vanish up to float64 round-off, and they occur exactly where $g$ lies in the rule's gauge group (right column):
+$\Ort(2)$ for SGD, $B_2$ for Adam (its first step from zero state, which at $\varepsilon=0$ is sign descent),
+$\mathrm{Mon}_2$ for Adam whose per-rank-channel rates are rescaled jointly with the stretch $g=\diag(d)$
+($\eta_{B,j}\mapsto\eta_{B,j}/d_j$, $\eta_{A,j}\mapsto d_j\,\eta_{A,j}$), $\Ort(2)$ for scaled GD damped by $\delta=0.1$,
+and all of $\GL_2$ for undamped scaled GD and for LoRA-Pro with the Sylvester-optimal free matrix, whose weight updates
+$P_UG+GP_V$ and $P_UG+GP_V-P_UGP_V$ depend only on $W$. Red cells are genuine defects. (b)~Three seeded LoRA modules
+$(B_i,A_i)$ with weights $w=(0.6,0.5,0.4)$ are merged after module~2 alone is re-gauged to $(cB_2,A_2/c)$. Task
+arithmetic \citep{ilharco2022editing}, $\sum_iw_iB_iA_i$, does not move (relative change below $10^{-16}$). The LoraHub
+merge \citep{huang2023lorahub}, $(\sum_iw_iB_i)(\sum_jw_jA_j)$, changes by up to $3.4$ times its norm at $c=1/8$, and
+the open circles, the closed form $\sum_{l\ne2}w_lw_2\big[(c-1)B_2A_l+(c^{-1}-1)B_lA_2\big]$ of
+\thmref{Proposition}{V.4}, match the recomputed change to $10^{-15}$.

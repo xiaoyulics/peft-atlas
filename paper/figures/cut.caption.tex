@@ -1,0 +1,19 @@
+Cut the tensor (\thmref{Theorem}{II.11}). A $16\times16$ matrix $\Delta$ is read as a four-leg tensor with output legs
+$U_1,U_2$ and input legs $V_1,V_2$, through $\R^{16}=\R^4\otimes\R^4$ on both sides. Its $256$ entries can be split into
+two pairs of legs in three ways (columns): the ordinary cut $\{U_1U_2\}\mid\{V_1V_2\}$, across which LoRA factors as
+$\Delta=BA$; the Kronecker cut $\{U_1V_1\}\mid\{U_2V_2\}$, across which a sum of Kronecker products $\sum_iC_i\otimes
+D_i$ factors after the rearrangement of Van Loan and Pitsianis~\citeyearpar{loan1993approximation}; and the third cut
+$\{U_1V_2\}\mid\{U_2V_1\}$, which is the Kronecker cut after the two input legs are swapped. The glyph above each column
+draws that factorisation as two boxes joined by a bond across the cut. Each panel shows the operator-Schmidt spectrum
+across one cut, that is, the singular values $\sigma_i$ of the corresponding $16\times16$ reshape of $\Delta$, divided by
+$\lVert\Delta\rVert_F$ and on a logarithmic scale, for (a)~a random rank-one update $uv\T$ with seeded Gaussian $u,v$,
+(b)~the identity $I_{16}=I_4\otimes I_4$, and (c)~$C\otimes D$ with seeded Gaussian $4\times4$ factors. Filled markers lie
+above the rank threshold $10^{-10}$ (dashed line). Open markers are numerically zero, at most $1.3\times10^{-16}$, and
+values below $10^{-17}$, exact zeros included, are drawn at $10^{-17}$; every nonzero value is at least
+$9.5\times10^{-4}$. Each reshape permutes the entries, so the squared singular values sum to $1$ on every cut. The ranks
+are $(1,16,16)$ for $uv\T$ and $(16,1,16)$ for $I_{16}$ and for $C\otimes D$. So a generic rank-one update has the
+maximal Kronecker rank $\kappa_1=16$, and a Kronecker product of full-rank factors has the maximal rank $\nu=16$, which
+makes zero-init LoRA$_r$ and $k$-term Kronecker sums incomparable for $r,k<16$ (\thmref{Theorem}{II.11}(b)--(d)). Each
+panel also gives the cost of a bond of that dimension, $k(4\cdot4+4\cdot4)=32k$ parameters across any of the three cuts.
+LoRA$_1$ fits $uv\T$ with $32$ parameters where a Kronecker sum needs $16$ terms and $512$ parameters, and for $I_{16}$
+and $C\otimes D$ the two costs trade places.

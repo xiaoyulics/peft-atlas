@@ -1,0 +1,521 @@
+bibkey	kind	id	name	year	arxiv	title
+rebuffi2017learning	method	residual-adapter	Residual Adapters	2017	1705.08045	Learning multiple visual domains with residual adapters
+houlsby2019parameter	method	houlsby-adapter	Adapter (Houlsby)	2019	1902.00751	Parameter-Efficient Transfer Learning for NLP
+pfeiffer2020adapterfusion	method	pfeiffer-adapter	Pfeiffer Adapter	2020	2005.00247	AdapterFusion: Non-Destructive Task Composition for Transfer Learning
+pfeiffer2020mad	method	mad-x	MAD-X	2020	2005.00052	MAD-X: An Adapter-Based Framework for Multi-Task Cross-Lingual Transfer
+pfeiffer2020adapterfusion	method	adapterfusion	AdapterFusion	2020	2005.00247	AdapterFusion: Non-Destructive Task Composition for Transfer Learning
+ruckle2020adapterdrop	method	adapterdrop	AdapterDrop	2020	2010.11918	AdapterDrop: On the Efficiency of Adapters in Transformers
+wang2020k	method	k-adapter	K-Adapter	2020	2002.01808	K-Adapter: Infusing Knowledge into Pre-Trained Models with Adapters
+mahabadi2021compacter	method	compacter	Compacter	2021	2106.04647	Compacter: Efficient Low-Rank Hypercomplex Adapter Layers
+mahabadi2021parameter	method	hyperformer	HyperFormer	2021	2106.04489	Parameter-efficient Multi-task Fine-tuning for Transformers via Shared Hypernetworks
+he2021unified	method	parallel-adapter	Parallel Adapter	2021	2110.04366	Towards a Unified View of Parameter-Efficient Transfer Learning
+he2021unified	method	mam-adapter	MAM Adapter	2021	2110.04366	Towards a Unified View of Parameter-Efficient Transfer Learning
+mao2021unipelt	method	unipelt	UniPELT	2021	2110.07577	UniPELT: A Unified Framework for Parameter-Efficient Language Model Tuning
+wang2022adamix	method	adamix	AdaMix	2022	2205.12410	AdaMix: Mixture-of-Adaptations for Parameter-efficient Model Tuning
+zhang2023llama	method	llama-adapter	LLaMA-Adapter	2023	2303.16199	LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention
+gao2023llama	method	llama-adapter-v2	LLaMA-Adapter V2	2023	2304.15010	LLaMA-Adapter V2: Parameter-Efficient Visual Instruction Model
+zhang2019side	method	side-tuning	Side-Tuning	2019	1912.13503	Side-Tuning: A Baseline for Network Adaptation via Additive Side Networks
+sung2022lst	method	ladder-side-tuning	LST	2022	2206.06522	LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning
+jiang2023res	method	res-tuning	Res-Tuning	2023	2310.19859	Res-Tuning: A Flexible and Efficient Tuning Paradigm via Unbinding Tuner from Backbone
+zhang2023adding	method	controlnet	ControlNet	2023	2302.05543	Adding Conditional Control to Text-to-Image Diffusion Models
+mou2023t2i	method	t2i-adapter	T2I-Adapter	2023	2302.08453	T2I-Adapter: Learning Adapters to Dig out More Controllable Ability for Text-to-Image Diffusion Models
+ye2023ip	method	ip-adapter	IP-Adapter	2023	2308.06721	IP-Adapter: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models
+chen2022adaptformer	method	adaptformer	AdaptFormer	2022	2205.13535	AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition
+jie2022convolutional	method	convpass	Convpass	2022	2207.07039	Convolutional Bypasses Are Better Vision Transformer Adapters
+pan2022st	method	st-adapter	ST-Adapter	2022	2206.13559	ST-Adapter: Parameter-Efficient Image-to-Video Transfer Learning
+yang2023aim	method	aim	AIM	2023	2302.03024	AIM: Adapting Image Models for Efficient Video Action Recognition
+luo2023efficient	method	repadapter	RepAdapter	2023	2302.08106	Towards Efficient Visual Adaption via Structural Re-parameterization
+yin20245	method	mona	Mona	2024	2408.08345	5%>100%: Breaking Performance Shackles of Full Fine-Tuning on Visual Recognition Tasks
+gao2021clip	method	clip-adapter	CLIP-Adapter	2021	2110.04544	CLIP-Adapter: Better Vision-Language Models with Feature Adapters
+zhang2022tip	method	tip-adapter	Tip-Adapter	2022	2207.09519	Tip-Adapter: Training-free Adaption of CLIP for Few-shot Classification
+steitz2024adapters	method	adapter-plus	Adapter+	2024	2406.06820	Adapters Strike Back
+li2026shadowpeft	method	shadow-peft	ShadowPEFT	2026	2604.19254	ShadowPEFT: Shadow Network for Parameter-Efficient Fine-Tuning
+zhao2026loft	method	loft-orthogonal	LOFT	2026	2605.11872	LOFT: Low-Rank Orthogonal Fine-Tuning via Task-Aware Support Selection
+lanpouthakoun2026preft	method	preft	PreFT	2026	2605.14217	PreFT: Prefill-only finetuning for efficient inference
+yang2026orthogonal	method	orthomerge	OrthoMerge	2026	2602.05943	Orthogonal Model Merging
+wang2026prism	method	prism-dp-lora	PRISM	2026	2606.00944	PRISM: Gauge-Invariant Tangent-Space Differentially Private LoRA
+luo2026keeplora	method	keeplora	KeepLoRA	2026	2601.19659	KeepLoRA: Continual Learning with Residual Gradient Adaptation
+wang2026taming	method	lora-pre	LoRA-Pre	2026	2602.24283	Taming Momentum: Rethinking Optimizer States Through Low-Rank Approximation
+xiao2026not	method	structlora	StructLoRA	2026	2603.14228	Not All Directions Matter: Towards Structured and Task-Aware Low-Rank Model Adaptation
+zhang2026fedrot	method	fedrot-lora	FedRot-LoRA	2026	2602.23638	FedRot-LoRA: Mitigating Rotational Misalignment in Federated LoRA
+zhang2026geometry	method	rlpo-rlmo	LoRA-RLPO / LoRA-RLMO	2026	2606.31813	Geometry-Preserving Orthonormal Initialization for Low-Rank Adaptation in RLVR
+wang2026nara	method	nara	NaRA	2026	2605.29716	NaRA: Noise-Aware LoRA for Parameter-Efficient Fine-Tuning of Diffusion LLMs
+kowsher2026lime	method	lime	LiME	2026	2604.02338	LiME: Lightweight Mixture of Experts for Efficient Multimodal Multi-task Learning
+lin2026agzo	method	agzo	AGZO	2026	2601.17261	AGZO: Activation-Guided Zeroth-Order Optimization for LLM Fine-Tuning
+lang2026powering	method	zo-muon	ZO-Muon	2026	2602.17155	Powering Up Zeroth-Order Training via Subspace Gradient Orthogonalization
+liu2026flexlora	method	flexlora-entropy	FlexLoRA	2026	2601.22905	FlexLoRA: Entropy-Guided Flexible Low-Rank Adaptation
+jiang2026fouriermoe	method	fouriermoe	FourierMoE	2026	2604.01762	FourierMoE: Fourier Mixture-of-Experts Adaptation of Large Language Models
+liu2026smoa	method	smoa	SMoA	2026	2605.21147	SMoA: Spectrum Modulation Adapter for Parameter-Efficient Fine-Tuning
+lin2026bayesian	method	bayesian-lora-sgp	Bayesian-LoRA	2026	2601.21003	Bayesian-LoRA: Probabilistic Low-Rank Adaptation of Large Language Models
+meng2026florg	method	florg	FLoRG	2026	2602.17095	FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment
+he2026task	method	loda-cl	LoDA	2026	2603.00191	Task-Driven Subspace Decomposition for Knowledge Sharing and Isolation in LoRA-based Continual Learning
+jeon2026lragent	method	lragent	LRAgent	2026	2602.01053	LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents
+zhang2026geora	method	geora	GeoRA	2026	2601.09361	GeoRA: Geometry-Aware Low-Rank Adaptation for RLVR
+modoranu2026matryoshkalora	method	matryoshka-lora	MatryoshkaLoRA	2026	2605.07850	MatryoshkaLoRA: Learning Accurate Hierarchical Low-Rank Representations for LLM Fine-Tuning
+nguyen2026loco	method	loco-orthogonal	LoCO	2026	2605.15916	LoCO: Low-rank Compositional Rotation Fine-tuning
+he2026compress	method	compress-then-merge	Compress-then-Merge (CtM)	2026	2606.03723	Compress then Merge: From Multiple LoRAs into One Low-Rank Adapter
+cho2026preserve	method	srr	SRR (Structured Residual Reconstruction)	2026	2602.02001	Preserve-Then-Quantize: Balancing Rank Budgets for Quantization Error Reconstruction in LLMs
+yang2026prompt2effect	method	prompt2effect	Prompt2Effect	2026	2606.13971	Prompt2Effect: Training-Free Image-to-Video Model Specialization via LoRA Generation
+gangwar2026giva	method	giva	GiVA	2026	2604.21901	GiVA: Gradient-Informed Bases for Vector-Based Adaptation
+zhang2023visual	method	activation-prompt	AP (Activation Prompt)	2023	2604.06440	Visual prompting reimagined: The power of the Activation Prompts
+wu2025stable	method	stable-lora	Stable-LoRA	2025	2603.05204	Stable-LoRA: Stabilizing Feature Learning of Low-Rank Adaptation
+zhang2026memory	method	mdpd	MDPD	2026	2604.09088	Memory-Efficient Transfer Learning with Fading Side Networks via Masked Dual Path Distillation
+bogachev2025lora	method	riemannion	Riemannion	2025	2507.12142	LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank Adapters
+qiu2026poet	method	poet-x	POET-X	2026	2603.05500	POET-X: Memory-efficient LLM Training by Scaling Orthogonal Transformation
+li2025lora	method	lora-mixer	LoRA-Mixer	2025	2507.00029	LoRA-Mixer: Coordinate Modular LoRA Experts Through Serial Attention Routing
+feng2025place	method	in-place-ttt	In-Place TTT	2025	2604.06169	In-Place Test-Time Training
+dang2025fzoo	method	fzoo	FZOO	2025	2506.09034	FZOO: Fast Zeroth-Order Optimizer for Fine-Tuning Large Language Models towards Adam-Scale Speed
+zhuang2025ld	method	ld-mole	LD-MoLE	2025	2509.25684	LD-MoLE: Learnable Dynamic Routing for Mixture of LoRA Experts
+chen2026ar1	method	ar1-zo	AR1-ZO	2026	2605.19767	AR1-ZO: Topology-Aware Rank-1 Zeroth-Order Queries for High-Rank LoRA Fine-Tuning
+tang2026crowded	method	pico	Pico	2026	2604.16826	Crowded in B-Space: Calibrating Shared Directions for LoRA Merging
+adepu2026fine	method	frameft	FrameFT	2026	2608.26430	Fine-Tuning of Transformer models with Frames
+wang2025prefixmemory	method	prefixmemory-tuning	PrefixMemory-Tuning	2025	2506.13674	PrefixMemory-Tuning: Modernizing Prefix-Tuning by Decoupling the Prefix from Attention
+xue2026fourtune	method	fourtune	FourTune	2026	2607.05711	FourTune: Towards Fully 4-Bit Efficient Post-Training for Diffusion Models
+rinaldi2025gradient	method	gradfix	GradFix	2025	2510.09658	Gradient-Sign Masking for Task Vector Transport Across Pre-Trained Models
+ye2025fly	method	coa-lora	CoA-LoRA	2025	2509.25214	On-the-Fly Adaptation to Quantization: Configuration-Aware LoRA for Efficient Fine-Tuning of Quantized LLMs
+manolache2026low	method	low-rank-ternary-adaptation	Low-Rank Ternary Adaptation	2026	2608.24469	Low-Rank Ternary Adaptation for Fine-Tuning Transformers
+lee2025adarank	method	adarank	AdaRank	2025	2503.22178	AdaRank: Adaptive Rank Pruning for Enhanced Model Merging
+qiao2025merge	method	slao	SLAO (Merge before Forget)	2025	2512.23017	Merge before Forget: A Single LoRA Continual Learning via Continual Merging
+huang2025rain	method	rain-merging	RAIN-Merging	2025	2602.22538	RAIN-Merging: A Gradient-Free Method to Enhance Instruction Following in Large Reasoning Models with Preserved Thinking Format
+wu2025elastic	method	smartfed-more	SmartFed (MoRE + EEQA)	2025	2512.00902	Elastic Mixture of Rank-Wise Experts for Knowledge Reuse in Federated Fine-Tuning
+sun2026rotmole	method	rotmole	RotMoLE	2026	2605.25565	RotMoLE: Enhancing Mixture of Low-Rank Experts through Rotational Gating Mechanism
+zhang2025scalora	method	scalora	ScaLoRA	2025	2510.23818	ScaLoRA: Optimally Scaled Low-Rank Adaptation for Efficient High-Rank Fine-Tuning
+zheng2025lora	method	lora-s	LoRA-S (AdamS, LRACS)	2025		LoRA-S: An Efficient Low Rank Adaptation scheme via Sylvester equation
+gurses2025diablo	method	diablo	DiaBlo	2025	2506.03230	DiaBlo: Diagonal Blocks Are Sufficient For Finetuning
+shang2025fine	method	qzo	QZO	2025	2505.13430	Fine-tuning Quantized Neural Networks with Zeroth-order Optimization
+chen2025perk	method	perk	PERK	2025	2507.06415	PERK: Long-Context Reasoning as Parameter-Efficient Test-Time Learning
+le2025revisit	method	vapt	VAPT	2025	2501.18936	Revisit Visual Prompt Tuning: The Expressiveness of Prompt Experts
+su2026adapad	method	adapad	AdaPaD	2026	2605.10741	AdaPaD: Adaptive Parallel Deflation for PEFT with Self-Correcting Rank Discovery
+zhang2025lora	method	lora-da	LoRA-DA	2025	2510.24561	LoRA-DA: Data-Aware Initialization for Low-Rank Adaptation via Asymptotic Analysis
+nguyen2025efficient	method	wasi	WASI	2025	2510.09160	Efficient Resource-Constrained Training of Transformers via Subspace Optimization
+gu2025tera	method	tera	TeRA	2025	2509.03234	TeRA: Vector-based Random Tensor Network for High-Rank Adaptation of Large Language Models
+zhang2026hybrid	method	hybrid-lora	Hybrid-LoRA	2026	2605.18822	Hybrid-LoRA: Bridging Full Fine-Tuning and Low-Rank Adaptation for Post-Training
+zhang2026dc	method	dc-merge	DC-Merge	2026	2603.06242	DC-Merge: Improving Model Merging with Directional Consistency
+dokme2026selective	method	malora-mamba	MaLoRA / MaRA	2026	2607.19326	Selective State-Space Adaptation and Retrieval for Language Model Reasoning
+wortsman2022model	method	model-soups	Model Soups	2022	2203.05482	Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time
+matena2021merging	method	fisher-merging	Fisher Merging	2021	2111.09832	Merging Models with Fisher-Weighted Averaging
+jin2022dataless	method	regmean	RegMean	2022	2212.09849	Dataless Knowledge Fusion by Merging Weights of Language Models
+ilharco2022editing	method	task-arithmetic	Task Arithmetic	2022	2212.04089	Editing Models with Task Arithmetic
+yadav2023ties	method	ties-merging	TIES-Merging	2023	2306.01708	TIES-Merging: Resolving Interference When Merging Models
+yu2023language	method	dare	DARE	2023	2311.03099	Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch
+yang2023adamerging	method	adamerging	AdaMerging	2023	2310.02575	AdaMerging: Adaptive Model Merging for Multi-Task Learning
+gargiulo2024task	method	tsv-merge	TSV-Merge	2024	2412.00081	Task Singular Vectors: Reducing Task Interference in Model Merging
+stoica2024model	method	knots	KnOTS	2024	2410.19735	Model merging with SVD to tie the Knots
+zhang2023composing	method	pem-arithmetic	PEM Arithmetic	2023	2306.14870	Composing Parameter-Efficient Modules with Arithmetic Operations
+chronopoulou2023adaptersoup	method	adaptersoup	AdapterSoup	2023	2302.07027	AdapterSoup: Weight Averaging to Improve Generalization of Pretrained Language Models
+huang2023lorahub	method	lorahub	LoraHub	2023	2307.13269	LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition
+prabhakar2024lora	method	lora-soups	LoRA Soups (CAT)	2024	2410.13025	LoRA Soups: Merging LoRAs for Practical Skill Composition Tasks
+zhao2024merging	method	lora-lego	LoRA-LEGO	2024	2409.16167	Merging LoRAs like Playing LEGO: Pushing the Modularity of LoRA to Extremes Through Rank-Wise Clustering
+shah2023ziplora	method	ziplora	ZipLoRA	2023	2311.13600	ZipLoRA: Any Subject in Any Style by Effectively Merging LoRAs
+gu2023mix	method	mix-of-show	Mix-of-Show	2023	2305.18292	Mix-of-Show: Decentralized Low-Rank Adaptation for Multi-Concept Customization of Diffusion Models
+po2023orthogonal	method	orthogonal-adaptation	Orthogonal Adaptation	2023	2312.02432	Orthogonal Adaptation for Modular Customization of Diffusion Models
+zhong2024multi	method	multi-lora-composition	LoRA Switch / LoRA Composite	2024	2402.16843	Multi-LoRA Composition for Image Generation
+ponti2022combining	method	polytropon	Polytropon (Poly)	2022	2202.13914	Combining Parameter-efficient Modules for Task-level Generalisation
+caccia2022multi	method	mhr	MHR	2022	2211.03831	Multi-Head Adapter Routing for Cross-Task Generalization
+muqeeth2023soft	method	smear	SMEAR	2023	2306.03745	Soft Merging of Experts with Adaptive Routing
+zadouri2023pushing	method	mov	MoV / MoLoRA	2023	2309.05444	Pushing Mixture of Experts to the Limit: Extremely Parameter Efficient MoE for Instruction Tuning
+dou2023loramoe	method	loramoe	LoRAMoE	2023	2312.09979	LoRAMoE: Alleviating World Knowledge Forgetting in Large Language Models via MoE-Style Plugin
+liu2023moe	method	moelora	MOELoRA	2023	2310.18339	When MOE Meets LLMs: Parameter Efficient Fine-tuning for Multi-task Medical Applications
+wu2024mixture	method	mole	MoLE	2024	2404.13628	Mixture of LoRA Experts
+li2024mixlora	method	mixlora	MixLoRA	2024	2404.15159	MixLoRA: Enhancing Large Language Models Fine-Tuning with LoRA-based Mixture of Experts
+buehler2024x	method	x-lora	X-LoRA	2024	2402.07148	X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Molecular Design
+tian2024hydralora	method	hydralora	HydraLoRA	2024	2404.19245	HydraLoRA: An Asymmetric LoRA Architecture for Efficient Fine-Tuning
+zhong2024low	method	lily	Lily	2024	2407.09946	Low-Rank Interconnected Adaptation across Layers
+muqeeth2024learning	method	phatgoose	PHATGOOSE	2024	2402.05859	Learning to Route Among Specialized Experts for Zero-Shot Generalization
+ostapenko2024modular	method	arrow	Arrow	2024	2405.11157	Towards Modular LLMs by Building and Reusing a Library of LoRAs
+zhao2024loraretriever	method	loraretriever	LoraRetriever	2024	2402.09997	LoraRetriever: Input-Aware LoRA Retrieval and Composition for Mixed Tasks in the Wild
+wang2024lora	method	lora-flow	LoRA-Flow	2024	2402.11455	LoRA-Flow: Dynamic LoRA Fusion for Large Language Models in Generative Tasks
+sheng2023s	method	s-lora	S-LoRA	2023	2311.03285	S-LoRA: Serving Thousands of Concurrent LoRA Adapters
+chen2023punica	method	punica	Punica	2023	2310.18547	Punica: Multi-Tenant LoRA Serving
+ruiz2023hyperdreambooth	method	hyperdreambooth	HyperDreamBooth	2023	2307.06949	HyperDreamBooth: HyperNetworks for Fast Personalization of Text-to-Image Models
+charakorn2025text	method	text-to-lora	Text-to-LoRA (T2L)	2025	2506.06105	Text-to-LoRA: Instant Transformer Adaption
+liang2025drag	method	drag-and-drop-llms	DnD	2025	2506.16406	Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights
+charakorn2026doc	method	doc-to-lora	Doc-to-LoRA (D2L)	2026	2602.15902	Doc-to-LoRA: Learning to Instantly Internalize Contexts
+wang2025tina	method	tina	Tina	2025	2504.15777	Tina: Tiny Reasoning Models via LoRA
+huang2025qerl	method	qerl	QeRL	2025	2510.11696	QeRL: Beyond Efficiency -- Quantization-enhanced Reinforcement Learning for LLMs
+hayou2025plop	method	plop	PLoP	2025	2506.20629	PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models
+zhang2025lori	method	lori	LoRI	2025	2504.07448	LoRI: Reducing Cross-Task Interference in Multi-Task Low-Rank Adaptation
+bensaid2025singlora	method	singlora	SingLoRA	2025	2507.05566	SingLoRA: Low Rank Adaptation Using a Single Matrix
+liu2026shine	method	shine	SHINE	2026	2602.06358	SHINE: A Scalable In-Context Hypernetwork for Mapping Context to LoRA in a Single Pass
+chen2024generative	method	generative-adapter	GenerativeAdapter	2024	2411.05877	Generative Adapter: Contextualizing Language Models in Parameters with A Single Forward Pass
+fan2025make	method	goat	GOAT	2025	2502.16894	Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment
+panariello2025accurate	method	core-space-merging	Core Space	2025	2509.17786	Accurate and Efficient Low-Rank Model Merging in Core Space
+ouyang2025k	method	k-lora	K-LoRA	2025	2502.18461	K-LoRA: Unlocking Training-Free Fusion of Any Subject and Style LoRAs
+tan2024ominicontrol	method	ominicontrol	OminiControl	2024	2411.15098	OminiControl: Minimal and Universal Control for Diffusion Transformer
+zhang2025easycontrol	method	easycontrol	EasyControl	2025	2503.07027	EasyControl: Adding Efficient and Flexible Control for Diffusion Transformer
+zhang2025context	method	icedit	ICEdit	2025	2504.20690	In-Context Edit: Enabling Instructional Image Editing with In-Context Generation in Large Scale Diffusion Transformer
+wu2025sd	method	sd-lora	SD-LoRA	2025	2501.13198	SD-LoRA: Scalable Decoupled Low-Rank Adaptation for Class Incremental Learning
+lin2025continual	method	sparse-memory-finetuning	Sparse Memory Finetuning	2025	2510.15103	Continual Learning via Sparse Memory Finetuning
+zweiger2025self	method	seal	SEAL	2025	2506.10943	Self-Adapting Language Models
+khaki2025sparselora	method	sparselora	SparseLoRA	2025	2506.16500	SparseLoRA: Accelerating LLM Fine-Tuning with Contextual Sparsity
+wu2024reft	method	loreft	LoReFT	2024	2404.03592	ReFT: Representation Finetuning for Language Models
+chen2023longlora	method	longlora	LongLoRA	2023	2309.12307	LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models
+wang2023orthogonal	method	o-lora	O-LoRA	2023	2310.14152	Orthogonal Subspace Learning for Language Model Continual Learning
+liang2024inflora	method	inflora	InfLoRA	2024	2404.00228	InfLoRA: Interference-Free Low-Rank Adaptation for Continual Learning
+gal2022image	method	textual-inversion	Textual Inversion	2022	2208.01618	An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion
+kumari2022multi	method	custom-diffusion	Custom Diffusion	2022	2212.04488	Multi-Concept Customization of Text-to-Image Diffusion
+wang2024let	method	esft	ESFT	2024	2407.01906	Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models
+shuttleworth2024lora	method	intruder-dimension-reduction	Intruder-dimension reduction	2024	2410.21228	LoRA vs Full Fine-tuning: An Illusion of Equivalence
+smith2022coda	method	coda-prompt	CODA-Prompt	2022	2211.13218	CODA-Prompt: COntinual Decomposed Attention-based Prompting for Rehearsal-Free Continual Learning
+wang2024trans	method	trans-lora	Trans-LoRA	2024	2405.17258	Trans-LoRA: towards data-free Transferable Parameter Efficient Finetuning
+farhadzadeh2025lora	method	lora-x	LoRA-X	2025	2501.16559	LoRA-X: Bridging Foundation Models with Training-Free Cross-Model Adaptation
+yin2024lofit	method	lofit	LoFiT	2024	2406.01563	LoFiT: Localized Fine-tuning on LLM Representations
+wu2024mixtureb	method	moslora	MoSLoRA	2024	2406.11909	Mixture-of-Subspaces in Low-Rank Adaptation
+zhang2022neural	method	noah	NOAH	2022	2206.04673	Neural Prompt Search
+zhou2023autopeft	method	autopeft	AutoPEFT	2023	2301.12132	AutoPEFT: Automatic Configuration Search for Parameter-Efficient Fine-Tuning
+yang2023bayesian	method	laplace-lora	Laplace-LoRA	2023	2308.13111	Bayesian Low-rank Adaptation for Large Language Models
+wang2024blob	method	blob	BLoB	2024	2406.11675	BLoB: Bayesian Low-Rank Adaptation by Backpropagation for Large Language Models
+zhang2023loraprune	method	loraprune	LoRAPrune	2023	2305.18403	LoRAPrune: Structured Pruning Meets Low-Rank Parameter-Efficient Fine-Tuning
+yin2023modulora	method	modulora	ModuLoRA	2023	2309.16119	ModuLoRA: Finetuning 2-Bit LLMs on Consumer GPUs by Integrating with Modular Quantizers
+han2024sltrain	method	sltrain	SLTrain	2024	2406.02214	SLTrain: a sparse plus low-rank approach for parameter and memory efficient pretraining
+liao2023make	method	meft	MEFT	2023	2306.00477	Make Pre-trained Model Reversible: From Parameter to Memory Efficient Fine-Tuning
+hartford2024spectrum	method	spectrum	Spectrum	2024	2406.06623	Spectrum: Targeted Training on Signal to Noise Ratio
+si2024unleashing	method	lora-dash	LoRA-Dash	2024	2409.01035	Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning
+luo2023lcm	method	lcm-lora	LCM-LoRA	2023	2311.05556	LCM-LoRA: A Universal Stable-Diffusion Acceleration Module
+gandikota2023concept	method	concept-sliders	Concept Sliders	2023	2311.12092	Concept Sliders: LoRA Adaptors for Precise Control in Diffusion Models
+huang2024context	method	ic-lora	IC-LoRA	2024	2410.23775	In-Context LoRA for Diffusion Transformers
+liu2024tuning	method	proxy-tuning	Proxy-Tuning	2024	2401.08565	Tuning Language Models by Proxy
+mitchell2023emulator	method	eft	EFT	2023	2310.12962	An Emulator for Fine-Tuning Large Language Models using Small Language Models
+wortsman2021robust	method	wise-ft	WiSE-FT	2021	2109.01903	Robust fine-tuning of zero-shot models
+donahue2013decaf	method	linear-probing	Linear probing	2013	1310.1531	DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition
+kumar2022fine	method	lp-ft	LP-FT	2022	2202.10054	Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+sun2024improving	method	ffa-lora	FFA-LoRA	2024	2403.12313	Improving LoRA in Privacy-preserving Federated Learning
+wang2024flora	method	flora-federated	FLoRA (federated)	2024	2409.05976	FLoRA: Federated Fine-Tuning Large Language Models with Heterogeneous Low-Rank Adaptations
+cho2024heterogeneous	method	hetlora	HetLoRA	2024	2401.06432	Heterogeneous LoRA for Federated Fine-tuning of On-Device Foundation Models
+cai2020tinytl	method	tinytl	TinyTL	2020	2007.11622	TinyTL: Reduce Memory, Not Parameters for Efficient On-Device Learning
+shin2020autoprompt	method	autoprompt	AutoPrompt	2020	2010.15980	AutoPrompt: Eliciting Knowledge from Language Models with Automatically Generated Prompts
+hu2021lora	method	lora	LoRA	2021	2106.09685	LoRA: Low-Rank Adaptation of Large Language Models
+zhang2023adalora	method	adalora	AdaLoRA	2023	2303.10512	AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning
+zheng2025adamss	method	adamss	AdaMSS	2025		AdaMSS: Adaptive Multi-Subspace Approach for Parameter-Efficient Fine-Tuning
+huang2025beft	method	beft	BEFT	2025	2509.15974	BEFT: Bias-Efficient Fine-Tuning of Language Models in Low-Data Regimes
+liu2023parameter	method	boft	BOFT	2023	2311.06243	Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization
+chen2024parameter	method	c3a	C3A	2024	2407.19342	Parameter-Efficient Fine-Tuning via Circular Convolution
+eyuboglu2025cartridges	method	cartridges	Cartridges	2025	2506.06266	Cartridges: Lightweight and general-purpose long context representations via self-study
+blau2024context	method	cpt	CPT	2024	2410.17222	Context-aware Prompt Tuning: Advancing In-Context Learning with Adversarial Methods
+kumar2025deft	method	deft	DEFT	2025	2509.22793	DEFT: Decompositional Efficient Fine-Tuning for Text-to-Image Models
+chen2024para	method	para	PaRa	2024	2406.05641	PaRa: Personalizing Text-to-Image Diffusion via Parameter Rank Reduction
+bini2025delora	method	delora	DeLoRA	2025	2503.18225	DeLoRA: Decoupling Angles and Strength in Low-rank Adaptation
+gao2024parameter	method	fourierft	FourierFT	2024	2405.03003	Parameter-Efficient Fine-Tuning with Discrete Fourier Transform
+wan2025frod	method	frod	FRoD	2025	2512.23485	FRoD: Full-Rank Efficient Fine-Tuning with Rotational Degrees for Fast Convergence
+chavan2023one	method	glora	GLoRA	2023	2306.07967	One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning
+jung2025gralora	method	gralora	GraLoRA	2025	2505.20355	GraLoRA: Granular Low-Rank Adaptation for Parameter-Efficient Fine-Tuning
+huang2025hira	method	hira	HiRA	2025		HiRA: Parameter-Efficient Hadamard High-Rank Adaptation for Large Language Models
+yuan2024bridging	method	hra	HRA	2024	2405.17484	Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation
+liu2022few	method	ia3	(IA)³	2022	2205.05638	Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning
+zhao2023tuning	method	ln-tuning	LN Tuning	2023	2312.11420	Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning
+hyeonwoo2021fedpara	method	loha	LoHa	2021	2108.06098	FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning
+yeh2023navigating	method	lokr	LoKr	2023	2309.14859	Navigating Text-To-Image Customization: From LyCORIS Fine-Tuning to Model Evaluation
+kang2024miss	method	miss	MiSS (formerly Bone)	2024	2409.15371	MiSS: Revisiting the Trade-off in LoRA with an Efficient Shard-Sharing Structure
+wang2023multitask	method	multitask-prompt-tuning	MPT	2023	2303.02861	Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning
+qiu2023controlling	method	oft	OFT	2023	2306.07280	Controlling Text-to-Image Diffusion by Orthogonal Finetuning
+qiu2025orthogonal	method	oftv2	OFTv2	2025	2506.19847	Orthogonal Finetuning Made Scalable
+nayak2025sculpting	method	osf	OSF	2025	2504.07097	Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning
+liu2021gpt	method	p-tuning	P-Tuning	2021	2103.10385	GPT Understands, Too
+zhong2024peanut	method	peanut	PEANuT	2024	2410.01870	PEANuT: Parameter-Efficient Adaptation with Weight-aware Neural Tweakers
+li2021prefix	method	prefix-tuning	Prefix-Tuning	2021	2101.00190	Prefix-Tuning: Optimizing Continuous Prompts for Generation
+lester2021power	method	prompt-tuning	Prompt Tuning	2021	2104.08691	The Power of Scale for Parameter-Efficient Prompt Tuning
+wu2025efficient	method	psoft	PSOFT	2025	2505.11235	Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation
+fillioux2025pvera	method	pvera	PVeRA	2025	2512.07703	PVeRA: Probabilistic Vector-Based Random Matrix Adaptation
+albert2025randlora	method	randlora	RandLoRA	2025	2502.00987	RandLoRA: Full-rank parameter-efficient fine-tuning of large models
+liao20243	method	road	RoAd	2024	2409.00119	3-in-1: 2D Rotary Adaptation for Efficient Finetuning, Efficient Batching and Composability
+bhardwaj2024sparse	method	shira	SHiRA	2024	2406.13175	Sparse High Rank Adapters
+ilin2026super	method	super-tuning	Super-Tuning (Super / Supra)	2026	2607.09287	Super-Tuning: From Activation-Aware Pruning to Sparse Fine-Tuning
+morris2026learning	method	tinylora	TinyLoRA	2026	2602.04118	Learning to Reason in 13 Parameters
+team2025trainable	method	trainable-tokens	Trainable Tokens	2025		
+li2025uni	method	uni-lora	Uni-LoRA	2025	2506.00799	Uni-LoRA: One Vector is All You Need
+li2024vb	method	vb-lora	VB-LoRA	2024	2405.15179	VB-LoRA: Extreme Parameter Efficient Fine-Tuning with Vector Banks
+kopiczko2023vera	method	vera	VeRA	2023	2310.11454	VeRA: Vector-based Random Matrix Adaptation
+bilican2025exploring	method	waveft	WaveFT	2025	2505.12532	Exploring Sparsity for Parameter Efficient Fine Tuning Using Wavelets for Vision
+liu2024dora	method	dora	DoRA	2024	2402.09353	DoRA: Weight-Decomposed Low-Rank Adaptation
+kalajdzievski2023rank	method	rslora	rsLoRA	2023	2312.03732	A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA
+meng2024pissa	method	pissa	PiSSA	2024	2404.02948	PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models
+buyukakyuz2024olora	method	olora	OLoRA	2024	2406.01775	OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models
+li2023loftq	method	loftq	LoftQ	2023	2310.08659	LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large Language Models
+paischer2024parameter	method	eva	EVA	2024	2410.07170	Parameter Efficient Fine-tuning via Explained Variance Adaptation
+yang2024corda	method	corda	CorDA	2024	2406.05223	CorDA: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning
+liu2026astra	method	astra	Astra	2026	2602.19111	Astra: Activation-Space Tail-Eigenvector Low-Rank Adaptation of Large Language Models
+rudiger2026mica	method	mica	MiCA	2026	2604.01694	MiCA Learns More Knowledge Than LoRA and Full Fine-Tuning
+wang2024lorab	method	lora-ga	LoRA-GA	2024	2407.05000	LoRA-GA: Low-Rank Adaptation with Gradient Approximation
+wang2024kasa	method	kasa	KaSA	2024	2412.06071	KaSA: Knowledge-Aware Singular-Value Adaptation of Large Language Models
+greenewald2025activated	method	alora	aLoRA	2025	2504.12397	Activated LoRA: Fine-tuned LLMs for Intrinsics
+xu2023qa	method	qa-lora	QA-LoRA	2023	2309.14717	QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models
+sengupta2024robust	method	monteclora	MonteCLoRA	2024	2411.04358	Robust and Efficient Fine-tuning of LLMs with Bayesian Reparameterization of Low-Rank Adaptation
+miles2024velora	method	velora	VeLoRA	2024	2405.17991	VeLoRA: Memory Efficient Training using Rank-1 Sub-Token Projections
+wang2025block	method	bd-lora	BD-LoRA	2025	2510.23346	Block-Diagonal LoRA for Eliminating Communication Overhead in Tensor Parallel LoRA Serving
+bagherifard2025genknowsub	method	genknowsub	GenKnowSub	2025	2505.10939	GenKnowSub: Improving Modularity and Reusability of LLMs through General Knowledge Subtraction
+hayou2024lora	method	lora-plus	LoRA+	2024	2402.12354	LoRA+: Efficient Low Rank Adaptation of Large Models
+zhang2023lora	method	lora-fa	LoRA-FA	2023	2308.03303	LoRA-FA: Memory-efficient Low-rank Adaptation for Large Language Models Fine-tuning
+zhang2024riemannian	method	riemannian-preconditioned-lora	Riemannian LoRA	2024	2402.02347	Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models
+dettmers2023qlora	method	qlora	QLoRA	2023	2305.14314	QLoRA: Efficient Finetuning of Quantized LLMs
+kim2023solar	method	layer-replication	LoRA layer replication (DUS)	2023	2312.15166	SOLAR 10.7B: Scaling Large Language Models with Simple yet Effective Depth Up-Scaling
+ludwig2025condition	method	kappatune	KappaTune	2025	2506.16289	The Condition Number as a Scale-Invariant Proxy for Information Encoding in Neural Units
+wang2024milora	method	milora	MiLoRA	2024	2406.09044	MiLoRA: Harnessing Minor Singular Components for Parameter-Efficient LLM Finetuning
+zhang2025lorab	method	lora-one	LoRA-One	2025	2502.01235	LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently
+he2025gora	method	gora	GoRA	2025	2502.12171	GoRA: Gradient-driven Adaptive Low Rank Adaptation
+ponkshe2024initialization	method	lora-sb	LoRA-SB	2024	2411.19557	Initialization using Update Approximation is a Silver Bullet for Extremely Efficient Low-Rank Fine-Tuning
+tang2025put	method	lora-null	LoRA-Null	2025	2503.02659	Put the Space of LoRA Initialization to the Extreme to Preserve Pre-trained Knowledge
+valipour2022dylora	method	dylora	DyLoRA	2022	2210.07558	DyLoRA: Parameter Efficient Tuning of Pre-trained Models using Dynamic Search-Free Low-Rank Adaptation
+ding2023sparse	method	sora	SoRA	2023	2311.11696	Sparse Low-rank Adaptation of Pre-trained Language Models
+zhang2023increlora	method	increlora	IncreLoRA	2023	2308.12043	IncreLoRA: Incremental Parameter Allocation Method for Parameter-Efficient Fine-tuning
+liu2024alora	method	alora-allocating	ALoRA	2024	2403.16187	ALoRA: Allocating Low-Rank Adaptation for Fine-tuning Large Language Models
+zhang2024autolora	method	autolora	AutoLoRA	2024	2403.09113	AutoLoRA: Automatically Tuning Matrix Ranks in Low-Rank Adaptation Based on Meta Learning
+chang2025elalora	method	elalora	ElaLoRA	2025	2504.00254	ElaLoRA: Elastic & Learnable Low-Rank Adaptation for Efficient Model Fine-Tuning
+zhou2024lora	method	lora-drop	LoRA-drop	2024	2402.07721	LoRA-drop: Efficient LoRA Parameter Pruning based on Output Evaluation
+mao2024dora	method	dora-dynamic-rank	DoRA (dynamic rank)	2024	2405.17357	DoRA: Enhancing Parameter-Efficient Fine-Tuning with Dynamic Rank Distribution
+yen2024lora	method	lora-rite	LoRA-RITE	2024	2410.20625	LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization
+wang2024lorac	method	lora-pro	LoRA-Pro	2024	2407.18242	LoRA-Pro: Are Low-Rank Adapters Properly Optimized?
+lialin2023relora	method	relora	ReLoRA	2023	2307.05695	ReLoRA: High-Rank Training Through Low-Rank Updates
+zi2023delta	method	delta-lora	Delta-LoRA	2023	2309.02411	Delta-LoRA: Fine-Tuning High-Rank Parameters with the Delta of Low-Rank Matrices
+xia2024chain	method	cola	COLA	2024	2401.04151	Chain of LoRA: Efficient Fine-tuning of Language Models via Residual Learning
+meng2024periodiclora	method	periodic-lora	PeriodicLoRA	2024	2402.16141	PeriodicLoRA: Breaking the Low-Rank Bottleneck in LoRA Optimization
+lin2024lora	method	lora-dropout	LoRA Dropout	2024	2404.09610	LoRA Dropout as a Sparsity Regularizer for Overfitting Control
+zhu2024asymmetry	method	asylora	AsyLoRA	2024	2402.16842	Asymmetry in Low-Rank Adapters of Foundation Models
+schulman2025lora	method	lora-without-regret	LoRA Without Regret	2025		LoRA Without Regret
+li2024flat	method	flat-lora	Flat-LoRA	2024	2409.14396	Flat-LoRA: Low-Rank Adaptation over a Flat Loss Landscape
+yu2025altlora	method	altlora	AltLoRA	2025	2505.12455	AltLoRA: Towards Better Gradient Approximation in Low-Rank Adaptation with Alternating Projections
+tastan2025loft	method	loft	LoFT	2025	2505.21289	LoFT: Low-Rank Adaptation That Behaves Like Full Fine-Tuning
+lion2025polar	method	polar	PoLAR	2025	2506.03133	PoLAR: Polar-Decomposed Low-Rank Adapter Representation
+ma2024parameter	method	goft	GOFT	2024	2404.04316	Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation
+ma2024parameter	method	qgoft	qGOFT	2024	2404.04316	Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation
+bini2024ether	method	ether	ETHER	2024	2405.20271	ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections
+bini2024ether	method	ether-plus	ETHER+	2024	2405.20271	ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections
+zhang2024spectral	method	spectral-adapter-r	Spectral Adapter^R	2024	2405.13952	Spectral Adapter: Fine-Tuning in Spectral Space
+zhang2024spectral	method	spectral-adapter-a	Spectral Adapter^A	2024	2405.13952	Spectral Adapter: Fine-Tuning in Spectral Space
+han2023svdiff	method	svdiff	SVDiff	2023	2303.11305	SVDiff: Compact Parameter Space for Diffusion Fine-Tuning
+sun2025transformer	method	svf	SVF (Transformer²)	2025	2501.06252	Transformer-Squared: Self-adaptive LLMs
+lingam2024svft	method	svft	SVFT	2024	2405.19597	SVFT: Parameter-Efficient Fine-Tuning with Singular Vectors
+qin2024bidora	method	bidora	BiDoRA	2024	2410.09758	BiDoRA: Bi-level Optimization-Based Weight-Decomposed Low-Rank Adaptation
+lian2022scaling	method	ssf	SSF	2022	2210.08823	Scaling & Shifting Your Features: A New Baseline for Efficient Model Tuning
+wu2024advancing	method	red	RED	2024	2402.15179	Advancing Parameter Efficiency in Fine-tuning via Representation Editing
+xie2023difffit	method	difffit	DiffFit	2023	2304.06648	DiffFit: Unlocking Transferability of Large Diffusion Models via Simple Parameter-Efficient Fine-Tuning
+si2025generalized	method	liera	LieRA	2025	2504.00851	Generalized Tensor-based Parameter-Efficient Fine-Tuning via Lie Group Transformations
+wen2023batched	method	flora-batched	FLoRA	2023	2312.05677	Batched Low-Rank Adaptation of Foundation Models
+koikeakino2025quantum	method	quantum-peft	Quantum-PEFT	2025	2503.05431	Quantum-PEFT: Ultra parameter-efficient fine-tuning
+liu2021p	method	p-tuning-v2	P-Tuning v2	2021	2110.07602	P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks
+hambardzumyan2021warp	method	warp	WARP	2021	2101.00121	WARP: Word-level Adversarial ReProgramming
+gu2021ppt	method	ppt	PPT	2021	2109.04332	PPT: Pre-trained Prompt Tuning for Few-shot Learning
+vu2021spot	method	spot	SPoT	2021	2110.07904	SPoT: Better Frozen Model Adaptation through Soft Prompt Transfer
+asai2022attempt	method	attempt	ATTEMPT	2022	2205.11961	ATTEMPT: Parameter-Efficient Multi-task Tuning via Attentional Mixtures of Soft Prompts
+shi2023dept	method	dept	DePT	2023	2309.05173	DePT: Decomposed Prompt Tuning for Parameter-Efficient Fine-tuning
+razdaibiedina2023residual	method	residual-prompt-tuning	Residual Prompt Tuning	2023	2305.03937	Residual Prompt Tuning: Improving Prompt Tuning with Residual Reparameterization
+liu2022late	method	late-prompt-tuning	LPT	2022	2210.11292	Late Prompt Tuning: A Late Prompt Could Be Better Than Many Prompts
+wu2022idpg	method	idpg	IDPG	2022	2204.04497	IDPG: An Instance-Dependent Prompt Generation Method
+ma2022xprompt	method	xprompt	XPrompt	2022	2210.04457	XPrompt: Exploring the Extreme of Prompt Tuning
+sun2022black	method	black-box-tuning	BBT	2022	2201.03514	Black-Box Tuning for Language-Model-as-a-Service
+jia2022visual	method	vpt	VPT	2022	2203.12119	Visual Prompt Tuning
+bahng2022exploring	method	visual-prompting	Visual Prompting	2022	2203.17274	Exploring Visual Prompts for Adapting Large-Scale Models
+zhou2021learning	method	coop	CoOp	2021	2109.01134	Learning to Prompt for Vision-Language Models
+zhou2022conditional	method	cocoop	CoCoOp	2022	2203.05557	Conditional Prompt Learning for Vision-Language Models
+khattak2022maple	method	maple	MaPLe	2022	2210.03117	MaPLe: Multi-modal Prompt Learning
+wang2021learning	method	l2p	L2P	2021	2112.08654	Learning to Prompt for Continual Learning
+wang2022dualprompt	method	dualprompt	DualPrompt	2022	2204.04799	DualPrompt: Complementary Prompting for Rehearsal-free Continual Learning
+galim2024parameter	method	initial-state-tuning	Initial State Tuning	2024	2410.09016	Parameter-Efficient Fine-Tuning of State Space Models
+kang2025state	method	state-offset-tuning	State-offset Tuning	2025	2503.03499	State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models
+guo2023lq	method	lq-lora	LQ-LoRA	2023	2311.12023	LQ-LoRA: Low-rank Plus Quantized Matrix Decomposition for Efficient Language Model Finetuning
+qin2024accurate	method	ir-qlora	IR-QLoRA	2024	2402.05445	Accurate LoRA-Finetuning Quantization of LLMs via Information Retention
+jeon2024l4q	method	l4q	L4Q	2024	2402.04902	L4Q: Parameter Efficient Quantization-Aware Fine-Tuning on Large Language Models
+kim2023memory	method	peqa	PEQA	2023	2305.14152	Memory-Efficient Fine-Tuning of Compressed Large Language Models via sub-4-bit Integer Quantization
+liao2024apiq	method	apiq	ApiQ	2024	2402.05147	ApiQ: Finetuning of 2-Bit Quantized Large Language Model
+chen2024efficientqat	method	efficientqat	EfficientQAT	2024	2407.11062	EfficientQAT: Efficient Quantization-Aware Training for Large Language Models
+loeschcke2024loqt	method	loqt	LoQT	2024	2405.16528	LoQT: Low-Rank Adapters for Quantized Pretraining
+zhao2024galore	method	galore	GaLore	2024	2403.03507	GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection
+su2025galore	method	galore-2	GaLore 2	2025	2504.20437	GaLore 2: Large-Scale LLM Pre-Training by Gradient Low-Rank Projection
+zhang2024q	method	q-galore	Q-GaLore	2024	2407.08296	Q-GaLore: Quantized GaLore with INT4 Projection and Layer-Adaptive Low-Rank Gradients
+hao2024flora	method	flora-opt	Flora	2024	2402.03293	Flora: Low-Rank Adapters Are Secretly Gradient Compressors
+chen2024fira	method	fira	Fira	2024	2410.01623	Fira: Can We Achieve Full-rank Training of LLMs Under Low-rank Constraint?
+zhu2024apollo	method	apollo	APOLLO	2024	2412.05270	APOLLO: SGD-like Memory, AdamW-level Performance
+liang2024memory	method	online-subspace-descent	Online Subspace Descent	2024	2408.12857	Memory-Efficient LLM Training with Online Subspace Descent
+zhang2024adam	method	adam-mini	Adam-mini	2024	2406.16793	Adam-mini: Use Fewer Learning Rates To Gain More
+malladi2023fine	method	mezo	MeZO	2023	2305.17333	Fine-Tuning Language Models with Just Forward Passes
+lv2023full	method	lomo	LOMO	2023	2306.09782	Full Parameter Fine-tuning for Large Language Models with Limited Resources
+lv2023adalomo	method	adalomo	AdaLomo	2023	2310.10195	AdaLomo: Low-memory Optimization with Adaptive Learning Rate
+luo2024badam	method	badam	BAdam	2024	2404.02827	BAdam: A Memory Efficient Full Parameter Optimization Method for Large Language Models
+pan2024lisa	method	lisa	LISA	2024	2403.17919	LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning
+benzaken2021bitfit	method	bitfit	BitFit	2021	2106.10199	BitFit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models
+guo2020parameter	method	diff-pruning	Diff Pruning	2020	2012.07463	Parameter-Efficient Transfer Learning with Diff Pruning
+sung2021training	method	fish-mask	FISH Mask	2021	2111.09839	Training Neural Networks with Fixed Sparse Masks
+xu2021raise	method	child-tuning	Child-Tuning	2021	2109.05687	Raise a Child in Large Language Model: Towards Effective and Generalizable Fine-tuning
+ansell2021composable	method	lt-sft	LT-SFT	2021	2110.07560	Composable Sparse Fine-Tuning for Cross-Lingual Transfer
+he2023sensitivity	method	spt	SPT	2023	2303.08566	Sensitivity-Aware Visual Parameter-Efficient Fine-Tuning
+liao2023parameter	method	pafi	PaFi	2023	2305.16742	Parameter-Efficient Fine-Tuning without Introducing New Latency
+he2024smt	method	smt	SMT	2024	2405.15525	SMT: Fine-Tuning Large Language Models with Sparse Matrices
+ansell2024scaling	method	spiel	SpIEL	2024	2401.16405	Scaling Sparse Fine-Tuning to Large Language Models
+zhang2023gradient	method	gps	GPS	2023	2312.10136	Gradient-based Parameter Selection for Efficient Fine-Tuning
+yang2024s2ft	method	s2ft	S²FT	2024	2412.06289	S²FT: Efficient, Scalable and Generalizable LLM Fine-tuning by Structured Sparsity
+song2023sparse	method	sift	SIFT	2023	2312.11875	Sparse is Enough in Fine-tuning Pre-trained Large Language Models
+liu2024hift	method	hift	HiFT	2024	2401.15207	HiFT: A Hierarchical Full Parameter Fine-Tuning Strategy
+lee2022surgical	method	surgical-fine-tuning	Surgical FT	2022	2210.11466	Surgical Fine-Tuning Improves Adaptation to Distribution Shifts
+zhao2020masking	method	masking	Masking	2020	2004.12406	Masking as an Efficient Alternative to Finetuning for Pretrained Language Models
+mallya2018piggyback	method	piggyback	Piggyback	2018	1801.06519	Piggyback: Adapting a Single Network to Multiple Tasks by Learning to Mask Weights
+fu2022effectiveness	method	sam-sparse	SAM (sparse)	2022	2211.15583	On the Effectiveness of Parameter-Efficient Fine-Tuning
+liu2025lift	method	lift	LIFT	2025	2506.00772	LIFT the Veil for the Truth: Principal Weights Emerge after Rank Reduction for Reasoning-Focused Supervised Fine-Tuning
+nikdan2024rosa	method	rosa	RoSA	2024	2401.04679	RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation
+singhal2025abba	method	abba	ABBA	2025	2505.14238	ABBA-Adapters: Efficient and Expressive Fine-Tuning of Foundation Models
+edalati2022krona	method	krona	KronA	2022	2212.10650	KronA: Parameter Efficient Tuning with Kronecker Adapter
+mahabadi2021compacter	method	phm-adapter	PHM-Adapter	2021	2106.04647	Compacter: Efficient Low-Rank Hypercomplex Adapter Layers
+he2022parameter	method	kadaptation	KAdaptation	2022	2203.16329	Parameter-efficient Model Adaptation for Vision Transformers
+albert2025higher	method	kradapter	KRAdapter	2025	2508.00230	Towards Higher Effective Rank in Parameter-efficient Fine-tuning using Khatri--Rao Product
+yang2024loretta	method	loretta	LoRETTA	2024	2402.11417	LoRETTA: Low-Rank Economic Tensor-Train Adaptation for Ultra-Low-Parameter Fine-Tuning of Large Language Models
+anjum2024tensor	method	tt-lora	TT-LoRA	2024	2408.01008	Tensor Train Low-rank Approximation (TT-LoRA): Democratizing AI with Accelerated LLMs
+bershatsky2024lotr	method	lotr	LoTR	2024	2402.01376	LoTR: Low Tensor Rank Weight Adaptation
+jie2022fact	method	fact	FacT	2022	2212.03145	FacT: Factor-Tuning for Lightweight Adaptation on Vision Transformer
+si2024maintaining	method	flora-tucker	FLoRA (Tucker core)	2024	2405.14739	Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning
+hounie2024lorta	method	lorta	LoRTA	2024	2410.04060	LoRTA: Low Rank Tensor Adaptation of Large Language Models
+lopezpiqueres2025metatt	method	metatt	MetaTT	2025	2506.09105	MetaTT: A Global Tensor-Train Adapter for Parameter-Efficient Fine-Tuning
+chen2024quanta	method	quanta	QuanTA	2024	2406.00132	QuanTA: Efficient High-Rank Fine-Tuning of LLMs with Quantum-Informed Tensor Adaptation
+jiang2024mora	method	mora	MoRA	2024	2405.12130	MoRA: High-Rank Updating for Parameter-Efficient Fine-Tuning
+ren2024melora	method	melora	MELoRA	2024	2402.17263	MELoRA: Mini-Ensemble Low-Rank Adapters for Parameter-Efficient Fine-Tuning
+tan2024more	method	more	MoRe	2024	2408.17383	MoRe Fine-Tuning with 10x Fewer Parameters
+chen2021dsee	method	dsee	DSEE	2021	2111.00160	DSEE: Dually Sparsity-embedded Efficient Tuning of Pre-trained Language Models
+ji2024efficient	method	sine-lora	Sine-LoRA	2024	2403.19243	Efficient Learning With Sine-Activated Low-rank Matrices
+koohpayegani2023nola	method	nola	NOLA	2023	2310.02556	NOLA: Compressing LoRA using Linear Combination of Random Basis
+aghajanyan2020intrinsic	method	intrinsic-said	Intrinsic SAID	2020	2012.13255	Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning
+renduchintala2023tied	method	tied-lora	Tied-LoRA	2023	2311.09578	Tied-LoRA: Enhancing parameter efficiency of LoRA with Weight Tying
+song2024sharelora	method	sharelora	ShareLoRA	2024	2406.10785	ShareLoRA: Parameter Efficient and Robust Large Language Model Fine-tuning via Shared Low-Rank Adaptation
+wang2024prolora	method	prolora	PRoLoRA	2024	2402.16902	PRoLoRA: Partial Rotation Empowers More Parameter-Efficient LoRA
+wang2024mos	method	mos	MoS	2024	2410.00938	MoS: Unleashing Parameter Efficiency of Low-Rank Adaptation with Mixture of Shards
+he2025rasa	method	rasa	RaSA	2025	2503.12576	RaSA: Rank-Sharing Low-Rank Adaptation
+baazy2024lora	method	lora-xs	LoRA-XS	2024	2405.17604	LoRA-XS: Low-Rank Adaptation with Extremely Small Number of Parameters
+azizi2024lamda	method	lamda	LaMDA	2024	2406.12832	LaMDA: Large Model Fine-Tuning via Spectrally Decomposed Low-Dimensional Adaptation
+singh2024lora	method	lora-mini	LoRA-Mini	2024	2411.15804	LoRA-Mini : Adaptation Matrices Decomposition and Selective Training
+wang2026mosa	method	mosa	MoSA	2026		MoSA: Mosaic Shared Adaptation of Large Language Models
+shen2025ssh	method	ssh	SSH	2025	2502.05539	SSH: Sparse Spectrum Adaptation via Discrete Hartley Transformation
+du2025loca	method	loca	LoCA	2025	2502.06820	LoCA: Location-Aware Cosine Adaptation for Parameter-Efficient Fine-Tuning
+he2021unified	paper	unified-view-peft	Towards a Unified View of Parameter-Efficient Transfer Learning	2021	2110.04366	Towards a Unified View of Parameter-Efficient Transfer Learning
+he2021effectiveness	paper	adapter-effectiveness	On the Effectiveness of Adapter-based Tuning for Pretrained Language Model Adaptation	2021	2106.03164	On the Effectiveness of Adapter-based Tuning for Pretrained Language Model Adaptation
+pfeiffer2020adapterhub	paper	adapterhub	AdapterHub: A Framework for Adapting Transformers	2020	2007.07779	AdapterHub: A Framework for Adapting Transformers
+poth2023adapters	paper	adapters-library	Adapters: A Unified Library for Parameter-Efficient and Modular Transfer Learning	2023	2311.11077	Adapters: A Unified Library for Parameter-Efficient and Modular Transfer Learning
+hu2023llm	paper	llm-adapters	LLM-Adapters: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models	2023	2304.01933	LLM-Adapters: An Adapter Family for Parameter-Efficient Fine-Tuning of Large Language Models
+pfeiffer2023modular	paper	modular-deep-learning	Modular Deep Learning	2023	2302.11529	Modular Deep Learning
+sung2021vl	paper	vl-adapter	VL-Adapter: Parameter-Efficient Transfer Learning for Vision-and-Language Tasks	2021	2112.06825	VL-Adapter: Parameter-Efficient Transfer Learning for Vision-and-Language Tasks
+ding2022parameter	paper	delta-tuning	Parameter-efficient fine-tuning of large-scale pre-trained language models	2022	2203.06904	Parameter-efficient fine-tuning of large-scale pre-trained language models
+chen2023parameter	paper	peft-design-spaces	Parameter-Efficient Fine-Tuning Design Spaces	2023	2301.01821	Parameter-Efficient Fine-Tuning Design Spaces
+han2024parameter	paper	peft-survey-han	Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey	2024	2403.14608	Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey
+chen2026learning	paper	lora-lr-scaling-across-ranks	Learning Rate Scaling across LoRA Ranks and Transfer to Full Finetuning	2026	2602.06204	Learning Rate Scaling across LoRA Ranks and Transfer to Full Finetuning
+zhang2026hidden	paper	lora-alpha-signal-drift	The Hidden Power of Scaling Factor in LoRA Optimization	2026	2606.12883	The Hidden Power of Scaling Factor in LoRA Optimization
+kang2026uniform	paper	muon-lora-uniform-spectral-growth	Uniform Spectral Growth and Convergence of Muon in LoRA-Style Matrix Factorization	2026	2602.06385	Uniform Spectral Growth and Convergence of Muon in LoRA-Style Matrix Factorization
+adila2026weight	paper	weight-updates-as-activation-shifts	Weight Updates as Activation Shifts: A Principled Framework for Steering	2026	2603.00425	Weight Updates as Activation Shifts: A Principled Framework for Steering
+borodin2026diffract	paper	diffract-spectral-domain-adaptation	Diffract: Spectral View of LLM Domain Adaptation	2026	2608.10850	Diffract: Spectral View of LLM Domain Adaptation
+liu2026appeal	paper	recycling-loras-adaptive-merging	The Appeal and Reality of Recycling LoRAs with Adaptive Merging	2026	2602.12323	The Appeal and Reality of Recycling LoRAs with Adaptive Merging
+li2026learning	paper	zo-learning-dynamics-kernel	Learning Dynamics of Zeroth-Order Optimization: A Kernel Perspective	2026	2605.03373	Learning Dynamics of Zeroth-Order Optimization: A Kernel Perspective
+back2026understanding	paper	lora-knowledge-memory	Understanding LoRA as Knowledge Memory: An Empirical Analysis	2026	2603.01097	Understanding LoRA as Knowledge Memory: An Empirical Analysis
+mu2025convergence	paper	lora-gd-convergence-rate	On the Convergence Rate of LoRA Gradient Descent	2025	2512.18248	On the Convergence Rate of LoRA Gradient Descent
+koubbi2024understanding	paper	lora-forgetting-mean-field-attention	Understanding Catastrophic Forgetting In LoRA via Mean-Field Attention Dynamics	2024	2402.15415	Understanding Catastrophic Forgetting In LoRA via Mean-Field Attention Dynamics
+wang2025model	paper	model-merging-scaling-laws	Model Merging Scaling Laws in Large Language Models	2025	2509.24244	Model Merging Scaling Laws in Large Language Models
+song2026zeroth	paper	zo-edge-of-stability	Zeroth-Order Optimization at the Edge of Stability	2026	2604.14669	Zeroth-Order Optimization at the Edge of Stability
+aliev2026riemannian	paper	gs-orthogonal-riemannian-structure	Riemannian Structure and Optimization for a Class of Low-Parametric Orthogonal Matrices	2026	2609.27982	Riemannian Structure and Optimization for a Class of Low-Parametric Orthogonal Matrices
+mondal2026can	paper	prefix-compile-lora-tests	When Can Prefixes Compile LoRA? Exact Resource-Capped Tests for Frozen Attention	2026	2609.36766	When Can Prefixes Compile LoRA? Exact Resource-Capped Tests for Frozen Attention
+ortizjimenez2023task	paper	tangent-task-arithmetic	Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models	2023	2305.12827	Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models
+ainsworth2022git	paper	git-re-basin	Git Re-Basin: Merging Models modulo Permutation Symmetries	2022	2209.04836	Git Re-Basin: Merging Models modulo Permutation Symmetries
+frankle2019linear	paper	linear-mode-connectivity	Linear Mode Connectivity and the Lottery Ticket Hypothesis	2019	1912.05671	Linear Mode Connectivity and the Lottery Ticket Hypothesis
+yang2024model	paper	model-merging-survey	Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities	2024	2408.07666	Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities
+yadav2024matters	paper	merging-at-scale	What Matters for Model Merging at Scale?	2024	2410.03617	What Matters for Model Merging at Scale?
+ha2016hypernetworks	paper	hypernetworks	HyperNetworks	2016	1609.09106	HyperNetworks
+wang2024neural	paper	neural-network-diffusion	Neural Network Diffusion	2024	2402.13144	Neural Network Diffusion
+mukherjee2025reinforcement	paper	rl-finetunes-small-subnetworks	Reinforcement Learning Finetunes Small Subnetworks in Large Language Models	2025	2505.11711	Reinforcement Learning Finetunes Small Subnetworks in Large Language Models
+zhu2025path	paper	path-not-taken-rlvr	The Path Not Taken: RLVR Provably Learns Off the Principals	2025	2511.08567	The Path Not Taken: RLVR Provably Learns Off the Principals
+shenfeld2025rl	paper	rls-razor	RL's Razor: Why Online Reinforcement Learning Forgets Less	2025	2509.04259	RL's Razor: Why Online Reinforcement Learning Forgets Less
+yin2025evaluating	paper	evaluating-peft-rlvr	Evaluating Parameter Efficient Methods for RLVR	2025	2512.23165	Evaluating Parameter Efficient Methods for RLVR
+pletenev2025much	paper	lora-knowledge-capacity	How Much Knowledge Can You Pack into a LoRA Adapter without Harming LLM?	2025	2502.14502	How Much Knowledge Can You Pack into a LoRA Adapter without Harming LLM?
+saha2021gradient	paper	gradient-projection-memory	Gradient Projection Memory for Continual Learning	2021	2103.09762	Gradient Projection Memory for Continual Learning
+farajtabar2019orthogonal	paper	orthogonal-gradient-descent	Orthogonal Gradient Descent for Continual Learning	2019	1910.07104	Orthogonal Gradient Descent for Continual Learning
+geiger2023finding	paper	distributed-alignment-search	Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations	2023	2303.02536	Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations
+wu2025axbench	paper	axbench	AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders	2025	2501.17148	AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders
+zou2023representation	paper	representation-engineering	Representation Engineering: A Top-Down Approach to AI Transparency	2023	2310.01405	Representation Engineering: A Top-Down Approach to AI Transparency
+li2023inference	paper	inference-time-intervention	Inference-Time Intervention: Eliciting Truthful Answers from a Language Model	2023	2306.03341	Inference-Time Intervention: Eliciting Truthful Answers from a Language Model
+daxberger2021laplace	paper	laplace-redux	Laplace Redux -- Effortless Bayesian Deep Learning	2021	2106.14806	Laplace Redux -- Effortless Bayesian Deep Learning
+blundell2015weight	paper	bayes-by-backprop	Weight Uncertainty in Neural Networks	2015	1505.05424	Weight Uncertainty in Neural Networks
+gomez2017reversible	paper	revnet	The Reversible Residual Network: Backpropagation Without Storing Activations	2017	1707.04585	The Reversible Residual Network: Backpropagation Without Storing Activations
+sharma2023truth	paper	laser-layer-selective-rank-reduction	The Truth is in There: Improving Reasoning in Language Models with Layer-Selective Rank Reduction	2023	2312.13558	The Truth is in There: Improving Reasoning in Language Models with Layer-Selective Rank Reduction
+molchanov2019importance	paper	taylor-importance-pruning	Importance Estimation for Neural Network Pruning	2019	1906.10771	Importance Estimation for Neural Network Pruning
+alain2016understanding	paper	linear-classifier-probes	Understanding intermediate layers using linear classifier probes	2016	1610.01644	Understanding intermediate layers using linear classifier probes
+liu2021dexperts	paper	dexperts	DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts	2021	2105.03023	DExperts: Decoding-Time Controlled Text Generation with Experts and Anti-Experts
+wallace2019universal	paper	universal-adversarial-triggers	Universal Adversarial Triggers for Attacking and Analyzing NLP	2019	1908.07125	Universal Adversarial Triggers for Attacking and Analyzing NLP
+zhang2022fedpetuning	paper	fedpetuning	FedPETuning: When Federated Learning Meets the Parameter-Efficient Tuning Methods of Pre-trained Language Models	2022	2212.10025	FedPETuning: When Federated Learning Meets the Parameter-Efficient Tuning Methods of Pre-trained Language Models
+zhang2023building	paper	fedit	Towards Building the Federated GPT: Federated Instruction Tuning	2023	2305.05644	Towards Building the Federated GPT: Federated Instruction Tuning
+huang2024group	paper	group-diffusion-transformers	Group Diffusion Transformers are Unsupervised Multitask Learners	2024	2410.15027	Group Diffusion Transformers are Unsupervised Multitask Learners
+aghajanyan2020intrinsic	paper	intrinsic-dimensionality	Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning	2020	2012.13255	Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning
+zeng2023expressive	paper	expressive-power-lora	The Expressive Power of Low-Rank Adaptation	2023	2310.17513	The Expressive Power of Low-Rank Adaptation
+shuttleworth2024lora	paper	lora-illusion-of-equivalence	LoRA vs Full Fine-tuning: An Illusion of Equivalence	2024	2410.21228	LoRA vs Full Fine-tuning: An Illusion of Equivalence
+ilharco2022editing	paper	task-arithmetic	Editing Models with Task Arithmetic	2022	2212.04089	Editing Models with Task Arithmetic
+biderman2024lora	paper	lora-learns-less-forgets-less	LoRA Learns Less and Forgets Less	2024	2405.09673	LoRA Learns Less and Forgets Less
+hayou2024impact	paper	hayou-lora-init-dynamics	The Impact of Initialization on LoRA Finetuning Dynamics	2024	2406.08447	The Impact of Initialization on LoRA Finetuning Dynamics
+schulman2025lora	paper	lora-without-regret	LoRA Without Regret	2025		LoRA Without Regret
+lialin2023scaling	paper	scaling-down-to-scale-up	Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning	2023	2303.15647	Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning
+li2024crucial	paper	nystrom-init-matrix-factorization	On the Crucial Role of Initialization for Matrix Factorization	2024	2410.18965	On the Crucial Role of Initialization for Matrix Factorization
+zhu2024asymmetry	paper	asymmetry-lora	Asymmetry in Low-Rank Adapters of Foundation Models	2024	2402.16842	Asymmetry in Low-Rank Adapters of Foundation Models
+he2026unified	paper	unified-lora-variants-study	A Unified Study of LoRA Variants: Taxonomy, Review, Codebase, and Empirical Evaluation	2026	2601.22708	A Unified Study of LoRA Variants: Taxonomy, Review, Codebase, and Empirical Evaluation
+li2018measuring	paper	intrinsic-dimension-objective-landscapes	Measuring the Intrinsic Dimension of Objective Landscapes	2018	1804.08838	Measuring the Intrinsic Dimension of Objective Landscapes
+malladi2022kernel	paper	kernel-view-lm-finetuning	A Kernel-Based View of Language Model Fine-Tuning	2022	2210.05643	A Kernel-Based View of Language Model Fine-Tuning
+jang2024lora	paper	lora-ntk-no-spurious-minima	LoRA Training in the NTK Regime has No Spurious Local Minima	2024	2402.11867	LoRA Training in the NTK Regime has No Spurious Local Minima
+kim2025lora	paper	lora-converges-or-fails-loudly	LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)	2025	2502.09376	LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)
+xu2025understanding	paper	lora-gradient-flow-matrix-factorization	Understanding the Learning Dynamics of LoRA: A Gradient Flow Perspective on Low-Rank Adaptation in Matrix Factorization	2025	2503.06982	Understanding the Learning Dynamics of LoRA: A Gradient Flow Perspective on Low-Rank Adaptation in Matrix Factorization
+lee2026learning	paper	lr-matters-vanilla-lora	Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning	2026	2602.04998	Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning
+wang2024lorad	paper	lora-meets-dropout	LoRA Meets Dropout under a Unified Framework	2024	2403.00812	LoRA Meets Dropout under a Unified Framework
+liu2018learning	paper	minimum-hyperspherical-energy	Learning towards Minimum Hyperspherical Energy	2018	1805.09298	Learning towards Minimum Hyperspherical Energy
+liu2020orthogonal	paper	orthogonal-over-parameterized-training	Orthogonal Over-Parameterized Training	2020	2004.04690	Orthogonal Over-Parameterized Training
+salimans2016weight	paper	weight-normalization	Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks	2016	1602.07868	Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks
+perez2017film	paper	film	FiLM: Visual Reasoning with a General Conditioning Layer	2017	1709.07871	FiLM: Visual Reasoning with a General Conditioning Layer
+dao2019learning	paper	butterfly-factorization	Learning Fast Algorithms for Linear Transforms Using Butterfly Factorizations	2019	1903.05895	Learning Fast Algorithms for Linear Transforms Using Butterfly Factorizations
+lezcanocasado2019cheap	paper	cheap-orthogonal-constraints	Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group	2019	1901.08428	Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group
+mhammedi2016efficient	paper	householder-orthogonal-rnn	Efficient Orthogonal Parametrisation of Recurrent Neural Networks Using Householder Reflections	2016	1612.00188	Efficient Orthogonal Parametrisation of Recurrent Neural Networks Using Householder Reflections
+zhang2025primacy	paper	primacy-of-magnitude	The Primacy of Magnitude in Low-Rank Adaptation	2025	2507.06558	The Primacy of Magnitude in Low-Rank Adaptation
+petrov2023prompting	paper	prefix-tuning-capabilities-limitations	When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations	2023	2310.19698	When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations
+wang2023universality	paper	wang-2023-prompt-universality	Universality and Limitations of Prompt Tuning	2023	2305.18787	Universality and Limitations of Prompt Tuning
+petrov2024prompting	paper	petrov-2024-prefix-universal	Prompting a Pretrained Transformer Can Be a Universal Approximator	2024	2402.14753	Prompting a Pretrained Transformer Can Be a Universal Approximator
+oymak2023role	paper	oymak-2023-attention-prompt-tuning	On the Role of Attention in Prompt-tuning	2023	2306.03435	On the Role of Attention in Prompt-tuning
+galim2024parameter	paper	galim-2025-ssm-prefix-equivalence	Parameter-Efficient Fine-Tuning of State Space Models	2024	2410.09016	Parameter-Efficient Fine-Tuning of State Space Models
+le2024revisiting	paper	le-2025-revisiting-prefix	Revisiting Prefix-tuning: Statistical Benefits of Reparameterization among Prompts	2024	2410.02200	Revisiting Prefix-tuning: Statistical Benefits of Reparameterization among Prompts
+qin2021exploring	paper	qin-2021-intrinsic-task-subspace	Exploring Universal Intrinsic Task Subspace via Prompt Tuning	2021	2110.07867	Exploring Universal Intrinsic Task Subspace via Prompt Tuning
+su2021transferability	paper	su-2022-prompt-transferability	On Transferability of Prompt Tuning for Natural Language Processing	2021	2111.06719	On Transferability of Prompt Tuning for Natural Language Processing
+khashabi2021prompt	paper	khashabi-2022-prompt-waywardness	Prompt Waywardness: The Curious Case of Discretized Interpretation of Continuous Prompts	2021	2112.08348	Prompt Waywardness: The Curious Case of Discretized Interpretation of Continuous Prompts
+liu2021pre	paper	liu-2023-pretrain-prompt-predict	Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing	2021	2107.13586	Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing
+chen2022inducer	paper	chen-2022-inducer-tuning	Inducer-tuning: Connecting Prefix-tuning and Adapter-tuning	2022	2210.14469	Inducer-tuning: Connecting Prefix-tuning and Adapter-tuning
+gurari2018gradient	paper	gradient-descent-tiny-subspace	Gradient Descent Happens in a Tiny Subspace	2018	1812.04754	Gradient Descent Happens in a Tiny Subspace
+shazeer2018adafactor	paper	adafactor	Adafactor: Adaptive Learning Rates with Sublinear Memory Cost	2018	1804.04235	Adafactor: Adaptive Learning Rates with Sublinear Memory Cost
+dettmers20218	paper	8bit-optimizers	8-bit Optimizers via Block-wise Quantization	2021	2110.02861	8-bit Optimizers via Block-wise Quantization
+he2024subspace	paper	golore-subspace-convergence	Subspace Optimization for Large Language Models with Convergence Guarantees	2024	2410.11289	Subspace Optimization for Large Language Models with Convergence Guarantees
+zhang2024revisiting	paper	zo-bench	Revisiting Zeroth-Order Optimization for Memory-Efficient LLM Fine-Tuning: A Benchmark	2024	2402.11592	Revisiting Zeroth-Order Optimization for Memory-Efficient LLM Fine-Tuning: A Benchmark
+frankle2018lottery	paper	lottery-ticket-hypothesis	The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks	2018	1803.03635	The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks
+frankle2020training	paper	batchnorm-only	Training BatchNorm and Only BatchNorm: On the Expressive Power of Random Features in CNNs	2020	2003.00152	Training BatchNorm and Only BatchNorm: On the Expressive Power of Random Features in CNNs
+fu2022effectiveness	paper	effectiveness-of-peft-sparse-view	On the Effectiveness of Parameter-Efficient Fine-Tuning	2022	2211.15583	On the Effectiveness of Parameter-Efficient Fine-Tuning
+panigrahi2023task	paper	skill-localization-grafting	Task-Specific Skill Localization in Fine-tuned Language Models	2023	2302.06600	Task-Specific Skill Localization in Fine-tuned Language Models
+lee2019would	paper	elsa-freezing-layers	What Would Elsa Do? Freezing Layers During Transformer Fine-Tuning	2019	1911.03090	What Would Elsa Do? Freezing Layers During Transformer Fine-Tuning
+zhang2021beyond	paper	phm-layer	Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters	2021	2102.08597	Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters
+loan1993approximation	paper	kronecker-approximation	Approximation with Kronecker Products	1993		Approximation with Kronecker Products
+oseledets2011tensor	paper	tensor-train-decomposition	Tensor-Train Decomposition	2011		Tensor-Train Decomposition
+kolda2009tensor	paper	tensor-decompositions-applications	Tensor Decompositions and Applications	2009		Tensor Decompositions and Applications
+cichocki2016low	paper	tensor-networks-dimensionality-reduction	Low-Rank Tensor Networks for Dimensionality Reduction and Large-Scale Optimization Problems: Perspectives and Challenges PART 1	2016	1609.00893	Low-Rank Tensor Networks for Dimensionality Reduction and Large-Scale Optimization Problems: Perspectives and Challenges PART 1
+dao2022monarch	paper	monarch	Monarch: Expressive Structured Matrices for Efficient and Accurate Training	2022	2204.00595	Monarch: Expressive Structured Matrices for Efficient and Accurate Training
+qiu2024compute	paper	compute-better-spent	Compute Better Spent: Replacing Dense Layers with Structured Matrices	2024	2406.06248	Compute Better Spent: Replacing Dense Layers with Structured Matrices
+wang2023tensor	paper	tensor-networks-meet-neural-networks	Tensor Networks Meet Neural Networks: A Survey and Future Perspectives	2023	2302.09019	Tensor Networks Meet Neural Networks: A Survey and Future Perspectives
+nooralinejad2022pranc	paper	pranc	PRANC: Pseudo RAndom Networks for Compacting deep models	2022	2206.08464	PRANC: Pseudo RAndom Networks for Compacting deep models
+chen2015compressing	paper	hashednets	Compressing Neural Networks with the Hashing Trick	2015	1504.04788	Compressing Neural Networks with the Hashing Trick
+si2024see	paper	subspace-tuning-decomposition-view	See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition	2024	2407.05417	See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition
+hayou2024lora	paper	lora-plus-width-scaling	LoRA+: Efficient Low Rank Adaptation of Large Models	2024	2402.12354	LoRA+: Efficient Low Rank Adaptation of Large Models
+kalajdzievski2023rank	paper	rslora-rank-stabilization	A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA	2023	2312.03732	A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA
+zhang2024scaling	paper	scaling-llm-finetuning	When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method	2024	2402.17193	When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method
+xu2023parameter	paper	peft-critical-review	Parameter-Efficient Fine-Tuning Methods for Pretrained Language Models: A Critical Review and Assessment	2023	2312.12148	Parameter-Efficient Fine-Tuning Methods for Pretrained Language Models: A Critical Review and Assessment
+mao2024survey	paper	lora-survey-mao	A Survey on LoRA of Large Language Models	2024	2407.11046	A Survey on LoRA of Large Language Models
+xin2024parameter	paper	visual-peft-survey	Parameter-Efficient Fine-Tuning for Pre-Trained Vision Models: A Survey and Benchmark	2024	2402.02242	Parameter-Efficient Fine-Tuning for Pre-Trained Vision Models: A Survey and Benchmark
+li2026low	paper	lora-redux	Low-Rank Adaptation Redux for Large Models	2026	2604.21905	Low-Rank Adaptation Redux for Large Models
+arora2018optimization	paper	implicit-acceleration-overparameterization	On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization	2018	1802.06509	On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization
+du2018algorithmic	paper	layers-automatically-balanced	Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced	2018	1806.00900	Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced
+arora2019implicit	paper	implicit-regularization-deep-matrix-factorization	Implicit Regularization in Deep Matrix Factorization	2019	1905.13655	Implicit Regularization in Deep Matrix Factorization
+kunin2020neural	paper	neural-mechanics-symmetry	Neural Mechanics: Symmetry and Broken Conservation Laws in Deep Learning Dynamics	2020	2012.04728	Neural Mechanics: Symmetry and Broken Conservation Laws in Deep Learning Dynamics
+zhao2022symmetries	paper	symmetries-conserved-quantities-gradient-flow	Symmetries, Flat Minima, and the Conserved Quantities of Gradient Flow	2022	2210.17216	Symmetries, Flat Minima, and the Conserved Quantities of Gradient Flow
+marcotte2023abide	paper	conservation-laws-gradient-flows	Abide by the Law and Follow the Flow: Conservation Laws for Gradient Flows	2023	2307.00144	Abide by the Law and Follow the Flow: Conservation Laws for Gradient Flows
+mishra2012fixed	paper	fixed-rank-riemannian-quotient	Fixed-rank matrix factorizations and Riemannian low-rank optimization	2012	1209.0430	Fixed-rank matrix factorizations and Riemannian low-rank optimization
+zhang2024riemannian	paper	riemannian-preconditioned-lora	Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models	2024	2402.02347	Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models
+yen2024lora	paper	lora-rite-transformation-invariance	LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization	2024	2410.20625	LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization
+putterman2024learning	paper	learning-on-loras-gl-equivariance	Learning on LoRAs: GL-Equivariant Processing of Low-Rank Weight Spaces for Large Finetuned Models	2024	2410.04207	Learning on LoRAs: GL-Equivariant Processing of Low-Rank Weight Spaces for Large Finetuned Models
+castin2026balanced	paper	balanced-lora	Balanced LoRA: Removing Parameter Invariance to Accelerate Convergence	2026	2605.31484	Balanced LoRA: Removing Parameter Invariance to Accelerate Convergence
+fong2017backprop	paper	backprop-as-functor	Backprop as Functor: A compositional perspective on supervised learning	2017	1711.10455	Backprop as Functor: A compositional perspective on supervised learning
+fong2019lenses	paper	lenses-and-learners	Lenses and Learners	2019	1903.03671	Lenses and Learners
+cockett2019reverse	paper	reverse-derivative-categories	Reverse Derivative Categories	2019	1910.07065	Reverse Derivative Categories
+cruttwell2021categorical	paper	categorical-foundations-gradient-learning	Categorical Foundations of Gradient-Based Learning	2021	2103.01931	Categorical Foundations of Gradient-Based Learning
+capucci2021foundations	paper	categorical-cybernetics	Towards Foundations of Categorical Cybernetics	2021	2105.06332	Towards Foundations of Categorical Cybernetics
+shiebler2021category	paper	category-theory-in-ml-survey	Category Theory in Machine Learning	2021	2106.07032	Category Theory in Machine Learning
+gavranovic2024position	paper	categorical-deep-learning	Position: Categorical Deep Learning is an Algebraic Theory of All Architectures	2024	2402.15332	Position: Categorical Deep Learning is an Algebraic Theory of All Architectures
+gavranovic2024fundamental	paper	fundamental-components-deep-learning-thesis	Fundamental Components of Deep Learning: A category-theoretic approach	2024	2403.13001	Fundamental Components of Deep Learning: A category-theoretic approach
+bronstein2021geometric	paper	geometric-deep-learning	Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges	2021	2104.13478	Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges

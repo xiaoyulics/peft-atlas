@@ -1,0 +1,430 @@
+{
+ "family": "addendum2026b-1",
+ "family_title": "2026 sweep pass 2, batch 1",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "ar1-zo",
+   "name": "AR1-ZO",
+   "full_name": "AR1-ZO: Alternating Rank-1 Zeroth-Order optimisation of LoRA with topology-aware scaling",
+   "paper_title": "AR1-ZO: Topology-Aware Rank-1 Zeroth-Order Queries for High-Rank LoRA Fine-Tuning",
+   "authors": "Chen et al.",
+   "year": 2026,
+   "venue": "NeurIPS 2026",
+   "arxiv": "2605.19767",
+   "url": "https://arxiv.org/abs/2605.19767",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\tfrac{\\gamma}{r}BAx=W_0x+\\alpha\\sum_{k=1}^{r}b_k a_k^{\\top}x,\\ \\ \\gamma=\\alpha r,\\ \\ B=[b_1,\\dots,b_r]\\in\\mathbb{R}^{d_{out}\\times r},\\ A=[a_1,\\dots,a_r]^{\\top}\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ \\text{step } t:\\ k(t)=1+(t\\bmod r)\\ (\\text{same atom index in every adapted matrix}),\\ \\ z_t=(z_b,z_a)\\sim\\mathcal{N}(0,I_{d_{out}+d_{in}}),\\ \\ \\ell_{\\pm}=\\mathcal{L}(\\theta_t\\pm\\mu P_tz_t),\\ \\ \\hat g_t=\\frac{\\ell_+-\\ell_-}{2\\mu}\\,z_t=(\\hat g_{b,t},\\hat g_{a,t}),\\ \\ b_{k(t)}\\leftarrow b_{k(t)}-\\eta_t\\hat g_{b,t},\\ \\ a_{k(t)}\\leftarrow a_{k(t)}-\\eta_t\\hat g_{a,t};\\ \\ \\text{frozen: } W_0 \\text{ and every atom } j\\neq k(t) \\text{ (shared by both endpoints)};\\ \\text{trained: all } r \\text{ atoms, one per step, from two forward passes and no backpropagation}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{stored per adapted matrix } (r=64 \\text{ in the main runs});\\ \\text{only } d_{in}+d_{out} \\text{ coordinates are perturbed and updated per step}",
+   "locus": "LoRA-adapted linear layers of OPT-2.7B/13B and Qwen3-1.7B/32B. The mechanism diagnostics use the 28 v_proj matrices of Qwen3-1.7B; the target modules of the main runs are not listed.",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "The stored object is an ordinary rank-\\(r\\) LoRA delta \\(\\Delta W=\\alpha\\sum_k b_ka_k^{\\top}\\). AR1-ZO changes only how a two-point zeroth-order oracle measures it. Each query perturbs one matched rank-1 atom \\((b_k,a_k)\\), a block of dimension \\(q=d_{out}+d_{in}\\). Lemma 4.1 shows that, for nonzero factors, this is the smallest complete LoRA-native block: one-sided blocks miss part of the first-order variation \\(\\delta b_k a_k^{\\top}+b_k\\delta a_k^{\\top}\\). The estimator's dimension term is therefore \\(q\\), not \\(rq\\). The second ingredient is scale. Under the canonical coefficient \\(\\gamma/r=\\alpha/r\\), the active finite-difference signal is \\(\\Theta(1/r)\\). Against a rank-independent evaluation-noise floor its SNR is \\(\\Theta(1/r^2)\\), and \\(\\mathbb{E}\\cos(\\hat\\nabla_k\\mathcal{L},\\nabla_k\\mathcal{L})\\to0\\) once \\(r\\gg r_c=\\Theta(\\alpha\\mu\\|g\\|/\\sigma_\\xi)\\). The paper calls this directional collapse. Setting \\(\\gamma=\\alpha r\\) gives every queried atom the rank-free coefficient \\(\\alpha\\). In forward-map terms, the method is LoRA with scale \\(\\alpha\\) (instead of \\(\\alpha/r\\) or \\(\\alpha/\\sqrt r\\)) trained by cyclic block-coordinate ZO over rank-1 atoms. Rank then appears only as coverage: over a cycle the stationarity measure is \\(\\tfrac1r\\sum_k\\|\\nabla_k\\mathcal{L}\\|^2\\). The convergence bound (Theorem 4.4(ii)) separately assumes a stable represented-adapter scale, which the paper uses to rule out output inflation. This matters because under \\(\\gamma=\\alpha r\\) the joint output scale \\(\\alpha\\sum_kb_ka_k^{\\top}\\) is no longer normalised by \\(r\\) (this last point is the entry's reading, not the paper's wording). A rank-\\(m\\) block query uses \\(\\gamma=\\alpha r/m\\) and has dimension \\(mq\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained adapter is a plain additive delta \\(\\Delta W=\\alpha BA\\) and folds into \\(W_0\\) exactly like LoRA. The atom schedule and \\(\\gamma=\\alpha r\\) affect training only.",
+   "identity_at_init": "Yes. \\(B\\) is initialised at zero and \\(A\\) at random (Appendix B.1), so \\(\\Delta W=\\alpha\\sum_k b_ka_k^{\\top}=0\\) at step 0.",
+   "key_idea": "In zeroth-order LoRA, rank should set storage and coverage, not the dimension of each query or the signal it measures. AR1-ZO perturbs one complete rank-1 atom \\((b_k,a_k)\\) per two-forward-pass query and gives it the coefficient \\(\\gamma/r=\\alpha\\) instead of \\(\\alpha/r\\). This removes the \\(1/r^2\\) decay of the finite-difference SNR that makes naive atomwise ZO collapse at high rank.",
+   "results_note": "With \\(r=64\\) and \\(\\alpha=16\\) on OPT-2.7B (Table 1), AR1-ZO beats MeZO-LoRA on all six tasks, e.g. SQuAD F1 77.8 vs 64.6 and DROP 27.8 vs 23.9. The same atom schedule with canonical \\(\\alpha/r\\) scaling (ZO-Alt-naive) collapses to 19.2 and 6.3.",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "builds-on",
+     "note": "Uses the same two-point SPSA/RGE oracle on paired mini-batches, restricted to one LoRA atom per query."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Keeps the rank-\\(r\\) LoRA parameterisation and the \\(B=0\\) init. Only the coefficient (\\(\\gamma=\\alpha r\\)) and the per-step update set change."
+    },
+    {
+     "target": "rslora",
+     "type": "competes-with",
+     "note": "Competing rank-scaling rule. rsLoRA uses \\(\\alpha/\\sqrt{r}\\) for joint first-order updates; AR1-ZO gives each queried atom the coefficient \\(\\alpha\\). In the paper's SQuAD ablation (Fig. 7), both \\(\\alpha/r\\) and \\(\\alpha/\\sqrt{r}\\) stagnate under atomwise ZO (F1 about 0.17, against 0.770 for \\(\\gamma=\\alpha r\\))."
+    },
+    {
+     "target": "agzo",
+     "type": "competes-with",
+     "note": "Another way to cut ZO perturbation dimension. AGZO perturbs in an activation-derived rank-\\(r\\) subspace of the dense weight; AR1-ZO uses the native LoRA atoms, with no auxiliary basis and no activation hooks. AGZO is cited in AR1-ZO's related work but is not a baseline."
+    },
+    {
+     "target": "zo-muon",
+     "type": "competes-with",
+     "note": "Another 2026 low-dimensional ZO fine-tuning scheme, using a random rank-\\(r\\) subspace plus orthogonalisation. AR1-ZO instead exposes the stored LoRA atoms one at a time. AR1-ZO does not cite ZO-Muon, so this is a structural comparison, not a reported baseline."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.19767",
+    "https://arxiv.org/html/2605.19767",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json",
+    "https://openreview.net/forum?id=7eOsaBX3qO",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2605.19767"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Ziye Chen and v1 date 2026-05-19 match; only v1 exists. Venue: neurips-2026-orals-posters.json lists poster 155186 with decision 'Accept (poster)' and paper_url openreview.net/forum?id=7eOsaBX3qO. Semantic Scholar: 0 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 3.1 to 3.3 of the arXiv HTML: Eq. (4) (two-point estimator with the active projector \\(P_t\\)), Eq. (5) (\\(\\gamma=\\alpha r\\)), Eq. (6) (active atom plus frozen background) and Algorithm 1 (cyclic schedule \\(k(t)=1+(t\\bmod r)\\), \\(z_b\\sim\\mathcal{N}(0,I_{d_{out}})\\), \\(z_a\\sim\\mathcal{N}(0,I_{d_{in}})\\), update of only \\(b_{k(t)},a_{k(t)}\\), shared atom index across adapted matrices). Lemma 4.1, Proposition 4.2, Theorems 4.3 and 4.4, and Corollaries 4.5 and 4.6 (rank-\\(m\\) blocks use \\(\\gamma=\\alpha r/m\\)) match the structure text. Initialisation (\\(B\\) zero, \\(A\\) random) is stated in Appendix B.1; the 28 v_proj matrices of Qwen3-1.7B are in Appendix B; \\(\\alpha=16\\) and \\(r=64\\) are in Sec. 5. Table 1 numbers in results_note match. Re-derived: \\(r(d_{in}+d_{out})\\) stored per matrix, \\(d_{in}+d_{out}\\) perturbed per step; the delta is an ordinary additive LoRA, so mergeable yes and identity at init yes.",
+   "corrections": [
+    "structure: Lemma 4.1's minimality and completeness statement is restricted to nonzero factors; added that qualifier.",
+    "structure: the 'not normalised by \\(r\\)' explanation of the stable-scale assumption is marked as the entry's reading; the paper only says the assumption rules out output inflation.",
+    "relations: agzo is cited in related work but is not a baseline; zo-muon is not cited at all. Both notes now say so.",
+    "Relation notes for lora, rslora, agzo and zo-muon: math wrapped in \\( \\); the rslora note now gives the Fig. 7 F1 values."
+   ]
+  },
+  {
+   "id": "pico",
+   "name": "Pico",
+   "full_name": "Pico: Pre-merge interference calibration in output-space",
+   "paper_title": "Crowded in B-Space: Calibrating Shared Directions for LoRA Merging",
+   "authors": "Tang and Yang",
+   "year": 2026,
+   "venue": "NeurIPS 2026",
+   "arxiv": "2604.16826",
+   "url": "https://arxiv.org/abs/2604.16826",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{per layer and target module, with LoRAs } \\Delta W_t=B_tA_t\\ (t=1,\\dots,T;\\ \\text{scale absorbed into } B_t):\\ \\ B_{\\text{all}}=[B_1,\\dots,B_T]=U\\Sigma V^{\\top},\\ \\ s_j=\\frac{\\sigma_j^2}{\\sum_k\\sigma_k^2},\\ \\ \\alpha_j=\\frac{1}{1+(T-1)s_j},\\ \\ S=I_{d_{out}}+U\\,\\mathrm{diag}(\\alpha-\\mathbf{1})\\,U^{\\top},\\ \\ \\tilde B_t=SB_t;\\ \\ \\Delta W_{\\text{calib}}=\\mathcal{M}\\big(\\tilde B_1A_1,\\dots,\\tilde B_TA_T\\big)\\ \\ (\\mathcal{M}\\in\\{\\text{TA},\\text{TIES},\\text{TSV-M},\\dots\\}),\\ \\ \\Delta W_{\\text{Pico}}=\\gamma\\,\\Delta W_{\\text{calib}},\\ \\ \\gamma=\\frac{\\tfrac1T\\sum_t\\|B_tA_t\\|_F}{\\|\\Delta W_{\\text{calib}}\\|_F};\\ \\ W=W_0+\\Delta W_{\\text{Pico}};\\ \\ \\text{frozen: } W_0 \\text{ and all } A_t,B_t;\\ \\text{nothing is trained and no data is used}",
+   "trainable_params": "0\\ \\text{(data-free post-hoc merge); per adapted matrix: one SVD of the } d_{out}\\times Tr \\text{ stack plus } T \\text{ left multiplications}",
+   "locus": "Every LoRA-adapted matrix (q_proj and v_proj in the experiments) of Llama-3.1-8B, and of Qwen3-4B-Base in an appendix. Four domain LoRAs (math, code, finance, medical) of rank 8 to 64.",
+   "modification_kind": "composition-or-routing",
+   "structure": "Pico left-multiplies each output factor, before merging, by one layer-wise operator \\(S=U\\,\\mathrm{diag}(\\alpha)\\,U^{\\top}+(I-UU^{\\top})\\). \\(S\\) is symmetric positive definite: its eigenvalues are \\(\\alpha_j\\in[1/T,1]\\) on \\(\\mathrm{col}(B_{\\text{all}})\\) and 1 on the orthogonal complement. It therefore shrinks output directions that carry a large share of the stacked \\(B\\) energy. The strongest shrinkage, \\(\\alpha_j\\to1/T\\) as \\(s_j\\to1\\), undoes the \\(T\\)-fold counting that a summed (Task Arithmetic) merge gives a direction used equally by all \\(T\\) tasks. A single scalar \\(\\gamma\\) then restores the mean source Frobenius norm. \\(A_t\\) is untouched; in the ablation, calibrating \\(A\\) or the full \\(BA\\) instead lowers accuracy. Two consequences are derived here. (i) Task Arithmetic is linear, so \\(\\mathcal{M}(SB_tA_t)=S\\,\\mathcal{M}(B_tA_t)\\) and Pico-TA equals the post-merge output-space reshaping \\(\\gamma S\\Delta W_{\\text{TA}}\\); applying \\(S\\) before merging matters only for non-linear mergers such as TIES and TSV-M. (ii) \\(s_j\\) is a direction's share of the stacked spectrum, only a proxy for cross-task sharing, so a direction dominated by one task's energy is shrunk too. \\(U\\) is the left singular basis of the concatenated \\(B\\)'s. It is the same output basis Core Space builds (\\(U_B\\)). KnOTS instead takes the SVD of the stacked products \\([B_1A_1,\\dots,B_TA_T]\\). Its left singular vectors span the same column space only when every \\(A_t\\) has full row rank, and they form a different basis.",
+   "mergeable": "yes",
+   "mergeable_reason": "The output is one additive delta per layer, \\(\\Delta W_{\\text{Pico}}=\\gamma\\,\\mathcal{M}(\\{SB_tA_t\\})\\), of rank at most \\(Tr\\) for TA. It folds into \\(W_0\\) like any merged LoRA.",
+   "identity_at_init": "Nothing is trained. With a single adapter (\\(T=1\\)), every \\(\\alpha_j=1\\), so \\(S=I\\) and the calibration step is the identity. Under Task Arithmetic, \\(\\gamma\\) then cancels any merge weight and \\(\\Delta W_{\\text{Pico}}=B_1A_1\\) exactly; under TIES, the merger's own trimming still changes the single adapter.",
+   "key_idea": "Across independently trained LoRAs, the output factors \\(B_t\\) reuse a few shared directions: pairwise overlap \\(O_B\\gg O_A\\), and the effective rank of \\(B\\) is about 3 at LoRA rank 64. A linear merge counts these directions \\(T\\) times. Pico shrinks them before merging with the spectral weights \\(\\alpha_j=1/(1+(T-1)s_j)\\) and then restores the update norm.",
+   "results_note": "On Llama-3.1-8B with four rank-16 domain LoRAs, Pico raises the eight-benchmark average from 0.4093 to 0.4430 under Task Arithmetic, from 0.3859 to 0.4328 under TIES and from 0.3473 to 0.4305 under TSV-M. Pico+TA (0.4430) also beats a jointly trained multi-task LoRA (0.3688).",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "combines",
+     "note": "Plug-in calibration before TA (+3.4 points). For TA it equals left-multiplying the merged delta by \\(S\\) and rescaling."
+    },
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "Calibrated factors are then merged by TIES (+4.7 points average)."
+    },
+    {
+     "target": "tsv-merge",
+     "type": "combines",
+     "note": "Calibrated factors are then merged by TSV-M (+8.3 points, the largest gain)."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "Both use a shared output basis from an SVD, but of different stacks. KnOTS factorises the stacked updates \\(B_tA_t\\) and merges the task-specific right factors; Pico factorises the stacked \\(B_t\\) and rescales the shared output directions by their energy share. KnOTS is a Table 1 baseline that Pico beats under all three mergers (overall 0.4088, 0.4207 and 0.3523, against Pico's 0.4430, 0.4328 and 0.4305)."
+    },
+    {
+     "target": "core-space-merging",
+     "type": "competes-with",
+     "note": "Uses the same left singular basis of the concatenated \\(B_t\\) (Core Space's \\(U_B\\)), but calibrates in it instead of projecting to a small core. Core Space is a baseline that Pico beats in all three merger blocks of Table 1."
+    },
+    {
+     "target": "dare",
+     "type": "competes-with",
+     "note": "Sparsify-and-rescale interference reduction; a baseline in every merger block of Table 1."
+    },
+    {
+     "target": "lori",
+     "type": "competes-with",
+     "note": "LoRI reduces merge interference at training time, with frozen random (near-orthogonal) \\(A_t\\) and sparse \\(B_t\\). Pico is post-hoc and data-free on ordinary LoRAs. Pico does not cite LoRI, so this is a structural comparison."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.16826",
+    "https://arxiv.org/html/2604.16826",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json",
+    "https://openreview.net/forum?id=PtEkosDXWk",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2604.16826"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Yixuan Tang (with Yi Yang) and v1 date 2026-04-18 match; only v1 exists. Venue: neurips-2026-orals-posters.json lists poster 152853 with decision 'Accept (poster)' and paper_url openreview.net/forum?id=PtEkosDXWk. Semantic Scholar: 0 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 4.1 and 4.2: \\(B_{\\text{all}}=[B_1,\\dots,B_T]=U\\Sigma V^{\\top}\\), \\(s_j=\\sigma_j^2/\\sum_k\\sigma_k^2\\), \\(\\alpha_j=1/(1+(T-1)s_j)\\), \\(S=I+U\\,\\mathrm{diag}(\\alpha-1)\\,U^{\\top}\\) with \\(m=\\min(d_{out},Tr)\\), \\(\\tilde B_t=SB_t\\) with \\(A_t\\) untouched, then \\(\\Delta W_{\\text{calib}}=\\mathcal{M}(\\cdot)\\) and the Frobenius rescaling \\(\\gamma\\). The paper does not mention the LoRA scale; 'scale absorbed into \\(B_t\\)' is a harmless convention (\\(\\alpha=16\\) is fixed and the rank is shared within each experiment). Setup (q_proj and v_proj, LoRA alpha 16, ranks 8 to 64, Llama-3.1-8B, Qwen3-4B-Base in Appendix F) and the motivation statistics (effective rank of \\(B\\) 2.94 and 2.59 at rank 64) match Sec. 3 and Appendix B. Table 1, Table 2 (joint multi-task LoRA 0.3688) and Table 3 (calibrating \\(A\\) or \\(BA\\) lowers accuracy) match. Baselines are DARE, KnOTS, DELLA and Core Space; DELLA is not catalogued. The derived claims hold: \\(S\\) is symmetric with eigenvalues in \\([1/T,1]\\), and for linear TA \\(\\mathcal{M}(SB_tA_t)=S\\,\\mathcal{M}(B_tA_t)\\).",
+   "corrections": [
+    "structure: 'averaging over-counts' was wrong; a summed (Task Arithmetic) merge counts a fully shared direction \\(T\\) times, and the bound \\(1/T\\) is reached only as \\(s_j\\to1\\).",
+    "structure: KnOTS's basis is the SVD of the stacked \\(B_tA_t\\), not of the stacked \\(B_t\\); it spans the same column space only when each \\(A_t\\) has full row rank.",
+    "identity_at_init: the \\(T=1\\) identity holds exactly for Task Arithmetic; TIES still trims a single adapter.",
+    "relations: the knots note wrongly said both methods SVD the stacked updates, and it now records that KnOTS is a beaten Table 1 baseline; the lori note says LoRI is not cited; math in relation notes is wrapped."
+   ]
+  },
+  {
+   "id": "frameft",
+   "name": "FrameFT",
+   "full_name": "FrameFT: fine-tuning with sparse coefficients in tight fusion frames",
+   "paper_title": "Fine-Tuning of Transformer models with Frames",
+   "authors": "Adepu et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2608.26430",
+   "url": "https://arxiv.org/abs/2608.26430",
+   "code_url": "https://github.com/vsingh-group/FrameFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+\\Delta W,\\ \\ \\Delta W=\\frac{\\alpha}{\\sqrt{d_{out}d_{in}}}\\,P_{out}\\,C\\,P_{in}^{\\top}=\\frac{\\alpha}{\\sqrt{d_{out}d_{in}}}\\sum_{i=1}^{k}P_{out,i}\\,C_i\\,P_{in,i}^{\\top};\\ \\ P_{out}=[P_{out,1},\\dots,P_{out,k}]\\in\\mathbb{R}^{d_{out}\\times k\\rho_{out}},\\ P_{in}=[P_{in,1},\\dots,P_{in,k}]\\in\\mathbb{R}^{d_{in}\\times k\\rho_{in}}\\ \\ \\text{(Parseval tight fusion frames from Spectral Tetris, } \\textstyle\\sum_iP_{\\cdot,i}P_{\\cdot,i}^{\\top}=I\\text{)};\\ \\ C=\\mathrm{blockdiag}(C_1,\\dots,C_k),\\ C_i\\in\\mathbb{R}^{\\rho_{out}\\times\\rho_{in}},\\ \\ \\mathrm{supp}(C)=\\Omega,\\ |\\Omega|=n_c \\text{ random and shared by all layers};\\ \\ \\text{(paper form; the released code sets the block size of } C \\text{ independently of } \\rho\\text{: } 4\\times4 \\text{ for Llama-2-7B, } 40\\times40 \\text{ for Llama-2-13B, one full block for Gemma-2-2B, 128 blocks for Gemma-2-9B and Llama-3.1-8B)};\\ \\ \\text{frozen: } W_0,\\ P_{out},\\ P_{in},\\ \\Omega;\\ \\text{trained: the } n_c \\text{ entries } C_{\\Omega} \\text{ of each adapted matrix}",
+   "trainable_params": "n_c\\ \\text{per adapted matrix } (n_c=1000 \\text{ for RoBERTa, } 5000 \\text{ for the 2B--13B LLMs, i.e. } 320\\text{K in total on Llama-2-7B } W_q,W_v);\\ \\text{frames and support are regenerated from } (d,\\rho) \\text{ and a seed, so neither is stored}",
+   "locus": "\\(W_q\\) and \\(W_v\\) in every Transformer block (RoBERTa-base/large, Llama-2-7B/13B, Gemma-2-2B/9B, Llama-3.1-8B, ViT-B/L)",
+   "modification_kind": "additive-weight",
+   "structure": "A fixed two-sided frame expansion with a sparse block-diagonal core. \\(\\Delta W=\\sum_iP_{out,i}C_iP_{in,i}^{\\top}\\) couples the \\(i\\)-th output subspace only with the \\(i\\)-th input subspace, and only \\(n_c\\) core entries are free. Rank is not capped by a small \\(r\\): \\(\\mathrm{rank}\\,\\Delta W\\le\\mathrm{rank}\\,C\\le n_c\\). The general definition allows redundant frames (\\(k\\rho>d\\)), but every reported experiment uses \\(k\\rho=d\\) with Parseval normalisation. The main GLUE, instruction-tuning and ViT runs use \\(\\rho=2\\), and the Appendix D ablation varies \\(\\rho\\) from 2 to 256, still with \\(k\\rho=d\\). Then \\(\\sum_iP_iP_i^{\\top}=I\\) with ranks summing to \\(d\\) forces the subspaces to be mutually orthogonal, so \\(P_{out}\\) and \\(P_{in}\\) are square orthogonal matrices and the frame is not redundant. Running the released construct_real_tff confirms this: the matrix is orthogonal to \\(10^{-5}\\) to \\(10^{-4}\\) (float32) for \\(d=768\\) to \\(4096\\), and its non-zero fraction is about \\(2/\\rho\\) (99.6 to 99.9% at \\(\\rho=2\\), about 50% at \\(\\rho=4\\), about 25% at \\(\\rho=8\\)). At \\(\\rho=2\\) the Spectral Tetris unit-norm tight frame in \\(\\mathbb{C}^1\\) is all ones, so the modulated frame is the realified \\((d/2)\\)-point DFT basis: each 2-D subspace is the realification of one conjugated DFT row. In this regime FrameFT is FourierFT-like: sparse coefficients in a fixed DFT-type basis on both sides. The block-sparse frames that the paper credits for throughput appear only at \\(\\rho\\ge4\\). The released code also decouples the coefficient blocks from \\(\\rho\\). Llama-2-7B uses \\(4\\times4\\) blocks, Llama-2-13B \\(40\\times40\\), Gemma-2-2B one full block (no block-diagonal constraint, so a random sparse support over the whole two-sided realified-DFT basis), and Gemma-2-9B and Llama-3.1-8B 128 blocks. Four of the twelve released GLUE scripts use \\(\\rho=4\\) (tff_l 4), although the paper states \\(\\rho=2\\) for GLUE. Lemma 3.1: if \\(f(W)\\) is \\(L\\)-smooth, the reparameterised loss \\(f(C)\\) is \\(LB_{out}B_{in}\\)-smooth, unlike LoRA's factored \\((A,B)\\) landscape. Gradient descent with \\(\\eta\\le1/\\tilde L\\) therefore gets the standard \\(O(1/T)\\) stationarity rate (Theorem 3.2).",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(\\Delta W\\) is a dense additive matrix computed from the frames and the sparse core. The released tuner's merge() adds it to \\(W_0\\), so inference cost is unchanged.",
+   "identity_at_init": "Depends on the configuration. The released instruction-tuning scripts set init_std 0, so \\(C=0\\) and \\(\\Delta W=0\\) at step 0. The GLUE scripts do not pass init_std, so the default 1.0 (GLUE/args.py and the FrameConfig default) applies: the \\(n_c\\) coefficients start as \\(\\mathcal{N}(0,1)\\) samples and \\(\\Delta W\\neq0\\) at initialisation, as in FourierFT. The tuner's reset_frame_parameters, which would zero the coefficients, is defined but never called. The paper's Algorithm 1 only says 'Init'.",
+   "key_idea": "Replace LoRA's learned factor subspaces with fixed, algorithmically generated Parseval fusion frames, shared by all layers of the same width, and learn only a sparse block-diagonal coefficient matrix between them. Storage drops to \\(n_c\\) scalars per matrix, and the coefficient-space loss inherits the smoothness of the weight-space loss.",
+   "results_note": "Instruction-tuned on Alpaca with 320K trainable parameters, Llama-2-7B averages 63.62 on eight LM-eval-harness tasks, against 63.18 for LoRA (16.7M) and 63.22 for FourierFT (320K) (Table 3). LoRA stays 0.2 to 0.7 points ahead on Llama-2-13B, Gemma-2-9B and Llama-3.1-8B. On GLUE, FrameFT averages 86.1 (RoBERTa-base, 24K parameters) and 88.7 (RoBERTa-large, 48K) (Table 1).",
+   "relations": [
+    {
+     "target": "fourierft",
+     "type": "competes-with",
+     "note": "FourierFT is a baseline in Tables 1 to 3. Same recipe: a few trainable coefficients in a fixed basis shared across layers. In every reported setting (\\(k\\rho=d\\), mostly \\(\\rho=2\\)), FrameFT's basis is itself a realified DFT, so the main difference is block-diagonal rather than scattered 2D-frequency support (derived here; the paper does not present FrameFT as building on FourierFT)."
+    },
+    {
+     "target": "waveft",
+     "type": "competes-with",
+     "note": "Sparse coefficients under a fixed wavelet synthesis instead of fusion frames. FrameFT does not cite WaveFT, so this is a structural comparison."
+    },
+    {
+     "target": "svft",
+     "type": "competes-with",
+     "note": "Also a sparse core between fixed bases, but SVFT's bases are the singular vectors of \\(W_0\\), stored per layer. FrameFT's bases depend only on \\((d,\\rho)\\). SVFT is a baseline in Tables 1 and 3."
+    },
+    {
+     "target": "lora-xs",
+     "type": "competes-with",
+     "note": "Core between frozen SVD bases of \\(W_0\\). FrameFT replaces the weight-derived bases with data-independent frames. LoRA-XS is a RoBERTa-large GLUE baseline (Table 1), where the two tie on average (88.7)."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "FrameFT matches or beats LoRA on GLUE (12 to 17 times fewer trainable parameters) and on Alpaca for Llama-2-7B and Gemma-2-2B. On Llama-2-13B, Gemma-2-9B and Llama-3.1-8B, LoRA is 0.2 to 0.7 points ahead with about 40 to 65 times more parameters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2608.26430",
+    "https://arxiv.org/html/2608.26430",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://openreview.net/forum?id=KCfbSVIheg",
+    "https://github.com/vsingh-group/FrameFT",
+    "https://github.com/vsingh-group/FrameFT/blob/main/peft/src/peft/tuners/frame/layer.py",
+    "https://github.com/vsingh-group/FrameFT/blob/main/InstructionTuning/launch_scripts/Llama-2-7b-frameft.sh",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2608.26430"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Harshavardhan Adepu and v1 date 2026-08-26 match; only v1 exists. Venue: icml-2026-orals-posters.json lists poster 64753 with decision 'Accept (regular)' and paper_url openreview.net/forum?id=KCfbSVIheg. Semantic Scholar: 0 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 3.1 (\\(W'=W+\\frac{\\alpha}{\\sqrt{mn}}P_mC_lP_n^{\\top}\\) with block-diagonal \\(C_l\\), \\(C_{l,i}\\in\\mathbb{R}^{\\rho_m\\times\\rho_n}\\)), Sec. 3.3 (random support shared across layers) and Sec. 3.5 (Lemma 3.1, Theorem 3.2, Parseval frames in all experiments). Code checked in a clone of github.com/vsingh-group/FrameFT: get_delta_weight computes \\(T_{in}^{\\top}S\\,T_{out}\\,\\alpha/\\sqrt{d_{in}d_{out}}\\) (\\(T\\): stacked frame rows, \\(S\\): sparse coefficient matrix), which is the transpose of the paper's form, and merge() adds the transposed result to the base weight. Here construct_real_tff was run on the released code: square, orthogonal frames at \\(k\\rho=d\\) for \\(\\rho\\in\\{2,4,8,256\\}\\); at \\(\\rho=2\\) each subspace matches a realified conjugate DFT row (projector distance below \\(10^{-4}\\)). All 17 released scripts were tabulated for tff_l, block size, num_blocks and init_std. Parameter counts re-derived: \\(n_c\\) per matrix, so \\(12\\cdot2\\cdot1000=24\\)K (RoBERTa-base), \\(24\\cdot2\\cdot1000=48\\)K (large), \\(32\\cdot2\\cdot5000=320\\)K (Llama-2-7B) and \\(40\\cdot2\\cdot5000=400\\)K (13B), matching Tables 1 and 3; 320K FP32 values give the stated 1.28 MB checkpoint.",
+   "corrections": [
+    "structure: 'every reported experiment uses \\(\\rho=2\\)' was wrong. Appendix D varies \\(\\rho\\) from 2 to 256, and four of the twelve released GLUE scripts use \\(\\rho=4\\). What holds for every reported run is \\(k\\rho=d\\), which already makes the frame non-redundant and orthogonal.",
+    "structure: measured density at \\(\\rho=2\\) is 99.6 to 99.9% (not 99.7 to 99.95%), orthogonality is \\(10^{-5}\\) to \\(10^{-4}\\) in float32, and density falls as about \\(2/\\rho\\).",
+    "structure: 'the released LLM scripts use \\(4\\times4\\) coefficient blocks' holds only for Llama-2-7B; 13B uses \\(40\\times40\\), Gemma-2-2B one full block, Gemma-2-9B and Llama-3.1-8B 128 blocks. The formula now records that the code decouples block size from \\(\\rho\\).",
+    "identity_at_init: the reset routine is never called, and the GLUE scripts use the default init_std 1.0, so \\(\\Delta W\\neq0\\) at init there. Only the instruction-tuning runs start at \\(\\Delta W=0\\).",
+    "relations: fourierft retyped from builds-on to competes-with (the paper treats FourierFT as a baseline, not a basis); waveft is not cited; the lora note now records where LoRA wins and the actual parameter ratios.",
+    "locus and results_note: math wrapped; added GLUE averages and the LoRA-wins caveat."
+   ]
+  },
+  {
+   "id": "prefixmemory-tuning",
+   "name": "PrefixMemory-Tuning",
+   "full_name": "PrefixMemory-Tuning (PMT; titled Prefix-Tuning+ in arXiv v1 and v2)",
+   "paper_title": "PrefixMemory-Tuning: Modernizing Prefix-Tuning by Decoupling the Prefix from Attention",
+   "authors": "Wang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2506.13674",
+   "url": "https://arxiv.org/abs/2506.13674",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{for each layer } l \\text{ and attention head } h:\\ \\ o_i^{\\top}=\\frac{\\sum_{j\\le i}\\mathrm{sim}(q_i,k_j)\\,v_j^{\\top}}{\\sum_{j\\le i}\\mathrm{sim}(q_i,k_j)}+\\phi(q_i)^{\\top}M,\\ \\ q_i=W_Qx_i,\\ k_j=W_Kx_j,\\ v_j=W_Vx_j,\\ \\ \\mathrm{sim}(q,k)=\\exp\\!\\big(q^{\\top}k/\\sqrt{d_K}\\big),\\ \\ \\phi\\in\\{\\mathrm{elu},\\mathrm{gelu}\\}\\ \\text{elementwise } (d_\\phi=d_K),\\ \\ M\\in\\mathbb{R}^{d_\\phi\\times d_V}\\ (\\text{per head; the paper's single-head notation writes } M\\in\\mathbb{R}^{d_\\phi\\times d});\\ \\ \\text{derived from prefix-tuning with prefix } s_1,\\dots,s_\\ell \\text{ by (i) taking the prefix out of the softmax with a fixed weight } \\lambda,\\ \\text{(ii) linearising } \\mathrm{sim}(\\cdot,\\cdot)\\approx\\phi(\\cdot)^{\\top}\\phi(\\cdot),\\ \\text{(iii) replacing } \\textstyle\\sum_{j\\le\\ell}\\phi(W_Ks_j)(W_Vs_j)^{\\top} \\text{ by a free } M \\text{, dropping the normaliser and absorbing } \\lambda;\\ \\ \\text{frozen: all base weights};\\ \\text{trained: } \\{M_{l,h}\\}",
+   "trainable_params": "L\\cdot H\\cdot d_\\phi d_V\\ \\text{per model } (=L\\,d\\,d_K \\text{ for multi-head attention with elementwise } \\phi):\\ 16.91\\text{M } (0.25\\%) \\text{ on LLaMA2-7B-Chat, } 9.51\\text{M } (0.31\\%) \\text{ on Qwen2.5-3B-Instruct};\\ \\text{both reported counts exceed } LHd_Kd_V \\text{ by exactly } L\\cdot d\\text{, consistent with one extra } d\\text{-vector per layer that the text does not describe (it equals } Hd_\\phi\\text{, the size of one Eq.-(6) normaliser } N\\in\\mathbb{R}^{d_\\phi} \\text{ per head; suggestive, not confirmed)}",
+   "locus": "Every attention head of every layer: a query-conditioned branch added to each head's output before \\(W_O\\) (LLaMA2-7B-Chat, Qwen2.5-3B-Instruct, Qwen2.5-Math-7B)",
+   "modification_kind": "architectural-insertion",
+   "structure": "An additive, query-conditioned bias outside the softmax: \\(o_i\\mapsto o_i+M^{\\top}\\phi(q_i)\\). Unlike a prefix, it is not renormalised against the input's attention mass. Prefix-tuning gives \\(o^{pt}_i=(1-\\alpha_i)o_i+\\sum_{j\\le\\ell}\\alpha_{ij}W_Vs_j\\), where \\(\\alpha_i\\) depends on the input and prefix lengths; this is the paper's tradeoff argument. In PMT the input path keeps weight 1 and the memory path is independent of length. A structural reading, derived here: through the frozen output projection, each layer gains the parallel branch \\(\\sum_hW_O^{(h)}M_h^{\\top}\\phi(W_Q^{(h)}x_i)\\). That is a parallel adapter whose down-projection is the frozen query projection \\(W_Q\\) (width \\(d_K\\) per head and \\(Hd_K=d\\) in total for both LLaMA2-7B and Qwen2.5-3B, so it is not a bottleneck), whose nonlinearity is elu or gelu, and whose trained map is block-diagonal (one \\(M_h^{\\top}\\in\\mathbb{R}^{d_V\\times d_K}\\) per head), read out through the frozen \\(W_O\\). It is the linear-kernel counterpart of He et al.'s view of prefix-tuning as a gated parallel adapter. Memory capacity scales with \\(d_\\phi\\times d_V\\) rather than with prefix length. Remark 1 notes that a trainable \\(\\phi_W(x)=\\mathrm{ReLU}(Wx+b)\\) would turn the branch into a one-hidden-layer MLP; Table 2 reports such an 'MLP Kernel' variant, better than elu on some tasks and worse on others. The paper does not say whether \\(q_i\\) is taken before or after RoPE; after RoPE the branch would depend on position.",
+   "mergeable": "no",
+   "mergeable_reason": "\\(\\phi(q_i)^{\\top}M\\) is a non-linear (elu/gelu) function of the query, so the branch cannot be folded into \\(W_Q,W_K,W_V\\) or \\(W_O\\) and stays at inference. It costs about one extra \\(d_K\\times d_V\\) product per head per token and does not grow the KV cache.",
+   "identity_at_init": "Not stated, and the linked code repository is empty. With \\(M=0\\) the branch vanishes and \\(o^{PMT}_i=o_i\\) exactly. Prefix-tuning has no such parameter value: any prefix with \\(\\ell\\ge1\\) takes softmax mass \\(\\alpha_i>0\\) from the input.",
+   "key_idea": "Prefix-tuning underperforms on deep LLMs because the prefix shares each head's softmax normaliser with the input, so prefix influence and input specificity trade off with sequence length. PMT moves the prefix out of the softmax, linearises it with a kernel feature map \\(\\phi\\), and replaces the prefix key-value sum with a free memory matrix \\(M\\), giving \\(o_i=\\mathrm{Attn}_i+\\phi(q_i)^{\\top}M\\).",
+   "results_note": "With one training example per class, PMT reaches 71.2% on BigBench with LLaMA2-7B-Chat and 76.6% with Qwen2.5-3B-Instruct, above LoRA (\\(r=64\\)), prefix-tuning and full fine-tuning.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Derived from the prefix-tuning attention output by decoupling the softmax, kernel-linearising, and freeing the prefix key-value sum. With the normaliser removed, prefix-tuning is not an exact member of the PMT family, so PMT relaxes it rather than strictly generalising it."
+    },
+    {
+     "target": "prefix-tuning-capabilities-limitations",
+     "type": "builds-on",
+     "note": "Starts from Petrov et al.'s decomposition \\(o^{pt}_i=(1-\\alpha_i)o_i+\\sum_j\\alpha_{ij}W_Vs_j\\). Argues that their explanation (prefixes cannot change the attention pattern) holds for shallow transformers but not for deep LLMs."
+    },
+    {
+     "target": "llama-adapter",
+     "type": "competes-with",
+     "note": "LLaMA-Adapter already gives adaption prompts their own softmax, separate from the token softmax, with a zero-init gate; this is PMT's step (i). PMT further linearises the prompt term and replaces it with a free matrix. The paper does not cite LLaMA-Adapter."
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "special-case-of",
+     "note": "Derived here: through \\(W_O\\), the PMT branch is a parallel adapter with a frozen down-projection \\(W_Q^{(h)}\\) per head (total width \\(d\\), so not a bottleneck), an elementwise \\(\\phi\\), and a trained block-diagonal map of per-head \\(M_h^{\\top}\\) read out through the frozen \\(W_O\\)."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "In Table 1, PMT beats LoRA \\(r=64\\) (33.55M parameters on LLaMA2-7B-Chat, about twice PMT's 16.91M) on all three few-shot datasets for both models, and Table 7 shows it ahead of LoRA \\(r=8\\) to \\(32\\). It also beats a LoRA baseline in CFT math (Table 3) and in AlpacaEval 2 win-rate deltas (Table 4); the LoRA rank used in those two tables is not stated."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.13674",
+    "https://arxiv.org/html/2506.13674",
+    "https://arxiv.org/abs/2506.13674v1",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://openreview.net/forum?id=LvUMpZE44r",
+    "https://github.com/haonan3/PrefixMemory-Tuning",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2506.13674"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title (v3), first author Haonan Wang and v1 date 2025-06-16 match, so year 2025 is right; the abs pages of v1 and v2 carry the title 'Prefix-Tuning+: ...'. Venue: iclr-2026-orals-posters.json lists poster 10009993 with decision 'Accept (Poster)' and paper_url openreview.net/forum?id=LvUMpZE44r; the arXiv comment says 'ICLR 2026'. Semantic Scholar: 5 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 3 to 5 of v3: Eq. (2) prefix attention, Eq. (3) Petrov decomposition, Eq. (4) fixed convex weight \\(\\lambda\\), Eq. (5) kernel linearisation, Eq. (6) free \\(M\\) and \\(N\\), Eq. (7) final form \\(o_i^{\\top}=\\mathrm{Attn}_i^{\\top}+\\phi(q_i)^{\\top}M\\); \\(\\phi\\in\\{\\mathrm{elu},\\mathrm{gelu}\\}\\) (Sec. 5.2). Parameter counts re-derived from Table 8: \\(32\\cdot32\\cdot128\\cdot128=16{,}777{,}216\\) plus \\(32\\cdot4096=131{,}072\\) gives 16.91M; \\(36\\cdot16\\cdot128\\cdot128=9{,}437{,}184\\) plus \\(36\\cdot2048=73{,}728\\) gives 9.51M. Table 1 values in results_note match. The paper states no initialisation and does not say whether \\(q_i\\) is taken before or after RoPE. LLaMA-Adapter is not cited (checked the v3 reference list). The linked repository github.com/haonan3/PrefixMemory-Tuning is empty (GitHub page reads 'This repository is empty'; git ls-remote returns no refs); its creation date could not be re-checked because the GitHub API was rate-limited.",
+   "corrections": [
+    "formula_latex: noted that the paper's single-head notation writes \\(M\\in\\mathbb{R}^{d_\\phi\\times d}\\); the per-head \\(d_\\phi\\times d_V\\) reading is the one consistent with Table 8.",
+    "trainable_params: the unexplained \\(L\\cdot d\\) surplus equals one Eq.-(6) normaliser \\(N\\in\\mathbb{R}^{d_\\phi}\\) per head; recorded as a possibility, not a fact.",
+    "structure and the parallel-adapter relation: the branch is not a bottleneck (\\(Hd_K=d\\)); the trained map is block-diagonal across heads.",
+    "structure: Table 2 does test an MLP-kernel variant, not only Remark 1.",
+    "relations: the lora note now separates the Table 1 comparison (LoRA \\(r=64\\), twice the parameters) from the A.4 comparison (\\(r\\le32\\)) and says the LoRA rank behind the CFT and AlpacaEval comparisons is not stated.",
+    "locus, results_note and relation notes: math wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "fourtune",
+   "name": "FourTune",
+   "full_name": "FourTune: fully 4-bit (W4A4G4) LoRA post-training with a frozen low-rank numerical stabilizer",
+   "paper_title": "FourTune: Towards Fully 4-Bit Efficient Post-Training for Diffusion Models",
+   "authors": "Xue et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2607.05711",
+   "url": "https://arxiv.org/abs/2607.05711",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0\\approx R+L_{\\text{stab}},\\ \\ L_{\\text{stab}}=L_1L_2\\ \\text{(low-rank outlier branch from the SVDQuant decomposition, kept in high precision)},\\ \\ R \\text{ quantised offline to NVFP4 with } 16\\times16 \\text{ block scales};\\ \\ h=\\mathrm{GEMM}_{4\\text{bit}}\\big(Q(R),Q(x)\\big)+L_{\\text{stab}}\\,x+BA\\,x;\\ \\ \\frac{\\partial\\mathcal{L}}{\\partial x}=\\mathrm{GEMM}_{4\\text{bit}}\\big(Q(R)^{\\top},Q(g)\\big)+L_{\\text{stab}}^{\\top}g+(BA)^{\\top}g,\\ \\ g=\\frac{\\partial\\mathcal{L}}{\\partial h}\\ \\text{(4-bit gradients through the backbone; block scales let } Q(R)^{\\top} \\text{ be used without requantising)};\\ \\ \\frac{\\partial\\mathcal{L}}{\\partial B}=g\\,(Ax)^{\\top},\\ \\ \\frac{\\partial\\mathcal{L}}{\\partial A}=B^{\\top}g\\,x^{\\top};\\ \\ \\text{frozen: } R,\\ L_{\\text{stab}};\\ \\text{trained: } B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix } (r=64 \\text{ in the experiments});\\ \\text{also frozen: the high-precision rank-}k \\text{ stabilizer, } k(d_{in}+d_{out}) \\text{ entries (} k \\text{ not stated), and the 4-bit residual}",
+   "locus": "Linear layers (GEMMs) of the diffusion backbone: the FLUX.1-dev (12B) and Qwen-Image (20B) DiTs, plus SDXL in Appendix B. The MLP's FC1 GEMM is fused with the FC2 quantisation kernel.",
+   "modification_kind": "additive-weight",
+   "structure": "A QLoRA-type composite with three parallel branches on each linear layer. The first is a frozen 4-bit residual GEMM (W4A4). The second is a frozen high-precision low-rank stabilizer \\(L_{\\text{stab}}\\) that absorbs the quantisation-sensitive outlier directions of \\(W_0\\); this is SVDQuant's decomposition, reused here during training. The third is a trainable rank-\\(r\\) LoRA \\(BA\\). The trainable update is the ordinary additive \\(BA\\); what changes is the arithmetic. QLoRA dequantises and computes in W4A16G16, while FourTune runs the forward and input-gradient GEMMs in 4-bit (W4A4G4). Its \\(16\\times16\\) block-wise scales let the transposed weight be used in the backward pass without requantisation. The LoRA down-projection, the stabilizer and activation quantisation share one fused kernel, and the 4-bit GEMM is fused with the up-projections. The block granularity is \\(16\\times16\\) instead of the usual \\(1\\times16\\) groups (Table 5: LPIPS 0.227 vs 0.203 for reconstruction). An INT4 variant on an RTX 4090 is reported in Appendix B. Without the stabilizer, naive W4A4G4 training shows gradient explosion in the distillation runs (Fig. 8). The stabilizer and the LoRA have the same algebraic form (high-precision low-rank maps of \\(x\\)), so the trained LoRA can be concatenated into the stabilizer branch: \\([L_1\\ B][L_2;A]\\).",
+   "mergeable": "conditional",
+   "mergeable_reason": "\\(BA\\) can be concatenated into the high-precision low-rank branch, \\(L_{\\text{stab}}+BA=[L_1\\ B]\\,[L_2;A]\\) (rank \\(k+r\\)), which keeps the trained function exactly in a W4A4 inference engine. Folding it into the 4-bit residual \\(R\\) requires requantisation. Folding it into a BF16 \\(W_0\\) gives \\(W_0+BA\\), which differs from the training-time function by the quantisation error of \\(R\\).",
+   "identity_at_init": "Not stated. Under standard LoRA initialisation (\\(BA=0\\)) the model starts at the quantised base \\(Q(R)Q(x)+L_{\\text{stab}}x\\approx W_0x\\), not exactly at \\(W_0x\\).",
+   "key_idea": "FourTune aims to make PEFT faster than BF16 LoRA, not only smaller, by running the whole frozen backbone in native 4-bit for weights, activations and gradients. A frozen high-precision low-rank stabilizer \\(L_{\\text{stab}}\\) carries the outlier directions. \\(16\\times16\\) block scales and fused LoRA and MLP kernels keep the 4-bit backward pass efficient.",
+   "results_note": "In end-to-end FLUX.1-dev customization training, FourTune uses 14.51 GB against 29.35 GB for BF16 LoRA. A step takes 0.86 s on an RTX 5090, 2.27x faster than BF16 LoRA and 2.79x faster than NF4 QLoRA, at matched generation quality.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "Same design of a frozen 4-bit base plus LoRA. QLoRA dequantises for compute (W4A16G16); FourTune computes in W4A4G4."
+    },
+    {
+     "target": "qerl",
+     "type": "competes-with",
+     "note": "Also NVFP4 base plus LoRA (QeRL targets RL for LLMs). QeRL dequantises weights for compute; FourTune quantises activations and gradients as well."
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "Both handle the quantised-base mismatch with a high-precision low-rank component. LoftQ puts it into the trainable LoRA initialisation; FourTune keeps it as a separate frozen stabilizer."
+    },
+    {
+     "target": "sparselora",
+     "type": "competes-with",
+     "note": "Training-time acceleration baseline for LoRA (contextual channel sparsity). It underperforms FourTune on \\(\\pi\\)-Flow distillation, even at 50% sparsity."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "The trainable branch is a standard rank-64 LoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2607.05711",
+    "https://arxiv.org/html/2607.05711",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://openreview.net/forum?id=RpwnrBkht2",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2607.05711"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Bowen Xue and v1 date 2026-07-07 match; only v1 exists. Venue: icml-2026-orals-posters.json lists poster 64004 with decision 'Accept (regular)' and paper_url openreview.net/forum?id=RpwnrBkht2. Semantic Scholar: 1 citation. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 3.1 to 3.3: Eq. (1) \\(W\\approx R+L_{\\text{stab}}\\), \\(L_{\\text{stab}}=L_1L_2\\) from SVDQuant; Eq. (2) triple-branch forward; Eq. (3) input gradient with \\(Q(G)Q(R)^{\\top}\\) computed in 4-bit through block-wise scales; adapter gradients. The paper uses row vectors (\\(Y=X\\cdot(AB)\\), \\(A\\) down, \\(B\\) up); the entry's column-vector form with \\(B\\in\\mathbb{R}^{d_{out}\\times r}\\) up and \\(A\\in\\mathbb{R}^{r\\times d_{in}}\\) down is the same model. \\(16\\times16\\) granularity is stated in Sec. 4.3 and Table 5; \\(r=64\\) in Sec. 4.1; no stabilizer rank or LoRA initialisation is stated anywhere. Sec. 4.2 efficiency numbers match results_note (14.51 vs 29.35 GB, 2.02x end-to-end; 7.71 vs 22.59 GB, 2.93x for DiT weights; 0.86 s per step on an RTX 5090, 2.27x over BF16 LoRA and 2.79x over NF4 QLoRA); the abstract's 2.25x memory figure is from Fig. 1. Re-derived: trainable \\(r(d_{in}+d_{out})\\) per matrix; mergeable conditional (exact only inside the low-rank branch); not exactly identity at init because the base is quantised.",
+   "corrections": [
+    "locus: the fusion is FC1 GEMM with the FC2 quantisation kernel, not 'FC1 and FC2 kernels'.",
+    "structure: added the \\(16\\times16\\) versus \\(1\\times16\\) granularity comparison, the INT4 variant, and that Fig. 8's gradient explosion is from the distillation runs.",
+    "sparselora relation: math wrapped (\\(\\pi\\)-Flow); added the 50% sparsity detail."
+   ]
+  },
+  {
+   "id": "gradfix",
+   "name": "GradFix",
+   "full_name": "GradFix: gradient-sign masking for task-vector transport across pre-trained models",
+   "paper_title": "Gradient-Sign Masking for Task Vector Transport Across Pre-Trained Models",
+   "authors": "Rinaldi et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2510.09658",
+   "url": "https://arxiv.org/abs/2510.09658",
+   "code_url": "https://github.com/fillo-rinaldi/GradFix",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\tau_A=\\theta_A^{ft}-\\theta_A\\ \\ (\\text{per matrix } \\Delta W_A=W_A^{ft}-W_A);\\ \\ \\hat s_i=\\mathrm{sign}\\Big(-\\sum_{(x_n,y_n)\\in\\mathcal{D}_s}\\mathrm{sign}\\big(\\nabla_\\theta\\ell(f_{\\theta_B}(x_n),y_n)\\big)_i\\Big)\\ \\ (\\text{majority vote over } N=|\\mathcal{D}_s| \\text{ labelled target examples});\\ \\ m_i=\\mathbb{1}\\{\\mathrm{sign}(\\tau_{A,i})=\\hat s_i\\},\\ \\ \\theta_B^{\\text{trans}}=\\theta_B+\\alpha\\,(m\\odot\\tau_A);\\ \\ \\text{full-data form: } g=\\nabla_\\theta\\mathcal{L}(\\theta_B),\\ \\ g^{\\top}\\big(\\alpha\\,m\\odot\\tau_A\\big)=-\\alpha\\textstyle\\sum_im_i|g_i||\\tau_{A,i}|\\le0;\\ \\ \\text{frozen: } \\theta_A,\\ \\theta_A^{ft},\\ \\theta_B;\\ \\text{nothing is trained; } \\alpha \\text{ is chosen on a validation set}",
+   "trainable_params": "0\\ \\text{(training-free); each transport builds one binary mask } m\\in\\{0,1\\}^{|\\theta|} \\text{ from } N \\text{ per-sample target gradients, plus the scalar } \\alpha",
+   "locus": "All parameters covered by the source task vector: the CLIP ViT-B/16 and ViT-L/14 image encoders (text encoder frozen), and T5-base for language tasks (T5 v1.1 as source, FLAN-T5 as target).",
+   "modification_kind": "composition-or-routing",
+   "structure": "A coordinatewise Hadamard filter on a task vector, in parameter coordinates. The transported delta keeps \\(\\tau_A\\) on the sign-agreement set \\(\\{i:\\mathrm{sign}\\,\\tau_{A,i}=\\mathrm{sign}(-g_i)\\}\\) unchanged and zeros it elsewhere. This makes it a base-change map: a displacement measured at base point \\(\\theta_A\\) is projected onto the target's local descent orthant at \\(\\theta_B\\), with no permutation alignment and no parameter updates. The first-order descent property \\(g^{\\top}\\delta\\le0\\) holds by construction for the full-data gradient, so the update lowers the loss for sufficiently small \\(\\alpha\\). With few samples the paper's lemma is per coordinate: under an independence assumption and \\(p_i>1/2\\), \\(\\Pr[\\hat s_i=\\mathrm{sign}(-g_i)]\\ge1-e^{-2N(p_i-1/2)^2}\\) (Hoeffding). A guarantee for the whole vector would need a union bound that the paper does not state. The filter acts on coordinates, not on functions, so it depends on the basis. One consequence, derived here: for a factored adapter, \\(m\\odot(BA)\\) is in general full-rank, so a LoRA task vector would be transported as a masked dense matrix, not as low-rank factors. The paper's experiments use full fine-tuning task vectors. For multi-task merging, merge-then-mask with a consensus target-sign mask works best; for several sources fine-tuned on one task, mask-then-merge works best. Magnitude-weighted masks underperform, which the paper reads as directions transferring across pre-trainings while magnitudes do not.",
+   "mergeable": "yes",
+   "mergeable_reason": "The result is a single additive weight delta \\(\\alpha\\,m\\odot\\tau_A\\) on \\(\\theta_B\\). It composes with Task Arithmetic and TIES (mask-then-merge or merge-then-mask) and adds no inference overhead.",
+   "identity_at_init": "Nothing is trained. \\(\\alpha=0\\), or an empty mask, returns the target base \\(\\theta_B\\) exactly.",
+   "key_idea": "A task vector trained on an old base \\(\\theta_A\\) transfers to a new release \\(\\theta_B\\) once its coordinates whose sign disagrees with the target's anti-gradient are removed. A few target gradients, combined by a majority vote of signs and with no update steps, rebase \\(\\tau_A\\) onto \\(\\theta_B\\) with a first-order descent guarantee \\(g^{\\top}\\delta\\le0\\).",
+   "results_note": "With one labelled example per class, transporting a DataComp-XL CLIP ViT-B/16 EuroSAT task vector to a LAION-2B ViT-B/16 gives 61.94%. Naive task-vector addition gives 49.58%, zero-shot 49.41%, and few-shot fine-tuning on the same samples 56.61%.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "Extends task-vector addition to a different base point. Naive \\(\\theta_B+\\tau_A\\) stays near zero-shot when the bases differ."
+    },
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "Used with TA and TIES in multi-task merging (merge-then-mask) and multi-source merging (mask-then-merge). TIES elects signs by task-vector mass; GradFix elects them by target anti-gradient votes."
+    },
+    {
+     "target": "trans-lora",
+     "type": "competes-with",
+     "note": "Both move fine-tuning knowledge to a new base model. Trans-LoRA re-trains the adapter by distillation on synthetic data; GradFix is training-free masking from a few labelled samples. GradFix does not cite Trans-LoRA, so this is a structural comparison."
+    },
+    {
+     "target": "lora-x",
+     "type": "competes-with",
+     "note": "Both are training-free cross-model transfer. LoRA-X projects onto the target's SVD subspaces; GradFix applies a coordinatewise gradient-sign mask. GradFix does not cite LoRA-X, so this is a structural comparison."
+    },
+    {
+     "target": "git-re-basin",
+     "type": "competes-with",
+     "note": "The paper frames transport against model rebasin (Ainsworth et al., cited in Sec. 3). Rebasin aligns two pre-trained models by a weight permutation; GradFix transfers a task vector between bases without any permutation, by sign masking. The paper's permutation-based baseline TransFusion is not catalogued."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.09658",
+    "https://arxiv.org/html/2510.09658",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://openreview.net/forum?id=CQnpxZNMvT",
+    "https://github.com/fillo-rinaldi/GradFix",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2510.09658"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Filippo Rinaldi and v1 date 2025-10-07 match, so year 2025 is right (v3 2026-02-20). Venue: iclr-2026-orals-posters.json lists poster 10010857 with decision 'Accept (Poster)' and paper_url openreview.net/forum?id=CQnpxZNMvT; the arXiv comment says 'Accepted at ICLR 2026'. Semantic Scholar: 3 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner for this method and src/peft/utils/merge_utils.py has only task_arithmetic, ties, dare_linear, dare_ties and magnitude_prune, so hf_peft stays false. Formula checked against Sec. 4.1 to 4.3 and Algorithm 1 of v3: Eq. (4) mask \\(m_i=\\mathbb{1}\\{\\mathrm{sign}(\\tau_{A,i})=\\mathrm{sign}(-g_i)\\}\\), Eq. (5) \\(\\theta_B^{\\text{trans}}=\\theta_B+\\alpha(m\\odot\\tau_A)\\), Eqs. (6) to (8) first-order descent, Eq. (9) majority vote, and the Hoeffding lemma (Eq. 10). \\(\\alpha\\) is chosen on a validation set (Sec. 5). Task vectors are full fine-tuning deltas under the Ilharco et al. protocol (2000 iterations, AdamW), with the CLIP text encoder frozen. Table 1 values in results_note match (61.94 vs 49.58, 49.41 and 56.61). Merge-then-mask (consensus mask) is best for multi-task merging and mask-then-merge is used for multi-source merging (Sec. 5.2); the magnitude-scaled mask underperforms even with oracle signs (Sec. 5.3, Table 4). The repository github.com/fillo-rinaldi/GradFix exists, with main.py and grad_sign/. Git Re-Basin (cited) was added as a relation; Trans-LoRA and LoRA-X are not cited.",
+   "corrections": [
+    "structure: the few-sample guarantee is per coordinate; the vector-level claim needs a union bound the paper does not give. Also made explicit that first-order descent needs small \\(\\alpha\\).",
+    "locus: 'the full T5-base model' replaced by the actual pair (T5 v1.1 source, FLAN-T5 target); the paper does not say which T5 parameters the task vector covers.",
+    "relations: trans-lora and lora-x notes now say these papers are not cited; added git-re-basin (competes-with), which the paper uses to frame its setting; math in the task-arithmetic note wrapped."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "All six requested methods exist, all are PEFT or PEFT-composition methods, and none duplicates a catalogued id. I checked existing_index.json and every JSON file under research/. PrefixMemory-Tuning (called Prefix-Tuning+ in arXiv v1 and v2) had earlier been listed as EXCLUDED in frontier.json for low uptake. It is added now as an ICLR 2026 paper with 5 Semantic Scholar citations. Venues come from the official virtual-site JSON downloaded on 2026-10-02: AR1-ZO is a NeurIPS 2026 poster (OpenReview 7eOsaBX3qO). Pico is a NeurIPS 2026 poster (PtEkosDXWk). FrameFT is an ICML 2026 poster (KCfbSVIheg). FourTune is an ICML 2026 poster (RpwnrBkht2). PrefixMemory-Tuning is an ICLR 2026 poster (LvUMpZE44r). GradFix is an ICLR 2026 poster (CQnpxZNMvT). Year follows the first public version: PrefixMemory-Tuning is 2025 (arXiv v1 on 2025-06-16), GradFix is 2025 (v1 on 2025-10-07), and the other four are 2026. Semantic Scholar citation counts on 2026-10-02: AR1-ZO 0, Pico 0, FrameFT 0, PrefixMemory-Tuning 5, FourTune 1, GradFix 3. None of the six is in HF PEFT v0.21.2 (2026-10-01). FrameFT ships its own patched peft with a 'frame' tuner. Formulas were read from the arXiv HTML method sections, and for FrameFT also from the released tuner code. Corrections to the sweep reasons. (1) AR1-ZO: 'directional collapse' is the Theta(r^-2) decay of the finite-difference SNR caused by inheriting the alpha/r coefficient under single-atom queries. It is a measurement-scale effect, not a statement about the cone geometry of BA. (2) Pico: the claim that it is the 'first merging rule built on the A/B asymmetry' is not supported. LoRI (catalogued) already exploits A/B roles to limit merge interference, and KnOTS and Core Space already work with the factor spaces separately. What is new in Pico is calibrating only B by spectral energy share before merging. For Task Arithmetic, Pico reduces exactly to a post-merge left multiplication by S. (3) FrameFT: every reported experiment uses rho=2 and k*rho=d with Parseval frames. That frame is a non-redundant orthogonal basis, not a redundant non-orthogonal dictionary. I checked numerically that the released construct_real_tff at rho=2 returns a dense matrix, orthogonal to about 1e-5, which is the realified (d/2)-point DFT basis. So in practice FrameFT is close to FourierFT with block-diagonal support. Redundancy appears only in the general definition (k*rho>d). (4) PrefixMemory-Tuning: the prompts-family axis change can be stated concretely. PMT has an identity point (M=0) that prefix-tuning lacks. Structurally it is a parallel adapter whose down-projection is the frozen W_Q (my derivation). LLaMA-Adapter's separately normalised, gated prompt softmax already anticipated PMT's step (i), and the paper does not cite it. The code link printed in the paper (github.com/haonan3/PrefixMemory-Tuning) is an empty repository, created 2026-04-18. Initialisation, pre- or post-RoPE queries, and the extra L*d parameters implied by Table 8 therefore cannot be checked. That is why code_url is empty and confidence is medium. (5) FourTune: the abstract's 2.25x memory figure comes from Fig. 1. The body reports 2.02x end-to-end (14.51 vs 29.35 GB) and 2.93x for DiT weights alone. The 2.27x figure is the step-time speedup on an RTX 5090. The paper does not state the stabilizer rank or the LoRA initialisation. (6) GradFix: its task vectors are full fine-tuning deltas (Ilharco et al. protocol), not LoRA. It is included as a training-free base-change (transport) composition method. No theory-only papers were in this batch, so papers is empty. Semantic Scholar first returned HTTP 429; the batch endpoint worked on retry. Metadata comes from arxiv.org/abs pages, so the arXiv export API was not needed. VERIFICATION UPDATE (2026-10-02, adversarial pass): all six methods confirmed and kept. The claims above that need correcting are these. (3) FrameFT: not every experiment uses \\(\\rho=2\\). Appendix D varies \\(\\rho\\) from 2 to 256 and four of the twelve released GLUE scripts use \\(\\rho=4\\). Every reported run does use \\(k\\rho=d\\), so the frame is non-redundant everywhere. The released coefficient block size is set separately from \\(\\rho\\) (\\(4\\times4\\) only for Llama-2-7B). init_std 0 holds only for the instruction-tuning scripts; the GLUE scripts keep the default 1.0. (4) PMT: the empty repository was re-confirmed, but its creation date could not be re-checked (GitHub API rate limit). Metadata has now also been checked through the arXiv export API.",
+ "verification_summary": "Adversarial check on 2026-10-02 of all 6 methods (no papers) in addendum2026b-1. All 6 were confirmed and kept; none was dropped. Metadata: the export API (id_list query) confirms all six titles, first authors (Chen, Tang, Adepu, Wang, Xue, Rinaldi) and v1 dates, so years are 2026, 2026, 2026, 2025, 2026 and 2025. Venues come from the official virtual-site JSON: AR1-ZO (155186) and Pico (152853) are 'Accept (poster)' at NeurIPS 2026; FrameFT (64753) and FourTune (64004) are 'Accept (regular)' posters at ICML 2026; PrefixMemory-Tuning (10009993) and GradFix (10010857) are 'Accept (Poster)' at ICLR 2026. Each record's paper_url equals the OpenReview forum cited. Semantic Scholar citation counts (0, 0, 0, 5, 1, 3) match. HF PEFT main 9146289 (v0.21.2) has no tuner or merge utility for any of the six, so hf_peft stays false. All ids are new against existing_index.json, and all 31 original relation targets plus one added target (git-re-basin), 32 in total, resolve. Formulas were checked against the arXiv HTML method sections and, for FrameFT, against a clone of the released code, including running construct_real_tff and tabulating all 17 scripts. Substantive fixes. (1) FrameFT: 'every experiment uses \\(\\rho=2\\)' and the '\\(4\\times4\\) blocks' claim were wrong; density and orthogonality figures were corrected; identity_at_init is configuration-dependent (GLUE scripts start from \\(C\\sim\\mathcal{N}(0,1)\\), and the reset routine is never called); fourierft was retyped from builds-on to competes-with. (2) Pico: 'averaging over-counts' was corrected to summed merging; KnOTS's basis comes from the stacked \\(B_tA_t\\), not the stacked \\(B_t\\); the \\(T=1\\) identity is exact only for TA. (3) PrefixMemory-Tuning: the branch is a parallel adapter but not a bottleneck (\\(Hd_K=d\\)); the paper's notation for the shape of \\(M\\) is noted; Table 2's MLP-kernel variant is noted; the lora note now separates LoRA \\(r=64\\) from \\(r\\le32\\). (4) GradFix: the few-shot guarantee is per coordinate; the T5 locus was corrected; git-re-basin was added. (5) AR1-ZO: Lemma 4.1's nonzero-factor condition was added; agzo is cited but not a baseline, and zo-muon is not cited. (6) FourTune: the kernel-fusion description was corrected; the \\(16\\times16\\) granularity and the INT4 variant were added. Math in all prose fields (structure, key_idea, identity_at_init, mergeable_reason, results_note, locus, relation notes, verification_notes, corrections) is wrapped in \\( \\). mergeable, modification_kind and trainable_params were re-derived and left unchanged."
+}

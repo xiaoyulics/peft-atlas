@@ -1,0 +1,3367 @@
+{
+ "family": "hf-peft",
+ "family_title": "Hugging Face PEFT library inventory (tuners, LoRA variants, optimizers and merge utilities)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "lora",
+   "name": "LoRA",
+   "full_name": "Low-Rank Adaptation",
+   "paper_title": "LoRA: Low-Rank Adaptation of Large Language Models",
+   "authors": "Hu et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2106.09685",
+   "url": "https://arxiv.org/abs/2106.09685",
+   "code_url": "https://github.com/microsoft/LoRA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig",
+   "formula_latex": "h = W_0 x + \\tfrac{\\alpha}{r} B A x,\\quad W = W_0 + \\tfrac{\\alpha}{r} B A,\\quad B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ W_0 \\text{ frozen},\\ A,B \\text{ trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer (PEFT also: Embedding, Conv1d/2d/3d, MultiheadAttention, raw nn.Parameter e.g. MoE experts via target_parameters); originally W_q, W_v, commonly 'all-linear'",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W factors through an r-dimensional space: \\Delta W = BA, \\operatorname{rank}\\Delta W \\le r",
+   "mergeable": "yes",
+   "mergeable_reason": "BA is a dense d_out x d_in matrix that can be added to W_0 after training (merge_and_unload), giving zero inference overhead.",
+   "identity_at_init": "B = 0 (A Kaiming-uniform in PEFT, Gaussian in the paper; init_lora_weights='gaussian' keeps B = 0); scaling alpha/r.",
+   "key_idea": "Fine-tuning updates have low intrinsic rank, so freeze W_0 and learn only a rank-r factorization of the update.",
+   "results_note": "Paper reports on-par or better quality than full fine-tuning on RoBERTa, DeBERTa, GPT-2 and GPT-3 175B, with 10,000x fewer trainable parameters and 3x less GPU memory for GPT-3.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "competes-with",
+     "note": "Mergeable alternative to serial bottleneck adapters, so no extra inference latency."
+    },
+    {
+     "target": "adalora",
+     "type": "generalizes",
+     "note": "Fixed-rank special case of AdaLoRA's adaptive SVD-shaped budget."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.09685",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "adalora",
+   "name": "AdaLoRA",
+   "full_name": "Adaptive Low-Rank Adaptation (adaptive budget allocation)",
+   "paper_title": "AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2303.10512",
+   "url": "https://arxiv.org/abs/2303.10512",
+   "code_url": "https://github.com/QingruZhang/AdaLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "AdaLoraConfig",
+   "formula_latex": "W = W_0 + P\\Lambda Q,\\ P\\in\\mathbb{R}^{d_{out}\\times r},\\ \\Lambda=\\mathrm{diag}(\\lambda_1,\\dots,\\lambda_r),\\ Q\\in\\mathbb{R}^{r\\times d_{in}};\\ \\mathcal{L}_{tot}=\\mathcal{L}+\\gamma\\big(\\|P^\\top P-I\\|_F^2+\\|QQ^\\top-I\\|_F^2\\big);\\ \\lambda_i \\text{ masked by sensitivity-based importance to meet a global rank budget}",
+   "trainable_params": "r(d_{in}+d_{out}+1) \\text{ with } r=\\text{init\\_r}, \\text{ pruned to an average of target\\_r}",
+   "locus": "any linear layer (PEFT: also Conv2d since v0.20)",
+   "modification_kind": "additive-weight",
+   "structure": "SVD-shaped low-rank update P\\Lambda Q with near-orthogonal P,Q and a learned per-matrix rank (masked singular values)",
+   "mergeable": "yes",
+   "mergeable_reason": "P Lambda Q is a dense low-rank matrix that can be added to W_0 after training.",
+   "identity_at_init": "Lambda = 0 (P, Q Gaussian), so Delta W = 0; a warmup (tinit), budget-reduction and final phase are scheduled via update_and_allocate.",
+   "key_idea": "Different weight matrices deserve different ranks; parameterize the update in SVD form and prune unimportant singular values to reallocate a global parameter budget.",
+   "results_note": "Reports notable gains over LoRA and other baselines, especially in low-budget settings, on GLUE, SQuAD and summarization with DeBERTaV3/BART.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "Fixed-rank LoRA is AdaLoRA without budget reallocation."
+    },
+    {
+     "target": "eva",
+     "type": "competes-with",
+     "note": "Both reallocate ranks across layers (EVA from activation variance, AdaLoRA from importance scores)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.10512",
+    "https://huggingface.co/docs/peft/main/en/package_reference/adalora",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/adalora"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "adamss",
+   "name": "AdaMSS",
+   "full_name": "Adaptive Multi-Subspace Approach for Parameter-Efficient Fine-Tuning",
+   "paper_title": "AdaMSS: Adaptive Multi-Subspace Approach for Parameter-Efficient Fine-Tuning",
+   "authors": "Zheng et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "",
+   "url": "https://papers.neurips.cc/paper_files/paper/2025/hash/1c85c302ece39939c1b334c78f7ee1b8-Abstract-Conference.html",
+   "code_url": "https://github.com/jzheng20/AdaMSS",
+   "hf_peft": true,
+   "hf_peft_config": "AdamssConfig",
+   "formula_latex": "W_0\\approx U_R\\Sigma_RV_R^\\top;\\ \\text{rows of } U_R \\text{ clustered into } K \\text{ subspaces } S_1,\\dots,S_K;\\ (\\Delta W)_{S_k,:}=B_kA_kV_R^\\top,\\ B_k\\in\\mathbb{R}^{|S_k|\\times r_k},\\ A_k\\in\\mathbb{R}^{r_k\\times R};\\ V_R \\text{ frozen},\\ A_k,B_k \\text{ trained; ASA prunes low-importance subspaces}",
+   "trainable_params": "\\sum_{k=1}^{K} r_k\\,(|S_k|+R),\\ \\ \\textstyle\\sum_k |S_k| = d_{out}",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "output rows partitioned into K clusters (subspace segmentation of the top-R left singular vectors); each cluster gets its own low-rank update inside the frozen top-R right singular subspace of W_0",
+   "mergeable": "yes",
+   "mergeable_reason": "The scattered block-low-rank update is a fixed matrix after training and can be added to W_0.",
+   "identity_at_init": "B_k = 0 (A_k initialized from a QR of the subspace data); requires an SVD + KMeans clustering of W_0 at injection time.",
+   "key_idea": "Replace one big low-rank subspace with several smaller, data-segmented subspaces and adaptively keep only the subspaces most relevant to the task.",
+   "results_note": "Abstract reports +4.7% average accuracy over LoRA on ViT-Large with 15.4% of LoRA's trainable parameters, and +7% over PiSSA on RoBERTa-Large with about 94.4% fewer parameters.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "Both start from the SVD of W_0; AdaMSS splits it into multiple subspaces."
+    },
+    {
+     "target": "adalora",
+     "type": "builds-on",
+     "note": "Adaptive Subspace Allocation prunes subspaces via importance scores, analogous to AdaLoRA's budget allocation."
+    }
+   ],
+   "sources": [
+    "https://papers.neurips.cc/paper_files/paper/2025/hash/1c85c302ece39939c1b334c78f7ee1b8-Abstract-Conference.html",
+    "https://huggingface.co/docs/peft/main/en/package_reference/adamss",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/adamss",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/adamss/layer.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "llama-adapter",
+   "name": "LLaMA-Adapter",
+   "full_name": "LLaMA-Adapter (Adaption Prompt with zero-init attention)",
+   "paper_title": "LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2303.16199",
+   "url": "https://arxiv.org/abs/2303.16199",
+   "code_url": "https://github.com/OpenGVLab/LLaMA-Adapter",
+   "hf_peft": true,
+   "hf_peft_config": "AdaptionPromptConfig",
+   "formula_latex": "\\text{top } L' \\text{ layers: } \\mathrm{Attn}(q)=\\big[\\,g_l\\cdot\\mathrm{softmax}(qK_P^\\top/\\sqrt{d});\\ \\mathrm{softmax}(qK^\\top/\\sqrt{d})\\,\\big]\\,[V_P;V],\\ K_P=P_lW_k,\\ V_P=P_lW_v,\\ P_l\\in\\mathbb{R}^{K\\times d} \\text{ (adaption prompt)},\\ g_l=0 \\text{ at init}",
+   "trainable_params": "L'(K d + 1) \\ \\ (K=\\text{adapter\\_len},\\ L'=\\text{adapter\\_layers}; \\text{one scalar gate per layer in PEFT})",
+   "locus": "keys/values of the top L' self-attention layers (learned adaption-prompt tokens)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "learned prompt vectors attended to at the top layers, whose softmax-normalized attention contribution is multiplied by a zero-initialized gate",
+   "mergeable": "no",
+   "mergeable_reason": "The extra attended tokens and gated attention branch are not a weight-space change and cannot be folded into W_0.",
+   "identity_at_init": "Gate g_l = 0, so the adaption prompts contribute nothing at initialization (zero-init attention).",
+   "key_idea": "Inject instruction knowledge through a few prompt tokens at the top layers, using zero-gated attention so training starts exactly from the pretrained model.",
+   "results_note": "Paper reports turning LLaMA-7B into an instruction follower with 1.2M learnable parameters in under one hour on 8 A100s, comparable to fully fine-tuned Alpaca.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Layer-wise learned key/value tokens, restricted to top layers and gated."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "competes-with",
+     "note": "Both learn soft tokens; LLaMA-Adapter injects them inside attention with a zero gate."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.16199",
+    "https://huggingface.co/docs/peft/main/en/package_reference/llama_adapter",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/adaption_prompt/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "beft",
+   "name": "BEFT",
+   "full_name": "Bias-Efficient Fine-Tuning",
+   "paper_title": "BEFT: Bias-Efficient Fine-Tuning of Language Models in Low-Data Regimes",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ACL 2026",
+   "arxiv": "2509.15974",
+   "url": "https://aclanthology.org/2026.acl-long.1799/",
+   "code_url": "https://github.com/whubaichuan/BEFT",
+   "hf_peft": true,
+   "hf_peft_config": "BeftConfig",
+   "formula_latex": "h = W_v x + b_v + \\Delta b_v,\\ \\ \\Delta b_v\\in\\mathbb{R}^{d_{out}} \\text{ trained, all weights frozen};\\ \\ a(V+\\mathbf{1}b_v^\\top)=aV+\\mathbf{1}b_v^\\top \\text{ (rows of } a \\text{ sum to 1)}",
+   "trainable_params": "d_{out} \\text{ per value projection } (\\approx 0.01\\% \\text{ of parameters})",
+   "locus": "bias of the value projection W_v in every attention block (bias added, zero-initialized, for bias-free LLMs)",
+   "modification_kind": "selective",
+   "structure": "additive shift of the value-projection output; because attention rows sum to one, the shift passes straight to the attention output",
+   "mergeable": "conditional",
+   "mergeable_reason": "It is just a new bias value; it folds into the existing bias, but bias-free models (e.g. LLaMA) gain a bias vector they did not have.",
+   "identity_at_init": "Starts from the pretrained bias (or a zero-initialized added bias), so the function is unchanged.",
+   "key_idea": "Among q/k/v biases, fine-tuning only the value bias b_v gives the best accuracy per parameter in low-data regimes.",
+   "results_note": "Paper reports b_v fine-tuning consistently beating b_q and b_k fine-tuning across encoder- and decoder-only LLMs up to 6.7B, with about 9x fewer parameters than tuning all biases.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "special-case-of",
+     "note": "Restricts BitFit to a single bias term (value projection)."
+    },
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "Both are vector-sized interventions on attention; IA3 scales, BEFT shifts."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.15974",
+    "https://arxiv.org/html/2509.15974",
+    "https://aclanthology.org/2026.acl-long.1799/",
+    "https://huggingface.co/docs/peft/main/en/package_reference/beft",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "boft",
+   "name": "BOFT",
+   "full_name": "Orthogonal Butterfly (Butterfly Orthogonal Fine-Tuning)",
+   "paper_title": "Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization",
+   "authors": "Liu et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2311.06243",
+   "url": "https://arxiv.org/abs/2311.06243",
+   "code_url": "https://github.com/wy1iu/butterfly-oft",
+   "hf_peft": true,
+   "hf_peft_config": "BOFTConfig",
+   "formula_latex": "W=\\mathrm{diag}(s)\\,W_0R^\\top,\\ \\ R=\\prod_{i=1}^{m}P_i^\\top\\,\\mathrm{blockdiag}(R_{i,1},\\dots,R_{i,d_{in}/b})\\,P_i\\in SO(d_{in}),\\ R_{i,j}=(I+Q_{i,j})(I-Q_{i,j})^{-1},\\ Q_{i,j}^\\top=-Q_{i,j}\\in\\mathbb{R}^{b\\times b}",
+   "trainable_params": "m\\,\\tfrac{d_{in}}{b}\\,\\tfrac{b(b-1)}{2}+d_{out} \\ \\ (m=\\text{boft\\_n\\_butterfly\\_factor},\\ b=\\text{boft\\_block\\_size})",
+   "locus": "any linear / Conv2d layer (rotation of the input space of W_0)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "orthogonal R \\in SO(d_{in}) built as a product of m butterfly-permuted block-diagonal orthogonal factors (Cooley-Tukey style), plus an output magnitude vector s",
+   "mergeable": "yes",
+   "mergeable_reason": "diag(s) W_0 R^T is a single dense matrix that replaces W_0.",
+   "identity_at_init": "Q = 0 so every block is the identity (R = I) and s = 1.",
+   "key_idea": "Make orthogonal fine-tuning cheap by factorizing the dense orthogonal matrix into sparse butterfly factors, as in the FFT.",
+   "results_note": "Paper reports favorable results versus OFT and LoRA when fine-tuning large ViTs, LLMs and text-to-image diffusion models, with fewer parameters than block-diagonal OFT.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "generalizes",
+     "note": "With m = 1 butterfly factor BOFT reduces to block-diagonal OFT."
+    },
+    {
+     "target": "hra",
+     "type": "competes-with",
+     "note": "Alternative structured parameterization of an orthogonal multiplicative update."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.06243",
+    "https://huggingface.co/docs/peft/main/en/package_reference/boft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/boft/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "c3a",
+   "name": "C³A",
+   "full_name": "Circular Convolution Adaptation",
+   "paper_title": "Parameter-Efficient Fine-Tuning via Circular Convolution",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ACL 2025",
+   "arxiv": "2407.19342",
+   "url": "https://arxiv.org/abs/2407.19342",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "C3AConfig",
+   "formula_latex": "h=W_0x+\\mathcal{C}_{blk}(\\Delta w)\\,x,\\ \\ (\\Delta h)_i=\\sum_{j=1}^{d_{in}/b}\\Delta w_{ij}\\star x_j,\\ \\Delta w_{ij}\\in\\mathbb{R}^{b},\\ \\ \\Delta w\\star x \\text{ computed with FFTs}",
+   "trainable_params": "\\tfrac{d_{in}\\,d_{out}}{b} \\ \\ (b=\\text{block\\_size}, \\text{ a common divisor of } d_{in},d_{out})",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "block-circulant \\Delta W: a (d_{out}/b)\\times(d_{in}/b) grid of b\\times b circulant blocks; rank is decoupled from the parameter count",
+   "mergeable": "yes",
+   "mergeable_reason": "The block-circulant matrix can be materialized and added to W_0.",
+   "identity_at_init": "NOT an identity by default in PEFT (kernels Xavier-uniform initialized); init_weights=True zero-initializes the kernels for an exact no-op.",
+   "key_idea": "Use circular convolution kernels (circulant matrices) so the update can be high-rank while costing only d_in*d_out/b parameters and FFT-time compute.",
+   "results_note": "Paper reports GLUE avg 86.96 vs 85.96 for LoRA (RoBERTa-Large) and 85.9 vs 83.9 on 8 commonsense tasks for LLaMA3-8B with 37% fewer parameters.",
+   "relations": [
+    {
+     "target": "fourierft",
+     "type": "competes-with",
+     "note": "Both exploit the Fourier domain; FourierFT learns sparse spectra, C3A learns circulant kernels."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "High-rank alternative at LoRA-level parameter and memory cost."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.19342",
+    "https://arxiv.org/html/2407.19342",
+    "https://huggingface.co/docs/peft/main/en/package_reference/c3a",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/c3a/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.16.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cartridges",
+   "name": "Cartridges",
+   "full_name": "Cartridges (trained KV-cache prefixes via self-study)",
+   "paper_title": "Cartridges: Lightweight and general-purpose long context representations via self-study",
+   "authors": "Eyuboglu et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2506.06266",
+   "url": "https://arxiv.org/abs/2506.06266",
+   "code_url": "https://github.com/HazyResearch/cartridges",
+   "hf_peft": true,
+   "hf_peft_config": "CartridgeConfig",
+   "formula_latex": "\\forall l:\\ K_l\\leftarrow[Z_k^{(l)};K_l],\\ V_l\\leftarrow[Z_v^{(l)};V_l],\\ Z_k^{(l)},Z_v^{(l)}\\in\\mathbb{R}^{p\\times d};\\ \\ \\min_Z\\sum_{(x,\\tilde c)}\\sum_i D_{KL}\\big(F(\\cdot\\mid\\tilde c\\oplus x_{:i})\\,\\|\\,F_Z(\\cdot\\mid x_{:i})\\big)",
+   "trainable_params": "2Lpd \\ \\ (\\text{minus the frozen first token(s), num\\_frozen\\_tokens}=1)",
+   "locus": "keys/values at every layer (a directly parameterized KV-cache prefix)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "learned key/value vectors prepended at every layer, trained directly (no MLP reparameterization) by context distillation on synthetic self-study conversations about a corpus",
+   "mergeable": "no",
+   "mergeable_reason": "The cartridge is extra KV state attended by the model, not a weight change.",
+   "identity_at_init": "Not an identity: initialized from the real prefill KV cache of the first p corpus tokens (or randomly); the first token is frozen as an attention sink.",
+   "key_idea": "Compress a long corpus offline into a small trainable KV cache via self-study distillation, so it can replace in-context documents at inference.",
+   "results_note": "Paper reports matching ICL quality with 38.6x less memory and 26.4x higher throughput, and extending effective context to 484k tokens.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Same serving mechanism (past_key_values), but the KV prefix itself is the parameter and is distilled from a corpus."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.06266",
+    "https://arxiv.org/html/2506.06266",
+    "https://huggingface.co/docs/peft/main/en/package_reference/cartridges",
+    "https://iclr.cc/virtual/2026/poster/10011902",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cpt",
+   "name": "CPT",
+   "full_name": "Context-aware Prompt Tuning",
+   "paper_title": "Context-aware Prompt Tuning: Advancing In-Context Learning with Adversarial Methods",
+   "authors": "Blau et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2410.17222",
+   "url": "https://arxiv.org/abs/2410.17222",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "CPTConfig",
+   "formula_latex": "X_{ctx}=[T_i(x_i),S_{intra},T_o(y_i),S_{inter}]_{i=1}^{N};\\ E\\leftarrow\\Pi_{\\|E-E_0\\|_2\\le\\epsilon}\\big(E-\\eta\\nabla_E\\mathcal{L}\\big);\\ \\mathcal{L}=\\sum_{k=1}^{N}\\gamma^{N+1-k}\\,\\mathrm{CE}(\\hat t_O^{(k)},t_O^{(k)})+\\mathrm{CE}(\\hat t_O^{(N+1)},t_O^{(N+1)})",
+   "trainable_params": "\\ell\\,d \\ \\ (\\ell=\\text{number of context input/format tokens optimized; label tokens frozen})",
+   "locus": "input embedding sequence (embeddings of the in-context demonstrations)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "soft prompt initialized from real few-shot demonstrations; per-token embedding changes projected onto an L2 ball (projected gradient descent) with a recency-decayed context loss",
+   "mergeable": "no",
+   "mergeable_reason": "Optimized context tokens are extra inputs, not weights.",
+   "identity_at_init": "Not a no-op relative to the bare query: at init it equals ordinary in-context learning with the given demonstrations.",
+   "key_idea": "Treat the in-context demonstrations themselves as trainable soft prompts, but keep them within an epsilon-ball of the real tokens and down-weight early examples to counter recency bias.",
+   "results_note": "Paper reports gains over LoRA, prompt tuning, IPT and ICL on SST-2, AG News, DBpedia and TREC in 2/4/6-shot settings with BLOOM-1.7B, GPT-J-6B and Llama-3-8B.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Soft prompt over demonstration tokens with projected (adversarial-style) updates."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.17222",
+    "https://arxiv.org/html/2410.17222",
+    "https://huggingface.co/docs/peft/main/en/package_reference/cpt",
+    "https://github.com/huggingface/peft/releases/tag/v0.14.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "deft",
+   "name": "DEFT",
+   "full_name": "Decompositional Efficient Fine-Tuning",
+   "paper_title": "DEFT: Decompositional Efficient Fine-Tuning for Text-to-Image Models",
+   "authors": "Kumar et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2509.22793",
+   "url": "https://arxiv.org/abs/2509.22793",
+   "code_url": "https://github.com/MAXNORM8650/DEFT",
+   "hf_peft": true,
+   "hf_peft_config": "DeftConfig",
+   "formula_latex": "W=(I-QQ^\\top)W_0+QR,\\ \\ Q=\\mathrm{qr}(P),\\ P\\in\\mathbb{R}^{d_{out}\\times r},\\ R\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ \\text{(PEFT default 'relu'): } W=(I-P\\,\\mathrm{relu}(P)^\\top)W_0+PR",
+   "trainable_params": "r(d_{out}+d_{in})",
+   "locus": "Linear / Conv1D layers (mainly text-to-image diffusion transformers/UNets)",
+   "modification_kind": "additive-weight",
+   "structure": "rank-r update that removes an r-dimensional output subspace of W_0 and injects new content into it: \\Delta W = Q(R - Q^\\top W_0)",
+   "mergeable": "yes",
+   "mergeable_reason": "The update equals a low-rank additive delta Q(R - Q^T W_0) that can be merged into W_0.",
+   "identity_at_init": "PEFT initializes R so that the injection exactly cancels the removal (W = W_0 at init); the paper initializes P at zero.",
+   "key_idea": "Split adaptation into 'forget a subspace' (projection) and 'write new content there' (low-rank injection) to personalize while preserving the base model's instruction-following/editability.",
+   "results_note": "Paper reports DreamBench Plus CLIP-T 0.361 on SDXL vs 0.341 for LoRA and 0.354 for PaRa.",
+   "relations": [
+    {
+     "target": "para",
+     "type": "generalizes",
+     "note": "Dropping the injection term QR gives PaRa (DeftConfig(para=True))."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Same rank-r parameter budget, different (subspace-replacing) structure."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.22793",
+    "https://arxiv.org/html/2509.22793",
+    "https://huggingface.co/docs/peft/main/en/package_reference/deft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/deft/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "para",
+   "name": "PaRa",
+   "full_name": "Parameter Rank Reduction",
+   "paper_title": "PaRa: Personalizing Text-to-Image Diffusion via Parameter Rank Reduction",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2406.05641",
+   "url": "https://arxiv.org/abs/2406.05641",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "DeftConfig(para=True)",
+   "formula_latex": "W=(I-QQ^\\top)W_0,\\ \\ Q=\\mathrm{qr}(B),\\ B\\in\\mathbb{R}^{d_{out}\\times r} \\text{ trained}",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "attention/linear layers of text-to-image diffusion models",
+   "modification_kind": "multiplicative-weight",
+   "structure": "left-multiplication of W_0 by an orthogonal projector of corank r, shrinking the output space of the layer (rank reduction)",
+   "mergeable": "yes",
+   "mergeable_reason": "(I - QQ^T) W_0 is a single dense matrix.",
+   "identity_at_init": "Not an identity: PEFT notes PaRa cannot be a no-op at initialization since only the projection is trained.",
+   "key_idea": "Personalization works by reducing the rank of generation: projecting out a few output directions narrows the model's output space toward the target concept.",
+   "results_note": "Paper reports about 2x fewer parameters than LoRA and 82-97% human preference over LoRA across tested concepts.",
+   "relations": [
+    {
+     "target": "deft",
+     "type": "special-case-of",
+     "note": "DEFT without the injection term."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Subtractive (rank-reducing) instead of additive low-rank adaptation."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.05641",
+    "https://arxiv.org/html/2406.05641",
+    "https://huggingface.co/docs/peft/main/en/package_reference/deft",
+    "https://api.semanticscholar.org/graph/v1/paper/batch"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "delora",
+   "name": "DeLoRA",
+   "full_name": "Decoupled Low-rank Adaptation",
+   "paper_title": "DeLoRA: Decoupling Angles and Strength in Low-rank Adaptation",
+   "authors": "Bini et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2503.18225",
+   "url": "https://arxiv.org/abs/2503.18225",
+   "code_url": "https://github.com/ExplainableML/DeLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "DeloraConfig",
+   "formula_latex": "W=W_0+\\frac{\\lambda\\|W_0\\|}{r}\\,B\\,\\Xi\\,A,\\ \\ \\Xi=\\mathrm{diag}\\Big(\\tfrac{1}{\\|b_i\\|\\,\\|a_i\\|}\\Big),\\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}},\\ \\lambda \\text{ trainable}",
+   "trainable_params": "r(d_{in}+d_{out})+1",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "sum of r unit-Frobenius rank-1 terms with a learnable global strength, so \\|\\Delta W\\|_F\\le\\lambda\\|W_0\\| (a Frobenius-ball boundary)",
+   "mergeable": "yes",
+   "mergeable_reason": "The normalized low-rank update is a fixed dense matrix after training.",
+   "identity_at_init": "Paper: subtract a frozen copy of the initial update from W_0; PEFT default: B = 0 (A Kaiming) with lambda initialized to delora_lambda.",
+   "key_idea": "Normalize the low-rank directions and learn their strength separately, bounding how far the weights can drift and making training robust to learning rate and length.",
+   "results_note": "Paper reports GLUE avg 85.6 vs 84.7 for LoRA, parity with LoRA/DoRA on subject-driven generation, and better robustness to learning rate and extended training.",
+   "relations": [
+    {
+     "target": "dora",
+     "type": "builds-on",
+     "note": "Also decouples direction and magnitude, but normalizes the update rather than the full weight."
+    },
+    {
+     "target": "ether",
+     "type": "generalizes",
+     "note": "Extends bounded ETHER-style transformations to arbitrary rank with learnable strength."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.18225",
+    "https://arxiv.org/html/2503.18225",
+    "https://huggingface.co/docs/peft/main/en/package_reference/delora",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "fourierft",
+   "name": "FourierFT",
+   "full_name": "Fourier Fine-Tuning (Discrete Fourier Transform PEFT)",
+   "paper_title": "Parameter-Efficient Fine-Tuning with Discrete Fourier Transform",
+   "authors": "Gao et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2405.03003",
+   "url": "https://arxiv.org/abs/2405.03003",
+   "code_url": "https://github.com/Chaos96/fourierft",
+   "hf_peft": true,
+   "hf_peft_config": "FourierFTConfig",
+   "formula_latex": "\\Delta W=\\alpha\\,\\mathrm{Re}\\big(\\mathcal{F}^{-1}_{2D}(F)\\big),\\ F\\in\\mathbb{C}^{d_{out}\\times d_{in}} \\text{ zero except at } n \\text{ fixed random frequency locations (shared across layers) holding trainable } c\\in\\mathbb{R}^{n}",
+   "trainable_params": "n \\ \\ (n=\\text{n\\_frequency})",
+   "locus": "any linear layer (typically W_q, W_v)",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W is the real part of the inverse 2D DFT of a sparse spectral matrix with n learnable coefficients",
+   "mergeable": "yes",
+   "mergeable_reason": "The spatial-domain Delta W can be computed once and added to W_0.",
+   "identity_at_init": "PEFT default init_weights=False draws coefficients from N(0,1), so it is NOT an exact identity; init_weights=True zero-initializes for a no-op.",
+   "key_idea": "Weight updates are compressible in the frequency domain, so learn only a handful of spectral coefficients.",
+   "results_note": "Paper reports outperforming LoRA on LLaMA2-7B instruction tuning with 0.064M trainable parameters versus LoRA's 33.5M.",
+   "relations": [
+    {
+     "target": "c3a",
+     "type": "competes-with",
+     "note": "Both are Fourier-domain parameterizations of Delta W."
+    },
+    {
+     "target": "waveft",
+     "type": "competes-with",
+     "note": "Same sparse-transform-coefficient idea with a wavelet instead of Fourier basis."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.03003",
+    "https://huggingface.co/docs/peft/main/en/package_reference/fourierft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/fourierft/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "frod",
+   "name": "FRoD",
+   "full_name": "Full-Rank Efficient Fine-Tuning with Rotational Degrees",
+   "paper_title": "FRoD: Full-Rank Efficient Fine-Tuning with Rotational Degrees for Fast Convergence",
+   "authors": "Wan et al.",
+   "year": 2025,
+   "venue": "AAAI 2026",
+   "arxiv": "2512.23485",
+   "url": "https://doi.org/10.1609/aaai.v40i31.39813",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "FrodConfig",
+   "formula_latex": "W_i'=U_i(\\Sigma_i+S_i)V^\\top,\\ \\ U_i=Q_iZ,\\ V^\\top \\text{ shared across layers of a module type (hierarchical joint decomposition)};\\ \\Sigma_i \\text{ diagonal and } S_i \\text{ sparse (density } s) \\text{ trained; } U_i,V \\text{ frozen}",
+   "trainable_params": "n+s\\,n^2 \\text{ per matrix } (n=\\text{core dimension},\\ s=\\text{sparse\\_rate}\\approx0.01\\text{-}0.02)",
+   "locus": "Linear / Conv1D layers (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "full-rank core update in a frozen, cross-layer-shared basis: \\Delta W_i = U_i(\\Delta\\Sigma_i+S_i)V^\\top with diagonal ('on-axis' strength) plus sparse off-diagonal ('rotational') coefficients",
+   "mergeable": "yes",
+   "mergeable_reason": "U_i(Sigma_i + S_i)V^T reconstructs a dense weight that replaces W_0.",
+   "identity_at_init": "S_i = 0 and Sigma_i taken from the decomposition, so the reconstruction reproduces W_0 at init (up to decomposition error); costly joint-decomposition setup.",
+   "key_idea": "Express updates as small rotations around a shared spectral basis, giving full-rank capacity with sparse trainable coefficients and fast convergence.",
+   "results_note": "Paper reports peak accuracy within 1-4 epochs and GLUE 90.53 vs 90.42 for full fine-tuning using about 2.5% of parameters.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "Both operate in a spectral basis of W_0; FRoD trains a sparse full-rank core instead of a rank-r factor."
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "Shared frozen bases with small per-layer trainable coefficients."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2512.23485",
+    "https://arxiv.org/html/2512.23485",
+    "https://huggingface.co/docs/peft/main/en/package_reference/frod",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/frod/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "glora",
+   "name": "GLoRA",
+   "full_name": "Generalized LoRA (One-for-All)",
+   "paper_title": "One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning",
+   "authors": "Chavan et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2306.07967",
+   "url": "https://arxiv.org/abs/2306.07967",
+   "code_url": "https://github.com/Arnav0400/ViT-Slim/tree/master/GLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "GloraConfig",
+   "formula_latex": "h=(W_0+W_0\\odot A+B)\\,x+b_0+b_0\\odot D+E+W_0C;\\ \\ A,B\\in\\{\\text{LoRA},\\text{vector},\\text{scalar},\\text{none}\\},\\ C\\in\\{\\text{LoRA},\\text{vector},\\text{none}\\},\\ D,E\\in\\{\\text{vector},\\text{scalar},\\text{none}\\}",
+   "trainable_params": "\\text{config-dependent; PEFT default (A,B=LoRA, C=LoRA, D,E=constant): } 2r(d_{in}+d_{out})+r(d_{in}+1)+2",
+   "locus": "nn.Linear layers (weights and biases)",
+   "modification_kind": "hybrid",
+   "structure": "unified reparameterization: Hadamard rescaling of W_0, additive (low-rank) weight shift, bias rescaling/shift, and a W_0-coupled bias (layer-wise prompt) path; per-layer path types chosen by evolutionary search in the paper",
+   "mergeable": "yes",
+   "mergeable_reason": "All paths are linear in the parameters and fold into W_uni = W_0 + W_0*A + B and b_uni = b_0 + b_0*D + E + W_0 C.",
+   "identity_at_init": "Zero-initialized down-projections make every path zero (no-op) by default.",
+   "key_idea": "Subsume LoRA, scaling/shifting and prompt-like methods in one reparameterizable layer and search the best path configuration per layer.",
+   "results_note": "Paper reports 78.0% average on VTAB-1K, up to 2.9% above prior methods, and strong few-shot and domain-generalization results.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "B path in LoRA mode with all other paths disabled is LoRA."
+    },
+    {
+     "target": "hira",
+     "type": "generalizes",
+     "note": "The W_0 (.) A path with a LoRA-type A is HiRA's update (PEFT's elementwise implementation)."
+    },
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "Vector-mode A path is a per-channel rescaling of W_0."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.07967",
+    "https://arxiv.org/html/2306.07967",
+    "https://huggingface.co/docs/peft/main/en/package_reference/glora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/glora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "gralora",
+   "name": "GraLoRA",
+   "full_name": "Granular Low-Rank Adaptation",
+   "paper_title": "GraLoRA: Granular Low-Rank Adaptation for Parameter-Efficient Fine-Tuning",
+   "authors": "Jung et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2505.20355",
+   "url": "https://arxiv.org/abs/2505.20355",
+   "code_url": "https://github.com/SqueezeBits/GraLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "GraloraConfig",
+   "formula_latex": "\\Delta W=\\begin{bmatrix}B_{11}A_{11}&\\cdots&B_{1k}A_{1k}\\\\\\vdots&\\ddots&\\vdots\\\\B_{k1}A_{k1}&\\cdots&B_{kk}A_{kk}\\end{bmatrix},\\ B_{ij}\\in\\mathbb{R}^{\\frac{d_{out}}{k}\\times\\frac{r}{k}},\\ A_{ij}\\in\\mathbb{R}^{\\frac{r}{k}\\times\\frac{d_{in}}{k}}",
+   "trainable_params": "r(d_{in}+d_{out}) \\ \\ (\\text{same as LoRA; } k=\\text{gralora\\_k})",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "k\\times k block matrix of independent rank-(r/k) LoRAs, effective rank up to kr at LoRA's parameter count (optional hybrid with a vanilla LoRA part)",
+   "mergeable": "yes",
+   "mergeable_reason": "The block matrix is a fixed dense update.",
+   "identity_at_init": "Every B_ij = 0.",
+   "key_idea": "Partition the weight into a grid and give each block its own small adapter, removing LoRA's gradient entanglement across channels and raising effective rank.",
+   "results_note": "Paper reports up to +8.5% absolute Pass@1 on HumanEval+ at rank 128 over LoRA, plus gains on commonsense and math reasoning.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "k = 1 recovers LoRA."
+    },
+    {
+     "target": "bd-lora",
+     "type": "competes-with",
+     "note": "Both impose block structure on LoRA (GraLoRA for expressivity, BD-LoRA for TP serving)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.20355",
+    "https://arxiv.org/html/2505.20355",
+    "https://huggingface.co/docs/peft/main/en/package_reference/gralora",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "hira",
+   "name": "HiRA",
+   "full_name": "Hadamard High-Rank Adaptation",
+   "paper_title": "HiRA: Parameter-Efficient Hadamard High-Rank Adaptation for Large Language Models",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "",
+   "url": "https://openreview.net/forum?id=TwJrTz9cRS",
+   "code_url": "https://github.com/hqsiswiliam/hira",
+   "hf_peft": true,
+   "hf_peft_config": "HiraConfig",
+   "formula_latex": "W=W_0+W_0\\odot(BA),\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "linear, embedding and conv layers (PEFT)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "element-wise (Hadamard) modulation of W_0 by 1 + BA; \\operatorname{rank}\\Delta W\\le r\\cdot\\operatorname{rank}W_0, i.e. high-rank at LoRA cost",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 + W_0 (.) BA is a dense matrix computable after training.",
+   "identity_at_init": "B = 0.",
+   "key_idea": "Multiply the frozen weight elementwise by a low-rank matrix so the update inherits W_0's full rank while the parameter count stays LoRA-sized.",
+   "results_note": "Paper (ICLR 2025 oral) reports outperforming LoRA and its variants on commonsense reasoning, dialogue generation and mathematical reasoning.",
+   "relations": [
+    {
+     "target": "glora",
+     "type": "special-case-of",
+     "note": "GLoRA's weight-scaling path W_0 (.) A with a LoRA-type A."
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "Both use Hadamard products to escape the rank bound; LoHa multiplies two learned low-rank factors."
+    }
+   ],
+   "sources": [
+    "https://openreview.net/forum?id=TwJrTz9cRS",
+    "https://iclr.cc/virtual/2025/oral/31839",
+    "https://huggingface.co/docs/peft/main/en/package_reference/hira",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "hra",
+   "name": "HRA",
+   "full_name": "Householder Reflection Adaptation",
+   "paper_title": "Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation",
+   "authors": "Yuan et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.17484",
+   "url": "https://arxiv.org/abs/2405.17484",
+   "code_url": "https://github.com/DaShenZi721/HRA",
+   "hf_peft": true,
+   "hf_peft_config": "HRAConfig",
+   "formula_latex": "W=W_0H,\\ \\ H=\\prod_{i=1}^{r}\\Big(I-2\\frac{u_iu_i^\\top}{\\|u_i\\|^2}\\Big),\\ u_i\\in\\mathbb{R}^{d_{in}};\\ \\ \\text{optional } \\lambda\\|I-U^\\top U\\|_F^2 \\text{ (or Gram-Schmidt, apply\\_GS)}",
+   "trainable_params": "r\\,d_{in}",
+   "locus": "linear and Conv2d layers (rotation of the input space)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "product of r Householder reflections (orthogonal) acting on the input side of W_0; equivalently W_0 + W_0U\\Gamma U^\\top, an 'adaptive LoRA'",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 H is a single dense matrix.",
+   "identity_at_init": "Reflection vectors initialized in identical pairs (u_{2i} = u_{2i-1}), so consecutive reflections cancel and H = I; requires even r in PEFT.",
+   "key_idea": "A chain of r Householder reflections is simultaneously an orthogonal transform and a rank-r additive update, bridging OFT and LoRA.",
+   "results_note": "Paper reports better accuracy than LoRA/OFT-style baselines with fewer parameters on GLUE, LLaMA2-7B math reasoning, and subject-driven/controllable image generation.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "competes-with",
+     "note": "Orthogonal multiplicative update with a different (reflection-based) parameterization."
+    },
+    {
+     "target": "lora",
+     "type": "equivalent-to",
+     "note": "W_0 H = W_0 + W_0 U Gamma U^T is a rank-r additive update whose factors depend on W_0."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.17484",
+    "https://arxiv.org/html/2405.17484",
+    "https://huggingface.co/docs/peft/main/en/package_reference/hra",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/hra/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ia3",
+   "name": "(IA)³",
+   "full_name": "Infused Adapter by Inhibiting and Amplifying Inner Activations",
+   "paper_title": "Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning",
+   "authors": "Liu et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2205.05638",
+   "url": "https://arxiv.org/abs/2205.05638",
+   "code_url": "https://github.com/r-three/t-few",
+   "hf_peft": true,
+   "hf_peft_config": "IA3Config",
+   "formula_latex": "k=l_k\\odot(W_kx),\\ v=l_v\\odot(W_vx),\\ h_{ff}=W_2\\big(l_{ff}\\odot\\gamma(W_1x)\\big);\\ l_k,l_v\\in\\mathbb{R}^{d_{out}},\\ l_{ff}\\in\\mathbb{R}^{d_{ff}} \\text{ trained}",
+   "trainable_params": "d_{out} \\text{ per key/value projection},\\ d_{ff} \\text{ per FFN}",
+   "locus": "outputs of key/value projections and inputs of the FFN down-projection (feedforward_modules)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "diagonal scaling: W=\\mathrm{diag}(l)W_0 (output rows) or W=W_0\\mathrm{diag}(l) (FFN input columns)",
+   "mergeable": "yes",
+   "mergeable_reason": "Diagonal scalings fold into the rows/columns of W_0.",
+   "identity_at_init": "Scaling vectors l initialized to 1.",
+   "key_idea": "Learn only rescaling vectors that inhibit or amplify inner activations; with the T-Few recipe this beats in-context learning cheaply.",
+   "results_note": "Paper reports T-Few (T0 + (IA)^3) outperforming GPT-3 in-context learning and reaching super-human performance on RAFT.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Vector-sized (rank-free) alternative with far fewer parameters."
+    },
+    {
+     "target": "glora",
+     "type": "special-case-of",
+     "note": "GLoRA's vector-mode weight-scaling path."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.05638",
+    "https://huggingface.co/docs/peft/main/en/package_reference/ia3",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/ia3/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lily",
+   "name": "Lily",
+   "full_name": "Low-Rank Interconnected Adaptation across Layers",
+   "paper_title": "Low-Rank Interconnected Adaptation across Layers",
+   "authors": "Zhong et al.",
+   "year": 2024,
+   "venue": "ACL 2025 (Findings)",
+   "arxiv": "2407.09946",
+   "url": "https://arxiv.org/abs/2407.09946",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LilyConfig",
+   "formula_latex": "h=W_0x+s\\Big(\\sum_{j=1}^{N_e}\\pi_j(x)\\,B_j\\Big)A_{g(l)}x,\\ \\ \\pi(x)=\\mathrm{softmax}\\big(R\\,A_{g(l)}x\\big),\\ A_{g(l)}\\in\\mathbb{R}^{r\\times d_{in}} \\text{ shared by a group of stride\\_A layers},\\ B_j\\in\\mathbb{R}^{d_{out}\\times r} \\text{ shared by all layers}",
+   "trainable_params": "\\tfrac{L}{\\text{stride}_A}\\,r\\,d_{in}+N_e\\,r\\,d_{out}+\\text{router} \\ \\text{(model-level, per module type)}",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "composition-or-routing",
+   "structure": "low-rank update with cross-layer sharing: locally shared down-projections A and a global pool of up-projection experts B mixed by a data-dependent router",
+   "mergeable": "no",
+   "mergeable_reason": "The B mixture depends on the input at runtime, so there is no fixed Delta W to merge.",
+   "identity_at_init": "B experts zero-initialized (A Kaiming) in PEFT, so the adapter output is zero at start.",
+   "key_idea": "Share adapter matrices across layers and route among them, so the freed budget buys a much higher rank than per-layer LoRA.",
+   "results_note": "Paper reports 82.8 average on commonsense reasoning with LLaMA3-8B using 1.2M parameters versus 80.8 for LoRA with 56M.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Same A/B factorization, but A and B are shared across layers and B is routed."
+    },
+    {
+     "target": "vb-lora",
+     "type": "competes-with",
+     "note": "Both share parameters globally across layers to cut cost."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.09946",
+    "https://arxiv.org/html/2407.09946",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lily",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lily/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ln-tuning",
+   "name": "LN Tuning",
+   "full_name": "LayerNorm Tuning",
+   "paper_title": "Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning",
+   "authors": "Zhao et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2312.11420",
+   "url": "https://arxiv.org/abs/2312.11420",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LNTuningConfig",
+   "formula_latex": "\\mathrm{LN}(x)=\\gamma\\odot\\frac{x-\\mu(x)}{\\sigma(x)}+\\beta,\\ \\ \\text{only } \\gamma,\\beta\\in\\mathbb{R}^{d} \\text{ of (attention-block) LayerNorms trained}",
+   "trainable_params": "2d \\text{ per LayerNorm}",
+   "locus": "LayerNorm gains and biases",
+   "modification_kind": "selective",
+   "structure": "per-channel affine rescaling/shift of normalized activations (diagonal), applied by training existing LayerNorm parameters",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing parameters change; the architecture is untouched.",
+   "identity_at_init": "Trivially identity: starts from the pretrained gamma and beta.",
+   "key_idea": "Turning an LLM into a multimodal LLM is largely a domain-adaptation problem that LayerNorm parameters alone can absorb.",
+   "results_note": "Paper reports, on 13B MLLMs, about 20% better average performance than LoRA across five multimodal benchmarks with 41.9% fewer trainable parameters and 17.6% less GPU memory.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "competes-with",
+     "note": "Both tune tiny existing parameter subsets (norms vs biases)."
+    },
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "Both are diagonal per-channel rescalings."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.11420",
+    "https://arxiv.org/html/2312.11420",
+    "https://huggingface.co/docs/peft/main/en/package_reference/layernorm_tuning"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "loha",
+   "name": "LoHa",
+   "full_name": "Low-Rank Hadamard Product",
+   "paper_title": "FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning",
+   "authors": "Hyeon-Woo et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2108.06098",
+   "url": "https://arxiv.org/abs/2108.06098",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoHaConfig",
+   "formula_latex": "\\Delta W=\\tfrac{\\alpha}{r}\\,(B_1A_1)\\odot(B_2A_2),\\ \\ B_i\\in\\mathbb{R}^{d_{out}\\times r},\\ A_i\\in\\mathbb{R}^{r\\times d_{in}}",
+   "trainable_params": "2r(d_{in}+d_{out})",
+   "locus": "linear and Conv1d/Conv2d layers (popular for diffusion models via LyCORIS)",
+   "modification_kind": "additive-weight",
+   "structure": "Hadamard product of two rank-r matrices, \\operatorname{rank}\\Delta W\\le r^2",
+   "mergeable": "yes",
+   "mergeable_reason": "The Hadamard product is a fixed dense matrix that can be added to W_0.",
+   "identity_at_init": "One factor zero-initialized (PEFT: B_2 = 0; others Kaiming).",
+   "key_idea": "A Hadamard product of two low-rank matrices reaches rank r^2 with 2x LoRA's parameters.",
+   "results_note": "FedPara reports accuracy comparable to the original model with 3-10x lower communication cost in federated learning; LoHa was popularized for diffusion fine-tuning by LyCORIS (ICLR 2024).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "Squared-rank capacity from two LoRA-style factors combined multiplicatively."
+    },
+    {
+     "target": "lokr",
+     "type": "competes-with",
+     "note": "Sibling LyCORIS method using a Kronecker instead of Hadamard product."
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "HiRA uses W_0 itself as the second Hadamard factor."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2108.06098",
+    "https://arxiv.org/abs/2309.14859",
+    "https://huggingface.co/docs/peft/main/en/package_reference/loha",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/loha/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lokr",
+   "name": "LoKr",
+   "full_name": "Low-Rank Kronecker Product",
+   "paper_title": "Navigating Text-To-Image Customization: From LyCORIS Fine-Tuning to Model Evaluation",
+   "authors": "Yeh et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.14859",
+   "url": "https://arxiv.org/abs/2309.14859",
+   "code_url": "https://github.com/KohakuBlueleaf/LyCORIS",
+   "hf_peft": true,
+   "hf_peft_config": "LoKrConfig",
+   "formula_latex": "\\Delta W=C\\otimes(BA),\\ \\ C\\in\\mathbb{R}^{p\\times q},\\ B\\in\\mathbb{R}^{\\frac{d_{out}}{p}\\times r},\\ A\\in\\mathbb{R}^{r\\times\\frac{d_{in}}{q}} \\ \\ (C \\text{ also low-rank if decompose\\_both})",
+   "trainable_params": "pq+r\\big(\\tfrac{d_{out}}{p}+\\tfrac{d_{in}}{q}\\big) \\ \\ (p,q \\text{ from decompose\\_factor})",
+   "locus": "linear and Conv1d/Conv2d layers",
+   "modification_kind": "additive-weight",
+   "structure": "Kronecker product of a small dense factor and a low-rank factor, \\operatorname{rank}\\Delta W\\le\\operatorname{rank}(C)\\cdot r",
+   "mergeable": "yes",
+   "mergeable_reason": "The Kronecker product is a fixed dense matrix.",
+   "identity_at_init": "PEFT zero-initializes the left Kronecker factor C (w1), so Delta W = 0.",
+   "key_idea": "Kronecker structure gives high-rank, block-repetitive updates with very few parameters.",
+   "results_note": "The LyCORIS paper provides a systematic evaluation framework for text-to-image customization comparing LoRA, LoHa, LoKr and native fine-tuning.",
+   "relations": [
+    {
+     "target": "krona",
+     "type": "builds-on",
+     "note": "Kronecker-product adapters (KronA) with an extra low-rank factor."
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "Sibling LyCORIS method (Hadamard instead of Kronecker)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.14859",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lokr",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lokr/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "miss",
+   "name": "MiSS (formerly Bone)",
+   "full_name": "Matrix Shard Sharing (successor of Block-Affine Adaptation, Bone)",
+   "paper_title": "MiSS: Revisiting the Trade-off in LoRA with an Efficient Shard-Sharing Structure",
+   "authors": "Kang & Yin",
+   "year": 2024,
+   "venue": "ICLR 2026",
+   "arxiv": "2409.15371",
+   "url": "https://arxiv.org/abs/2409.15371",
+   "code_url": "https://github.com/Joluck/MiSS",
+   "hf_peft": true,
+   "hf_peft_config": "MissConfig (init_weights=True | 'bat' | 'mini'); BoneConfig removed in v0.19.0",
+   "formula_latex": "W=W_0+\\mathrm{expand}(D),\\ \\ \\Delta W\\,x=D\\,S(x),\\ S(x)_j=\\sum_{t\\in\\text{shard } j}x_t,\\ D\\in\\mathbb{R}^{d_{out}\\times r};\\ \\text{i.e. } \\Delta W=D\\,(I_r\\otimes\\mathbf{1}^\\top_{d_{in}/r})",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "shard sharing: one d_{out}\\times r matrix whose columns are replicated across the d_{in}/r input shards (rank \\le r); 'bat' mode adds a nonlinear block-affine interaction with W_0",
+   "mergeable": "yes",
+   "mergeable_reason": "expand(D) is a fixed dense matrix after training.",
+   "identity_at_init": "D = 0.",
+   "key_idea": "A single small matrix shared across input shards keeps LoRA-like expressivity with lower compute, memory and no expensive initialization.",
+   "results_note": "Paper reports Llama2-7B GSM8K 48.16 vs 40.75 for LoRA and MATH 8.58 vs 5.22.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Single-matrix alternative with O(d_out r) parameters and cheaper FLOPs."
+    },
+    {
+     "target": "bone",
+     "type": "builds-on",
+     "note": "MiSS is the revised version of Bone (Block-Affine Adaptation), which PEFT removed in favor of MiSS."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.15371",
+    "https://arxiv.org/html/2409.15371",
+    "https://huggingface.co/docs/peft/main/en/package_reference/miss",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/miss/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.17.0",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "multitask-prompt-tuning",
+   "name": "MPT",
+   "full_name": "Multitask Prompt Tuning",
+   "paper_title": "Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2303.02861",
+   "url": "https://arxiv.org/abs/2303.02861",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "MultitaskPromptTuningConfig",
+   "formula_latex": "P_k=P^*\\odot(u_kv_k^\\top),\\ \\ P^*\\in\\mathbb{R}^{\\ell\\times d} \\text{ shared (distilled from source tasks)},\\ u_k\\in\\mathbb{R}^{\\ell},v_k\\in\\mathbb{R}^{d};\\ \\text{input}=[P_k;E(x)]",
+   "trainable_params": "\\ell d+\\ell+d \\text{ per target task}",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "soft prompt = Hadamard product of a shared prompt matrix and a task-specific rank-one matrix",
+   "mergeable": "no",
+   "mergeable_reason": "Prompt tokens extend the input sequence; they are not a weight change.",
+   "identity_at_init": "Not an identity (adds tokens); target prompts initialized from the distilled shared source prompt.",
+   "key_idea": "Distill many source-task prompts into one shared prompt and adapt it to each target task with a cheap multiplicative rank-one update.",
+   "results_note": "Paper reports SuperGLUE average 74.1 vs 57.8 for vanilla prompt tuning while tuning 0.035% task-specific parameters.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Soft prompt with multitask-shared structure."
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "Same Hadamard-with-low-rank idea applied to a prompt matrix instead of a weight."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.02861",
+    "https://arxiv.org/html/2303.02861",
+    "https://huggingface.co/docs/peft/main/en/package_reference/multitask_prompt_tuning"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "oft",
+   "name": "OFT",
+   "full_name": "Orthogonal Finetuning",
+   "paper_title": "Controlling Text-to-Image Diffusion by Orthogonal Finetuning",
+   "authors": "Qiu et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.07280",
+   "url": "https://arxiv.org/abs/2306.07280",
+   "code_url": "https://github.com/Zeju1997/oft",
+   "hf_peft": true,
+   "hf_peft_config": "OFTConfig",
+   "formula_latex": "W=W_0R^\\top,\\ \\ R=\\mathrm{blockdiag}(R_1,\\dots,R_n)\\in O(d_{in}),\\ R_i=(I+Q_i)(I-Q_i)^{-1},\\ Q_i^\\top=-Q_i\\in\\mathbb{R}^{b\\times b},\\ n=d_{in}/b;\\ \\text{COFT: }\\|Q\\|\\le\\epsilon",
+   "trainable_params": "n\\,\\tfrac{b(b-1)}{2}=\\tfrac{d_{in}(b-1)}{2} \\ \\ (\\text{or one shared block if block\\_share})",
+   "locus": "linear and Conv2d layers (rotation of each neuron's input-weight vector)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "block-diagonal orthogonal R\\in O(d_{in}) (Cayley-parameterized) multiplying W_0, preserving hyperspherical energy (pairwise angles between neurons)",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 R^T is a dense matrix that replaces W_0.",
+   "identity_at_init": "Q = 0, so R = I.",
+   "key_idea": "Fine-tune by rotating neurons rather than adding to them, which provably preserves the pairwise angular structure of pretrained weights.",
+   "results_note": "Paper reports better generation quality and faster convergence than existing methods on subject-driven and controllable text-to-image generation.",
+   "relations": [
+    {
+     "target": "boft",
+     "type": "special-case-of",
+     "note": "BOFT with a single butterfly factor."
+    },
+    {
+     "target": "oftv2",
+     "type": "builds-on",
+     "note": "OFTv2 is the scalable input-centric reformulation implemented in PEFT >= 0.16."
+    },
+    {
+     "target": "hra",
+     "type": "competes-with",
+     "note": "Alternative orthogonal parameterization."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.07280",
+    "https://huggingface.co/docs/peft/main/en/package_reference/oft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/oft/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "oftv2",
+   "name": "OFTv2",
+   "full_name": "Orthogonal Finetuning Made Scalable (input-centric OFT with Cayley-Neumann)",
+   "paper_title": "Orthogonal Finetuning Made Scalable",
+   "authors": "Qiu et al.",
+   "year": 2025,
+   "venue": "EMNLP 2025",
+   "arxiv": "2506.19847",
+   "url": "https://arxiv.org/abs/2506.19847",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "OFTConfig(use_cayley_neumann=True) (default since PEFT 0.16 refactor)",
+   "formula_latex": "h=W_0\\,(R^\\top x),\\ \\ R_i=(I+Q_i)(I-Q_i)^{-1}\\approx(I+Q_i)\\sum_{k=0}^{K}Q_i^{k},\\ Q_i^\\top=-Q_i",
+   "trainable_params": "\\tfrac{d_{in}(b-1)}{2}",
+   "locus": "linear layers, including quantized base layers (QOFT)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "block-diagonal orthogonal rotation applied to activations (matrix-vector) instead of weights (matrix-matrix), with a truncated Neumann series replacing the Cayley inverse",
+   "mergeable": "yes",
+   "mergeable_reason": "The rotation can still be folded into W_0 after training.",
+   "identity_at_init": "Q = 0, so R = I.",
+   "key_idea": "Make OFT input-centric and replace the matrix inverse with a Neumann series to cut OFT's compute and memory to LoRA-like levels.",
+   "results_note": "Paper reports up to 10x faster training and 3x lower GPU memory than OFT without performance loss, and better stability/efficiency than QLoRA on quantized models.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "Same orthogonal parameterization, scalable computation."
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "QOFT targets quantized base models like QLoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.19847",
+    "https://huggingface.co/docs/peft/main/en/package_reference/oft",
+    "https://github.com/huggingface/peft/releases/tag/v0.16.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "osf",
+   "name": "OSF",
+   "full_name": "Orthogonal Subspace Fine-tuning (adaptive-SVD constrained full fine-tuning)",
+   "paper_title": "Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning",
+   "authors": "Nayak et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2504.07097",
+   "url": "https://arxiv.org/abs/2504.07097",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "OSFConfig",
+   "formula_latex": "W_0=U_{hi}\\Sigma_{hi}V_{hi}^\\top+U_{lo}\\Sigma_{lo}V_{lo}^\\top;\\ U_{hi},\\Sigma_{hi},V_{hi} \\text{ frozen};\\ U_{lo},\\Sigma_{lo},V_{lo} \\text{ trained with } \\nabla_{proj}=\\nabla-U_{hi}U_{hi}^\\top\\nabla\\,V_{hi}V_{hi}^\\top",
+   "trainable_params": "k(d_{out}+d_{in}+1),\\ \\ k=\\min(d_{in},d_{out})-\\text{effective\\_rank}",
+   "locus": "any linear layer ('all-linear' supported)",
+   "modification_kind": "hybrid",
+   "structure": "SVD split of W_0: top singular subspace (important for prior tasks) frozen; minor singular components trained with gradients projected orthogonally to the frozen subspace",
+   "mergeable": "yes",
+   "mergeable_reason": "The frozen and trained SVD components recombine into one dense W.",
+   "identity_at_init": "Trainable components initialized from W_0's own SVD, so W = W_0 at init.",
+   "key_idea": "For continual learning, update only directions orthogonal to the dominant singular subspaces of earlier tasks, giving full-rank-capacity updates with little forgetting.",
+   "results_note": "Paper reports 71.3 vs 69.6 (O-LoRA) on the 15-task T5-Large benchmark and 48.4 vs 41.3 on TRACE with LLaMA-2 7B.",
+   "relations": [
+    {
+     "target": "o-lora",
+     "type": "competes-with",
+     "note": "Both use orthogonality to prior-task subspaces; OSF does it within full-rank SVD components."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "Both train minor singular components of W_0."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.07097",
+    "https://arxiv.org/html/2504.07097",
+    "https://huggingface.co/docs/peft/main/en/package_reference/osf",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/osf/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "p-tuning",
+   "name": "P-Tuning",
+   "full_name": "P-Tuning (prompt-encoder continuous prompts)",
+   "paper_title": "GPT Understands, Too",
+   "authors": "Liu et al.",
+   "year": 2021,
+   "venue": "AI Open",
+   "arxiv": "2103.10385",
+   "url": "https://arxiv.org/abs/2103.10385",
+   "code_url": "https://github.com/THUDM/P-tuning",
+   "hf_peft": true,
+   "hf_peft_config": "PromptEncoderConfig",
+   "formula_latex": "\\text{input}=[\\,\\dots,h_1,\\dots,h_\\ell,\\dots,E(x),\\dots],\\ \\ h_{1:\\ell}=f_\\phi(p_{1:\\ell}),\\ f_\\phi\\in\\{\\text{LSTM},\\text{MLP}\\},\\ p_i\\in\\mathbb{R}^{d} \\text{ trained}",
+   "trainable_params": "\\ell d+|\\phi| \\ \\ (\\text{prompt embeddings + prompt encoder})",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "continuous virtual tokens produced by a trainable reparameterizing encoder (LSTM/MLP) and inserted into the input embeddings",
+   "mergeable": "no",
+   "mergeable_reason": "Virtual tokens extend the input sequence.",
+   "identity_at_init": "Not an identity (adds tokens).",
+   "key_idea": "Learn continuous prompt embeddings through a small prompt encoder, which stabilizes optimization compared with free prompt vectors.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "competes-with",
+     "note": "Same input-level soft prompt, but reparameterized through an encoder."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "competes-with",
+     "note": "Input-only vs every-layer prompts."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2103.10385",
+    "https://huggingface.co/docs/peft/main/en/package_reference/p_tuning",
+    "https://api.semanticscholar.org/graph/v1/paper/batch"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "peanut",
+   "name": "PEANuT",
+   "full_name": "Parameter-Efficient Adaptation with Weight-aware Neural Tweakers",
+   "paper_title": "PEANuT: Parameter-Efficient Adaptation with Weight-aware Neural Tweakers",
+   "authors": "Zhong et al.",
+   "year": 2024,
+   "venue": "KDD 2026",
+   "arxiv": "2410.01870",
+   "url": "https://arxiv.org/abs/2410.01870",
+   "code_url": "https://github.com/yibozhong/peanut",
+   "hf_peft": true,
+   "hf_peft_config": "PeanutConfig",
+   "formula_latex": "W=W_0+f(W_0;\\theta),\\ \\ f(W_0;\\theta)=\\sigma(W_0\\Theta_1)\\,\\Theta_2,\\ \\Theta_1\\in\\mathbb{R}^{d_{in}\\times r},\\ \\Theta_2\\in\\mathbb{R}^{r\\times d_{in}} \\ (\\text{optional depth: extra } r\\times r \\text{ nonlinear layers})",
+   "trainable_params": "2r\\,d_{in}+\\text{depth}\\cdot O(r^2)",
+   "locus": "nn.Linear layers",
+   "modification_kind": "additive-weight",
+   "structure": "nonlinear weight-conditioned update: a small MLP applied to the rows of W_0 produces \\Delta W (rank \\le r)",
+   "mergeable": "yes",
+   "mergeable_reason": "f(W_0) is computed once after training and added to W_0.",
+   "identity_at_init": "Output projection Theta_2 (B) zero-initialized.",
+   "key_idea": "Generate the update as a nonlinear function of the frozen weight itself instead of a weight-agnostic linear factorization.",
+   "results_note": "Paper reports consistent gains over strong PEFT baselines on four benchmarks spanning 20+ NLP and vision datasets at comparable or fewer parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "With identity activation and Theta_1 absorbing W_0, the update is a rank-r linear map like LoRA (paper shows >= expressivity)."
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "Both condition the update on W_0 (nonlinear MLP vs Hadamard)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.01870",
+    "https://arxiv.org/html/2410.01870",
+    "https://huggingface.co/docs/peft/main/en/package_reference/peanut",
+    "https://github.com/yibozhong/peanut",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "polytropon",
+   "name": "Polytropon (Poly)",
+   "full_name": "Polytropon: modular skill inventory with task-level routing",
+   "paper_title": "Combining Modular Skills in Multitask Learning",
+   "authors": "Ponti et al.",
+   "year": 2022,
+   "venue": "EACL 2023",
+   "arxiv": "2202.13914",
+   "url": "https://arxiv.org/abs/2202.13914",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "PolyConfig(poly_type='poly', n_splits=1)",
+   "formula_latex": "\\Delta W_\\tau=\\Big(\\sum_{j=1}^{S}\\hat z_{\\tau j}B_j\\Big)\\Big(\\sum_{j=1}^{S}\\hat z_{\\tau j}A_j\\Big),\\ \\ \\hat z_{\\tau j}=\\frac{z_{\\tau j}}{\\sum_k z_{\\tau k}},\\ z_{\\tau}\\sim\\mathrm{RelaxedBernoulli}(\\mathrm{logits}_\\tau)",
+   "trainable_params": "S\\,r(d_{in}+d_{out})+T\\,S \\ \\ (S=\\text{n\\_skills},\\ T=\\text{n\\_tasks})",
+   "locus": "LoRA-style adapters on linear layers, selected per task id",
+   "modification_kind": "composition-or-routing",
+   "structure": "task-level routing over an inventory of S LoRA skills; each task's adapter is the normalized average of its active skills' parameters",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a fixed task id the averaged adapter is a fixed low-rank update that could be merged; in multitask use the routing varies per task.",
+   "identity_at_init": "Skill B matrices zero-initialized in PEFT; routing logits ~U(-1e-3, 1e-3).",
+   "key_idea": "Tasks share a small inventory of latent skills (adapters); learn which skills each task uses so knowledge recombines across tasks.",
+   "results_note": "Paper reports improved few-shot generalization on CrossFit (NLP) and sample efficiency on BabyAI over non-modular baselines.",
+   "relations": [
+    {
+     "target": "mhr",
+     "type": "special-case-of",
+     "note": "MHR with a single routing head equals Poly."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Each skill is a LoRA adapter."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2202.13914",
+    "https://huggingface.co/docs/peft/main/en/package_reference/poly",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/poly/router.py"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "mhr",
+   "name": "MHR",
+   "full_name": "Multi-Head Adapter Routing",
+   "paper_title": "Multi-Head Adapter Routing for Cross-Task Generalization",
+   "authors": "Caccia et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2211.03831",
+   "url": "https://arxiv.org/abs/2211.03831",
+   "code_url": "https://github.com/microsoft/mttl",
+   "hf_peft": true,
+   "hf_peft_config": "PolyConfig(n_splits>1)",
+   "formula_latex": "A^{(\\tau)}=\\mathrm{concat}_{h=1}^{H}\\Big(\\sum_{j}\\hat z^{(h)}_{\\tau j}A^{(h)}_j\\Big),\\ B^{(\\tau)} \\text{ analogously},\\ \\Delta W_\\tau=B^{(\\tau)}A^{(\\tau)}",
+   "trainable_params": "S\\,r(d_{in}+d_{out})+T\\,S\\,H \\ \\ (H=\\text{n\\_splits})",
+   "locus": "LoRA-style adapters on linear layers, routed per task",
+   "modification_kind": "composition-or-routing",
+   "structure": "adapters split into H disjoint parameter blocks, each with its own task-to-skill routing, giving finer-grained combinations than Poly",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a known task the routed adapter is a fixed low-rank update; across tasks it varies.",
+   "identity_at_init": "Skill B matrices zero-initialized in PEFT.",
+   "key_idea": "Route subsets of adapter parameters (heads) rather than whole adapters to increase the expressivity of skill combination.",
+   "results_note": "Paper reports MHR outperforming Poly in few-shot cross-task generalization.",
+   "relations": [
+    {
+     "target": "polytropon",
+     "type": "generalizes",
+     "note": "H = 1 recovers Poly."
+    },
+    {
+     "target": "arrow",
+     "type": "competes-with",
+     "note": "Both reuse a library of LoRAs for cross-task generalization."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2211.03831",
+    "https://huggingface.co/docs/peft/main/en/package_reference/poly"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "prefix-tuning",
+   "name": "Prefix Tuning",
+   "full_name": "Prefix-Tuning",
+   "paper_title": "Prefix-Tuning: Optimizing Continuous Prompts for Generation",
+   "authors": "Li & Liang",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2101.00190",
+   "url": "https://arxiv.org/abs/2101.00190",
+   "code_url": "https://github.com/XiangLi1999/PrefixTuning",
+   "hf_peft": true,
+   "hf_peft_config": "PrefixTuningConfig",
+   "formula_latex": "\\forall l:\\ K_l=[P^{(l)}_K;\\,W_kX],\\ V_l=[P^{(l)}_V;\\,W_vX],\\ P^{(l)}_K,P^{(l)}_V\\in\\mathbb{R}^{\\ell\\times d};\\ \\ P=\\mathrm{MLP}_\\theta(P') \\text{ during training (prefix\\_projection)}",
+   "trainable_params": "2L\\ell d \\ \\ (\\text{or } \\ell d+|\\theta_{MLP}| \\text{ with prefix\\_projection})",
+   "locus": "keys/values at every layer",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "learned key/value vectors prepended at every attention layer (served as past_key_values)",
+   "mergeable": "no",
+   "mergeable_reason": "Extra attended KV states are not a weight change.",
+   "identity_at_init": "Not an identity with random init; PEFT's init_weights='zero' (v0.19) makes the prefix activations zero, approximately a no-op.",
+   "key_idea": "Steer a frozen LM by learning virtual tokens that every layer can attend to.",
+   "results_note": "Paper reports comparable performance to fine-tuning in full-data table-to-text and summarization with 0.1% of parameters, and better results in low-data settings.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "generalizes",
+     "note": "Prompt tuning is the input-layer-only special case."
+    },
+    {
+     "target": "cartridges",
+     "type": "competes-with",
+     "note": "Same KV-prefix mechanism trained by self-study distillation."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2101.00190",
+    "https://huggingface.co/docs/peft/main/en/package_reference/prefix_tuning",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/prefix_tuning/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "prompt-tuning",
+   "name": "Prompt Tuning",
+   "full_name": "Prompt Tuning (soft prompts)",
+   "paper_title": "The Power of Scale for Parameter-Efficient Prompt Tuning",
+   "authors": "Lester et al.",
+   "year": 2021,
+   "venue": "EMNLP 2021",
+   "arxiv": "2104.08691",
+   "url": "https://arxiv.org/abs/2104.08691",
+   "code_url": "https://github.com/google-research/prompt-tuning",
+   "hf_peft": true,
+   "hf_peft_config": "PromptTuningConfig",
+   "formula_latex": "\\text{input}=[P;\\,E(x)],\\ \\ P\\in\\mathbb{R}^{\\ell\\times d} \\text{ trained},\\ \\text{model frozen}",
+   "trainable_params": "\\ell\\,d",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "learned soft-token embeddings prepended to the input",
+   "mergeable": "no",
+   "mergeable_reason": "Soft tokens extend the input; nothing to fold into weights.",
+   "identity_at_init": "Not an identity (adds tokens); initialized randomly, from text (vocab embeddings), or by random discrete vocab sampling (PEFT >= 0.18).",
+   "key_idea": "With large enough models, a few learned input embeddings match full fine-tuning.",
+   "results_note": "Paper reports prompt tuning closing the gap to model tuning as T5 scales past billions of parameters.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "special-case-of",
+     "note": "Prefix tuning restricted to the input layer."
+    },
+    {
+     "target": "p-tuning",
+     "type": "competes-with",
+     "note": "P-tuning reparameterizes the prompt through an encoder."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2104.08691",
+    "https://huggingface.co/docs/peft/main/en/package_reference/prompt_tuning",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "psoft",
+   "name": "PSOFT",
+   "full_name": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+   "paper_title": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2505.11235",
+   "url": "https://arxiv.org/abs/2505.11235",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "PsoftConfig",
+   "formula_latex": "W_0=AB+W_{res}\\ (AB=U_r\\Sigma_rV_r^\\top);\\ \\ W=A\\,\\mathrm{diag}(\\alpha)\\,R\\,\\mathrm{diag}(\\beta)\\,B+W_{res}=W_0+A\\big(\\mathrm{diag}(\\alpha)R\\,\\mathrm{diag}(\\beta)-I_r\\big)B,\\ R\\in O(r) \\text{ (Cayley)}",
+   "trainable_params": "\\tfrac{r(r-1)}{2}+2r \\ \\ (R \\text{ skew generator plus } \\alpha,\\beta)",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "orthogonal transform R\\in O(r) acting inside the rank-r principal singular subspace of W_0, with optional diagonal relaxations of orthogonality",
+   "mergeable": "yes",
+   "mergeable_reason": "The additive form A(R' - I)B is a fixed low-rank update.",
+   "identity_at_init": "R = I and alpha = beta = 1 at init, so W = W_0.",
+   "key_idea": "Confine orthogonal fine-tuning to the low-rank principal subspace, getting OFT's geometry preservation at LoRA-like cost.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "Orthogonal transformation, restricted to an r-dim principal subspace."
+    },
+    {
+     "target": "pissa",
+     "type": "builds-on",
+     "note": "Uses the principal SVD subspace of W_0 like PiSSA."
+    },
+    {
+     "target": "lora",
+     "type": "equivalent-to",
+     "note": "Implemented as the additive low-rank update A(R - I)B."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.11235",
+    "https://huggingface.co/docs/peft/main/en/package_reference/psoft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/psoft/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "pvera",
+   "name": "PVeRA",
+   "full_name": "Probabilistic Vector-Based Random Matrix Adaptation",
+   "paper_title": "PVeRA: Probabilistic Vector-Based Random Matrix Adaptation",
+   "authors": "Fillioux et al.",
+   "year": 2025,
+   "venue": "WACV 2026",
+   "arxiv": "2512.07703",
+   "url": "https://arxiv.org/abs/2512.07703",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "PveraConfig",
+   "formula_latex": "(\\mu,\\sigma)=\\Lambda_dAx,\\ A\\in\\mathbb{R}^{2r\\times d_{in}} \\text{ frozen shared};\\ z=\\mu+\\sigma\\odot\\epsilon,\\ \\epsilon\\sim\\mathcal{N}(0,I);\\ h=W_0x+\\Lambda_bBz;\\ \\ \\mathcal{L}\\mathrel{+}=\\beta\\,D_{KL}\\big(\\mathcal{N}(\\mu,\\sigma^2)\\,\\|\\,\\mathcal{N}(0,I)\\big)",
+   "trainable_params": "2r+d_{out}",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "VeRA with a reparameterized Gaussian latent in the shared random bottleneck; frozen shared random bases with trainable diagonal scalings",
+   "mergeable": "conditional",
+   "mergeable_reason": "With z = mu at inference the adapter is a fixed linear map and can be merged; sampling for Monte Carlo uncertainty (sample_at_inference) cannot.",
+   "identity_at_init": "b = 0 (d initialized to 0.1), so the update is zero.",
+   "key_idea": "Learn a distribution over VeRA's latent adaptation, improving accuracy and enabling Monte Carlo confidence estimates.",
+   "results_note": "Paper reports VTAB-1k average 71.4 vs 69.9 for VeRA, 70.5 for LoRA and 71.0 for DoRA.",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "builds-on",
+     "note": "Same frozen shared random bases; adds a probabilistic latent."
+    },
+    {
+     "target": "monteclora",
+     "type": "competes-with",
+     "note": "Both make low-rank adapters Bayesian/stochastic."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2512.07703",
+    "https://arxiv.org/html/2512.07703",
+    "https://huggingface.co/docs/peft/main/en/package_reference/pvera",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "randlora",
+   "name": "RandLoRA",
+   "full_name": "RandLoRA: full-rank PEFT via scaled random bases",
+   "paper_title": "RandLoRA: Full-rank parameter-efficient fine-tuning of large models",
+   "authors": "Albert et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2502.00987",
+   "url": "https://arxiv.org/abs/2502.00987",
+   "code_url": "https://github.com/PaulAlbert31/RandLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "RandLoraConfig",
+   "formula_latex": "\\Delta W=\\sum_{j=1}^{n}B_j\\Lambda_jA\\,\\Gamma_j,\\ \\ B_j\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}} \\text{ frozen random (shared)},\\ \\Lambda_j\\in\\mathbb{R}^{r\\times r},\\ \\Gamma_j \\text{ trainable diagonal},\\ n=\\lceil\\min(d_{in},d_{out})/r\\rceil",
+   "trainable_params": "n\\,\\big(r+\\min(d_{in},d_{out})\\big)\\ \\approx\\ \\tfrac{d^2}{r}+d \\text{ for } d_{in}=d_{out}=d",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "sum of n frozen random rank-r bases with trainable diagonal scalings on both sides, reaching full rank; parameter count grows as the basis rank shrinks",
+   "mergeable": "yes",
+   "mergeable_reason": "The scaled sum of bases is a fixed dense matrix.",
+   "identity_at_init": "Lambda_j = 0 (Gamma_j = 1/n) in PEFT, so Delta W = 0.",
+   "key_idea": "Separate parameter count from rank: combine many frozen random low-rank bases with learned diagonal scalings to get full-rank updates cheaply.",
+   "results_note": "Paper reports RandLoRA overtaking LoRA as the parameter budget grows on vision (DinoV2, CLIP), vision-language and commonsense reasoning (e.g. LLaMA3-8B).",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "generalizes",
+     "note": "VeRA is a single-basis special case with one scaling per side."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Full-rank alternative at similar budgets."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2502.00987",
+    "https://arxiv.org/html/2502.00987",
+    "https://huggingface.co/docs/peft/main/en/package_reference/randlora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/randlora/layer.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.16.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "road",
+   "name": "RoAd",
+   "full_name": "2D Rotary Adaptation",
+   "paper_title": "3-in-1: 2D Rotary Adaptation for Efficient Finetuning, Efficient Batching and Composability",
+   "authors": "Liao & Monz",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2409.00119",
+   "url": "https://arxiv.org/abs/2409.00119",
+   "code_url": "https://github.com/BaohaoLiao/road",
+   "hf_peft": true,
+   "hf_peft_config": "RoadConfig(variant='road_1'|'road_2'|'road_4')",
+   "formula_latex": "W=RW_0,\\ \\ R=\\mathrm{blockdiag}_i\\Big(\\alpha_i\\begin{bmatrix}\\cos\\theta_i&-\\sin\\theta_i\\\\\\sin\\theta_i&\\cos\\theta_i\\end{bmatrix}\\Big) \\text{ over output pairs};\\ \\ h=r_1\\odot(W_0x)+r_2\\odot\\widehat{(W_0x)}",
+   "trainable_params": "d_{out}\\ (\\text{RoAd}_1),\\ 2d_{out}\\ (\\text{RoAd}_2),\\ 4d_{out}\\ (\\text{RoAd}_4)",
+   "locus": "linear layers (outputs); works with bitsandbytes-quantized bases",
+   "modification_kind": "multiplicative-weight",
+   "structure": "block-diagonal 2x2 scaled rotations applied to pairs of output dimensions, implemented element-wise",
+   "mergeable": "yes",
+   "mergeable_reason": "R W_0 is a dense matrix; unmerged it is cheap element-wise ops enabling mixed-adapter batches.",
+   "identity_at_init": "theta = 0 and alpha = 1, so R = I.",
+   "key_idea": "Fine-tuning mostly rotates representations, so learn tiny 2D rotations that are element-wise (batchable across adapters) and composable.",
+   "results_note": "Paper reports matching or beating full fine-tuning on GLUE with <0.1% trainable parameters and 2x LoRA's throughput in heterogeneous multi-adapter batches.",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "With theta = 0 RoAd reduces to per-channel scaling like (IA)^3."
+    },
+    {
+     "target": "oft",
+     "type": "competes-with",
+     "note": "Both are orthogonal-style multiplicative updates; RoAd uses 2x2 blocks on the output side."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.00119",
+    "https://arxiv.org/html/2409.00119",
+    "https://huggingface.co/docs/peft/main/en/package_reference/road",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/road/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "shadowpeft",
+   "name": "ShadowPEFT",
+   "full_name": "Shadow Network for Parameter-Efficient Fine-Tuning",
+   "paper_title": "ShadowPEFT: Shadow Network for Parameter-Efficient Fine-Tuning",
+   "authors": "Li et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2604.19254",
+   "url": "https://arxiv.org/abs/2604.19254",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "ShadowConfig",
+   "formula_latex": "s^{(0)}=f_{sh}(x;\\theta_{sh});\\ \\ h^{(l)}=h^{(l-1)}_{out}+\\alpha\\,\\big(\\mathrm{Drop}(h^{(l-1)}_{out}-s^{(l-1)})W^{(l)}_{down}\\big)W^{(l)}_{up};\\ \\ s^{(l)}=(1-g^{(l)})\\odot s^{(l-1)}+g^{(l)}\\odot t^{(l)}",
+   "trainable_params": "|\\theta_{sh}|+\\sum_{l=1}^{L}\\big(2rd+|\\theta^{(l)}_{T,G}|\\big)",
+   "locus": "every decoder block input (whole-block wrapper) plus a parallel small shadow backbone",
+   "modification_kind": "architectural-insertion",
+   "structure": "parallel shadow network whose state is injected into each block input through a rank-r bottleneck of the base-shadow discrepancy and advanced by gated residual MLP updates",
+   "mergeable": "no",
+   "mergeable_reason": "The adaptation is an input-dependent trajectory through a separate network, not a weight delta (PEFT raises on merge).",
+   "identity_at_init": "W_up zero-initialized, so the injection is a no-op at start.",
+   "key_idea": "Share adaptation across layers through a small, detachable, pretrainable shadow model that runs alongside the frozen backbone.",
+   "results_note": "Paper reports outperforming LoRA and DoRA at comparable budgets (~29M params on Qwen3-8B) on MMLU, GSM8K and SQuAD v2, with the best OOD average.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "competes-with",
+     "note": "Inserted modules, but in a parallel stateful network rather than per-layer bottlenecks."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Same trainable-parameter range with layer-shared adaptation."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.19254",
+    "https://arxiv.org/html/2604.19254",
+    "https://huggingface.co/docs/peft/main/en/package_reference/shadow",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/shadow/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.21.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "shira",
+   "name": "SHiRA",
+   "full_name": "Sparse High Rank Adapters",
+   "paper_title": "Sparse High Rank Adapters",
+   "authors": "Bhardwaj et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.13175",
+   "url": "https://arxiv.org/abs/2406.13175",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "ShiraConfig(mask_type='random' or custom mask_fn)",
+   "formula_latex": "W=W_0+M\\odot S,\\ \\ M\\in\\{0,1\\}^{d_{out}\\times d_{in}} \\text{ fixed},\\ \\|M\\|_0=r(d_{in}+d_{out}),\\ S \\text{ trained on the support of } M",
+   "trainable_params": "r(d_{in}+d_{out}) \\ \\ (\\approx1\\text{-}2\\% \\text{ of the layer})",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "selective",
+   "structure": "sparse coordinate mask on W_0 (random, magnitude, gradient, SNIP or structured), giving a sparse but high-rank update",
+   "mergeable": "yes",
+   "mergeable_reason": "Only existing entries change; the sparse delta is scattered into W_0 (fast switching via sparse indices).",
+   "identity_at_init": "S = 0.",
+   "key_idea": "Directly fine-tune a tiny sparse subset of existing weights: high-rank, cheap to switch, and less interference when fusing adapters.",
+   "results_note": "Paper reports HPSv2 31.2 vs 24.7 for LoRA on a style task, +2.7% over LoRA on LLaMA-7B commonsense, and 5-16x faster adapter loading than LoRA fusing.",
+   "relations": [
+    {
+     "target": "super-tuning",
+     "type": "competes-with",
+     "note": "Both train a fixed sparse support of W_0; Super-Tuning picks it by magnitude."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Same parameter count as LoRA but sparse/high-rank."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.13175",
+    "https://arxiv.org/html/2406.13175",
+    "https://huggingface.co/docs/peft/main/en/package_reference/shira",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/shira/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.17.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "super-tuning",
+   "name": "Super-Tuning (Super / Supra)",
+   "full_name": "Super-Tuning: sparse fine-tuning from activation-aware pruning saliency",
+   "paper_title": "Super-Tuning: From Activation-Aware Pruning to Sparse Fine-Tuning",
+   "authors": "Ilin et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2607.09287",
+   "url": "https://arxiv.org/abs/2607.09287",
+   "code_url": "https://github.com/vectozavr/SuperTuning",
+   "hf_peft": true,
+   "hf_peft_config": "SupertuningConfig (r=None: Super; r>0: Supra hybrid; select_top=False: bottom-k)",
+   "formula_latex": "W=W_0+M\\odot U\\ \\big(+\\,\\gamma BA \\text{ in Supra}\\big),\\ \\ M=\\mathrm{TopK}\\ \\text{or}\\ \\mathrm{BottomK}\\big(|W_0|\\big) \\text{ (paper also: } |W_{ij}|\\,\\|X_{j}\\|_2\\text{)}",
+   "trainable_params": "(1-\\text{sparsity})\\,d_{in}d_{out}\\ \\big(+\\,r(d_{in}+d_{out}) \\text{ for Supra}\\big)",
+   "locus": "nn.Linear layers only (PEFT)",
+   "modification_kind": "selective",
+   "structure": "sparse coordinate mask chosen data-free by weight magnitude (or Wanda-style saliency in the paper); Supra = sparse-plus-low-rank",
+   "mergeable": "yes",
+   "mergeable_reason": "Sparse and low-rank deltas are fixed matrices that add into W_0.",
+   "identity_at_init": "Sparse values U = 0 and LoRA B = 0.",
+   "key_idea": "Reuse pruning saliency to choose an unrestricted-rank sparse trainable support at a fixed budget, optionally adding a low-rank part.",
+   "results_note": "Paper reports Supra beating LoRA on Math17K (Llama-3.2-1B 62.23 vs 61.07; Meta-Llama-3-8B 79.12 vs 73.17).",
+   "relations": [
+    {
+     "target": "shira",
+     "type": "competes-with",
+     "note": "Sparse fixed-support fine-tuning with a different mask criterion."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Supra adds a LoRA term to the sparse update."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2607.09287",
+    "https://arxiv.org/html/2607.09287",
+    "https://huggingface.co/docs/peft/main/en/package_reference/supertuning",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/supertuning/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.21.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tinylora",
+   "name": "TinyLoRA",
+   "full_name": "TinyLoRA (learning to reason in 13 parameters)",
+   "paper_title": "Learning to Reason in 13 Parameters",
+   "authors": "Morris et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2602.04118",
+   "url": "https://arxiv.org/abs/2602.04118",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "TinyLoraConfig",
+   "formula_latex": "W=W_0+U_r\\Sigma_r\\Big(\\sum_{i=1}^{u}v_iP_i\\Big)V_r^\\top,\\ \\ U_r,\\Sigma_r,V_r \\text{ from truncated SVD of } W_0 \\text{ (frozen)},\\ P_i\\in\\mathbb{R}^{r\\times r} \\text{ fixed random},\\ v\\in\\mathbb{R}^{u} \\text{ trained, optionally tied across modules}",
+   "trainable_params": "u \\text{ per module, or } u \\text{ for the whole model with full weight tying}",
+   "locus": "Linear, Embedding and Conv1D layers",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA-XS core R=\\sum_i v_iP_i confined to a u-dimensional random subspace of r\\times r matrices in the top-r singular frame of W_0",
+   "mergeable": "yes",
+   "mergeable_reason": "The update is a fixed rank-r matrix after training.",
+   "identity_at_init": "v ~ U(-0.02, 0.02) in PEFT, so near- but not exactly identity.",
+   "key_idea": "With RL, reasoning can be unlocked by a handful of parameters projected through fixed random tensors into the principal singular frame.",
+   "results_note": "Paper reports Qwen2.5-8B reaching 91% on GSM8K with 13 trained parameters under RL, and RL vastly outperforming SFT at tiny budgets.",
+   "relations": [
+    {
+     "target": "lora-xs",
+     "type": "builds-on",
+     "note": "Replaces LoRA-XS's trainable r x r core with a random projection of a tiny vector."
+    },
+    {
+     "target": "uni-lora",
+     "type": "competes-with",
+     "note": "Both project a tiny global vector into LoRA-style parameters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.04118",
+    "https://arxiv.org/html/2602.04118",
+    "https://huggingface.co/docs/peft/main/en/package_reference/tinylora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/tinylora/layer.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "trainable-tokens",
+   "name": "Trainable Tokens",
+   "full_name": "Trainable Tokens (selective embedding-row tuning)",
+   "paper_title": "",
+   "authors": "Hugging Face PEFT team",
+   "year": 2025,
+   "venue": "Hugging Face PEFT (software, no paper)",
+   "arxiv": "",
+   "url": "https://huggingface.co/docs/peft/main/en/package_reference/trainable_tokens",
+   "code_url": "https://github.com/huggingface/peft",
+   "hf_peft": true,
+   "hf_peft_config": "TrainableTokensConfig; or LoraConfig(trainable_token_indices=[...])",
+   "formula_latex": "E=E_0+\\sum_{t\\in\\mathcal{T}}e_t\\,\\delta_t^\\top,\\ \\ \\delta_t\\in\\mathbb{R}^{d} \\text{ trained only for selected token ids } \\mathcal{T}",
+   "trainable_params": "|\\mathcal{T}|\\,d",
+   "locus": "rows of the input embedding (and tied LM head)",
+   "modification_kind": "selective",
+   "structure": "sparse row mask on the embedding matrix",
+   "mergeable": "yes",
+   "mergeable_reason": "Updated rows are written back into the embedding matrix.",
+   "identity_at_init": "New row values initialized to the existing token embeddings (no-op).",
+   "key_idea": "Train only the embeddings of new or special tokens (e.g. reasoning tokens) without full-embedding fine-tuning or a LoRA on the embedding.",
+   "results_note": "PEFT docs report about 4 GiB VRAM saved on gemma-2-2b versus fully fine-tuning the embedding matrix.",
+   "relations": [
+    {
+     "target": "shira",
+     "type": "competes-with",
+     "note": "Both are sparse selective updates of existing parameters (rows vs entries)."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Usable together with LoRA through trainable_token_indices."
+    }
+   ],
+   "sources": [
+    "https://huggingface.co/docs/peft/main/en/package_reference/trainable_tokens",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/trainable_tokens/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.15.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "uni-lora",
+   "name": "Uni-LoRA",
+   "full_name": "Uni-LoRA: one vector is all you need",
+   "paper_title": "Uni-LoRA: One Vector is All You Need",
+   "authors": "Li et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.00799",
+   "url": "https://arxiv.org/abs/2506.00799",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "UniLoraConfig",
+   "formula_latex": "\\theta_D=P\\,\\theta_d,\\ \\ \\theta_D=\\mathrm{vec}\\{(A_\\ell,B_\\ell)\\}_\\ell\\in\\mathbb{R}^{D},\\ P\\in\\mathbb{R}^{D\\times d} \\text{ fixed: one-hot rows (uniform random slot), columns scaled by } 1/\\sqrt{n_j};\\ W_\\ell=W_{0,\\ell}+B_\\ell A_\\ell",
+   "trainable_params": "d \\text{ for the whole model (theta\\_d\\_length)}",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "global random isometric projection from one d-dim vector to all LoRA parameters of the model (random parameter tying across layers)",
+   "mergeable": "yes",
+   "mergeable_reason": "Each layer's B_l A_l is fixed after training.",
+   "identity_at_init": "theta_d ~ U(-0.02, 0.02): both A and B are small but nonzero, so not an exact no-op.",
+   "key_idea": "All parameter-sharing LoRA variants are projections of LoRA's parameter space; a single global, isometric projection gives extreme efficiency.",
+   "results_note": "Paper reports Gemma-7B instruction tuning comparable to LoRA with 0.52M parameters (0.0061% of the model, 0.26% of LoRA).",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "generalizes",
+     "note": "VeRA is a particular (layer-wise, structured) projection theta_D = P theta_d."
+    },
+    {
+     "target": "vb-lora",
+     "type": "generalizes",
+     "note": "VB-LoRA is another projection choice in the same framework."
+    },
+    {
+     "target": "tinylora",
+     "type": "competes-with",
+     "note": "Both train a tiny vector projected into low-rank adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.00799",
+    "https://arxiv.org/html/2506.00799",
+    "https://huggingface.co/docs/peft/main/en/package_reference/unilora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/unilora/layer.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "vb-lora",
+   "name": "VB-LoRA",
+   "full_name": "Vector-Bank LoRA",
+   "paper_title": "VB-LoRA: Extreme Parameter Efficient Fine-Tuning with Vector Banks",
+   "authors": "Li et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.15179",
+   "url": "https://arxiv.org/abs/2405.15179",
+   "code_url": "https://github.com/leo-yangli/VB-LoRA",
+   "hf_peft": true,
+   "hf_peft_config": "VBLoRAConfig",
+   "formula_latex": "\\Delta W=BA,\\ \\text{each length-}b \\text{ sub-vector } u \\text{ of } A,B:\\ u=\\sum_{s=1}^{h}w_s(\\sigma_u)\\,\\alpha_s,\\ w(\\sigma)=\\mathrm{softmax}(\\mathrm{TopK}(\\sigma,k)),\\ \\{\\alpha_s\\}_{s=1}^{h}\\subset\\mathbb{R}^{b} \\text{ shared bank}",
+   "trainable_params": "hb+h\\cdot\\#\\text{sub-vectors (logits) in training; stored: } hb+3\\cdot\\#\\text{sub-vectors for } k=2",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA factors assembled from a global vector bank by top-k sparse admixtures",
+   "mergeable": "yes",
+   "mergeable_reason": "BA is fixed after training.",
+   "identity_at_init": "Not exact: bank ~U(-0.02, 0.02) and logits ~N(0, 0.1^2), so BA is small but nonzero.",
+   "key_idea": "Share a tiny global bank of vectors from which every LoRA sub-vector is mixed, pushing parameter sharing across all layers and modules.",
+   "results_note": "Paper reports VB-LoRA using only 0.4% of LoRA's stored parameters on Llama2-13B while achieving better results.",
+   "relations": [
+    {
+     "target": "uni-lora",
+     "type": "special-case-of",
+     "note": "A particular projection choice within Uni-LoRA's framework."
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "Extreme parameter sharing across layers."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.15179",
+    "https://arxiv.org/html/2405.15179",
+    "https://huggingface.co/docs/peft/main/en/package_reference/vblora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/vblora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "vera",
+   "name": "VeRA",
+   "full_name": "Vector-based Random Matrix Adaptation",
+   "paper_title": "VeRA: Vector-based Random Matrix Adaptation",
+   "authors": "Kopiczko et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.11454",
+   "url": "https://arxiv.org/abs/2310.11454",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "VeraConfig",
+   "formula_latex": "h=W_0x+\\Lambda_bB\\Lambda_dAx,\\ \\ A\\in\\mathbb{R}^{r\\times d_{in}},B\\in\\mathbb{R}^{d_{out}\\times r} \\text{ frozen random, shared across layers},\\ \\Lambda_d=\\mathrm{diag}(d),\\Lambda_b=\\mathrm{diag}(b) \\text{ trained}",
+   "trainable_params": "r+d_{out}",
+   "locus": "linear layers (shared A/B sliced to each layer's shape)",
+   "modification_kind": "additive-weight",
+   "structure": "frozen shared random low-rank bases with trainable diagonal scalings on both sides",
+   "mergeable": "yes",
+   "mergeable_reason": "Lambda_b B Lambda_d A is a fixed low-rank matrix.",
+   "identity_at_init": "b = 0 (d = 0.1), so the update is zero.",
+   "key_idea": "Random projections are good enough as LoRA bases; only learn per-layer scaling vectors.",
+   "results_note": "Paper reports matching LoRA with 10x fewer trainable parameters on GLUE, E2E and instruction tuning.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "Fixes LoRA's A, B to shared random matrices and learns diagonal scalings."
+    },
+    {
+     "target": "randlora",
+     "type": "special-case-of",
+     "note": "Single-basis special case of RandLoRA."
+    },
+    {
+     "target": "uni-lora",
+     "type": "special-case-of",
+     "note": "A structured projection in Uni-LoRA's theta_D = P theta_d view."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.11454",
+    "https://huggingface.co/docs/peft/main/en/package_reference/vera",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/vera/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "waveft",
+   "name": "WaveFT",
+   "full_name": "Wavelet Fine-Tuning",
+   "paper_title": "Exploring Sparsity for Parameter Efficient Fine Tuning Using Wavelets",
+   "authors": "Bilican et al.",
+   "year": 2025,
+   "venue": "arXiv",
+   "arxiv": "2505.12532",
+   "url": "https://arxiv.org/abs/2505.12532",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "WaveFTConfig",
+   "formula_latex": "\\Delta W=\\lambda\\,\\mathrm{IDWT}(C),\\ \\ C\\in\\mathbb{R}^{d_{out}\\times d_{in}} \\text{ sparse with } p \\text{ trainable coefficients at fixed random locations}",
+   "trainable_params": "p \\ \\ (p=\\text{n\\_frequency})",
+   "locus": "nn.Linear layers only (PEFT); designed for SDXL personalization",
+   "modification_kind": "additive-weight",
+   "structure": "inverse 2D discrete wavelet transform of a sparse coefficient matrix (high-rank, spatially localized update)",
+   "mergeable": "yes",
+   "mergeable_reason": "IDWT(C) is computed once and added to W_0.",
+   "identity_at_init": "C = 0.",
+   "key_idea": "Learn a few wavelet coefficients of the update, giving parameter counts far below LoRA's rank-1 minimum with fine-grained control.",
+   "results_note": "Paper reports SDXL DreamBooth DINO 0.495 vs 0.463 for LoRA at equal parameter count and higher output diversity.",
+   "relations": [
+    {
+     "target": "fourierft",
+     "type": "competes-with",
+     "note": "Sparse coefficients in a wavelet rather than Fourier basis."
+    },
+    {
+     "target": "shira",
+     "type": "competes-with",
+     "note": "Sparse update, but sparse in a transform domain rather than in W itself."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.12532",
+    "https://arxiv.org/html/2505.12532",
+    "https://huggingface.co/docs/peft/main/en/package_reference/waveft",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/waveft/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "x-lora",
+   "name": "X-LoRA",
+   "full_name": "Mixture of Low-Rank Adapter Experts",
+   "paper_title": "X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Molecular Design",
+   "authors": "Buehler & Buehler",
+   "year": 2024,
+   "venue": "APL Machine Learning 2024",
+   "arxiv": "2402.07148",
+   "url": "https://arxiv.org/abs/2402.07148",
+   "code_url": "https://github.com/EricLBuehler/xlora",
+   "hf_peft": true,
+   "hf_peft_config": "XLoraConfig",
+   "formula_latex": "h=W_0x+\\sum_{i=1}^{n}\\lambda_i(x)\\,\\tfrac{\\alpha_i}{r_i}B_iA_ix,\\ \\ \\lambda=\\mathrm{softmax}/\\mathrm{top}\\text{-}k\\big(g_\\phi(\\text{hidden states of a first scaling pass})\\big) \\text{ per token (and per layer)}",
+   "trainable_params": "|\\phi| \\ (\\text{scaling head; LoRA experts frozen unless use\\_trainable\\_adapters})",
+   "locus": "all LoRA-adapted layers; scalings predicted from hidden states",
+   "modification_kind": "composition-or-routing",
+   "structure": "dense token-level gating of a set of pretrained LoRA experts by a learned scaling head (two forward passes)",
+   "mergeable": "no",
+   "mergeable_reason": "Mixing weights depend on each token's hidden state.",
+   "identity_at_init": "Not a no-op: pretrained LoRA experts are mixed from the start.",
+   "key_idea": "Reuse several domain LoRAs as experts and learn a small head that mixes them token by token, layer by layer.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Mixes multiple trained LoRA adapters."
+    },
+    {
+     "target": "arrow",
+     "type": "competes-with",
+     "note": "Arrow routes LoRAs training-free; X-LoRA trains a gating head."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.07148",
+    "https://arxiv.org/html/2402.07148",
+    "https://huggingface.co/docs/peft/main/en/package_reference/xlora"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dora",
+   "name": "DoRA",
+   "full_name": "Weight-Decomposed Low-Rank Adaptation",
+   "paper_title": "DoRA: Weight-Decomposed Low-Rank Adaptation",
+   "authors": "Liu et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.09353",
+   "url": "https://arxiv.org/abs/2402.09353",
+   "code_url": "https://github.com/NVlabs/DoRA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_dora=True)",
+   "formula_latex": "W_{i,:}=m_i\\,\\frac{(W_0+\\tfrac{\\alpha}{r}BA)_{i,:}}{\\|(W_0+\\tfrac{\\alpha}{r}BA)_{i,:}\\|_2},\\ \\ m\\in\\mathbb{R}^{d_{out}} \\text{ trained (init } m_i=\\|(W_0)_{i,:}\\|_2),\\ B,A \\text{ as LoRA}",
+   "trainable_params": "r(d_{in}+d_{out})+d_{out}",
+   "locus": "linear, Conv1d/2d layers (and embeddings)",
+   "modification_kind": "hybrid",
+   "structure": "magnitude-direction decomposition: learned per-output norm times the normalized (W_0 + low-rank) direction (the paper's 'column-wise' norm in its transposed convention)",
+   "mergeable": "yes",
+   "mergeable_reason": "After training m and the normalized direction combine into one dense weight (merging recommended to remove the overhead).",
+   "identity_at_init": "B = 0 and m = row norms of W_0, so W = W_0.",
+   "key_idea": "Full fine-tuning changes magnitude and direction differently; let LoRA handle direction and a separate vector handle magnitude.",
+   "results_note": "Paper reports consistent gains over LoRA on commonsense reasoning (LLaMA family), visual instruction tuning and image/video-text understanding.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA updates the direction component."
+    },
+    {
+     "target": "delora",
+     "type": "competes-with",
+     "note": "DeLoRA normalizes the update instead of the full weight."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.09353",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora_variant_dora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "rslora",
+   "name": "rsLoRA",
+   "full_name": "Rank-Stabilized LoRA",
+   "paper_title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA",
+   "authors": "Kalajdzievski",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2312.03732",
+   "url": "https://arxiv.org/abs/2312.03732",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_rslora=True)",
+   "formula_latex": "W=W_0+\\frac{\\alpha}{\\sqrt{r}}BA \\quad(\\text{instead of } \\tfrac{\\alpha}{r}BA)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "LoRA with rank-dependent scale 1/sqrt(r), which keeps activations and gradients O(1) as r grows",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the scalar scale changes; the update is still BA.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "The alpha/r scaling makes high-rank LoRA learn too slowly (gradient collapse); alpha/sqrt(r) is the rank-stable choice.",
+   "results_note": "Paper shows that with alpha/sqrt(r), fine-tuning performance keeps improving as rank increases, unlike standard LoRA scaling.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Changes only the scaling factor."
+    },
+    {
+     "target": "loraplus",
+     "type": "competes-with",
+     "note": "Both fix LoRA's training dynamics through scaling (of output vs learning rates)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.03732",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "pissa",
+   "name": "PiSSA",
+   "full_name": "Principal Singular values and Singular vectors Adaptation",
+   "paper_title": "PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models",
+   "authors": "Meng et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2404.02948",
+   "url": "https://arxiv.org/abs/2404.02948",
+   "code_url": "https://github.com/GraphPKU/PiSSA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='pissa' | 'pissa_niter_[n]')",
+   "formula_latex": "W_0=U\\Sigma V^\\top;\\ B=U_{[:,:r]}\\Sigma_{[:r]}^{1/2},\\ A=\\Sigma_{[:r]}^{1/2}V_{[:,:r]}^\\top,\\ W^{res}=U_{[:,r:]}\\Sigma_{[r:]}V_{[:,r:]}^\\top \\text{ frozen};\\ W=W^{res}+BA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA (also reduces quantization error when W^res is quantized)",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA whose factors are initialized to the principal rank-r SVD component of W_0, with the residual frozen",
+   "mergeable": "yes",
+   "mergeable_reason": "W^res + BA is a dense weight; PEFT can convert to a standard LoRA delta relative to W_0.",
+   "identity_at_init": "Exact: W^res + BA = W_0 at init (base weight is modified to the residual).",
+   "key_idea": "Train the principal components and freeze the noise-like residual, which converges faster and better than random LoRA init.",
+   "results_note": "Paper reports Mistral-7B GSM8K 72.86% with PiSSA vs 67.7% with LoRA.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Same architecture, SVD-based initialization."
+    },
+    {
+     "target": "mica",
+     "type": "dual-to",
+     "note": "MiCA uses the minor instead of principal singular directions."
+    },
+    {
+     "target": "olora",
+     "type": "competes-with",
+     "note": "QR- instead of SVD-based weight-derived initialization."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.02948",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "olora",
+   "name": "OLoRA",
+   "full_name": "Orthonormal Low-Rank Adaptation",
+   "paper_title": "OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models",
+   "authors": "Büyükakyüz",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2406.01775",
+   "url": "https://arxiv.org/abs/2406.01775",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='olora')",
+   "formula_latex": "W_0=QR_{qr};\\ B=Q_{[:,:r]},\\ A=(R_{qr})_{[:r,:]};\\ W_0\\leftarrow W_0-s\\,BA \\text{ (frozen)};\\ W=W_0-sB_0A_0+sBA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA initialized from the QR decomposition of W_0 (orthonormal B), with the base weight translated so the model is unchanged",
+   "mergeable": "yes",
+   "mergeable_reason": "Standard low-rank delta relative to the translated base.",
+   "identity_at_init": "Exact: base weight is shifted by -sBA at init.",
+   "key_idea": "An orthonormal basis from W_0's QR decomposition gives a better-conditioned starting point and faster convergence.",
+   "results_note": "Paper reports higher final performance than LoRA in 53 of 60 model-task-rank combinations.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "Weight-derived initialization via QR rather than SVD."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.01775",
+    "https://arxiv.org/html/2406.01775",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "loftq",
+   "name": "LoftQ",
+   "full_name": "LoRA-Fine-Tuning-aware Quantization",
+   "paper_title": "LoftQ: LoRA-Fine-Tuning-Aware Quantization for Large Language Models",
+   "authors": "Li et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.08659",
+   "url": "https://arxiv.org/abs/2310.08659",
+   "code_url": "https://github.com/yxli2123/LoftQ",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='loftq', loftq_config=LoftQConfig(loftq_bits=4, loftq_iter=1)); replace_lora_weights_loftq",
+   "formula_latex": "\\text{for } t=1..T:\\ Q_t=q_N\\big(W_0-B_{t-1}A_{t-1}\\big),\\ \\ B_tA_t=\\mathrm{SVD}_r\\big(W_0-Q_t\\big);\\ \\ W=Q_T+BA,\\ Q_T \\text{ frozen (quantized)}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "linear layers of a quantized backbone (NF4, int8 since v0.19)",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA initialized jointly with the quantized backbone so that Q + BA approximates W_0 (alternating quantization and low-rank SVD)",
+   "mergeable": "conditional",
+   "mergeable_reason": "The LoRA can be merged only into a dequantized (higher-precision) copy of the backbone.",
+   "identity_at_init": "Approximate: Q_T + B_T A_T ~ W_0 (minimizes the quantization residual in Frobenius norm).",
+   "key_idea": "Choose the LoRA initialization to absorb the quantization error, instead of starting QLoRA from a degraded quantized model.",
+   "results_note": "Paper reports outperforming QLoRA, especially in 2-bit and mixed 2/4-bit regimes, on NLU, QA, summarization and NLG.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "Same quantized-backbone + LoRA setting with error-correcting init."
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "PiSSA also reduces quantization error by quantizing only the residual."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.08659",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "eva",
+   "name": "EVA",
+   "full_name": "Explained Variance Adaptation",
+   "paper_title": "Parameter Efficient Fine-tuning via Explained Variance Adaptation",
+   "authors": "Paischer et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.07170",
+   "url": "https://arxiv.org/abs/2410.07170",
+   "code_url": "https://github.com/ml-jku/EVA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='eva', eva_config=EvaConfig(rho=2.0)); initialize_lora_eva_weights",
+   "formula_latex": "X=USV^\\top \\text{ (incremental SVD of input activations of the layer)};\\ A=V_{[:,:r_\\ell]}^\\top,\\ B=0;\\ \\xi_i=\\frac{\\sigma_i^2}{(M-1)\\|\\sigma\\|_1};\\ \\{r_\\ell\\} \\text{ chosen by top explained variance under } \\textstyle\\sum_\\ell r_\\ell=rN,\\ r_\\ell\\le\\rho r",
+   "trainable_params": "r_\\ell(d_{in}+d_{out}) \\text{ per layer, } \\textstyle\\sum_\\ell r_\\ell\\le rN",
+   "locus": "same as LoRA",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA with A initialized to the top right-singular vectors of the layer's input activations, plus data-driven rank redistribution",
+   "mergeable": "yes",
+   "mergeable_reason": "Standard LoRA update.",
+   "identity_at_init": "B = 0 (exact no-op).",
+   "key_idea": "Initialize A to the directions of maximal activation variance (which maximizes the expected gradient signal) and give more rank where variance is spread out.",
+   "results_note": "Paper reports EVA Pareto-dominating competitors across language generation/understanding, image classification and RL with fewer trainable parameters.",
+   "relations": [
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "Both redistribute ranks across layers."
+    },
+    {
+     "target": "corda",
+     "type": "competes-with",
+     "note": "Both use task-data activation statistics to initialize LoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.07170",
+    "https://arxiv.org/html/2410.07170",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/releases/tag/v0.14.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "corda",
+   "name": "CorDA",
+   "full_name": "Context-Oriented Decomposition Adaptation",
+   "paper_title": "CorDA: Context-Oriented Decomposition Adaptation of Large Language Models for Task-Aware Parameter-Efficient Fine-tuning",
+   "authors": "Yang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.05223",
+   "url": "https://arxiv.org/abs/2406.05223",
+   "code_url": "https://github.com/iboing/CorDA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='corda', corda_config=CordaConfig(corda_method='ipm'|'kpm')); preprocess_corda",
+   "formula_latex": "C=XX^\\top;\\ \\mathrm{SVD}(W_0C)=U\\Sigma V^\\top;\\ \\hat W=U\\Sigma(V^\\top C^{-1});\\ \\text{IPM: } B=U_{:,:r}\\Sigma_{:r}^{1/2},\\ A=\\Sigma_{:r}^{1/2}(V^\\top C^{-1})_{:r,:};\\ \\text{KPM: same with the last } r \\text{ components; rest frozen}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA built from a covariance-oriented SVD of W_0; adapter = top-r (instruction-previewed) or bottom-r (knowledge-preserved) components, remainder frozen",
+   "mergeable": "yes",
+   "mergeable_reason": "Frozen residual + BA is a dense weight.",
+   "identity_at_init": "Exact: residual + BA reconstructs W_0 (C^{-1} undoes the covariance orientation).",
+   "key_idea": "Orient the weight decomposition by task (or knowledge) activation covariance so the adapter captures exactly the directions to learn (IPM) or to leave untouched (KPM).",
+   "results_note": "Paper reports KPM preserving world knowledge (TriviaQA, NQ, WebQS) while beating LoRA on math, code and instruction following, and IPM surpassing LoRA, DoRA and PiSSA.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "generalizes",
+     "note": "With C = I, IPM reduces to PiSSA's principal-component initialization."
+    },
+    {
+     "target": "astra",
+     "type": "competes-with",
+     "note": "Both are activation-aware SVD/eigen initializations."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.05223",
+    "https://arxiv.org/html/2406.05223",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/releases/tag/v0.15.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "astra",
+   "name": "Astra",
+   "full_name": "Activation-Space Tail-Eigenvector Low-Rank Adaptation",
+   "paper_title": "Astra: Activation-Space Tail-Eigenvector Low-Rank Adaptation of Large Language Models",
+   "authors": "Liu et al.",
+   "year": 2026,
+   "venue": "ACL 2026 (Findings)",
+   "arxiv": "2602.19111",
+   "url": "https://aclanthology.org/2026.findings-acl.1593/",
+   "code_url": "https://github.com/LyoAI/Astra",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='astra', astra_config=AstraConfig()); preprocess_astra (main branch, merged 2026-09-29, after v0.21.1)",
+   "formula_latex": "\\mathrm{Cov}(Y)=Q\\Lambda Q^\\top \\text{ (output activations on a calibration set)};\\ B_0=Q_{tail}\\in\\mathbb{R}^{d_{out}\\times r},\\ A_0=Q_{tail}^\\top W_0;\\ \\ W=(W_0-B_0A_0)+BA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "explicit target_modules (linear layers)",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA initialized as the projection of W_0 onto the tail eigenspace of the layer's output-activation covariance, residual frozen",
+   "mergeable": "yes",
+   "mergeable_reason": "Frozen residual + BA is a dense weight.",
+   "identity_at_init": "Exact: (W_0 - B_0A_0) + B_0A_0 = W_0.",
+   "key_idea": "Under-used (tail) activation directions are where task-specific changes fit best, so constrain the adapter to that subspace.",
+   "results_note": "Paper reports outperforming LoRA variants across 16 benchmarks, with rank-8 Astra surpassing rank-128 LoRA on math reasoning.",
+   "relations": [
+    {
+     "target": "corda",
+     "type": "competes-with",
+     "note": "Activation-covariance-oriented initialization (output-side tail eigenvectors vs input-covariance SVD)."
+    },
+    {
+     "target": "mica",
+     "type": "competes-with",
+     "note": "Both target minor/tail directions (activation space vs weight singular space)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.19111",
+    "https://arxiv.org/html/2602.19111",
+    "https://aclanthology.org/2026.findings-acl.1593/",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/pull/3725"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "mica",
+   "name": "MiCA",
+   "full_name": "Minor Component Adaptation",
+   "paper_title": "MiCA Learns More Knowledge Than LoRA and Full Fine-Tuning",
+   "authors": "Rüdiger & Raschka",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2604.01694",
+   "url": "https://arxiv.org/abs/2604.01694",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='mica')",
+   "formula_latex": "W_0=U\\Sigma V^\\top;\\ B=U_{[:,-r:]} \\text{ (frozen)},\\ A=0 \\text{ (trained)};\\ W=W_0+\\tfrac{\\alpha}{r}BA",
+   "trainable_params": "r\\,d_{in}",
+   "locus": "linear and embedding layers",
+   "modification_kind": "additive-weight",
+   "structure": "update confined to the column space of the r minor left-singular vectors of W_0 (B fixed, only A learned)",
+   "mergeable": "yes",
+   "mergeable_reason": "BA is a fixed low-rank update.",
+   "identity_at_init": "A = 0 (exact no-op without modifying the base weight).",
+   "key_idea": "Write new knowledge into the least-used singular directions of the pretrained weight to absorb more and interfere less.",
+   "results_note": "Paper reports up to 5.9x better knowledge acquisition than LoRA, e.g. 61.33% vs 58.28% on BLOGS-MC with Llama-2-7B.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "dual-to",
+     "note": "Uses minor instead of principal singular directions."
+    },
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "Both freeze one LoRA factor (MiCA freezes B, LoRA-FA freezes A)."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "Both exploit minor singular components."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.01694",
+    "https://arxiv.org/html/2604.01694",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-ga",
+   "name": "LoRA-GA",
+   "full_name": "Low-Rank Adaptation with Gradient Approximation",
+   "paper_title": "LoRA-GA: Low-Rank Adaptation with Gradient Approximation",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2407.05000",
+   "url": "https://arxiv.org/abs/2407.05000",
+   "code_url": "https://github.com/Outsider565/LoRA-GA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='lora_ga', lora_ga_config=LoraGAConfig()); preprocess_loraga",
+   "formula_latex": "G=\\nabla_{W_0}\\mathcal{L}\\approx USV^\\top \\text{ (sampled batches)};\\ A_0=c\\,V_{[:,1:r]}^\\top,\\ B_0=c\\,U_{[:,r+1:2r]};\\ W=(W_0-\\eta B_0A_0)+\\eta BA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA (full-precision weights only)",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA initialized from the SVD of an estimated full-model gradient so the first low-rank step best approximates the full fine-tuning step, with base weight offset",
+   "mergeable": "yes",
+   "mergeable_reason": "Offset base + BA is a dense weight.",
+   "identity_at_init": "Exact: base weight is shifted by -eta B_0 A_0; scale c chosen for rank-stable forward/backward ('stable' scaling).",
+   "key_idea": "Align the initial LoRA gradient with the full fine-tuning gradient to converge 2-4x faster.",
+   "results_note": "Paper reports +5.69% over LoRA on a GLUE subset with T5-Base and +11.52% on GSM8K and +5.05% on HumanEval with Llama 2-7B, converging 2-4x faster.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "Data/gradient-aware rather than weight-only SVD initialization."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Both use gradient SVD to pick low-rank subspaces."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.05000",
+    "https://arxiv.org/html/2407.05000",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "kasa",
+   "name": "KaSA",
+   "full_name": "Knowledge-Aware Singular-Value Adaptation",
+   "paper_title": "KaSA: Knowledge-Aware Singular-Value Adaptation of Large Language Models",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2412.06071",
+   "url": "https://arxiv.org/abs/2412.06071",
+   "code_url": "https://github.com/juyongjiang/KaSA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(kasa_config=KasaConfig(beta, gamma)); add LoraModel._get_kasa_loss to the loss",
+   "formula_latex": "W_{world}=U_{[:,:m-r]}\\Sigma_{[:m-r]}V_{[:,:m-r]}^\\top \\text{ (r minor components of } W_0 \\text{ removed)};\\ W=W_{world}+\\eta\\,\\Delta U\\,\\Delta\\Sigma\\,\\Delta V^\\top;\\ \\mathcal{L}=\\mathcal{L}_{task}+\\beta\\|\\Delta\\Sigma\\|_F^2+\\gamma\\big(\\|\\Delta U^\\top\\Delta U-I\\|_F+\\|\\Delta V^\\top\\Delta V-I\\|_F\\big)",
+   "trainable_params": "r(d_{in}+d_{out}+1)",
+   "locus": "linear layers only (PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "SVD-form low-rank update with a learnable diagonal of singular values on top of a base weight truncated of its r smallest singular components",
+   "mergeable": "yes",
+   "mergeable_reason": "The SVD-form update merges into the (truncated) base weight.",
+   "identity_at_init": "Not an exact identity: the base weight is destructively truncated at injection (unload does not restore it); the adapter itself starts as a no-op.",
+   "key_idea": "Drop noisy long-tail knowledge from W_0 and let learnable singular values activate the knowledge relevant to the task.",
+   "results_note": "Paper reports beating full fine-tuning in 13 of 14 GLUE scenarios with 0.24% trainable parameters and 84.6% average commonsense accuracy on LLaMA3-8B.",
+   "relations": [
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "Same SVD-form update with orthogonality regularization; KaSA also truncates W_0."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "Both act on the minor singular components of W_0 (KaSA removes them)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2412.06071",
+    "https://arxiv.org/html/2412.06071",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora_variant_kasa",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.21.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "alora",
+   "name": "aLoRA",
+   "full_name": "Activated LoRA",
+   "paper_title": "Activated LoRA: Fine-tuned LLMs for Intrinsics",
+   "authors": "Greenewald et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2504.12397",
+   "url": "https://arxiv.org/abs/2504.12397",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(alora_invocation_tokens=[...])",
+   "formula_latex": "h_t=\\begin{cases}W_0x_t,& t<t_{inv}\\\\(W_0+BA)\\,x_t,& t\\ge t_{inv}\\end{cases}\\quad\\text{for } W\\in\\{W_q,W_k,W_v\\}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "attention projections of causal LMs, applied only to tokens at/after the invocation sequence",
+   "modification_kind": "hybrid",
+   "structure": "token-position-gated low-rank update: identity before the invocation token, LoRA after it, so prefix KV caches equal the base model's",
+   "mergeable": "no",
+   "mergeable_reason": "The adapter is applied selectively by token position, so it cannot be folded into W_0.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "Activate the adapter only after an invocation string, so the base model's KV cache can be reused and adapters can be switched in mid-conversation for free.",
+   "results_note": "Paper reports 2-7x faster adapter generation even for 250-token prompts and over 20x on long prompts, with no consistent accuracy difference from LoRA.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Same low-rank update, gated by token position."
+    },
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "Both condition adapter use on tokens; aLoRA uses a hard positional switch."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.12397",
+    "https://arxiv.org/html/2504.12397",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "qa-lora",
+   "name": "QA-LoRA",
+   "full_name": "Quantization-Aware Low-Rank Adaptation",
+   "paper_title": "QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Language Models",
+   "authors": "Xu et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.14717",
+   "url": "https://arxiv.org/abs/2309.14717",
+   "code_url": "https://github.com/yuhuixu1993/qa-lora",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_qalora=True, qalora_group_size=g) (GPTQ backends only)",
+   "formula_latex": "\\tilde W=\\alpha\\odot\\Big\\lfloor\\frac{W_0-\\beta}{\\alpha}\\Big\\rceil+\\beta \\text{ (group-wise INT-}k);\\ h=\\tilde Wx+s\\,BA\\,\\mathrm{pool}_g(x),\\ A\\in\\mathbb{R}^{r\\times d_{in}/g};\\ \\text{merge: } \\beta'=\\beta-s\\,(BA)\\oslash\\alpha",
+   "trainable_params": "r\\big(\\tfrac{d_{in}}{g}+d_{out}\\big)",
+   "locus": "linear layers of a group-wise quantized (GPTQ) model",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA on group-average-pooled inputs, so the update is constant within each quantization group",
+   "mergeable": "yes",
+   "mergeable_reason": "The group-constant update is absorbed into the quantization zero-points, keeping the merged model in INT4.",
+   "identity_at_init": "B = 0.",
+   "key_idea": "Balance quantization and adaptation degrees of freedom with group-wise pooling so the fine-tuned model stays quantized after merging.",
+   "results_note": "Paper reports LLaMA-7B 5-shot MMLU 39.4 vs 36.0 for QLoRA+GPTQ at INT4, with faster inference.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "QLoRA cannot merge without leaving the quantized format."
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "Both target quantized-backbone LoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.14717",
+    "https://arxiv.org/html/2309.14717",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.16.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "monteclora",
+   "name": "MonteCLoRA",
+   "full_name": "Monte Carlo Low-Rank Adaptation",
+   "paper_title": "Robust and Efficient Fine-tuning of LLMs with Bayesian Reparameterization of Low-Rank Adaptation",
+   "authors": "Sengupta et al.",
+   "year": 2024,
+   "venue": "TMLR 2025",
+   "arxiv": "2411.04358",
+   "url": "https://arxiv.org/abs/2411.04358",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(monteclora_config=MontecloraConfig(num_samples, sample_scaler, kl_loss_weight, ...))",
+   "formula_latex": "A=\\sum_{k=1}^{N}\\pi_k\\theta_k,\\ \\theta_k\\sim\\mathcal{N}(\\mu,\\Sigma),\\ \\Sigma\\sim\\mathcal{W}_r(V,n),\\ \\pi\\sim\\mathrm{Dir}(\\alpha),\\ \\mu=A_{LoRA};\\ \\mathcal{L}=\\mathcal{L}_{task}+\\eta\\,(\\mathrm{KL}_{\\mathcal{D}}+\\mathrm{KL}_{\\mathcal{W}}+\\mathrm{KL}_{\\mathcal{N}})+\\textstyle\\sum_k\\pi_k^2",
+   "trainable_params": "r(d_{in}+d_{out})+O(r+N)",
+   "locus": "same as LoRA (training-time variational sampler on lora_A)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "LoRA whose A factor is treated as a Gaussian mixture (Wishart covariance, Dirichlet weights) estimated by Monte Carlo during training; plain LoRA at inference",
+   "mergeable": "yes",
+   "mergeable_reason": "At inference the sampler is disabled and the adapter is a standard LoRA.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "Treat low-rank parameters as a distribution and average Monte Carlo samples to make LoRA robust to hyperparameters.",
+   "results_note": "Paper reports up to 62% lower accuracy spread than LoRA across hyperparameters on LLaMA-3.2-3B (and 53% on LLaMA-1-7B commonsense).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Bayesian reparameterization of LoRA's A matrix."
+    },
+    {
+     "target": "pvera",
+     "type": "competes-with",
+     "note": "Both introduce stochastic latent parameters into low-rank adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2411.04358",
+    "https://arxiv.org/html/2411.04358",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora_variant_monteclora",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "velora",
+   "name": "VeLoRA",
+   "full_name": "Memory-efficient training with rank-1 sub-token projections",
+   "paper_title": "VeLoRA: Memory Efficient Training using Rank-1 Sub-Token Projections",
+   "authors": "Miles et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.17991",
+   "url": "https://arxiv.org/abs/2405.17991",
+   "code_url": "https://github.com/roymiles/VeLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(velora_config=VeloraConfig(num_groups, scale, init_type))",
+   "formula_latex": "\\text{fwd: } z=\\mathrm{group}_M(x),\\ z_p=z\\,v \\text{ (stored)};\\ \\text{bwd: } \\hat x=\\mathrm{ungroup}(z_pv^\\top),\\ \\nabla_A\\mathcal{L}=\\delta^\\top\\hat x;\\ v\\in\\mathbb{R}^{M} \\text{ fixed (first-batch average)}",
+   "trainable_params": "r(d_{in}+d_{out}) \\ (\\text{unchanged; saves activation memory})",
+   "locus": "input activations of the LoRA A projection",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "activation compression for the backward pass: sub-tokens projected onto a fixed rank-1 direction and coarsely reconstructed when computing weight gradients",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the backward pass changes; the adapter is a standard LoRA.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "Weight gradients tolerate coarse activations, so store each sub-token as a single scalar along a fixed vector instead of the full activation.",
+   "results_note": "Paper reports beating QLoRA by 0.5pp on LLaMA-7B with 15.4% less memory, and 45% less memory than GaLore on RoBERTa.",
+   "relations": [
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "Both reduce LoRA activation memory."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Both are memory-efficient training via projections."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.17991",
+    "https://arxiv.org/html/2405.17991",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora_variant_velora",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "bd-lora",
+   "name": "BD-LoRA",
+   "full_name": "Block-Diagonal LoRA",
+   "paper_title": "Block-Diagonal LoRA for Eliminating Communication Overhead in Tensor Parallel LoRA Serving",
+   "authors": "Wang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2510.23346",
+   "url": "https://arxiv.org/abs/2510.23346",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_bdlora=BdLoraConfig(target_modules_bd_a, target_modules_bd_b, nblocks))",
+   "formula_latex": "\\text{column-parallel } W_1:\\ \\Delta W_1=B_1A_1,\\ B_1=\\mathrm{blockdiag}(B_1^{(1)},\\dots,B_1^{(N)});\\ \\ \\text{row-parallel } W_2:\\ \\Delta W_2=B_2A_2,\\ A_2=\\mathrm{blockdiag}(A_2^{(1)},\\dots,A_2^{(N)});\\ N=\\text{TP degree}",
+   "trainable_params": "r\\big(d_{in}+\\tfrac{d_{out}}{N}\\big) \\text{ (B block-diagonal) or } r\\big(\\tfrac{d_{in}}{N}+d_{out}\\big) \\text{ (A block-diagonal)}",
+   "locus": "attention (QKV / out) and MLP (up/gate / down) projections under tensor parallelism",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA with one factor block-diagonal, aligned to the tensor-parallel sharding so each GPU's LoRA computation is local",
+   "mergeable": "yes",
+   "mergeable_reason": "BA is still a fixed low-rank update.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "Constrain LoRA factors to match Megatron sharding so multi-adapter TP serving needs no extra communication.",
+   "results_note": "Paper reports up to 1.79x end-to-end speed-up with 0.87x adapter parameters on Llama-3.1-70B versus S-LoRA sharding, at similar quality.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with a block-diagonal constraint on one factor."
+    },
+    {
+     "target": "gralora",
+     "type": "competes-with",
+     "note": "Both impose block structure on LoRA factors."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.23346",
+    "https://arxiv.org/html/2510.23346",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora_variant_bdlora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.19.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "arrow",
+   "name": "Arrow",
+   "full_name": "Arrow routing over a library of LoRAs",
+   "paper_title": "Towards Modular LLMs by Building and Reusing a Library of LoRAs",
+   "authors": "Ostapenko et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2405.11157",
+   "url": "https://arxiv.org/abs/2405.11157",
+   "code_url": "https://github.com/microsoft/mttl",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(arrow_config=ArrowConfig(top_k, router_temperature)); create_arrow_model",
+   "formula_latex": "p_i=v_1(B_iA_i) \\text{ (top right-singular vector)};\\ s_i(x)=|p_i^\\top x|;\\ w=\\mathrm{softmax}_{\\text{top-}k}(s/\\tau);\\ h=W_0x+\\sum_{i\\in\\text{top-}k}w_i\\,B_iA_ix",
+   "trainable_params": "0 \\ (\\text{training-free routing over pre-trained LoRAs})",
+   "locus": "every LoRA-adapted layer, per token",
+   "modification_kind": "composition-or-routing",
+   "structure": "training-free token-level top-k routing of a LoRA library using SVD prototypes of each expert's update",
+   "mergeable": "no",
+   "mergeable_reason": "Routing weights depend on each token.",
+   "identity_at_init": "Not applicable (no training; experts are pre-trained).",
+   "key_idea": "Each LoRA's dominant input direction serves as its routing key, enabling zero-shot reuse of a LoRA library without training a router.",
+   "results_note": "Paper reports Arrow nearly matching oracle routing and improving zero-shot generalization; model-based clustering of the library adds 1.2% absolute over the strongest baseline.",
+   "relations": [
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "Learned vs training-free LoRA mixture."
+    },
+    {
+     "target": "genknowsub",
+     "type": "generalizes",
+     "note": "GenKnowSub is Arrow applied to general-knowledge-subtracted experts."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.11157",
+    "https://arxiv.org/html/2405.11157",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/arrow.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "genknowsub",
+   "name": "GenKnowSub",
+   "full_name": "General Knowledge Subtraction",
+   "paper_title": "GenKnowSub: Improving Modularity and Reusability of LLMs through General Knowledge Subtraction",
+   "authors": "Bagherifard et al.",
+   "year": 2025,
+   "venue": "ACL 2025 (short)",
+   "arxiv": "2505.10939",
+   "url": "https://aclanthology.org/2025.acl-short.54/",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(arrow_config=ArrowConfig(use_gks=True)); create_arrow_model(..., general_adapter_paths=[...])",
+   "formula_latex": "A_i\\leftarrow A_i-\\tfrac{1}{G}\\sum_{g=1}^{G}A^{gen}_g,\\ \\ B_i\\leftarrow B_i-\\tfrac{1}{G}\\sum_{g=1}^{G}B^{gen}_g \\text{ (PEFT implementation)};\\ \\text{then Arrow routing over the residual experts}",
+   "trainable_params": "0 \\ (\\text{post-hoc arithmetic on trained adapters})",
+   "locus": "LoRA library used by Arrow",
+   "modification_kind": "composition-or-routing",
+   "structure": "adapter arithmetic: subtract the mean general-domain LoRA from each task LoRA to obtain residual task modules, then route",
+   "mergeable": "no",
+   "mergeable_reason": "Inference uses token-level Arrow routing.",
+   "identity_at_init": "Not applicable (operates on trained adapters).",
+   "key_idea": "Task LoRAs carry generic language knowledge; subtracting a general-knowledge LoRA purifies them and improves zero-shot recombination.",
+   "results_note": "Paper reports consistent gains over Arrow on Phi-3 in monolingual and cross-lingual settings, also confirmed on Phi-2.",
+   "relations": [
+    {
+     "target": "arrow",
+     "type": "builds-on",
+     "note": "Arrow routing over subtracted experts."
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "Both are task-vector arithmetic on adapters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.10939",
+    "https://aclanthology.org/2025.acl-short.54/",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/arrow.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.18.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "loraplus",
+   "name": "LoRA+",
+   "full_name": "LoRA+ (decoupled learning rates for A and B)",
+   "paper_title": "LoRA+: Efficient Low Rank Adaptation of Large Models",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.12354",
+   "url": "https://arxiv.org/abs/2402.12354",
+   "code_url": "https://github.com/nikhil-ghosh-berkeley/loraplus",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_loraplus_optimizer(model, optimizer_cls, lr, loraplus_lr_ratio)",
+   "formula_latex": "W=W_0+BA,\\ \\ \\eta_B=\\lambda\\,\\eta_A,\\ \\lambda\\gg1 \\ (\\text{e.g. } 2^4)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "optimizer parameter groups for LoRA A/B (and embeddings)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "same LoRA update; different step sizes for the two factors, derived from infinite-width (feature-learning) scaling analysis",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained adapter is a standard LoRA.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "With equal learning rates LoRA's B learns too slowly at large width; give B a much larger learning rate.",
+   "results_note": "Paper reports 1-2% performance gains and up to about 2x faster fine-tuning at the same compute.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Optimizer-level change to LoRA."
+    },
+    {
+     "target": "riemannian-lora",
+     "type": "competes-with",
+     "note": "Both rebalance the A/B updates (scalar ratio vs r x r preconditioner)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.12354",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/tree/main/src/peft/optimizers"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-fa",
+   "name": "LoRA-FA",
+   "full_name": "LoRA with Frozen-A (memory-efficient LoRA optimizer)",
+   "paper_title": "LoRA-FA: Efficient and Effective Low Rank Representation Fine-tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2308.03303",
+   "url": "https://arxiv.org/abs/2308.03303",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_lorafa_optimizer(model, r, lora_alpha, lr)",
+   "formula_latex": "W=W_0+sBA,\\ A \\text{ frozen (random)},\\ B \\text{ trained with } \\tilde g_B=\\tfrac{1}{s^2}\\,g_B\\,(AA^\\top)^{-1}",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "LoRA layers (optimizer-level)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "half-frozen LoRA: update restricted to the fixed row space of A, with a gradient correction that makes B's step approximate the projected full fine-tuning gradient",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained adapter is a standard LoRA.",
+   "identity_at_init": "B = 0 as in LoRA.",
+   "key_idea": "Freezing A means only the r-dim projection Ax is stored for backprop, removing the large input-activation memory; gradient correction keeps learning effective.",
+   "results_note": "Paper reports up to 1.4x lower overall memory than LoRA at comparable accuracy.",
+   "relations": [
+    {
+     "target": "mica",
+     "type": "competes-with",
+     "note": "MiCA freezes B (minor singular vectors) instead of A."
+    },
+    {
+     "target": "riemannian-lora",
+     "type": "special-case-of",
+     "note": "The (AA^T)^{-1} correction on B is the B-half of the Riemannian preconditioner."
+    },
+    {
+     "target": "velora",
+     "type": "competes-with",
+     "note": "Both cut activation memory of LoRA training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2308.03303",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/optimizers/lorafa.py",
+    "https://github.com/huggingface/peft/releases/tag/v0.16.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "riemannian-lora",
+   "name": "Riemannian LoRA",
+   "full_name": "Riemannian Preconditioned LoRA",
+   "paper_title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models",
+   "authors": "Zhang & Pilanci",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.02347",
+   "url": "https://arxiv.org/abs/2402.02347",
+   "code_url": "https://github.com/pilancilab/Riemannian_Preconditioned_LoRA",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_riemannian_optimizer(model, optimizer_cls, lr, reg)",
+   "formula_latex": "A\\leftarrow A-\\eta\\,(B^\\top B+\\delta I_r)^{-1}\\nabla_A\\mathcal{L},\\ \\ B\\leftarrow B-\\eta\\,\\nabla_B\\mathcal{L}\\,(AA^\\top+\\delta I_r)^{-1}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "LoRA layers (optimizer-level)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "r x r preconditioners turning Euclidean gradients into scaled (Riemannian) gradients on the manifold of rank-r matrices",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained adapter is a standard LoRA.",
+   "identity_at_init": "B = 0 as in LoRA (delta regularizes the singular preconditioner).",
+   "key_idea": "LoRA's factorization is ill-conditioned; precondition each factor by the Gram matrix of the other to follow the geometry of the low-rank manifold.",
+   "results_note": "Paper reports faster convergence and more robustness to learning rate with SGD and AdamW on GPT-2, Mistral-7B and diffusion models, with negligible overhead.",
+   "relations": [
+    {
+     "target": "loraplus",
+     "type": "generalizes",
+     "note": "A scalar A/B learning-rate ratio is a crude special case of per-factor preconditioning."
+    },
+    {
+     "target": "lora-fa",
+     "type": "generalizes",
+     "note": "LoRA-FA's B-gradient correction is one half of this preconditioner."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.02347",
+    "https://arxiv.org/html/2402.02347",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/tree/main/src/peft/optimizers",
+    "https://github.com/huggingface/peft/releases/tag/v0.21.0"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "qlora",
+   "name": "QLoRA",
+   "full_name": "Quantized LoRA",
+   "paper_title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+   "authors": "Dettmers et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.14314",
+   "url": "https://arxiv.org/abs/2305.14314",
+   "code_url": "https://github.com/artidoro/qlora",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(target_modules='all-linear') on a bitsandbytes 4-bit NF4 model + prepare_model_for_kbit_training",
+   "formula_latex": "h=\\mathrm{dequant}\\big(W_0^{NF4}\\big)\\,x+\\tfrac{\\alpha}{r}BAx,\\ \\ W_0^{NF4} \\text{ frozen 4-bit NormalFloat (double-quantized constants)},\\ A,B \\text{ in bf16}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all linear layers of a 4-bit quantized model",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA on a frozen 4-bit NF4 backbone with double quantization and paged optimizers",
+   "mergeable": "conditional",
+   "mergeable_reason": "Merging requires dequantizing the backbone (or re-quantizing after merge).",
+   "identity_at_init": "B = 0 relative to the quantized model.",
+   "key_idea": "Backpropagate through a frozen 4-bit model into LoRA adapters, making 65B fine-tuning fit on one 48GB GPU.",
+   "results_note": "Paper reports fine-tuning a 65B model on a single 48GB GPU and Guanaco reaching 99.3% of ChatGPT's level on the Vicuna benchmark.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA applied to all linear layers of a quantized base."
+    },
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "LoftQ initializes LoRA to compensate quantization error."
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "QA-LoRA keeps the merged model quantized."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.14314",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://huggingface.co/docs/peft/main/en/developer_guides/quantization"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "layer-replication",
+   "name": "LoRA layer replication (DUS)",
+   "full_name": "Memory-efficient depth up-scaling with per-replica LoRA",
+   "paper_title": "SOLAR 10.7B: Scaling Large Language Models with Simple yet Effective Depth Up-Scaling",
+   "authors": "Kim et al.",
+   "year": 2023,
+   "venue": "NAACL 2024 (Industry)",
+   "arxiv": "2312.15166",
+   "url": "https://arxiv.org/abs/2312.15166",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(layer_replication=[[start, end), ...])",
+   "formula_latex": "f=\\ell_{\\pi(L')}\\circ\\cdots\\circ\\ell_{\\pi(1)},\\ \\ \\pi:[L']\\to[L] \\text{ (stacked layer ranges, base weights shared)};\\ W^{(j)}=W_{0,\\pi(j)}+B^{(j)}A^{(j)} \\text{ (distinct LoRA per replica)}",
+   "trainable_params": "\\sum_{j=1}^{L'} r(d_{in}+d_{out}) \\text{ per adapted module type}",
+   "locus": "whole transformer stack (layer duplication) plus LoRA on every replica",
+   "modification_kind": "hybrid",
+   "structure": "depth up-scaling by repeating layer ranges (mergekit passthrough convention) with weight sharing, differentiated by per-replica low-rank updates",
+   "mergeable": "conditional",
+   "mergeable_reason": "Merging requires materializing separate weights for each replica, yielding a larger (deeper) model rather than the original architecture.",
+   "identity_at_init": "Not an identity of the original model: replication changes depth; each replica's LoRA starts at B = 0.",
+   "key_idea": "Grow a model's depth by reusing its own layers, then specialize the copies cheaply with LoRA instead of storing duplicated weights.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "LoRA adapters attached to replicated layers."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.15166",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "kappatune",
+   "name": "KappaTune",
+   "full_name": "Condition-number-based selective fine-tuning",
+   "paper_title": "The Condition Number as a Scale-Invariant Proxy for Information Encoding in Neural Units",
+   "authors": "Ludwig",
+   "year": 2025,
+   "venue": "arXiv",
+   "arxiv": "2506.16289",
+   "url": "https://arxiv.org/abs/2506.16289",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "peft.helpers.find_kappa_target_modules / KappaTuneSelector -> LoraConfig(target_modules=..., target_parameters=...)",
+   "formula_latex": "\\kappa(W)=\\frac{\\sigma_{\\max}(W)}{\\sigma_{\\min}(W)};\\ \\ \\mathcal{S}=\\text{lowest-}\\kappa \\text{ top-}p \\text{ fraction of tensors};\\ \\text{train (or attach LoRA to) } W\\in\\mathcal{S},\\ \\text{freeze the rest}",
+   "trainable_params": "\\sum_{W\\in\\mathcal{S}}|W| \\ (\\text{KappaTune}) \\text{ or } \\sum_{W\\in\\mathcal{S}}r(d_{in}+d_{out}) \\ (\\text{KappaTune-LoRA})",
+   "locus": "module selection over all linear layers and fused MoE expert parameters",
+   "modification_kind": "selective",
+   "structure": "data-free target selection by spectral condition number (most isotropic tensors are adapted)",
+   "mergeable": "yes",
+   "mergeable_reason": "Selected parameters or LoRAs are ordinary weight changes.",
+   "identity_at_init": "Inherits from the chosen tuner (LoRA: B = 0).",
+   "key_idea": "Well-conditioned (low-kappa, high-entropy) tensors encode less specialized information and can absorb new tasks with less forgetting.",
+   "results_note": "Paper reports about 6x lower forgetting than LoRA on OLMoE and 2.8x lower with KappaTune-LoRA on DeepSeek-V2-Lite.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "KappaTune-LoRA places LoRA only on low-kappa modules."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.16289",
+    "https://arxiv.org/html/2506.16289",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora",
+    "https://github.com/huggingface/peft/releases/tag/v0.20.0"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "ties-merging",
+   "name": "TIES-Merging",
+   "full_name": "TrIm, Elect Sign & Merge",
+   "paper_title": "TIES-Merging: Resolving Interference When Merging Models",
+   "authors": "Yadav et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.01708",
+   "url": "https://arxiv.org/abs/2306.01708",
+   "code_url": "https://github.com/prateeky2806/ties-merging",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(combination_type='ties' | 'ties_svd', density=...)",
+   "formula_latex": "\\hat\\tau_t=\\mathrm{trim}_k(\\tau_t);\\ \\gamma=\\mathrm{sgn}\\Big(\\sum_t\\hat\\tau_t\\Big);\\ \\tau_m^{(p)}=\\frac{1}{|\\mathcal{A}^p|}\\sum_{t\\in\\mathcal{A}^p}\\hat\\tau_t^{(p)},\\ \\mathcal{A}^p=\\{t:\\mathrm{sgn}(\\hat\\tau_t^{(p)})=\\gamma^{(p)}\\};\\ W=W_0+\\lambda\\tau_m",
+   "trainable_params": "0 \\ (\\text{post-hoc merge})",
+   "locus": "LoRA adapters (A/B separately, or full Delta W followed by SVD for *_svd)",
+   "modification_kind": "composition-or-routing",
+   "structure": "coordinate-wise trimming, sign election and disjoint averaging of task vectors",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged adapter is a single LoRA that can itself be merged into W_0.",
+   "identity_at_init": "Not applicable (post-hoc).",
+   "key_idea": "Merging fails mainly through redundant small values and sign conflicts; trim them and average only agreeing coordinates.",
+   "results_note": "Paper reports TIES outperforming existing merging methods across modalities, model sizes, architectures and fine-tuning settings.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "Refines plain task-vector addition."
+    },
+    {
+     "target": "dare",
+     "type": "combines",
+     "note": "DARE drop-and-rescale is used as a pre-step (dare_ties)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.01708",
+    "https://huggingface.co/docs/peft/main/en/developer_guides/model_merging",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/model.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dare",
+   "name": "DARE",
+   "full_name": "Drop And REscale",
+   "paper_title": "Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch",
+   "authors": "Yu et al.",
+   "year": 2023,
+   "venue": "ICML 2024",
+   "arxiv": "2311.03099",
+   "url": "https://arxiv.org/abs/2311.03099",
+   "code_url": "https://github.com/yule-BUAA/MergeLM",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(combination_type='dare_linear' | 'dare_ties' | 'dare_linear_svd' | 'dare_ties_svd', density=1-p)",
+   "formula_latex": "\\tilde\\delta=\\frac{m\\odot\\delta}{1-p},\\ \\ m\\sim\\mathrm{Bernoulli}(1-p)^{\\otimes\\dim\\delta};\\ \\text{then linear or TIES merge of the } \\tilde\\delta_t",
+   "trainable_params": "0 \\ (\\text{post-hoc merge})",
+   "locus": "LoRA adapters (delta parameters)",
+   "modification_kind": "composition-or-routing",
+   "structure": "random sparsification of delta parameters with unbiased rescaling before merging",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged adapter is a single LoRA.",
+   "identity_at_init": "Not applicable (post-hoc).",
+   "key_idea": "Fine-tuning deltas are extremely redundant; randomly dropping most of them and rescaling preserves ability and reduces merge interference.",
+   "results_note": "Paper reports dropping 90% (even 99%) of delta parameters without performance loss and gains from merging homologous models (e.g. WizardLM + WizardMath).",
+   "relations": [
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "dare_ties applies DARE before TIES."
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "Sparsified task vectors."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.03099",
+    "https://huggingface.co/docs/peft/main/en/developer_guides/model_merging"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "papers": [
+  {
+   "id": "intrinsic-dimensionality",
+   "title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning",
+   "authors": "Aghajanyan et al.",
+   "year": 2020,
+   "venue": "ACL 2021",
+   "arxiv": "2012.13255",
+   "url": "https://arxiv.org/abs/2012.13255",
+   "claim": "Fine-tuning large pretrained LMs can be done in a random low-dimensional subspace (a few hundred dimensions reach 90% of full performance on MRPC with RoBERTa), and pretraining lowers this intrinsic dimension.",
+   "relevance": "Foundational justification for every low-dimensional PEFT parameterization (LoRA, VeRA, Uni-LoRA, TinyLoRA are explicit subspace choices).",
+   "sources": [
+    "https://arxiv.org/abs/2012.13255"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "unified-view-peft",
+   "title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "claim": "Adapters, prefix tuning and LoRA can all be written as modifications to specific hidden states, differing in function form, insertion position (sequential/parallel) and composition (additive/gated/scaled).",
+   "relevance": "First explicit unifying framework of PEFT methods; a direct precursor of a categorical classification by locus and composition law.",
+   "sources": [
+    "https://arxiv.org/abs/2110.04366"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "expressive-power-lora",
+   "title": "The Expressive Power of Low-Rank Adaptation",
+   "authors": "Zeng & Lee",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.17513",
+   "url": "https://arxiv.org/abs/2310.17513",
+   "claim": "For fully connected networks, LoRA can exactly adapt any model to a smaller target model once the rank exceeds a threshold depending on width and depth ratio, with quantified approximation error below it.",
+   "relevance": "Gives a theoretical expressivity yardstick for comparing rank-bounded (LoRA) against high-rank structured updates (HiRA, C3A, RandLoRA).",
+   "sources": [
+    "https://arxiv.org/abs/2310.17513"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lora-vs-full-ft-intruders",
+   "title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+   "authors": "Shuttleworth et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.21228",
+   "url": "https://arxiv.org/abs/2410.21228",
+   "claim": "LoRA-trained weights contain new high-ranking singular vectors ('intruder dimensions') absent in full fine-tuning; they cause forgetting, and scaling them down recovers pretraining behaviour with little task loss.",
+   "relevance": "Spectral invariant distinguishing additive low-rank updates from full fine-tuning; implemented in HF PEFT as peft.tuners.lora.intruders.reduce_intruder_dimension (v0.19).",
+   "sources": [
+    "https://arxiv.org/abs/2410.21228",
+    "https://neurips.cc/virtual/2025/poster/115207",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "task-arithmetic",
+   "title": "Editing Models with Task Arithmetic",
+   "authors": "Ilharco et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2212.04089",
+   "url": "https://arxiv.org/abs/2212.04089",
+   "claim": "Task vectors (fine-tuned minus pretrained weights) can be added, negated and combined arithmetically to steer model behaviour.",
+   "relevance": "Defines the vector-space (module) structure on adapters that PEFT's add_weighted_adapter (linear/svd/cat), TIES, DARE and GenKnowSub operate in.",
+   "sources": [
+    "https://arxiv.org/abs/2212.04089",
+    "https://huggingface.co/docs/peft/main/en/developer_guides/model_merging"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-learns-less-forgets-less",
+   "title": "LoRA Learns Less and Forgets Less",
+   "authors": "Biderman et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2405.09673",
+   "url": "https://arxiv.org/abs/2405.09673",
+   "claim": "On code and math continued pretraining and instruction tuning, LoRA underperforms full fine-tuning but better preserves source-domain performance; full fine-tuning learns perturbations of 10-100x higher rank.",
+   "relevance": "Quantifies the learning/forgetting trade-off induced by restricting the update to a low-rank subobject.",
+   "sources": [
+    "https://arxiv.org/abs/2405.09673"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lora-init-dynamics",
+   "title": "The Impact of Initialization on LoRA Finetuning Dynamics",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.08447",
+   "url": "https://arxiv.org/abs/2406.08447",
+   "claim": "Initializing B = 0 with random A (the default) allows larger stable learning rates and better feature learning than the symmetric choice A = 0 with random B.",
+   "relevance": "Explains why identity-at-init via a zero factor is not symmetric, informing the 'identity_at_init' axis of the taxonomy.",
+   "sources": [
+    "https://arxiv.org/abs/2406.08447"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lora-without-regret",
+   "title": "LoRA Without Regret",
+   "authors": "Schulman et al.",
+   "year": 2025,
+   "venue": "Thinking Machines Lab blog",
+   "arxiv": "",
+   "url": "https://thinkingmachines.ai/blog/lora/",
+   "claim": "LoRA matches full fine-tuning when applied to all layers (especially MLP/MoE) and when capacity exceeds the information to learn; optimal LoRA learning rate is about 10x the full fine-tuning one; rank-1 LoRA suffices for RL.",
+   "relevance": "Cited in the HF PEFT LoRA docs (MoE rank budgeting); a capacity-based account of when the low-rank restriction is harmless.",
+   "sources": [
+    "https://thinkingmachines.ai/blog/lora/",
+    "https://huggingface.co/docs/peft/main/en/package_reference/lora"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "peft-survey-han",
+   "title": "Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey",
+   "authors": "Han et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2403.14608",
+   "url": "https://arxiv.org/abs/2403.14608",
+   "claim": "Surveys PEFT algorithms (additive, selective, reparameterized, hybrid), their system costs and applications across model families.",
+   "relevance": "Standard additive/selective/reparameterized/hybrid taxonomy against which a categorical classification can be compared.",
+   "sources": [
+    "https://arxiv.org/abs/2403.14608"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "scaling-down-to-scale-up",
+   "title": "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning",
+   "authors": "Lialin et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2303.15647",
+   "url": "https://arxiv.org/abs/2303.15647",
+   "claim": "Systematic overview and comparison of 40+ PEFT methods, organized as additive, selective and reparametrization-based approaches.",
+   "relevance": "Widely used classification of PEFT methods; a baseline taxonomy.",
+   "sources": [
+    "https://arxiv.org/abs/2303.15647"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "notes": "PEFT version observed: latest release v0.21.1 (2026-09-29; TP patch on top of v0.21.0 from 2026-09-15). main branch at 2026-09-30 reports __version__ 0.21.1.dev0. Its src/peft/tuners has 45 method directories: adalora, adamss, adaption_prompt, beft, boft, c3a, cartridge, cpt, deft, delora, fourierft, frod, glora, gralora, hira, hra, ia3, lily, ln_tuning, loha, lokr, lora, miss, multitask_prompt_tuning, oft, osf, p_tuning, peanut, poly, prefix_tuning, prompt_tuning, psoft, pvera, randlora, road, shadow, shira, supertuning, tinylora, trainable_tokens, unilora, vblora, vera, waveft, xlora. 'mixed' (PeftMixedModel) is plumbing, not a method. LoraConfig exposes these published variants: use_dora, use_rslora, init_lora_weights in {gaussian, eva, olora, pissa, pissa_niter_k, corda, astra, loftq, orthogonal, mica, lora_ga}, lora_ga_config, kasa_config, velora_config, monteclora_config, use_bdlora, alora_invocation_tokens, use_qalora, arrow_config (Arrow/GenKnowSub), layer_replication, trainable_token_indices. peft.optimizers provides LoRA+, LoRA-FA and the Riemannian preconditioner. Merging is via add_weighted_adapter: linear, svd, cat, ties, ties_svd, dare_linear, dare_ties, *_svd, magnitude_prune. Astra exists only on main (PR #3725, merged 2026-09-29); it is not in v0.21.1. Bone was removed in v0.19.0 and replaced by MiSS, which shares arXiv 2409.15371; they are kept as one entry. PaRa is DeftConfig(para=True), MHR is PolyConfig(n_splits>1) and OFTv2 is OFTConfig(use_cayley_neumann=True); each paper has its own entry. Not listed as methods: init_lora_weights='gaussian'/'orthogonal' (no dedicated paper), lora_bias, target_parameters (MoE), hotswap, mixed-adapter batches, LoRA conversion, ensure_weight_tying, and the prompt-tuning random-discrete and prefix zero init options. reduce_intruder_dimension (Shuttleworth et al.) and task arithmetic are in papers. Gaps and uncertainties: OpenReview was challenge-blocked, so HiRA and AdaMSS formulas come from the PEFT docs/implementation and proceedings/abstract pages; AdaMSS has no arXiv id. Trainable Tokens has no paper (PEFT-original). GLoRA's W0*A path is implemented elementwise in PEFT; the paper writes W0A. LoRA-FA in PEFT is the gradient-corrected optimizer from the later arXiv version. LoRA-GA scale constants are written generically as c. FRoD's per-matrix trainable count is approximate. Polytropon's arXiv title differs from its EACL 2023 version. P-tuning venue is AI Open per Semantic Scholar. Several 2026 venues (BEFT ACL 2026, Astra ACL 2026 Findings, MiSS/OSF/PSOFT/Cartridges ICLR 2026, PEANuT KDD 2026) were confirmed by web search, not by reading proceedings."
+}

@@ -1,0 +1,1260 @@
+{
+ "family": "frontier",
+ "family_title": "Frontier (2025-2026): PEFT for RL and reasoning, amortized adapter generation, adapter merging, diffusion control, continual learning",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "tina",
+   "name": "Tina",
+   "full_name": "Tiny Reasoning Models via LoRA",
+   "paper_title": "Tina: Tiny Reasoning Models via LoRA",
+   "authors": "Wang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2504.15777",
+   "url": "https://arxiv.org/abs/2504.15777",
+   "code_url": "https://github.com/shangshang-wang/Tina",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(r=32, lora_alpha=128, lora_dropout=0.05, target_modules=[\"q_proj\",\"k_proj\",\"v_proj\",\"o_proj\",\"gate_proj\",\"up_proj\",\"down_proj\"])  # plain LoRA (no dedicated tuner), trained with GRPO / Dr.GRPO via TRL",
+   "formula_latex": "W = W_0 + \\tfrac{\\alpha}{r} B A,\\ \\ r=32,\\ \\alpha=128;\\quad \\max_{A,B}\\ \\mathcal{J}_{\\mathrm{GRPO}}\\big(\\pi_{W_0+\\frac{\\alpha}{r}BA}\\big)\\ \\text{with verifiable math rewards};\\ W_0 \\text{ frozen},\\ A,B \\text{ trained}",
+   "trainable_params": "r(d_{in}+d_{out}) \\text{ per adapted projection } (r=32)",
+   "locus": "DeepSeek-R1-Distill-Qwen-1.5B; the paper's Table 5 lists \"query, key, value, dense\", while the released training recipes target q/k/v/o and gate/up/down projections",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Plain rank-r LoRA factorization \\Delta W = BA; the contribution is the objective: on-policy GRPO / Dr.GRPO reinforcement learning with verifiable rewards on a 1.5B distilled reasoning model, instead of SFT.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter is ordinary LoRA, so BA folds into W_0 after training.",
+   "identity_at_init": "B = 0 (standard LoRA initialization), so RL starts exactly at the distilled base policy.",
+   "key_idea": "Low-rank RL on a tiny distilled model recovers most of the reasoning gain of full RL at a few dollars per run; the authors attribute this to 'rapid format adaptation': LoRA learns the structure/format that RL rewards while leaving base knowledge intact.",
+   "results_note": "Best Tina checkpoint reaches 43.33% Pass@1 on AIME24 (>20% reasoning improvement over the base) for about $9 of post-training and evaluation compute.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Uses unmodified LoRA as the policy parameterization for RL."
+    },
+    {
+     "target": "tinylora",
+     "type": "competes-with",
+     "note": "TinyLoRA pushes the same 'RL needs very few parameters' thesis to ~13 trainable parameters."
+    },
+    {
+     "target": "qerl",
+     "type": "competes-with",
+     "note": "QeRL is another recipe for cheap LoRA-based RL, adding NVFP4 quantization and noise."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.15777",
+    "https://arxiv.org/html/2504.15777",
+    "https://mlanthology.org/iclr/2026/wang2026iclr-tina/",
+    "https://github.com/shangshang-wang/Tina"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "hf_peft_config: added target_modules from the released recipes (e.g. recipes/.../train_model_open_rs3.yaml) and noted there is no dedicated tuner.",
+    "locus: paper Table 5 says attention-only, but the official recipes also adapt the MLP projections; both are now recorded."
+   ],
+   "verification_notes": "arXiv 2504.15777 (Wang, 2025) confirmed; ICLR 2026 confirmed via mlanthology and OpenReview (P2OXYO3bEe). r=32, alpha=128, dropout=0.05, GRPO, $9 and 43.33% AIME24 confirmed from the paper. Uses the default PEFT LoraConfig (paper App. B.2)."
+  },
+  {
+   "id": "qerl",
+   "name": "QeRL",
+   "full_name": "Quantization-enhanced Reinforcement Learning",
+   "paper_title": "QeRL: Beyond Efficiency -- Quantization-enhanced Reinforcement Learning for LLMs",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2510.11696",
+   "url": "https://arxiv.org/abs/2510.11696",
+   "code_url": "https://github.com/NVlabs/QeRL",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = \\mathrm{Dequant}(\\tilde W_0)\\,x + \\tfrac{\\alpha}{r}BAx,\\ \\ \\mathrm{Dequant}(\\tilde W)=S_{\\mathrm{FP32}}\\cdot(S_{\\mathrm{E4M3}}\\odot \\tilde W)\\ (\\text{NVFP4, frozen});\\ \\ \\text{AQN: } w_{\\mathrm{noise}} = w_{\\mathrm{RMSNorm}} + Z,\\ Z\\sim\\mathcal{N}(0,\\sigma_k^2 I),\\ \\sigma_k=\\sigma_{\\mathrm{start}}\\big(\\tfrac{\\sigma_{\\mathrm{end}}}{\\sigma_{\\mathrm{start}}}\\big)^{\\frac{k-1}{K-1}};\\ A,B \\text{ trained by GRPO/DAPO}",
+   "trainable_params": "r(d_{in}+d_{out}) \\text{ per adapted matrix } (r=32 \\text{ default})",
+   "locus": "LoRA on the linear layers of an NVFP4-quantized LLM (Qwen2.5 3B-32B); exploration noise injected through RMSNorm gains",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "QLoRA-type composite: additive rank-r delta on a frozen 4-bit (NVFP4) base, plus a scheduled channel-wise Gaussian noise vector added to the RMSNorm scale. This is equivalent to row-wise multiplicative noise (Z/w + 1) on the following W_q, W_k, W_v (shared norm) and W_gate, W_up (shared norm).",
+   "mergeable": "conditional",
+   "mergeable_reason": "BA can be merged into the dequantized weights (giving up the NVFP4 format) or kept as a side adapter; the noise is used only during training.",
+   "identity_at_init": "B = 0, but the starting policy is the NVFP4-quantized base, not the exact bf16 model. In stage 0 only the inherent quantization noise acts (sigma = 0); AQN then starts at sigma_start (1e-2 in the main text, range 5e-2 to 5e-4 in experiments) and decays exponentially over K stages.",
+   "key_idea": "In RL, quantization noise helps: it raises policy entropy and so aids exploration. QeRL schedules it with Adaptive Quantization Noise and combines it with fast NVFP4 rollouts and LoRA.",
+   "results_note": "First RL training of a 32B LLM on a single H100-80GB, >1.5x rollout speedup, and Qwen2.5-7B reaching 90.8% GSM8K / 77.4% MATH500, matching full-parameter RL.",
+   "relations": [
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "Frozen low-bit base + LoRA, here with NVFP4 and for RL rather than SFT."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Trainable part is standard LoRA."
+    },
+    {
+     "target": "tina",
+     "type": "competes-with",
+     "note": "Alternative low-cost LoRA-RL recipe."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.11696",
+    "https://arxiv.org/html/2510.11696",
+    "https://github.com/NVlabs/QeRL",
+    "https://mlanthology.org/iclr/2026/huang2026iclr-qerl/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "identity_at_init: stage 0 uses only quantization noise (sigma=0) before AQN starts at sigma_start (Alg. 1).",
+    "structure: specified which matrices receive the AQN noise (q/k/v and gate/up, App. G)."
+   ],
+   "verification_notes": "arXiv 2510.11696 (Huang, 2025) confirmed; ICLR 2026 confirmed (mlanthology). Dequant formula, AQN RMSNorm form, exponential schedule, rank 32 and 90.8 GSM8K / 77.4 MATH500 checked against Sec. 3 and App. G. No PEFT tuner (NVFP4 base is not supported by PEFT LoRA)."
+  },
+  {
+   "id": "plop",
+   "name": "PLoP",
+   "full_name": "Precise LoRA Placement",
+   "paper_title": "PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models",
+   "authors": "Hayou et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2506.20629",
+   "url": "https://arxiv.org/abs/2506.20629",
+   "code_url": "https://github.com/soufiane001/plop",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{NFN}(W,x)=\\frac{\\|W z_{\\mathrm{in}}(x)\\|}{\\|W \\tilde z_{\\mathrm{in}}(x)\\|},\\ \\tilde z_{\\mathrm{in}}(x)\\ \\text{i.i.d. centered Gaussian, same dimension and norm as } z_{\\mathrm{in}}(x);\\ \\ \\mathrm{NFN}(W,\\mathcal{D})=\\tfrac{1}{|\\mathcal{D}|}\\sum_{x\\in\\mathcal{D}}\\frac{\\|W z_{\\mathrm{in}}(x)\\|^2}{\\|W \\tilde z_{\\mathrm{in}}(x)\\|^2},\\ \\ \\mathrm{NFN}(T,\\mathcal{D})=\\tfrac{1}{|N_T|}\\sum_{W\\in T}\\mathrm{NFN}(W,\\mathcal{D});\\ \\ W=W_0+\\tfrac{\\alpha}{r}BA \\text{ inserted only in the module types } T \\text{ with the lowest } \\mathrm{NFN}(T,\\mathcal{D})",
+   "trainable_params": "r(d_{in}+d_{out}) \\text{ per selected matrix; total depends on the selected module types}",
+   "locus": "data-dependent subset of module types (e.g. V, O, down-projection), chosen per model and dataset before training",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A placement rule that chooses the support (set of module types) of an otherwise standard LoRA, scored by how aligned each frozen W_0 is with its real inputs relative to random inputs of the same norm.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapters placed are ordinary LoRA and merge as usual.",
+   "identity_at_init": "B = 0 as in LoRA; the placement is computed from the frozen model before training starts.",
+   "key_idea": "From infinite-width feature-learning analysis, modules whose weights are least aligned with the fine-tuning data (low normalized feature norm) gain most from adaptation, so LoRA should be placed there instead of a fixed attention or MLP default.",
+   "results_note": "SFT on MetaMathQA -> GSM8K with Qwen3-0.6B: PLoP (Down-Up-Value, r=76, 21.8M params) reaches 63.8%, vs 63.3% for MLP-only (r=64, 22.0M) and 58.6% for attention-only (r=64, 12.8M); also evaluated with GRPO on Qwen3-1.7B.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Changes only where LoRA is inserted."
+    },
+    {
+     "target": "lora-without-regret",
+     "type": "competes-with",
+     "note": "Gives a different placement prescription (data-driven NFN versus all layers / MLP-first)."
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "Both allocate adaptation budget across modules, AdaLoRA during training, PLoP before training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.20629",
+    "https://arxiv.org/html/2506.20629",
+    "https://github.com/soufiane001/plop"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "venue: arXiv -> ICLR 2026 (mlanthology /iclr/2026/hayou2026iclr-plop/).",
+    "formula_latex: the dataset-level score in PLoP Step 1 averages the SQUARED norm ratio; aggregation is a mean over modules of type T (Sec. 3).",
+    "results_note: the 63.8% vs 58.6% comparison is NOT at equal parameter count (21.8M vs 12.8M); the matched-budget comparison is MLP-only at 63.3% (Table 1)."
+   ],
+   "verification_notes": "arXiv 2506.20629 (Hayou, 2025) confirmed; venue corrected to ICLR 2026. NFN definition and PLoP steps 1-3 checked against Sec. 3; Table 1 numbers re-read."
+  },
+  {
+   "id": "lori",
+   "name": "LoRI",
+   "full_name": "LoRA with Reduced Interference",
+   "paper_title": "LoRI: Reducing Cross-Task Interference in Multi-Task Low-Rank Adaptation",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "COLM 2025",
+   "arxiv": "2504.07448",
+   "url": "https://arxiv.org/abs/2504.07448",
+   "code_url": "https://github.com/juzhengz/LoRI",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + (B_t\\odot M_t)\\,A_t,\\ \\ A_t\\in\\mathbb{R}^{r\\times d_{in}} \\text{ frozen random (Kaiming-uniform)},\\ B_t\\in\\mathbb{R}^{d_{out}\\times r} \\text{ trained},\\ M_t=\\mathbb{1}\\big(|B_t|\\ge\\tau_t\\big),\\ \\tau_t=\\mathrm{Quantile}_s\\big(\\textstyle\\bigcup_{\\text{layers}}|B_t|\\big);\\ \\ \\text{merge: } W=W_0+\\sum_t\\alpha_t (B_t\\odot M_t)A_t",
+   "trainable_params": "r\\,d_{out} \\text{ per adapted matrix (LoRI-D)};\\ \\ (1-s)\\sum_{\\text{adapted matrices}} r\\,d_{out} \\text{ in total (LoRI-S, global mask, } s=0.9\\text{)}",
+   "locus": "any linear layer (attention and MLP projections of Llama-3-8B / Mistral-7B in the paper)",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W factors through a fixed random r-dimensional projection of the input; only the up-projection is learned, and only on a sparse coordinate mask. Independent random A_t per task give nearly orthogonal row spaces, so merged adapters interfere little.",
+   "mergeable": "yes",
+   "mergeable_reason": "Each task delta is a fixed matrix (B_t odot M_t)A_t, and multi-task merging is a weighted sum, all foldable into W_0.",
+   "identity_at_init": "B_t = 0 with A_t random (Kaiming-uniform) and frozen. Masks M_t come from a calibration run that trains B_t unmasked (A_t frozen); B_t is then reset to zero and retrained under the fixed mask.",
+   "key_idea": "LoRA's down-projection can be a frozen random map and its up-projection can be about 90% sparse. Random task-specific projections make adapters nearly orthogonal (easy merging), and sparse masks protect earlier adapters, such as a safety adapter, in continual learning.",
+   "results_note": "Up to 95% fewer trainable parameters than LoRA while matching or beating it, e.g. LoRI-D reaches 63.2% HumanEval pass@10 vs 50.8% for LoRA on Llama-3-8B.",
+   "relations": [
+    {
+     "target": "lora-fa",
+     "type": "builds-on",
+     "note": "LoRA-FA also freezes a random A; LoRI adds task-specific sparse masks on B."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Restricts both factors of LoRA."
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "Both rely on frozen random projections to cut parameters."
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "Reduces merge interference by construction (orthogonal subspaces + sparsity) rather than post hoc."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "Alternative fix for cross-task interference when merging LoRAs."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.07448",
+    "https://arxiv.org/html/2504.07448",
+    "https://github.com/juzhengz/LoRI"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "trainable_params: the LoRI-S mask is a single global (model-wise) quantile, so the (1-s) budget applies to the total, not to each matrix.",
+    "identity_at_init: clarified that B_t is reset to zero after mask calibration (Sec. 2.1)."
+   ],
+   "verification_notes": "arXiv 2504.07448 (Zhang, 2025); COLM 2025 confirmed (arXiv comment + OpenReview). The paper writes Delta = A(B odot M) in row-vector convention; the entry's column form (B odot M)A matches. HumanEval 63.2 vs 50.8 confirmed. Reduces to LoRA-FA for a single task with zero sparsity (paper)."
+  },
+  {
+   "id": "singlora",
+   "name": "SingLoRA",
+   "full_name": "Single-matrix Low-Rank Adaptation",
+   "paper_title": "SingLoRA: Low Rank Adaptation Using a Single Matrix",
+   "authors": "Bensaïd et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 Workshop (DeLTa)",
+   "arxiv": "2507.05566",
+   "url": "https://arxiv.org/abs/2507.05566",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\tfrac{\\alpha}{r}\\,u(t)\\,A A^{\\top},\\ A\\in\\mathbb{R}^{d\\times r},\\ u(t)=\\min(t/T,1)\\ \\ (d_{in}=d_{out}=d);\\ \\ \\text{rectangular: } \\Delta W=\\tfrac{\\alpha}{r}u(t)\\,A_{[1:d_{out}]}A_{[1:d_{in}]}^{\\top},\\ A\\in\\mathbb{R}^{\\max(d_{in},d_{out})\\times r};\\ W_0 \\text{ frozen},\\ A \\text{ trained}",
+   "trainable_params": "r\\,\\max(d_{in},d_{out})",
+   "locus": "any linear layer (attention projections in the LLM and Stable Diffusion experiments)",
+   "modification_kind": "additive-weight",
+   "structure": "Gram-type update from a single factor: for square W_0, \\Delta W = AA^\\top is symmetric positive semidefinite of rank at most r; rectangular layers use a row-truncated copy of the same factor. The reparameterization symmetry shrinks from LoRA's GL(r) (B\\mapsto BG, A\\mapsto G^{-1}A) to O(r) (A\\mapsto AQ).",
+   "mergeable": "yes",
+   "mergeable_reason": "AA^T (or its truncated version) is a fixed matrix after training and adds to W_0.",
+   "identity_at_init": "Ramp u(0)=0 with Kaiming-initialized A, so the update is zero at step 0 and phased in over T steps (T = 1% of training steps in the main experiments, 10^3 steps for RoBERTa/GPT-2; robust for T from 0.5% to 8%).",
+   "key_idea": "Replacing LoRA's two factors by one matrix and its transpose removes the scale imbalance between factors. The authors prove stable feature learning at infinite width and transformation-invariance of standard optimizers, while halving parameters. For square layers the symmetric-PSD form restricts expressivity, which the paper argues the transformer architecture compensates for.",
+   "results_note": "Llama-7B on MNLI: 91.3% vs 89.1% (LoRA) and 90.2% (LoRA+) with about 60% of their parameters; DreamBooth DINO 0.151 vs 0.148 (DoRA) and 0.143 (LoRA).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Same additive low-rank role with one factor instead of two."
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "LoRA+ fixes factor imbalance with separate learning rates; SingLoRA removes the second factor."
+    },
+    {
+     "target": "lora-rite",
+     "type": "competes-with",
+     "note": "Both target transformation-invariant optimization of low-rank adapters."
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "competes-with",
+     "note": "Alternative route to scale-stable LoRA training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2507.05566",
+    "https://arxiv.org/html/2507.05566",
+    "https://openreview.net/pdf/edc1a91c35fc48c860a49795a08d3309376cb8d8.pdf"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "identity_at_init: T is 1% of steps in the main experiments and 10^3 steps for the GLUE runs, not specifically \"for LLMs\" (App. A)."
+   ],
+   "verification_notes": "arXiv 2507.05566 (Bensaid, 2025). Venue: ICLR 2026 DeLTa Workshop poster (OpenReview xjksemsy11); no main-track acceptance found. Formula W0 + (alpha/r) u(t) A A^T and the truncation rule for non-square layers (Sec. 4.4) confirmed. No public code (paper: \"will be released\")."
+  },
+  {
+   "id": "text-to-lora",
+   "name": "T2L",
+   "full_name": "Text-to-LoRA",
+   "paper_title": "Text-to-LoRA: Instant Transformer Adaption",
+   "authors": "Charakorn et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2506.06105",
+   "url": "https://arxiv.org/abs/2506.06105",
+   "code_url": "https://github.com/SakanaAI/text-to-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\phi_{m,l}=\\big[f(z);\\,E[m];\\,E[l]\\big],\\ \\ (A_{m,l},B_{m,l})=h_\\theta(\\phi_{m,l}),\\ \\ W_{m,l}=W_{0,m,l}+B_{m,l}A_{m,l};\\ \\ W_0 \\text{ and text encoder } f \\text{ frozen, hypernetwork } h_\\theta \\text{ trained by } \\min_\\theta \\mathbb{E}_i\\big|\\Delta W^i-h_\\theta(\\phi^i)\\big|_1 \\text{ (reconstruction) or the downstream SFT loss}",
+   "trainable_params": "|\\theta| \\text{ for the whole model, shared by all tasks: } 4.9\\mathrm{M}\\ (S),\\ 34.3\\mathrm{M}\\ (M),\\ 55.3\\mathrm{M}\\ (L);\\ \\text{each generated adapter has } r(d_{in}+d_{out}) \\text{ entries per module}",
+   "locus": "query and value projections of every layer (Mistral-7B-Instruct, r = 8); z is a natural-language task description",
+   "modification_kind": "hybrid",
+   "structure": "Amortized adapter: a learned map h_\\theta from (task-description embedding x module-type embedding x layer embedding) to rank-r factor pairs, so the reachable adapters form a text-parameterized family inside LoRA space. The deployed modification is additive low-rank.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Once generated for a given description the LoRA merges into W_0 as usual; the hypernetwork is needed only at adaptation time, one adapter per task.",
+   "identity_at_init": "No identity guarantee by construction: the generated adapter is generally nonzero for any description. Removing it restores W_0 exactly.",
+   "key_idea": "Compress many task-specific LoRAs into one hypernetwork conditioned on a natural-language task description, so a new adapter comes from a single forward pass with no data or gradient steps and generalizes zero-shot to unseen tasks.",
+   "results_note": "SFT-trained T2L on Mistral-7B-Instruct averages 67.7% zero-shot over 10 benchmarks vs 66.3% for a multi-task LoRA, and reconstruction-trained T2L nearly matches the task-specific LoRAs it compresses.",
+   "relations": [
+    {
+     "target": "hyperformer",
+     "type": "builds-on",
+     "note": "Hypernetwork-generated adapters conditioned on task information, here emitting LoRA factors from text."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "The output object is a LoRA adapter."
+    },
+    {
+     "target": "drag-and-drop-llms",
+     "type": "competes-with",
+     "note": "DnD conditions on unlabeled task prompts instead of a task description."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.06105",
+    "https://arxiv.org/html/2506.06105",
+    "https://github.com/SakanaAI/text-to-lora"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: the reconstruction loss is an L1 distance (Eq. 3, Fig. 3 \"L1 reconstruction error\").",
+    "sources: removed the unrelated sakana.ai/doc-to-lora page."
+   ],
+   "verification_notes": "arXiv 2506.06105 (Charakorn, 2025); ICML 2025 confirmed (arXiv comment, OpenReview zWskCdu3QA). Exact hypernetwork sizes 55,252,992 / 34,282,240 / 4,923,392 confirmed (v1 appendix); rank-8 q/v LoRA on Mistral-7B-Instruct; 67.7 vs 66.3 confirmed."
+  },
+  {
+   "id": "drag-and-drop-llms",
+   "name": "DnD",
+   "full_name": "Drag-and-Drop LLMs (prompt-to-weights)",
+   "paper_title": "Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights",
+   "authors": "Liang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.16406",
+   "url": "https://arxiv.org/abs/2506.16406",
+   "code_url": "https://github.com/jerryliang24/Drag-and-Drop-LLMs",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "c=\\mathrm{Enc}\\big(\\{p_1,\\dots,p_N\\}\\big)\\ (\\text{frozen Sentence-BERT, unlabeled prompts}),\\ \\ \\widehat{\\Theta}=\\mathcal{D}_\\theta(c)\\ (\\text{hyper-convolutional decoder}),\\ \\ W=W_0+\\widehat{B}\\widehat{A};\\ \\ \\min_\\theta\\ \\big\\|\\mathcal{D}_\\theta(c)-\\mathrm{tok}(\\Theta_{\\mathrm{LoRA}})\\big\\|_2^2",
+   "trainable_params": "|\\theta| \\text{ (decoder, shared across tasks); each generated adapter has } r(d_{in}+d_{out}) \\text{ entries per adapted matrix}",
+   "locus": "all LoRA-adapted matrices in all layers (Qwen2.5 0.5B-7B, Qwen2.5-VL-3B)",
+   "modification_kind": "hybrid",
+   "structure": "Generator from a batch of unlabeled task prompts to the full set of tokenized LoRA weights, trained on prompt-checkpoint pairs collected along LoRA fine-tuning trajectories. The deployed modification is additive low-rank.",
+   "mergeable": "conditional",
+   "mergeable_reason": "A generated adapter merges into W_0 like any LoRA; the generator is only used at adaptation time.",
+   "identity_at_init": "No identity guarantee: the decoder emits a nonzero adapter; removing it restores W_0.",
+   "key_idea": "Treat adaptation as conditional weight generation: map a handful of unlabeled prompts from a new task straight to LoRA weights in seconds, skipping per-task training.",
+   "results_note": "Generates task-specific LoRA weights in seconds (up to 12,000x lower overhead than full-shot LoRA tuning) with average gains of up to 30% over the strongest training LoRAs on unseen commonsense, math, coding and multimodal benchmarks.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "competes-with",
+     "note": "Both are prompt/text-conditioned LoRA generators; DnD uses unlabeled prompt batches and a convolutional decoder."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Generated object is a LoRA adapter."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.16406",
+    "https://arxiv.org/html/2506.16406",
+    "https://neurips.cc/virtual/2025/loc/san-diego/poster/116841",
+    "https://github.com/jerryliang24/Drag-and-Drop-LLMs"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "results_note: \"under a second\" is not stated; the paper says \"in seconds\"."
+   ],
+   "verification_notes": "arXiv 2506.16406 (Liang, 2025); NeurIPS 2025 poster confirmed (OpenReview fTkBZLxBzV, mlanthology). Sentence-BERT encoder, cascaded hyper-convolutional decoder and MSE on tokenized checkpoints confirmed. LoRA rank and target modules not stated in the text."
+  },
+  {
+   "id": "doc-to-lora",
+   "name": "D2L",
+   "full_name": "Doc-to-LoRA",
+   "paper_title": "Doc-to-LoRA: Learning to Instantly Internalize Contexts",
+   "authors": "Charakorn et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.15902",
+   "url": "https://arxiv.org/abs/2602.15902",
+   "code_url": "https://github.com/SakanaAI/doc-to-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "(A_l^{(k)},B_l^{(k)})=H_\\phi\\big(\\text{activations of chunk } c^{(k)} \\text{ in the frozen LLM}\\big)_l,\\ \\ W_l'=W_l+\\alpha_l\\,[B_l^{(1)}\\cdots B_l^{(K)}]\\,[A_l^{(1)};\\dots;A_l^{(K)}];\\ \\ \\min_\\phi\\ \\mathbb{E}_{c,(x,y)}\\,\\mathrm{KL}\\big(p_\\theta(y\\mid x,c)\\,\\|\\,p_{\\theta+H_\\phi(c)}(y\\mid x)\\big)",
+   "trainable_params": "|\\phi| \\approx 309\\mathrm{M} \\text{ (Perceiver hypernetwork with 8 cross-attention blocks, meta-trained once)};\\ \\text{generated adapter } K r(d_{in}+d_{out}) \\text{ per MLP down-projection for a } K\\text{-chunk document } (r=8);\\ \\alpha_l \\text{ learnable per-layer scalars}",
+   "locus": "MLP down-projection of every layer (Gemma-2-2B-IT)",
+   "modification_kind": "hybrid",
+   "structure": "Context distillation amortized into a hypernetwork: Perceiver cross-attention over per-layer document activations emits rank-8 factors. Long documents are chunked and per-chunk adapters are concatenated along the rank axis, so \\Delta W=\\sum_k B^{(k)}A^{(k)} (adapters compose additively, rank grows as Kr).",
+   "mergeable": "conditional",
+   "mergeable_reason": "The generated adapter for a given document can be merged, but each document has its own adapter, so it is normally kept as a swappable side module.",
+   "identity_at_init": "Not identity by design; base weights are untouched, so dropping the adapter recovers the base model.",
+   "key_idea": "Meta-learn approximate context distillation: a hypernetwork reads a document once and emits a LoRA, so later queries are answered without the document in context, cutting latency and KV-cache memory.",
+   "results_note": "Near-perfect zero-shot needle-in-a-haystack accuracy at more than 4x the target model's native context window, with sub-second internalization and far lower memory than keeping the document in context.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "builds-on",
+     "note": "Same Sakana hypernetwork line, conditioned on documents instead of task descriptions."
+    },
+    {
+     "target": "generative-adapter",
+     "type": "competes-with",
+     "note": "Both map a context to a parameter delta in one forward pass."
+    },
+    {
+     "target": "cartridges",
+     "type": "competes-with",
+     "note": "Cartridges also stores a document in trainable parameters (a KV prefix), but trains per document by self-study."
+    },
+    {
+     "target": "shine",
+     "type": "competes-with",
+     "note": "Concurrent context-to-LoRA hypernetwork."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.15902",
+    "https://arxiv.org/html/2602.15902",
+    "https://sakana.ai/doc-to-lora/",
+    "https://github.com/SakanaAI/doc-to-lora"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "trainable_params: added the reported hypernetwork size (309M) and the learnable per-layer scale alpha_l (Sec. 3, Sec. 5)."
+   ],
+   "verification_notes": "arXiv 2602.15902 (Charakorn, 2026); ICML 2026 confirmed (OpenReview iW1oBBO72S, \"ICML 2026 regular\"; an earlier ICLR 2026 submission was rejected). Formula W' = W + alpha_l B A, rank-axis chunk concatenation, KL context-distillation objective and Gemma-2-2B down-proj placement confirmed."
+  },
+  {
+   "id": "shine",
+   "name": "SHINE",
+   "full_name": "Scalable In-Context Hypernetwork",
+   "paper_title": "SHINE: A Scalable In-Context Hypernetwork for Mapping Context to LoRA in a Single Pass",
+   "authors": "Liu et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.06358",
+   "url": "https://arxiv.org/abs/2602.06358",
+   "code_url": "https://github.com/MuLabPKU/SHINE",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathcal{M}=\\mathrm{LLM}_{\\theta_0+\\Delta_{\\mathrm{meta}}}\\big([c;\\,m_{1:M}]\\big)\\big|_{\\text{last } M \\text{ tokens of all } L \\text{ layers}}\\in\\mathbb{R}^{L\\times M\\times H},\\ \\ \\{(A_l,B_l)\\}_{l}=\\mathrm{M2P}_\\psi(\\mathcal{M}),\\ \\ W_l=W_{0,l}+B_lA_l;\\ \\theta_0 \\text{ frozen},\\ \\Delta_{\\mathrm{meta}},\\,m,\\,\\psi \\text{ trained}",
+   "trainable_params": "\\text{meta-LoRA (rank 128) + } M=\\lceil rD/H\\rceil \\text{ memory embeddings + 4-layer M2P Transformer (shared); generated adapter has rank } r=8",
+   "locus": "all linear layers of each backbone layer (Qwen3-8B; generated rank-8 LoRA); D is the summed input and output width of those linear layers",
+   "modification_kind": "hybrid",
+   "structure": "In-context hypernetwork: the frozen LLM itself (with a meta-LoRA and learnable memory tokens) encodes the context into an L x M memory grid, which an axial (row/column) attention Transformer maps jointly to every LoRA factor. The deployed modification is additive low-rank.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Generated per context; it can be merged for a fixed context but is normally kept as a swappable adapter.",
+   "identity_at_init": "No identity guarantee for the generated adapter; base weights are untouched.",
+   "key_idea": "Reuse the LLM as its own hypernetwork encoder so that context-to-LoRA generation scales with the backbone, producing an adapter for an arbitrary context in one pass, pretrained with reconstruction/completion objectives and then instruction-tuned on QA.",
+   "results_note": "About 0.3 s to generate an adapter in one forward pass. On SQuAD it beats test-time-training baselines such as SEAL (58.2) and PaST, and perplexity improves with backbone size, M2P depth, meta-LoRA rank and generated LoRA rank.",
+   "relations": [
+    {
+     "target": "generative-adapter",
+     "type": "competes-with",
+     "note": "Both are self-supervised context-to-adapter generators; SHINE generates all layers jointly."
+    },
+    {
+     "target": "doc-to-lora",
+     "type": "competes-with",
+     "note": "Concurrent context-to-LoRA hypernetwork."
+    },
+    {
+     "target": "text-to-lora",
+     "type": "builds-on",
+     "note": "Extends the text-to-adapter hypernetwork idea to arbitrary contexts."
+    },
+    {
+     "target": "seal",
+     "type": "competes-with",
+     "note": "Amortized one-pass alternative to iterative test-time LoRA training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.06358",
+    "https://arxiv.org/html/2602.06358",
+    "https://github.com/MuLabPKU/SHINE",
+    "https://openreview.net/forum?id=ZMexYcAibv"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "locus: added the backbone (Qwen3-8B) and made clear all linear layers in each block are generated.",
+    "sources: replaced github.com/Yewei-Liu/SHINE (redirect) with the canonical github.com/MuLabPKU/SHINE given in the paper; added OpenReview.",
+    "results_note: added the reported 0.3 s generation time and the SEAL comparison figure (Table 3)."
+   ],
+   "verification_notes": "arXiv 2602.06358 (Liu, 2026); ICML 2026 confirmed (OpenReview ZMexYcAibv). Meta-LoRA rank 128, generated rank 8, M = ceil(rD/H) = 148 memory tokens, 4-layer M2P with alternating row/column attention confirmed."
+  },
+  {
+   "id": "generative-adapter",
+   "name": "GenerativeAdapter",
+   "full_name": "Generative Adapter",
+   "paper_title": "Generative Adapter: Contextualizing Language Models in Parameters with A Single Forward Pass",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2411.05877",
+   "url": "https://arxiv.org/abs/2411.05877",
+   "code_url": "https://github.com/chentong0/generative-adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_l = A_1\\,\\mathrm{norm}_r\\big(A_2 H_{l-1}^{\\top}H_{l-1} B_1\\big)\\,B_2,\\ \\ H_{l-1}^{\\top}H_{l-1}=\\textstyle\\sum_{m=1}^{M} h_m h_m^{\\top}\\ (\\text{context hidden states from block } l-1),\\ \\ \\mathrm{norm}_r(S)=U_rV_r^{\\top}\\ (\\text{rank-}r \\text{ SVD } S\\approx U_r\\Sigma_rV_r^{\\top},\\ r=128);\\ \\ \\text{streaming: } S_t\\leftarrow S_{t-1}+A_2H_t^{\\top}H_tB_1;\\ A_1\\in\\mathbb{R}^{d_{out}\\times d_r},A_2\\in\\mathbb{R}^{d_r\\times d_h},B_1\\in\\mathbb{R}^{d_h\\times d_r},B_2\\in\\mathbb{R}^{d_r\\times d_{in}};\\ \\text{base LM frozen, generator trained}",
+   "trainable_params": "d_r(d_{in}+d_{out}+2d_h) \\text{ generator parameters per adapted layer (about 500M total for 7B models, } d_r=1024\\text{)}; \\text{ generated adapter rank } 128 \\text{ (about 32M parameters)}",
+   "locus": "attention output projections of every layer (Mistral-7B-Instruct, Llama2-7B-Chat)",
+   "modification_kind": "hybrid",
+   "structure": "Bilinear, linear-attention-like map from context hidden states to a parameter delta: the context enters only through its second-moment matrix \\sum_m h_m h_m^\\top, compressed into a d_r x d_r state that accumulates additively over streamed chunks, then SVD-normalized (singular values reset to 1).",
+   "mergeable": "conditional",
+   "mergeable_reason": "A generated delta can be added to W_o for a fixed context, but it is context-specific and regenerated per context.",
+   "identity_at_init": "Not identity by construction; the base LM is frozen and recovered by dropping the delta.",
+   "key_idea": "A lightweight generator, trained self-supervised (reconstruction + completion), turns any context into a parameter delta in one forward pass, giving test-time knowledge injection, in-context learning and personalization without fine-tuning or long prompts.",
+   "results_note": "StreamingQA F1 rises from 19.5 (SFT) to 31.5 for contexts up to 32K tokens; 44.9 average accuracy on 26 MetaICL tasks.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "competes-with",
+     "note": "Both generate adapters with a forward pass; GenerativeAdapter conditions on raw context rather than task descriptions."
+    },
+    {
+     "target": "cartridges",
+     "type": "competes-with",
+     "note": "Both put context into parameters; Cartridges trains per document."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2411.05877",
+    "https://arxiv.org/html/2411.05877",
+    "https://proceedings.iclr.cc/paper_files/paper/2025/hash/447708674d7f30492ca5338b36b07d0c-Abstract-Conference.html",
+    "https://github.com/chentong0/generative-adapter"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "formula_latex: SVD normalization is a rank-r truncated SVD (r=128), so the generated delta has rank 128; hidden states come from block l-1 (Eqs. 1-9).",
+    "trainable_params: re-derived the generator size from the four matrices.",
+    "relations: removed hyperformer builds-on; the paper does not cite HyperFormer or hypernetworks (lineage reaches HyperFormer via text-to-lora)."
+   ],
+   "verification_notes": "arXiv 2411.05877 (Chen, 2024); ICLR 2025 poster confirmed (OpenReview bc3sUsS6ck, DBLP). Bilinear generator, streaming update, SVD normalization, attention output-projection placement, d_r=1024, r=128 and StreamingQA 19.5 -> 31.5 confirmed."
+  },
+  {
+   "id": "goat",
+   "name": "GOAT",
+   "full_name": "Great LoRA Mixture-of-Experts (adaptive SVD priors + optimization alignment)",
+   "paper_title": "Make LoRA Great Again: Boosting LoRA with Adaptive Singular Values and Mixture-of-Experts Optimization Alignment",
+   "authors": "Fan et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2502.16894",
+   "url": "https://arxiv.org/abs/2502.16894",
+   "code_url": "https://github.com/Facico/GOAT-PEFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=(W_0-W_{\\mathrm{res}})x+\\sum_{i=1}^{E} w^{i}(x)\\,s\\,B^{i}A^{i}x,\\ \\ w(x)=\\mathrm{softmax}\\ \\text{over the top-}k \\text{ router logits } W_z^{\\top}x \\ (0 \\text{ elsewhere}),\\ \\ B_0^{i}=\\sqrt{\\tfrac{1}{s\\rho}}\\,U_i\\Sigma_i^{1/2},\\ A_0^{i}=\\sqrt{\\tfrac{1}{s\\rho}}\\,\\Sigma_i^{1/2}V_i^{\\top},\\ \\ W_{\\mathrm{res}}=\\tfrac{s}{E}\\sum_{i}B_0^{i}A_0^{i},\\ \\ s=\\sqrt{3n\\eta/r}",
+   "trainable_params": "E\\cdot\\tfrac{r}{E}(d_{in}+d_{out})+E\\,d_{in}=r(d_{in}+d_{out})+E\\,d_{in}\\ \\ (E=8,\\ \\text{top-}2)",
+   "locus": "linear layers of ViT-B/32, RoBERTa-large and LLaMA-2-7B (MoE-LoRA in place of a single LoRA)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Mixture of E rank-(r/E) LoRA experts with input-dependent top-k gating; expert i is initialized on the i-th contiguous segment of the SVD of W_0 (segments tile the whole spectrum: U_i\\Sigma_iV_i^\\top with start index (i-1)\\min(d_{in},d_{out})/E), and a closed-form scale s aligns MoE-LoRA gradients with full fine-tuning of an upcycled MoE.",
+   "mergeable": "no",
+   "mergeable_reason": "Expert weights depend on the input through the router, so no single static matrix reproduces the layer.",
+   "identity_at_init": "The residual (s/E) sum_i B_0^i A_0^i is subtracted from W_0; the initial layer equals W_0 exactly only when routing weights are uniform (1/E), so identity holds approximately, not pointwise.",
+   "key_idea": "Give each LoRA expert a different SVD-derived starting subspace spread across the whole spectrum, and derive the scaling factor that makes MoE-LoRA optimization mimic full-parameter MoE fine-tuning.",
+   "results_note": "Across 25 datasets (image classification, GLUE, NLG, commonsense reasoning) GOAT beats LoRA and MoE-LoRA baselines and closes most of the gap to full fine-tuning.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "builds-on",
+     "note": "Uses SVD of W_0 to initialize adapters, distributed across experts and the whole spectrum."
+    },
+    {
+     "target": "lora-pro",
+     "type": "competes-with",
+     "note": "Both align low-rank updates with full fine-tuning dynamics."
+    },
+    {
+     "target": "adamix",
+     "type": "competes-with",
+     "note": "Mixture of adaptation modules."
+    },
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "Learned gating over several LoRA experts."
+    },
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "Main LoRA-MoE baseline in the paper; GOAT beats it on IC and commonsense reasoning."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2502.16894",
+    "https://arxiv.org/html/2502.16894",
+    "https://github.com/Facico/GOAT-PEFT"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: renamed so that W_res is the subtracted constant (s/E) sum B_0 A_0, as in the paper (Eq. 15, Thm. 3.4); the previous entry used W_res for the residual base, which clashes with the paper.",
+    "relations: added hydralora (directly compared baseline)."
+   ],
+   "verification_notes": "arXiv 2502.16894 (Fan, 2025); ICML 2025 confirmed. GOAT = \"Great LoRA Mixture-of-Expert\" (abstract). Segment init, 1/(s rho) scaling, W_res = (s/E) sum B0A0 and s = sqrt(3 n eta / r) confirmed; 8 experts with top-2 in the main setting."
+  },
+  {
+   "id": "knots",
+   "name": "KnOTS",
+   "full_name": "Knowledge Orientation Through SVD (LoRA merging)",
+   "paper_title": "Model merging with SVD to tie the Knots",
+   "authors": "Stoica et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2410.19735",
+   "url": "https://arxiv.org/abs/2410.19735",
+   "code_url": "https://github.com/gstoica27/KnOTS",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\big[\\Delta W^{(1)},\\dots,\\Delta W^{(T)}\\big]=U\\Sigma\\big[V^{(1)};\\dots;V^{(T)}\\big]^{\\top},\\ \\ \\Delta W^{(t)}=B^{(t)}A^{(t)},\\ \\ V^{(\\mathrm{m})}=\\mathcal{M}\\big(V^{(1)},\\dots,V^{(T)}\\big)\\ (\\text{TIES / DARE / TA}),\\ \\ W=W_0+U\\Sigma V^{(\\mathrm{m})\\top}",
+   "trainable_params": "0 \\text{ (training-free merging)}",
+   "locus": "every LoRA-adapted layer, layer-wise (LoRA on q/k/v/o of CLIP ViT-B/32 and ViT-L/14, and Llama-3-8B)",
+   "modification_kind": "composition-or-routing",
+   "structure": "A joint SVD of the concatenated task updates gives a shared left basis U\\Sigma; each task is represented by its right factor V^{(t)} in that common basis, and an off-the-shelf merging operator acts on the aligned V's before mapping back.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged update U Sigma V^(m)T is a single static matrix added to W_0.",
+   "identity_at_init": "Not applicable (training-free; no new parameters).",
+   "key_idea": "LoRA updates for different tasks are poorly aligned (low CKA), which breaks merging methods designed for full fine-tunes. Expressing them in a common SVD basis before merging fixes this.",
+   "results_note": "Up to 4.3% higher normalized accuracy than existing merging methods on 8 ViT-B/32 vision tasks and +2.9% on Llama-3-8B NLI tasks; introduces a joint-task evaluation benchmark.",
+   "relations": [
+    {
+     "target": "ties-merging",
+     "type": "builds-on",
+     "note": "Uses TIES (and DARE / task arithmetic) as the merge operator inside the aligned space."
+    },
+    {
+     "target": "dare",
+     "type": "builds-on",
+     "note": "Can plug DARE into the aligned space."
+    },
+    {
+     "target": "core-space-merging",
+     "type": "competes-with",
+     "note": "Core Space achieves lossless alignment in a much smaller Tr x Tr space."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.19735",
+    "https://arxiv.org/html/2410.19735",
+    "https://github.com/gstoica27/KnOTS"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "locus: specified the attention q/k/v/o placement used in the experiments."
+   ],
+   "verification_notes": "arXiv 2410.19735 (Stoica, 2024); ICLR 2025 poster confirmed (OpenReview 67X93aZHII). Concatenate-then-SVD formula and merging on V^(t) confirmed (Eqs. 1-2); up to 4.3% gain and +2.9% on Llama-3-8B NLI confirmed."
+  },
+  {
+   "id": "core-space-merging",
+   "name": "Core Space",
+   "full_name": "Core Space merging of low-rank adapters",
+   "paper_title": "Accurate and Efficient Low-Rank Model Merging in Core Space",
+   "authors": "Panariello et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2509.17786",
+   "url": "https://arxiv.org/abs/2509.17786",
+   "code_url": "https://github.com/apanariello4/core-space-merging",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\big[A^{(1)};\\dots;A^{(T)}\\big]=U_A\\Sigma_AV_A^{\\top},\\ \\ \\big[B^{(1)},\\dots,B^{(T)}\\big]=U_B\\Sigma_BV_B^{\\top},\\ \\ M^{(t)}=\\big(U_B^{\\top}B^{(t)}\\big)\\big(A^{(t)}V_A\\big)\\in\\mathbb{R}^{Tr\\times Tr},\\ \\ W=W_0+U_B\\,\\mathcal{M}\\big(\\{M^{(t)}\\}_{t}\\big)\\,V_A^{\\top}",
+   "trainable_params": "0 \\text{ (training-free merging)}",
+   "locus": "every LoRA-adapted layer (Llama-3-8B, ViT-B/32, ViT-L/14)",
+   "modification_kind": "composition-or-routing",
+   "structure": "All rank-r task updates lie in the span of the union of their factor spaces; shared orthonormal bases of the stacked A's (row space) and concatenated B's (column space) map each update losslessly to a small Tr x Tr core matrix, where any merging operator acts before mapping back.",
+   "mergeable": "yes",
+   "mergeable_reason": "The reconstructed merged update is a single static matrix added to W_0.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "Merge LoRAs in their joint core space rather than at full size: the projection is provably lossless, aligns the tasks, and costs far less than full-matrix or KnOTS-style SVD merging.",
+   "results_note": "State-of-the-art merging accuracy on Llama-3-8B NLI and ViT-B/32 / ViT-L/14 vision benchmarks, with up to 600x faster merging than merging in full space or KnOTS space.",
+   "relations": [
+    {
+     "target": "knots",
+     "type": "builds-on",
+     "note": "Same alignment-before-merging idea, done in a lossless reduced space."
+    },
+    {
+     "target": "ties-merging",
+     "type": "builds-on",
+     "note": "Off-the-shelf merging operators are applied inside the core space."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.17786",
+    "https://arxiv.org/html/2509.17786",
+    "https://github.com/apanariello4/core-space-merging"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "results_note: the 600x speed-up is relative to full-space or KnOTS-space merging (Sec. 5)."
+   ],
+   "verification_notes": "arXiv 2509.17786 (Panariello, 2025); NeurIPS 2025 confirmed (arXiv comment, OpenReview y1z7SAS8q8). Reference bases from SVD of stacked A and B, core matrix M^(t) = (U_B^T B)(A V_A) in R^{Tr x Tr} and zero alignment error confirmed (Alg. 1)."
+  },
+  {
+   "id": "k-lora",
+   "name": "K-LoRA",
+   "full_name": "Top-K training-free subject-style LoRA fusion",
+   "paper_title": "K-LoRA: Unlocking Training-Free Fusion of Any Subject and Style LoRAs",
+   "authors": "Ouyang et al.",
+   "year": 2025,
+   "venue": "CVPR 2025",
+   "arxiv": "2502.18461",
+   "url": "https://arxiv.org/abs/2502.18461",
+   "code_url": "https://github.com/HVision-NKU/K-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W^{l}(t)=\\begin{cases}\\Delta W_c^{l} & \\text{if } S_c^{l}\\ \\ge\\ \\gamma\\,\\mathcal{S}(t)\\,S_s^{l}\\\\ \\Delta W_s^{l} & \\text{otherwise}\\end{cases},\\ \\ S_\\bullet^{l}=\\sum_{i\\in\\mathrm{TopK}(|\\Delta W_\\bullet^{l}|)}|\\Delta W_\\bullet^{l}|_i,\\ K=r_cr_s,\\ \\ \\mathcal{S}(t)=\\alpha\\tfrac{t_{\\mathrm{now}}}{t_{\\mathrm{all}}}+\\beta,\\ \\ \\gamma=\\frac{\\sum_l\\sum_i|\\Delta W_c^{l}|_i}{\\sum_l\\sum_j|\\Delta W_s^{l}|_j}",
+   "trainable_params": "0 \\text{ (training-free)}",
+   "locus": "attention-layer LoRA weights of SDXL and FLUX diffusion models",
+   "modification_kind": "composition-or-routing",
+   "structure": "Layer-wise, timestep-dependent hard selection between two pretrained LoRA deltas (content vs style), decided by comparing their Top-K l1 mass with a time-ramped scale (alpha=1.5, beta=0.5): content dominates early denoising steps, style later ones.",
+   "mergeable": "conditional",
+   "mergeable_reason": "At each timestep the selected LoRA per layer can be merged, but the selection changes over timesteps, so no single static merged weight reproduces it.",
+   "identity_at_init": "Not applicable (training-free; no new parameters).",
+   "key_idea": "Only the few largest LoRA entries matter, and early denoising steps set content while later ones set style; so at each attention layer use whichever LoRA has more Top-K mass, rescaled over time, with no training.",
+   "results_note": "Highest subject similarity among compared methods (CLIP score 69.4% vs 64.4% ZipLoRA and 63.8% B-LoRA; DINO 46.9% vs 35.7%), with style similarity 58.7% (ZipLoRA 60.4%, B-LoRA 58.0%); preferred in user studies.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Operates on community LoRAs."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "Different training-free answer to combining LoRAs (selection vs aligned merging)."
+    },
+    {
+     "target": "ziplora",
+     "type": "competes-with",
+     "note": "Main baseline: ZipLoRA learns merge coefficients, whereas K-LoRA selects per layer without training."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2502.18461",
+    "https://arxiv.org/html/2502.18461",
+    "https://k-lora.github.io/K-LoRA.io/",
+    "https://github.com/HVision-NKU/K-LoRA"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "results_note: the 69.4% figure is SUBJECT similarity; on style similarity K-LoRA trails ZipLoRA (58.7 vs 60.4), so \"outperforms\" overall was inaccurate (Table 1).",
+    "relations: added ziplora (directly compared baseline)."
+   ],
+   "verification_notes": "arXiv 2502.18461 (Ouyang, 2025); CVPR 2025 confirmed (arXiv comment, DBLP). The Top-K l1 rule with K = r_c r_s, gamma and alpha=1.5, beta=0.5 are from Eqs. 1-8. The paper's Algorithm 1 writes scale = alpha + beta t/T, which is inconsistent with Eq. 7 (alpha t/T + beta); the entry follows Eq. 7."
+  },
+  {
+   "id": "ominicontrol",
+   "name": "OminiControl",
+   "full_name": "Minimal and Universal Control for Diffusion Transformer",
+   "paper_title": "OminiControl: Minimal and Universal Control for Diffusion Transformer",
+   "authors": "Tan et al.",
+   "year": 2024,
+   "venue": "ICCV 2025",
+   "arxiv": "2411.15098",
+   "url": "https://arxiv.org/abs/2411.15098",
+   "code_url": "https://github.com/Yuanshi9815/OminiControl",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{MMA}\\big([X;C_T;C_I]\\big)=\\mathrm{softmax}\\Big(\\tfrac{QK^{\\top}}{\\sqrt d}+B(\\gamma)\\Big)V,\\ \\ C_I=\\mathrm{VAE}(\\text{condition image}),\\ \\ B(\\gamma)=\\log\\gamma \\text{ on the } X\\leftrightarrow C_I \\text{ blocks, } 0 \\text{ elsewhere};\\ \\ \\text{per token } z:\\ (W_0+\\mathbb{1}[z\\in C_I]\\,BA)\\,z \\text{ (rank-4 LoRA, scale 0 on non-condition tokens)};\\ W_0,\\ \\mathrm{VAE} \\text{ frozen}",
+   "trainable_params": "\\approx 0.1\\% \\text{ of FLUX.1 } (\\approx 14.5\\mathrm{M} \\text{ LoRA parameters for 12B})",
+   "locus": "all FLUX.1 DiT blocks (attention projections and norms matter most) plus condition-image tokens appended to the token sequence",
+   "modification_kind": "hybrid",
+   "structure": "Input augmentation plus a token-restricted low-rank update: VAE-encoded condition tokens are concatenated into the multimodal attention sequence (shared RoPE positions for spatially aligned tasks, shifted positions for subject-driven tasks). A rank-4 LoRA in the shared DiT blocks acts only on condition tokens, and condition strength is a log-gamma attention-bias block.",
+   "mergeable": "no",
+   "mergeable_reason": "The LoRA is applied only to condition tokens, so merging it into the shared weights would change text and image tokens; inference must also process the extra condition tokens.",
+   "identity_at_init": "LoRA uses B = 0 and is off on text and noise tokens, but appending condition tokens changes attention outputs from the start; gamma = 0 (bias of minus infinity) removes the condition's influence.",
+   "key_idea": "A DiT can serve as its own condition encoder: pass the condition image through the same VAE and transformer as extra tokens and train only a tiny LoRA, giving one mechanism for both spatial and subject-driven control.",
+   "results_note": "With about 0.1% extra parameters on FLUX.1 it outperforms ControlNet / T2I-Adapter on spatially aligned control and IP-Adapter on subject-driven generation; releases the Subjects200K dataset.",
+   "relations": [
+    {
+     "target": "controlnet",
+     "type": "competes-with",
+     "note": "Replaces ControlNet's trainable encoder copy with token concatenation + LoRA."
+    },
+    {
+     "target": "t2i-adapter",
+     "type": "competes-with",
+     "note": "Alternative lightweight conditioning of diffusion models."
+    },
+    {
+     "target": "ip-adapter",
+     "type": "competes-with",
+     "note": "Subject/image-prompt conditioning without a separate image encoder."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "The only trainable weights are LoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2411.15098",
+    "https://arxiv.org/html/2411.15098",
+    "https://github.com/Yuanshi9815/OminiControl"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: the paper sets the LoRA scale to 0 on non-condition tokens (Sec. 4, implementation details), so the LoRA is token-restricted to condition tokens rather than applied to the whole sequence.",
+    "structure: LoRA acts only on condition tokens (LoRA scale 0 for text/noise tokens).",
+    "mergeable_reason: rewritten to reflect token-restricted LoRA.",
+    "identity_at_init: noted that the LoRA is off on non-condition tokens."
+   ],
+   "verification_notes": "arXiv 2411.15098 (Tan, 2024); ICCV 2025 confirmed (arXiv comment). Attention-bias formula, rank 4, 14.5M parameters (~0.1% of 12B FLUX.1) and the LoRA scale of 0 on non-condition tokens are confirmed from the current (v6) text."
+  },
+  {
+   "id": "easycontrol",
+   "name": "EasyControl",
+   "full_name": "EasyControl (condition-injection LoRA for DiT)",
+   "paper_title": "EasyControl: Adding Efficient and Flexible Control for Diffusion Transformer",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "ICCV 2025",
+   "arxiv": "2503.07027",
+   "url": "https://arxiv.org/abs/2503.07027",
+   "code_url": "https://github.com/Xiaojiu-z/EasyControl",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "Q_c'=Q_c+B_QA_QZ_c,\\ \\ K_c'=K_c+B_KA_KZ_c,\\ \\ V_c'=V_c+B_VA_VZ_c;\\ \\ Q,K,V \\text{ of text and noise tokens computed with frozen } W_0;\\ \\ \\mathrm{Attn}\\big([Z_t;Z_n;Z_{c_1};\\dots]\\big) \\text{ under a causal mutual-attention mask}",
+   "trainable_params": "\\approx 15\\mathrm{M} \\text{ per condition (FLUX.1-dev): } 3r(d_{in}+d_{out}) \\text{ per block for the condition branch}",
+   "locus": "Q/K/V projections applied only to condition-image tokens in the FLUX.1-dev DiT",
+   "modification_kind": "hybrid",
+   "structure": "Token-restricted LoRA: the low-rank delta acts only on condition tokens, so the map on text and noise tokens is exactly W_0; conditions interact with generation only through masked attention (separate conditions do not attend to each other), and condition K/V are computed once and cached across denoising steps.",
+   "mergeable": "no",
+   "mergeable_reason": "The LoRA applies only to condition tokens, so folding it into shared weights would alter text/noise tokens; inference also processes extra condition tokens.",
+   "identity_at_init": "Condition-branch LoRA starts at B = 0, but the frozen base still attends to condition tokens, so outputs change once a condition is added.",
+   "key_idea": "Keep the control signal in its own LoRA-adapted token branch so that conditions are plug-and-play, compose zero-shot across condition types, stay compatible with community style LoRAs, and can be KV-cached.",
+   "results_note": "About 15M parameters per condition. Combining the position-aware training paradigm (resolution-normalized conditions) with KV caching cuts 1024x1024 / 25-step inference time by 58% for a single condition (16.3 s) and 75% for two conditions (18.3 s), relative to the variant without both; KV caching alone gives -36% / -50%.",
+   "relations": [
+    {
+     "target": "ominicontrol",
+     "type": "builds-on",
+     "note": "Same token-concatenation conditioning on FLUX with condition-token LoRA. EasyControl adds a causal (mutual) attention mask so condition K/V can be cached and several conditions composed; it compares directly with OminiControl."
+    },
+    {
+     "target": "controlnet",
+     "type": "competes-with",
+     "note": "Lightweight alternative for spatial control."
+    },
+    {
+     "target": "alora",
+     "type": "competes-with",
+     "note": "Structural analogue in LLMs: aLoRA also applies its adapter to only some tokens so the base computation stays intact and cacheable."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.07027",
+    "https://arxiv.org/html/2503.07027",
+    "https://github.com/Xiaojiu-z/EasyControl"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "results_note: the 58%/75% reductions come from PATP + KV cache together, not KV caching alone (Table 1).",
+    "relations[ominicontrol]: note corrected, since OminiControl already restricts its LoRA to condition tokens; the difference is the causal mask, KV cache and multi-condition composition."
+   ],
+   "verification_notes": "arXiv 2503.07027 (Zhang, 2025); ICCV 2025 confirmed (mlanthology, pp. 19513-19524). Condition-branch-only QKV LoRA (Eqs. 2-4), causal conditional/mutual attention masks and 15M parameters per condition confirmed."
+  },
+  {
+   "id": "icedit",
+   "name": "ICEdit",
+   "full_name": "In-Context Edit",
+   "paper_title": "In-Context Edit: Enabling Instructional Image Editing with In-Context Generation in Large Scale Diffusion Transformer",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2504.20690",
+   "url": "https://arxiv.org/abs/2504.20690",
+   "code_url": "https://github.com/River-Zhang/ICEdit",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{Out}(x)=W_0x+\\tfrac{\\alpha}{r}\\sum_{i=1}^{N}G(x)_i\\,B_iA_ix \\ \\text{(attention output projection)},\\ \\ G(x)=\\mathrm{softmax}\\big(\\mathrm{TopK}(g(x),k)\\big),\\ N=4,\\ r=\\alpha=32,\\ k=1;\\ \\ \\text{other DiT modules: standard LoRA } W_0+BA \\ (r=\\alpha=32);\\ \\ \\text{input: diptych [source | masked target] with the prompt ``A diptych with two side-by-side images of the same scene. On the right, the scene is exactly the same as on the left but \\{instruction\\}''}",
+   "trainable_params": "\\approx 0.2\\mathrm{B} \\text{ (Table 1; about 1.7\\% of the 12B FLUX.1 Fill, the abstract rounds to }\\sim 1\\%\\text{): LoRA-MoE experts, router and standard LoRAs}",
+   "locus": "FLUX.1 Fill (inpainting DiT): LoRA-MoE in the output projection of the multimodal attention blocks, standard LoRA in the other modules",
+   "modification_kind": "hybrid",
+   "structure": "In-context input augmentation (an edit is inpainting the right half of a diptych conditioned on the left half) combined with a top-1 routed mixture of four rank-32 LoRA experts.",
+   "mergeable": "no",
+   "mergeable_reason": "Routing over experts is input-dependent and the diptych doubles the image sequence at inference.",
+   "identity_at_init": "Experts presumably start at B_i = 0 (standard LoRA initialization; not stated). The training-free diptych prompt already produces edits, which the LoRA-MoE then sharpens.",
+   "key_idea": "Instruction-based editing can be posed as in-context inpainting of a diptych in a large DiT. A small LoRA-MoE trained on 50K pairs (about 0.1% of prior methods' data) is enough, and VLM-guided early filtering of noise seeds improves results at inference.",
+   "results_note": "Strong results on Emu Edit (CLIP-I 0.907, DINO 0.866) and MagicBrush with about 0.1% of the training data of prior methods.",
+   "relations": [
+    {
+     "target": "goat",
+     "type": "competes-with",
+     "note": "Both use mixtures of LoRA experts with top-k routing."
+    },
+    {
+     "target": "ominicontrol",
+     "type": "competes-with",
+     "note": "Both reuse the DiT's own attention over concatenated image tokens for conditioning."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Experts are LoRA modules."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.20690",
+    "https://arxiv.org/html/2504.20690",
+    "https://github.com/River-Zhang/ICEdit"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "formula_latex: added standard rank-32 LoRA on the other modules, set alpha = r = 32 (App.), and quoted the exact IC prompt.",
+    "locus: the paper uses standard LoRA \"elsewhere\", not only the output projections.",
+    "trainable_params: added the standard LoRAs and noted the abstract's \"1%\" rounding.",
+    "identity_at_init: B_i = 0 is not stated in the paper; marked as presumed."
+   ],
+   "verification_notes": "arXiv 2504.20690 (Zhang, 2025); NeurIPS 2025 confirmed (arXiv comment). MoE equation, 4 experts, rank 32, top-1, alpha = rank, 50K training pairs and Emu Edit CLIP-I 0.907 / DINO 0.866 confirmed."
+  },
+  {
+   "id": "sd-lora",
+   "name": "SD-LoRA",
+   "full_name": "Scalable Decoupled Low-Rank Adaptation",
+   "paper_title": "SD-LoRA: Scalable Decoupled Low-Rank Adaptation for Class Incremental Learning",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2501.13198",
+   "url": "https://arxiv.org/abs/2501.13198",
+   "code_url": "https://github.com/WuYichen-97/SD-Lora-CL",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{(t)}=W_0+\\sum_{k=1}^{t}\\alpha_k\\,\\frac{B_kA_k}{\\|B_kA_k\\|_F};\\ \\ \\text{during task } t:\\ \\Big\\{\\tfrac{B_kA_k}{\\|B_kA_k\\|_F}\\Big\\}_{k<t} \\text{ frozen},\\ \\{\\alpha_k\\}_{k\\le t} \\text{ and } (B_t,A_t) \\text{ trained}",
+   "trainable_params": "\\text{task } t:\\ r_t(d_{in}+d_{out}) \\text{ per adapted matrix} + t \\text{ magnitudes (one set shared across all adapted projections)};\\ r_1=10",
+   "locus": "query and value projections of all ViT blocks (rank 10, reduced for later tasks in SD-LoRA-RR)",
+   "modification_kind": "additive-weight",
+   "structure": "Linear combination of frozen unit-Frobenius-norm rank-r directions with trainable scalar magnitudes (initialized to 1; one magnitude set shared across the adapted projections): each task adds one direction, while the magnitudes of all earlier directions keep being re-weighted. Variants shrink later ranks (RR) or absorb a new direction into old ones by least squares (KD).",
+   "mergeable": "yes",
+   "mergeable_reason": "After training the sum of scaled directions is a single static matrix, and inference needs no task identity or component selection.",
+   "identity_at_init": "Not identity: magnitudes are initialized to 1 and each direction has unit norm, so a new task starts with a nonzero perturbation (initialization of A_t, B_t is not specified in the paper).",
+   "key_idea": "Decouple LoRA magnitude from direction in continual learning: freeze old directions but keep re-weighting their magnitudes. Training then follows a low-loss path into a region shared by all tasks, giving rehearsal-free, selection-free inference.",
+   "results_note": "ImageNet-R (20 tasks) accuracy 75.26% vs 73.59% for HiDe-Prompt (which stores samples) and 69.89% for InfLoRA; state of the art on ImageNet-A, DomainNet, CIFAR-100 and CUB-200 class-incremental benchmarks with ViT-B/16.",
+   "relations": [
+    {
+     "target": "dora",
+     "type": "builds-on",
+     "note": "Applies magnitude/direction decoupling to a growing set of LoRA components."
+    },
+    {
+     "target": "l2p",
+     "type": "competes-with",
+     "note": "Rehearsal-free continual learning with prompts instead of LoRA."
+    },
+    {
+     "target": "dualprompt",
+     "type": "competes-with",
+     "note": "Prompt-pool continual learning baseline."
+    },
+    {
+     "target": "osf",
+     "type": "competes-with",
+     "note": "Alternative PEFT-style continual learning by constraining update subspaces."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2501.13198",
+    "https://arxiv.org/html/2501.13198",
+    "https://iclr.cc/virtual/2025/oral/31918",
+    "https://github.com/WuYichen-97/SD-Lora-CL"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "structure: \"nonnegative\" removed (no sign constraint in the paper); recorded that one magnitude set is shared across projections (Sec. 4 implementation details).",
+    "trainable_params: confirmed the shared magnitude set and added r_1 = 10.",
+    "results_note: added the strongest baseline at N=20 (HiDe-Prompt 73.59) so the comparison is not cherry-picked (Table 2)."
+   ],
+   "verification_notes": "arXiv 2501.13198 (Wu, 2025); ICLR 2025 Oral confirmed (OpenReview 5U1rlpX68A). Formula h' = (W0 + sum alpha_k normalized(A_k B_k)) x, frozen old directions, magnitudes initialized to 1, q/v placement with rank 10, and the RR/KD variants confirmed."
+  },
+  {
+   "id": "sparse-memory-finetuning",
+   "name": "Sparse Memory Finetuning",
+   "full_name": "Continual learning via sparse memory-layer finetuning",
+   "paper_title": "Continual Learning via Sparse Memory Finetuning",
+   "authors": "Lin et al.",
+   "year": 2025,
+   "venue": "arXiv",
+   "arxiv": "2510.15103",
+   "url": "https://arxiv.org/abs/2510.15103",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\mathrm{Mem}(x)=W_2^{\\top}\\Big[\\Big(\\sum_{i\\in\\mathrm{TopK}(K q(x))}s_i(x)\\,V_i\\Big)\\odot\\mathrm{silu}(W_1 x)\\Big],\\ s=\\mathrm{softmax}(K_{\\mathbb{I}}q(x)),\\ k=32;\\ \\ \\text{update only } \\{V_i: i\\in\\mathcal{T}\\},\\ \\ \\mathcal{T}=\\text{top-}t \\text{ slots by } \\frac{c(i)}{\\sum_j c(j)}\\cdot\\log\\frac{|\\mathcal{B}|+1}{\\sum_{b\\in\\mathcal{B}}\\mathbb{1}[c_b(i)>0]+1};\\ \\text{all other parameters frozen (gradients stopped)}",
+   "trainable_params": "t\\cdot d_v \\text{ memory values per step } (d_v=1024;\\ t=500 \\text{ for TriviaQA}, 10^4 \\text{ for SimpleQA, out of } 10^6 \\text{ slots})",
+   "locus": "value table of a product-key memory layer that replaces one FFN (layer 12 of 22) in a 1.3B model",
+   "modification_kind": "selective",
+   "structure": "Input-dependent sparse coordinate mask over rows of the memory value table, chosen by a TF-IDF score: slot access counts c(i) on the current batch, discounted by how often the slot is used on background pretraining batches B.",
+   "mergeable": "yes",
+   "mergeable_reason": "Updated memory values overwrite the originals in place, so the memory-layer model keeps its architecture and inference cost.",
+   "identity_at_init": "No new parameters; training starts exactly from the pretrained memory-layer model.",
+   "key_idea": "Memory layers are sparsely accessed by design; updating only the slots specifically activated by new knowledge (relative to their pretraining usage) learns new facts with much less interference than full fine-tuning or LoRA.",
+   "results_note": "After learning new TriviaQA facts, NaturalQuestions F1 drops 89% with full fine-tuning and 71% with LoRA but only 11% with sparse memory finetuning, at the same level of new-knowledge acquisition.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "LoRA is the main forgetting baseline it improves on."
+    },
+    {
+     "target": "lt-sft",
+     "type": "competes-with",
+     "note": "Sparse fine-tuning, but here the sparse support is defined by memory-slot access statistics."
+    },
+    {
+     "target": "spiel",
+     "type": "competes-with",
+     "note": "Alternative sparse fine-tuning method."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2510.15103",
+    "https://arxiv.org/html/2510.15103",
+    "https://openreview.net/forum?id=LGo7U1m24L"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: added the output projection W_2 and the silu(W_1 x) gate of the memory layer (Sec. 3, memory-layer equations).",
+    "trainable_params: value dimension d_v = 1024 made explicit, and the t values tied to their tasks."
+   ],
+   "verification_notes": "arXiv 2510.15103 (Lin, 2025). ICLR 2026 desk-rejected (OpenReview LGo7U1m24L); no other venue found, so arXiv. TF-IDF score, 1M-slot memory at layer 12 of 22 in a 1.3B model, and the NQ drops (89% / 71% / 11%) confirmed."
+  },
+  {
+   "id": "seal",
+   "name": "SEAL",
+   "full_name": "Self-Adapting Language Models",
+   "paper_title": "Self-Adapting Language Models",
+   "authors": "Zweiger et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.10943",
+   "url": "https://arxiv.org/abs/2506.10943",
+   "code_url": "https://github.com/Continual-Intelligence/SEAL",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "SE\\sim \\mathrm{LM}_\\theta(\\cdot\\mid C),\\ \\ \\theta'=\\mathrm{SFT}_{\\mathrm{LoRA}}(\\theta,SE)\\ \\ (W=W_0+\\tfrac{\\alpha}{r}BA;\\ r=64,\\alpha=128 \\text{ for knowledge incorporation};\\ r=128,\\alpha=16 \\text{ for ARC TTT});\\ \\ \\text{outer loop: ReST}^{EM}\\ \\text{(SFT on self-edits with } r(SE)=1),\\ r(SE)=\\mathbb{1}\\big[\\text{adapting with } SE \\text{ improves } \\mathrm{LM}_\\theta \\text{ on } \\tau\\big]",
+   "trainable_params": "\\text{inner: } r(d_{in}+d_{out}) \\text{ per adapted matrix per self-edit } (r=64 \\text{ or } 128);\\ \\text{outer: the self-edit generation policy (LoRA } r=16 \\text{ in the ARC RL-SFT)}",
+   "locus": "inner LoRA on all attention and MLP projections (Qwen2.5-7B, knowledge incorporation) or on q/v/gate/up/down projections (Llama-3.2-1B-Instruct, ARC)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Bi-level: the model writes its own fine-tuning data and hyperparameters ('self-edits'); a LoRA SFT step turns each self-edit into \\Delta W = BA; RL (filtered behavior cloning) reinforces self-edits whose induced update improves downstream performance.",
+   "mergeable": "yes",
+   "mergeable_reason": "Each realized update is an ordinary LoRA that can be merged into the weights.",
+   "identity_at_init": "Each inner LoRA update starts from B = 0.",
+   "key_idea": "Let the LLM learn, through RL, to generate the training data and optimization directives that best update its own weights, turning LoRA fine-tuning into an action the model can take.",
+   "results_note": "On SQuAD knowledge incorporation (no-context), accuracy rises from 32.7% to 47.0%, beating synthetic data written by GPT-4.1 (46.3%); ARC few-shot success 72.5% vs 20% without RL. The paper flags catastrophic forgetting under repeated self-edits.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Self-edits are realized as LoRA SFT updates."
+    },
+    {
+     "target": "generative-adapter",
+     "type": "competes-with",
+     "note": "Context-to-weights via iterative self-generated SFT rather than an amortized generator."
+    },
+    {
+     "target": "shine",
+     "type": "competes-with",
+     "note": "SHINE amortizes the same context-to-weights step in one forward pass."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.10943",
+    "https://arxiv.org/html/2506.10943",
+    "https://github.com/Continual-Intelligence/SEAL"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: r=64/alpha=128 is only the SQuAD setting; ARC test-time training uses r=128, alpha=16 (App. A).",
+    "locus: split by task, following the two appendix configurations.",
+    "trainable_params: updated ranks per setting."
+   ],
+   "verification_notes": "arXiv 2506.10943 (Zweiger, 2025); NeurIPS 2025 poster confirmed (OpenReview JsNUE84Hxi, mlanthology). Binary ReST^EM reward (Eq. 2), SQuAD no-context 32.7 -> 47.0 vs 46.3 for GPT-4.1 data, and ARC 72.5% vs 20% confirmed."
+  },
+  {
+   "id": "sparselora",
+   "name": "SparseLoRA",
+   "full_name": "LoRA fine-tuning with contextual sparsity",
+   "paper_title": "SparseLoRA: Accelerating LLM Fine-Tuning with Contextual Sparsity",
+   "authors": "Khaki et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2506.16500",
+   "url": "https://arxiv.org/abs/2506.16500",
+   "code_url": "https://github.com/z-lab/sparselora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0\\big|_{\\mathcal{S}(x)}\\,x+\\tfrac{\\alpha}{r}BAx\\ \\ (\\text{training only}),\\ \\ \\mathcal{S}(x)=\\mathrm{TopK}\\ \\text{channels of the cheap proxy } (U_k\\Sigma_k^{1/2})(\\Sigma_k^{1/2}V_k^{\\top})x\\ \\ \\big(U_k\\Sigma_kV_k^{\\top}=\\text{offline rank-}k \\text{ SVD of } W_0\\big);\\ W_0 \\text{ frozen},\\ A,B \\text{ trained}",
+   "trainable_params": "r(d_{in}+d_{out}) \\text{ (same as LoRA)}",
+   "locus": "frozen main branch of attention (QKVO) and MLP projections, with non-uniform layer sparsity (deeper layers sparser); output tokens and up to the first 10% of steps stay dense. The LoRA branch (QKVO, r=32, alpha=64 in experiments) stays dense.",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Standard LoRA update; the forward/backward pass through the frozen W_0 uses input-dependent channel sparsity, predicted by a training-free rank-k SVD sketch of W_0 (activation norms for FFN/VO, query-key norm products for QK).",
+   "mergeable": "yes",
+   "mergeable_reason": "Sparsity is used only during training; the dense LoRA adapter merges into W_0 and inference is unchanged.",
+   "identity_at_init": "B = 0 as in LoRA; the sparse frozen branch only approximates W_0 x during training.",
+   "key_idea": "LoRA saves memory but not compute; predicting per input which channels of the frozen weights matter, with a cheap SVD proxy, lets fine-tuning skip most frozen-branch FLOPs without hurting accuracy.",
+   "results_note": "Up to 2.2x compute reduction and 1.6x wall-clock speedup over LoRA at matched accuracy on commonsense and arithmetic reasoning, code generation and instruction following (LLaMA-2/3).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Adapter is unchanged; only frozen-branch computation is sparsified."
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "Different axis of LoRA training efficiency (compute sparsity vs weight quantization)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.16500",
+    "https://arxiv.org/html/2506.16500",
+    "https://z-lab.ai/projects/sparselora"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "locus: added the LoRA configuration used (QKVO, r=32, alpha=64) and the \"up to 10%\" dense warm-up."
+   ],
+   "verification_notes": "arXiv 2506.16500 (Khaki, 2025); ICML 2025 confirmed (arXiv comment, OpenReview z83rodY0Pw). SVD estimator (rank-k sqrt(S)-split factors, Alg. 1), L2-norm metric for FFN/VO, q odot k norm metric for QK, and 2.2x FLOP / 1.6x wall-clock figures confirmed."
+  }
+ ],
+ "papers": [
+  {
+   "id": "rl-finetunes-small-subnetworks",
+   "title": "Reinforcement Learning Finetunes Small Subnetworks in Large Language Models",
+   "authors": "Mukherjee et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2505.11711",
+   "url": "https://arxiv.org/abs/2505.11711",
+   "claim": "Across 7 RL-style algorithms (PPO, GRPO, KTO, DPO, SimPO, PRIME and rejection-sampling SFT) and 10 LLMs, RL updates only 5-30% of parameters. The updated subnetworks overlap far more than chance across seeds, datasets and algorithms, the sparse updates are nearly full-rank, and fine-tuning only that subnetwork recovers a model nearly identical to full RL fine-tuning.",
+   "relevance": "Shows the RL update is constrained in its support but not in its rank, a different algebraic type of constraint from low rank. This argues for selective/sparse rather than factorized PEFT when classifying what RL post-training actually changes.",
+   "sources": [
+    "https://arxiv.org/abs/2505.11711"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "claim: listed the 7 algorithms as in the paper (includes KTO, SimPO, PRIME and rejection-sampling SFT)."
+   ],
+   "verification_notes": "arXiv 2505.11711 (Mukherjee, 2025); NeurIPS 2025 poster confirmed (OpenReview 0NdS4xCngO, DBLP conf/nips). Claims checked against the abstract and Secs. 3-5."
+  },
+  {
+   "id": "path-not-taken-rlvr",
+   "title": "The Path Not Taken: RLVR Provably Learns Off the Principals",
+   "authors": "Zhu et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025 Workshop on Efficient Reasoning (spotlight)",
+   "arxiv": "2511.08567",
+   "url": "https://arxiv.org/abs/2511.08567",
+   "claim": "RLVR's apparent sparsity comes from a model-conditioned bias: updates avoid the principal singular directions of the pretrained weights, preserve the spectrum and rotate the principal subspace very little, whereas SFT targets principal weights. A 'three-gate' theory (KL anchor, model geometry, bf16 precision) explains this.",
+   "relevance": "Predicts which PEFT parameterizations suit RL: principal-subspace initializations (PiSSA-style) conflict with RLVR geometry. Under RL, the spectral position of an adapter's subspace matters as much as its rank.",
+   "sources": [
+    "https://arxiv.org/abs/2511.08567",
+    "https://hanqing.notion.site/The-Path-Not-Taken-RLVR-Provably-Learns-Off-the-Principals-2a7f89d0c846816faffec5f1c2b24a49"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2511.08567 (Zhu, 2025). Only venue found is the NeurIPS 2025 Efficient Reasoning workshop spotlight (arXiv comment, OpenReview N75EWQQnb3); not in ICLR 2026. Three-gate theory, off-principal updates and \"SFT targets principal weights\" confirmed; the paper reports PiSSA gives no clear gain over LoRA under RLVR."
+  },
+  {
+   "id": "rls-razor",
+   "title": "RL's Razor: Why Online Reinforcement Learning Forgets Less",
+   "authors": "Shenfeld et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2509.04259",
+   "url": "https://arxiv.org/abs/2509.04259",
+   "claim": "Forgetting is predicted by the forward KL between the fine-tuned and base policy on the new task; on-policy RL is implicitly biased toward KL-minimal solutions among those that solve the task, while SFT can converge arbitrarily far, which is why RL forgets less at equal new-task performance.",
+   "relevance": "Gives a distributional (KL) rather than parametric measure of how far an adaptation moves, a candidate invariant for comparing PEFT methods. It also helps explain why tiny-parameter adapters suffice for RL.",
+   "sources": [
+    "https://arxiv.org/abs/2509.04259",
+    "https://proceedings.iclr.cc/paper_files/paper/2026/file/618c95f4557c15b253fb0e6f548ea0c0-Paper-Conference.pdf"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2509.04259 (Shenfeld, 2025); ICLR 2026 confirmed (mlanthology). Forward-KL forgetting predictor and the KL-minimal on-policy bias confirmed."
+  },
+  {
+   "id": "evaluating-peft-rlvr",
+   "title": "Evaluating Parameter Efficient Methods for RLVR",
+   "authors": "Yin et al.",
+   "year": 2025,
+   "venue": "ICML 2026",
+   "arxiv": "2512.23165",
+   "url": "https://arxiv.org/abs/2512.23165",
+   "claim": "Benchmarking 12+ PEFT methods under RLVR on DeepSeek-R1-Distill-Qwen 1.5B/7B math reasoning: structural variants (DoRA, AdaLoRA, MiSS) beat standard LoRA, with DoRA even exceeding full fine-tuning on several benchmarks; SVD-informed initializations (PiSSA, MiLoRA) suffer 'spectral collapse'; and extreme compression (VeRA, rank-1) bottlenecks reasoning.",
+   "relevance": "The first systematic map of the PEFT design space under RL. Its rank-1 result is in tension with the LoRA Without Regret and TinyLoRA findings that a tiny rank or parameter count suffices for RL.",
+   "sources": [
+    "https://arxiv.org/abs/2512.23165",
+    "https://arxiv.org/html/2512.23165",
+    "https://openreview.net/forum?id=76CIL1O0bz"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "venue: arXiv -> ICML 2026 (OpenReview 76CIL1O0bz, \"ICML 2026 regular\").",
+    "sources: added OpenReview."
+   ],
+   "verification_notes": "arXiv 2512.23165 (Yin, 2025); venue corrected to ICML 2026. Claims (12+ methods, DeepSeek-R1-Distill 1.5B/7B, DoRA > full FT, PiSSA/MiLoRA spectral collapse, VeRA/rank-1 bottleneck) confirmed from the abstract and introduction."
+  },
+  {
+   "id": "lora-knowledge-capacity",
+   "title": "How Much Knowledge Can You Pack into a LoRA Adapter without Harming LLM?",
+   "authors": "Pletenev et al.",
+   "year": 2025,
+   "venue": "Findings of NAACL 2025",
+   "arxiv": "2502.14502",
+   "url": "https://aclanthology.org/2025.findings-naacl.243/",
+   "claim": "Fine-tuning Llama-3.1-8B-Instruct with LoRA on growing amounts of new facts shows that a mixture of known and new facts works best, but packing in more new knowledge degrades general QA benchmarks, and biased data makes the model regress to a few over-represented answers and become overconfident.",
+   "relevance": "Quantifies the capacity/interference trade-off of a single low-rank adapter used as a knowledge store, relevant to adapter-as-memory views (Doc-to-LoRA, Cartridges, sparse memory finetuning).",
+   "sources": [
+    "https://arxiv.org/abs/2502.14502",
+    "https://aclanthology.org/2025.findings-naacl.243/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2502.14502 (Pletenev, 2025); Findings of NAACL 2025 confirmed (ACL Anthology 2025.findings-naacl.243). Claims match the abstract."
+  }
+ ],
+ "notes": "Scope: 2025-2026 PEFT methods with clear uptake, verified via arXiv / OpenReview / proceedings pages and Semantic Scholar metadata (checked 2026-10-01). SEED TRIAGE: Most seeds exist and are already fully catalogued in sibling families, so to avoid duplicate records they are NOT repeated here; the site should tag them as 'frontier': lora-one, gora, lora-sb, kasa (init-rank); hira, randlora, c3a, miss, gralora, abba, shira (shape/hf-peft); delora, oftv2, polar, road, osf, svf=Transformer-Squared (multiplicative); loft, lora-without-regret (lora-core; also a paper in hf-peft); tinylora (TinyLoRA, 'Learning to Reason in 13 Parameters', 2602.04118, in hf-peft as TinyLoraConfig); alora, waveft, cartridges (hf-peft/prompts); lift (selective). Seeds added here: Tina, LoRI, SingLoRA, Text-to-LoRA, Drag-and-Drop LLMs. TAXONOMY SUGGESTIONS: (1) The hypernetwork cluster (text-to-lora, drag-and-drop-llms, doc-to-lora, shine, generative-adapter) is labeled 'hybrid' but deserves its own class, 'amortized adapter generation'. Each is a learned map from a task/context space into LoRA space, i.e. a functor from contexts to adapters, with the deployed edit always additive low-rank. (2) Token-restricted adapters (OminiControl sets the LoRA scale to 0 on non-condition tokens and EasyControl applies LoRA only to the condition branch; aLoRA in hf-peft only after invocation tokens) form a structural pattern that the modification_kind enum cannot express. (3) Merging operators (knots, core-space-merging, k-lora) act on the space of adapters, not on networks. Core Space shows that T rank-r LoRAs embed losslessly in a Tr x Tr core, a natural 'colimit' object for composition. RL FINDINGS IN TENSION: LoRA Without Regret (rank 1 matches full FT in policy-gradient RL) and TinyLoRA (13 parameters reach 91% GSM8K) versus Evaluating-PEFT-for-RLVR (rank-1/VeRA bottleneck; PiSSA/MiLoRA collapse; DoRA best). RL subnetworks: RL updates are sparse but nearly full-rank. Path Not Taken: RLVR avoids principal directions. UNCERTAINTIES: SingLoRA venue is the ICLR 2026 DeLTa workshop (not the main track); Doc-to-LoRA and SHINE are ICML 2026 per the authors' announcements/README; Path Not Taken found only as a NeurIPS 2025 workshop spotlight; Sparse Memory Finetuning was desk-rejected at ICLR 2026 (arXiv only). SparseLoRA's estimator formula and K-LoRA's exact comparison rule are paraphrased from the method sections (medium confidence). DnD's LoRA rank and target modules are not stated in the text I read. SHINE's numeric results were not fully verified, so its results_note is qualitative. GenerativeAdapter, OminiControl and KnOTS first appeared in late 2024 but were published at 2025 venues. EXCLUDED (too new or negligible uptake as of 2026-10-01): NoRA / Normalized LoRA (2608.31036), NB-LoRA (2609.25618), LSPO (2607.27787), Geometry-Preserving Orthonormal Init for RLVR (2606.31813), SaRA (2409.06633), HyperLoRA portrait (2503.16944), PrefixMemory-Tuning / Prefix-Tuning+ (2506.13674), ORAL (2503.24354), TC-LoRA (2510.09561), LoRA-Diffusion trajectory (2608.12328). HF PEFT v0.21.1 (2026-09-29) has no dedicated tuner for any method in this file; Tina uses plain LoraConfig. VERIFICATION UPDATE (2026-10-01): PLoP is ICLR 2026 (not arXiv-only); Evaluating-PEFT-for-RLVR is ICML 2026 (not arXiv-only); SparseLoRA's estimator and K-LoRA's comparison rule have now been checked against the method sections (K-LoRA's Algorithm 1 has an alpha/beta order inconsistent with its Eq. 7). Duplicates across families: text-to-lora, drag-and-drop-llms, doc-to-lora and knots also appear in composition.json.",
+ "verification_summary": "Adversarial check on 2026-10-01 of all 21 methods and 5 papers. Titles, first authors and first-version years were batch-verified via the arXiv API (all 26 ids exist and match). Venues were checked via arXiv comments, OpenReview API, mlanthology and ACL Anthology; formulas and hyperparameters against arXiv HTML full texts; HF PEFT status against huggingface/peft main (commit 85be3f3, 2026-09-30; release v0.21.1, 2026-09-29), which has no dedicated tuner for any method here (Tina uses plain LoraConfig). Key fixes: PLoP venue -> ICLR 2026 and Evaluating-PEFT-RLVR venue -> ICML 2026. OminiControl's LoRA is token-restricted (scale 0 on non-condition tokens), so its formula, structure and EasyControl's relation note were corrected. Misleading result notes were fixed for PLoP (unequal parameter counts), K-LoRA (69.4% is subject, not style, similarity), EasyControl (58%/75% come from PATP + KV cache together), DnD (\"in seconds\", not under a second) and SD-LoRA (stronger baseline added). Formulas were tightened for PLoP (squared ratio), T2L (L1 loss), GenerativeAdapter (rank-128 SVD normalization, block l-1 states), GOAT (W_res naming as in paper), Sparse Memory FT (W_2 / silu gate), ICEdit (standard LoRA elsewhere, alpha=r) and SEAL (per-task ranks). One unjustified relation was removed (generative-adapter -> hyperformer) and two directly compared baselines were added (goat -> hydralora, k-lora -> ziplora). No entries dropped."
+}

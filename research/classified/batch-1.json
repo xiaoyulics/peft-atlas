@@ -1,0 +1,1403 @@
+{
+ "batch": 1,
+ "methods": [
+  {
+   "id": "eva",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Plain LoRA update on an untouched W_0 (B_0=0); only the pointing row A_0 and the per-layer ranks r_l change.",
+    "shape": "Image W_0+M_{<=r_l}, the LoRA cone; the rank redistribution makes the object a product of LoRA_{r_l} over layers.",
+    "base_point": "Stratum T_A at the point row A_0 = top-r_l input principal subspace (Thm II.2 table): apex, deficit r_l(n-r_l). Not isomorphic to vanilla LoRA as a pointed object: S_1={X V_r^T} differs from {X A_0} for a random A_0.",
+    "covariance": "The image is GL x GL-covariant; only the frame row A_0 and the rank allocation are CO(n)-covariant (Prop II.16; table: 'GL x GL (frame CO)').",
+    "rebasing": "Cone closed under scaling: -> Theta after ceil(min(m,n)/r_l) cycles (Thm V.3 Cor 1)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "EVA is LoRA in the stratum \\(\\mathrm T_A\\) at the data-chosen point \\(\\mathrm{row}\\,A_0=\\) top-\\(r_\\ell\\) input principal subspace of \\(\\mathrm{Gr}(r_\\ell,n)\\): same cone \\(W_0+\\mathcal M_{\\le r_\\ell}\\) and apex as LoRA, but a different isomorphism class of pointed object, detected by \\(S_1=\\{XV_{r_\\ell}^\\top\\}\\) (Thm II.2(a)). Its image is \\(GL\\times GL\\)-covariant; only the pointing and the rank allocation are \\(CO(n)\\)-covariant (Prop II.16).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}:(B,A)\\mapsto(B,A)",
+     "note": "Pointed isomorphism onto LoRA_{r_l} pointed at (0, V_{r_l}^T); to vanilla LoRA with a random A_0 there is only a weak morphism (different point of Gr(r,n))."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "corda",
+     "test": "O3",
+     "reason": "Type I apex (B_0=0, W_0 unsplit) vs Type II smooth point: different strata of Thm II.2, images incomparable at equal rank (Thm II.2(d))."
+    },
+    {
+     "target": "astra",
+     "test": "O3",
+     "reason": "Dual activation frames, but EVA is T_A-pointed at theta_0 = vertex while Astra is S-pointed (theta_0 smooth) on layers with rank(Q_tail^T W_0)=r; on tall layers where Astra collapses to T_B the images coincide but S_1={X V_r^T} vs {Q_tail Y} are mutually non-contained (T_A vs T_B). No arrow either way at equal rank."
+    }
+   ],
+   "verified": true,
+   "check_notes": "All seven coordinates re-derived (Thm II.2 stratum T_A, Prop II.16 for the frame); h=id arrow pointed at (0,V_r^T) checked. Change: astra obstruction reason extended to Astra's T_B collapse on tall layers (O3 still holds). Consolidation (2026-10-01): table_row 'R (Type I)' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "corda",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Translated cone (W_0-P)+M_{<=r} with P=[W_0C]_rC^{-1} (IPM) or the covariance-oriented tail (KPM); rank P=r.",
+    "base_point": "Stratum S: theta_0 is a smooth point, S_1=T_P M_r, deficit 0 (both IPM and KPM).",
+    "covariance": "Undamped split is CO(n)-covariant on the input side exactly (Prop II.16(b)) and CO(m) on the output side (truncated SVD of W_0C); damping C+lambda I reduces the input side to O(n). In law, data transformed.",
+    "rebasing": "Table: -> Theta (cone closed under scaling)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "CorDA is a Type II pointing of LoRA (stratum S): the cone is translated to the vertex \\(W_0-P\\), \\(P=[W_0C]_rC^{-1}\\) (IPM) or its covariance-oriented tail (KPM), so \\(\\theta_0\\) is a smooth point with full first-order reach \\(S_1=T_P\\mathcal M_r\\). The split is \\(CO(m)\\times CO(n)\\)-covariant undamped (Prop II.16(b)); damping \\(C+\\lambda I\\) cuts the input side to \\(O(n)\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "The PiSSA->LoRA conversion of Thm II.1 applied to CorDA: lands in LoRA_{2r} with residual theta_0, pointed at the degenerate pointing ([B_0,-B_0],[A_0;A_0]) of rank pattern (r,r,0), outside the three strata."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "Vertices differ: (W_0-[W_0C]_rC^{-1})+M_{<=r} vs (W_0-[W_0]_r)+M_{<=r}; iterated Sing determines the vertex (Thm II.2), so inclusion holds only when C is proportional to I."
+    },
+    {
+     "target": "eva",
+     "test": "O3",
+     "reason": "Type II smooth point vs Type I apex (both use input-activation statistics); different strata, incomparable images at equal rank."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; output CO(m) (1.6e-14) and input CO(n) covariance checked numerically, generic output GL fails (5.6); Thm II.1 arrow into LoRA_{2r} at the (r,r,0) pointing checked. No changes. Consolidation (2026-10-01): table_row 'R (Type II)' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "astra",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Translated cone with vertex W_0-Pi_tail W_0, Pi_tail = tail eigenprojector of Cov(y)=W_0 Cov(x) W_0^T.",
+    "base_point": "Regular (stratum S) when rank(Q_tail^T W_0)=r, i.e. on layers with d_out<=rank W_0 (q,k,v,o,down). On layers with d_out-rank W_0>=r (up/gate projections) the tail lies in coker W_0, A_0=Q_tail^T W_0=0 and the pointing falls into the apex stratum T_B (checked numerically: ||A_0||~1e-15, dim S_1=nr). The verified catalog flags that HF PEFT appears to pick the leading rather than the tail eigenvectors; that variant is the whitened split Pi_r W_0 of Prop II.16(a), always rank r when rank W_0>=r, so it stays regular with the same seven coordinates.",
+    "covariance": "Exact group is CO(m) x GL(n) (data): the split depends on the data only through the output covariance W_0 Cov(x) W_0^T (Prop II.16(a), with C the centred input covariance). The axis has no 'CO x GL' value; encoded as OxO as axes.json does.",
+    "rebasing": "Table: -> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "Astra is a Type II split with vertex \\(W_0-\\Pi_{\\rm tail}W_0\\), \\(\\Pi_{\\rm tail}\\) the tail eigenprojector of the output covariance \\(W_0\\,\\mathrm{Cov}(x)\\,W_0^\\top\\); because the split sees the data only through that output covariance it is \\(CO(m)\\times GL(n)\\)-covariant (Prop II.16(a), with \\(C\\) the centred input covariance). On layers with \\(d_{\\rm out}-\\operatorname{rank}W_0\\ge r\\) the tail lies in \\(\\mathrm{coker}\\,W_0\\), \\(A_0=0\\), and the pointing collapses into the apex stratum \\(\\mathrm T_B\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Thm II.1 conversion into LoRA_{2r} with residual theta_0, pointed at the degenerate (r,r,0) pointing; valid in either stratum."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "corda",
+     "test": "O1",
+     "reason": "Different vertices: Astra's P=Pi_tail W_0 (output-side projector) vs CorDA's P=[W_0C]_rC^{-1}; images are translated cones with different vertices."
+    },
+    {
+     "target": "eva",
+     "test": "O3",
+     "reason": "Astra is S-pointed (smooth) on layers with rank(Q_tail^T W_0)=r, EVA T_A-pointed (apex): different strata. On tall layers where Astra collapses to T_B, T_A vs T_B still differ (S_1={XV_r^T} vs {Q_tail Y}). No arrow either way."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: CO(m)xGL(n) encoded as OxO per axes.json; T_B collapse on tall layers confirmed numerically (||A_0||=3e-15, dim S_1=nr=15 at 12x5, r=3). Changes: base_point note adds the catalog's HF leading-eigenvector caveat (still regular); eva obstruction reason covers the T_B case. Consolidation (2026-10-01): table_row 'R (Type II)' -> 'R-additive' (atlas vocabulary). Sync with the refereed paper (2026-10-03): Astra's paper form uses the centred covariance, so Prop II.16(a) applies with C the centred input covariance."
+  },
+  {
+   "id": "mica",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "rho(A)=W_0+(alpha/r)U_{-r}A is affine and injective: image W_0+{Z: col Z in col U_{-r}}, d=rn.",
+    "base_point": "Linear, hence regular; as a sub-object of LoRA it sits in stratum T_B (B_0=U_{-r}, A_0=0).",
+    "covariance": "The frame U_{-r} is a truncated-SVD frame of W_0: CO(m) x CO(n).",
+    "rebasing": "Idempotent with the frame frozen; recomputing U_{-r} from the merged weight gains."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "MiCA is the one-sided method \\(\\mathrm{FB}(U_{-r})\\) in the minor left-singular frame: an A2 sub-object of LoRA pointed in stratum \\(\\mathrm T_B\\), and also of MiLoRA, whose image \\(W_p+\\mathcal M_{\\le r}\\) contains \\(W_0+\\{U_{-r}Y\\}\\). Its image is a fixed affine subspace, so merge-and-restart with the frame frozen is idempotent.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(A)=\\big(U_{-r},\\ \\tfrac{\\alpha}{r}A\\big)",
+     "note": "Freezing B at U_{-r}: monomorphism into LoRA pointed at (U_{-r},0), stratum T_B (axes.json A2 example)."
+    },
+    {
+     "target": "milora",
+     "rule": "A3",
+     "h": "h(A)=\\big(U_m\\Sigma_m^{1/2},\\ \\Sigma_m^{1/2}V_m^\\top+\\tfrac{\\alpha}{r}\\Sigma_m^{-1/2}A\\big)",
+     "note": "W_0+(alpha/r)U_mA = W_p+U_m(Sigma_mV_m^T+(alpha/r)A); pointed (h(0)=MiLoRA's q_0); needs the minor singular values nonzero (checked numerically)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-fa",
+     "test": "O1",
+     "reason": "Column-space constraint {U_{-r}Y} vs row-space constraint {XA_0}: neither image contains the other."
+    },
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "[W_0]_r+U_{-r}Y has rank up to 2r, so W_0+{U_{-r}Y} is not inside (W_0-[W_0]_r)+M_{<=r}."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (affine injective, CO x CO SVD frame, T_B sub-object of LoRA); MiCA->MiLoRA h checked to 4e-16. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "kasa",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "nonlinear",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Base change along the non-function-preserving truncation kappa: W_0 -> W_0-[W_0]_{tail r}, then a diagonal-core LoRA at kappa theta_0 (Def V.1(b), the QLoRA template).",
+    "shape": "Image W_world+M_{<=r}, a cone whose vertex is the start rho(q_0)=W_world (as QLoRA's 'cone at kappa theta_0'). theta_0 itself lies in the image, at a smooth point.",
+    "base_point": "Defect e=-[W_0]_{tail r} (truncated base); B_0=0 makes the adapter zero but the base is permanently truncated.",
+    "gauge": "(B,dsigma,A) -> B diag(dsigma) A: generic fibre r^2+r (Jacobian check) against the 2r-dim torus (BD_1^{-1}, D_1D_2 dsigma, D_2^{-1}A); the rest is absorption of diag(dsigma) into B, as for AdaLoRA (axes.json lists AdaLoRA under nonlinear).",
+    "covariance": "The cone part is GL x GL, but the truncation [W_0]_{tail r} is spectral: CO(m) x CO(n).",
+    "merge": "Folds into the truncated base; the truncation itself is irreversible.",
+    "rebasing": "With the truncation applied once, W_world+M_{<=Kr} -> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "KaSA is base change along the truncation \\(\\kappa:W_0\\mapsto W_0-[W_0]_{\\rm tail\\,r}\\) followed by a diagonal-core LoRA at \\(\\kappa\\theta_0\\): like QLoRA it carries the defect \\(e=-[W_0]_{\\rm tail\\,r}\\). Its image is exactly MiLoRA's, \\(W_p+\\mathcal M_{\\le r}\\), but it starts at the vertex \\(W_p\\) instead of the smooth point \\(\\theta_0\\), so the two are related only by a weak morphism.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,\\Delta\\sigma,A)=\\big(\\tfrac{\\alpha}{r}B\\,\\mathrm{diag}(\\Delta\\sigma),\\ A\\big)",
+     "note": "Arrow in the slice at kappa theta_0 = W_world: onto zero-init LoRA at the truncated base, pointed at (0,A_0)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "milora",
+     "test": "O3",
+     "reason": "Images coincide (W_p+M_{<=r}, same W_p=W_world), but KaSA starts at the vertex W_p with defect -W_tail and MiLoRA at the smooth point theta_0; only a weak morphism exists."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; B diag(s) A generic fibre r^2+r confirmed by Jacobian rank (6 at r=2, 12 at r=3), nonlinear gauge as batch-0 AdaLoRA; truncation base change and defect -W_tail checked against the catalog. No changes. Consolidation (2026-10-01): table_row 'R at κθ0' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "milora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "(W_0-P)+M_{<=r} with P=W_m the bottom-r SVD part of W_0.",
+    "base_point": "Stratum S: theta_0 smooth, S_1=T_P M_r (table: regular (smooth)).",
+    "covariance": "Truncated-SVD split: input-side group exactly CO(n), output CO(m) (Prop II.16(b)).",
+    "rebasing": "Table: -> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "MiLoRA is the Type II pointing with \\(P=\\) bottom-\\(r\\) SVD part of \\(W_0\\): image \\((W_0-P)+\\mathcal M_{\\le r}\\), \\(\\theta_0\\) smooth, \\(S_1=T_P\\mathcal M_r\\). It is the \\(C=I\\) member of CorDA-KPM, but for \\(C\\not\\propto I\\) the vertices differ and no arrow connects the two.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Thm II.1 conversion into LoRA_{2r} with residual theta_0, pointed at the degenerate (r,r,0) pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "Dual splits with different vertices (W_0-W_m vs W_0-[W_0]_r): the translated cones are distinct, neither contains the other."
+    },
+    {
+     "target": "mica",
+     "test": "O2",
+     "reason": "d(MiLoRA)=r(m+n-r) > d(MiCA)=rn; the arrow runs only MiCA -> MiLoRA."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (stratum S, Prop II.16(b)); O2 against MiCA verified (r(m+n-r) > rn). No changes. Consolidation (2026-10-01): table_row 'R (Type II)' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "gora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Image W_0+M_{<=r_l} (residual W_0 untouched): the cone with vertex theta_0; the start theta_0+e is a smooth point of it, not theta_0.",
+    "base_point": "Defect by design: e=(alpha/sqrt r)B_0A_0 ~ -gamma Gbar P_{row A_0}, a compressed gradient step; over its own start theta_0+e the object is a Type II split with P=e.",
+    "covariance": "The image is GL x GL-covariant; the starting defect (a gradient step) is at best O x O in law, and the rank allocation |W_0 . Gbar| is a coordinatewise (monomial) statistic.",
+    "rebasing": "-> Theta, as LoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "GoRA is LoRA with the frozen residual \\(W_0\\) untouched but started off the base point, at \\(\\theta_0+e\\) with \\(e\\approx-\\gamma\\bar G P_{\\mathrm{row}A_0}\\) a compressed gradient step: an object of the unpointed slice with a designed defect, which over its own start is a Type II split with \\(P=e\\). Its rank allocation by \\(|W_0\\odot\\bar G|\\) is a coordinatewise statistic.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=(cB,A),\\ c=\\tfrac{\\alpha/\\sqrt{r_\\ell}}{s}",
+     "note": "Pointed isomorphism onto LoRA_{r_l} with residual W_0 pointed at (cB_0,A_0): an arrow over the common start theta_0+e, not in the slice at theta_0 (there only a weak morphism to zero-init LoRA)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-ga",
+     "test": "O1",
+     "reason": "LoRA-GA subtracts B_0A_0 and starts at theta_0 on (theta_0-P)+M_{<=r}; GoRA keeps W_0 and lives on W_0+M_{<=r}: incomparable images (Thm II.2(d)) and different start points."
+    },
+    {
+     "target": "eva",
+     "test": "O3",
+     "reason": "Same image W_0+M_{<=r_l} at equal rank, but EVA is pointed at theta_0 and GoRA at theta_0+e; a morphism must preserve rho(q_0)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (image W_0+M_{<=r}, designed defect, rank allocation not part of image covariance as for EVA). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "lora-sb",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "R -> W_0+sU_rRV_r^T: affine and injective, d=r^2 (a generalised LoRA-XS = FA x FB product, Prop I.8(a)).",
+    "base_point": "Defect by design: R_0=S_r/s puts the start at W_0+[DeltaW_avg]_r.",
+    "covariance": "Table says CO x CO (data), but the frame is the SVD of sign(sum grad) (simulated first Adam step); sign() commutes only with signed permutations and homotheties, so the group is R_{>0}B_m x R_{>0}B_n inside Mon x Mon (numerically: the frame moves by 1.5 under a rotation, 2e-15 under a signed permutation). CO x CO would hold for an SGD-step frame.",
+    "rebasing": "Idempotent with frozen frames; recomputing the frame each cycle gains."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "LoRA-SB is the categorical product \\(\\mathrm{FA}(V_r^\\top)\\times\\mathrm{FB}(U_r)\\) of Prop I.8(a) taken in the frame of the simulated first Adam update rather than of \\(W_0\\), re-pointed at \\(R_0=S_r/s\\): a linear \\(r^2\\)-dimensional image with a designed defect. Because that frame is the SVD of \\(\\mathrm{sign}(\\sum\\nabla)\\), its covariance is only signed permutations and homotheties on each side, not \\(CO\\times CO\\).",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A4",
+     "h": "h(R)=sU_rR",
+     "note": "Projection of the product FA(V_r^T) x FB(U_r) onto LoRA-FA with frozen A=V_r^T, re-pointed at sU_rR_0: an arrow over the common start theta_0+e."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-xs",
+     "test": "O1",
+     "reason": "Same W_0+sBRA architecture but frames from SVD(sign grad) vs SVD(W_0): r^2-dim linear images in different frames, equal only if the frames coincide."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: the SVD(sign G) frame moves by 2.7 under rotations and 0.5 under a positive diagonal but 5e-14 under signed permutations and homotheties, so the group is R^x B_m x R^x B_n inside Mon x Mon; MonxMon kept (departs from table/axes OxO, which fits an SGD-step frame: 8e-15 under rotations). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "lora-null",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "P=W_0U_{null}U_{null}^T has rank r and its rank-r SVD is exact, so the image is (W_0-P)+M_{<=r} with P=W_0P_{null}.",
+    "base_point": "Stratum S: exact identity at init, theta_0 smooth, deficit 0.",
+    "covariance": "P transforms as gP for every g in GL_m (P depends on the output side only through W_0) and needs P_null(hCh^T)=hP_null(C)h^{-1} on the input side, i.e. h in CO(n): group GL(m) x CO(n), in law with the data transformed.",
+    "rebasing": "-> Theta, as for the other splits."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "LoRA-Null is a Type II split with \\(P=W_0P_{\\rm null}\\), the projection of \\(W_0\\) onto the minor input-activation directions of pretraining data; \\(\\theta_0\\) is a smooth point of \\((W_0-P)+\\mathcal M_{\\le r}\\). Since \\(P\\) depends on the output side only through \\(W_0\\), the split is \\(GL(m)\\times CO(n)\\)-covariant.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Thm II.1 conversion into LoRA_{2r} with residual theta_0, pointed at the degenerate (r,r,0) pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "corda",
+     "test": "O1",
+     "reason": "Different vertices: W_0P_null (input null-space projection) vs CorDA-KPM's covariance-oriented tail [W_0C]_{tail}C^{-1}."
+    },
+    {
+     "target": "milora",
+     "test": "O1",
+     "reason": "Different vertices: W_0P_null vs the weight-only tail W_m; translated cones with distinct vertices are incomparable."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; output GL(m) (2e-15) and input CO(n) (2e-15) covariance checked, generic input GL fails (40), so GLxCO is right. No changes. Consolidation (2026-10-01): table_row 'R (Type II)' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "dylora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Filtration of cones W_0+M_{<=b}, b<=r_max (table).",
+    "base_point": "B_0=0: stratum T_A, deficit r_max(n-r_max).",
+    "gauge": "Only diagonal g preserves every truncation B_{:,1:b}A_{1:b,:} simultaneously: T_r (table). The full-rank object alone has GL_r; the nested-dropout loss breaks it.",
+    "rebasing": "-> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "DyLoRA's object at full rank is LoRA\\(_{r_{\\max}}\\), but its nested-dropout loss is a sum over the filtration \\(W_0+\\mathcal M_{\\le b}\\), and only the torus \\(T_r\\) preserves every truncation, so the training gauge is \\(T_r\\) rather than \\(GL_r\\). The truncations are A2 sub-objects DyLoRA\\(_b\\hookrightarrow\\)DyLoRA\\(_{r_{\\max}}\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Isomorphism of underlying objects at b=r_max (pointed at (0,A_0)); it does not intertwine the nested-dropout objective, whose symmetry is only T_r."
+    },
+    {
+     "target": "dylora",
+     "rule": "A2",
+     "h": "h(B_b,A_b)=\\big([\\tfrac{r_{\\max}}{b}B_b,\\ 0],\\ [A_b;\\ A_{0,(b+1):}]\\big)",
+     "note": "Truncation level b as a sub-object of level r_max: freeze the trailing B columns at 0 and A rows at their base values (scale alpha/b vs alpha/r_max absorbed)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "dim S_1(DyLoRA)=m r_max (B_0=0) but dim S_1(AdaLoRA)=r (Lambda_0=0): S_1 not contained, so no pointed arrow at the default pointings."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; only diagonal g preserves every truncation (triangular g fails), so T_r; A2 padding arrow with alpha/b rescaling checked. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "sora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Image W_0+M_{<=r_max}; pruning zero gates gives sub-cones W_0+M_{<=r'} (a budgeted union).",
+    "base_point": "B_0=0 with g_0, A_0 random: S_1={X diag(g_0)A_0}={XA_0}, dim m r_max (checked), stratum T_A.",
+    "gauge": "B diag(g) A: generic fibre r^2+r against a 2r-dim torus; the extra directions are non-linear absorption (as AdaLoRA). The l1 penalty and proximal step act on Q and are not invariant under the torus slide (BD^{-1},Dg,A).",
+    "rebasing": "-> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "SoRA is the map \\((B,g,A)\\mapsto W_0+B\\,\\mathrm{diag}(g)A\\) pointed at \\(B=0\\) (stratum \\(\\mathrm T_A\\), \\(\\dim S_1=mr_{\\max}\\)); it factors through LoRA by \\(h=(B\\,\\mathrm{diag}(g),A)\\), and pruning zero gates moves to a lower-rank sub-object. The \\(\\ell_1\\) penalty lives on \\(Q\\), not on \\(\\Theta\\): the slide \\((BD^{-1},Dg,A)\\) fixes \\(\\rho\\) but rescales \\(\\|g\\|_1\\), so the sparsity it induces depends on the gauge.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,g,A)=(B\\,\\mathrm{diag}(g),\\ A)",
+     "note": "Pointed at (0,A_0), same random A_0; after pruning the support S, the restriction maps into LoRA_{|S|}."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "Both gate rank-one components, but SoRA starts at B=0 (dim S_1=m r_max) and AdaLoRA at Lambda=0 (dim S_1=r): S_1(SoRA) is not inside S_1(AdaLoRA)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; fibre r^2+r confirmed (same map as KaSA), S_1={XA_0}. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "increlora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Budgeted union of cones W_0+M_{<=r_k} with r_k growing from 1; no per-module ceiling as in AdaLoRA.",
+    "base_point": "lambda_i=0 for active components: only Lambda moves to first order, dim S_1=r_k (Lemma II.4); reserve components at lambda~1e-5 leave a negligible defect.",
+    "gauge": "B Lambda A: fibre r^2+r beyond the 2r-dim torus (non-linear absorption, as AdaLoRA).",
+    "covariance": "Image GL x GL; the importance score |DeltaW . grad| is coordinatewise and affects only the allocation.",
+    "rebasing": "-> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "IncreLoRA is the \\(P\\Lambda Q\\) object pointed at \\(\\Lambda=0\\) (\\(\\dim S_1=r_k\\), apex), walked up the rank filtration by A5 stages \\(r_k\\to r_k+1\\) instead of down it as in AdaLoRA; its reachable set is a budgeted union of cones \\(W_0+\\mathcal M_{\\le r_k}\\) without AdaLoRA's per-module ceiling.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,\\Lambda,A)=(B\\Lambda,\\ A)",
+     "note": "Pointed at (0,A_0); S_1={B_0 diag(delta) A_0} lies inside {XA_0}."
+    },
+    {
+     "target": "adalora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}:(B,\\Lambda,A)\\mapsto(P,\\Lambda,Q)",
+     "note": "Same P Lambda Q object at Lambda_0=0, pointed at the same frames; the two differ only in the rank schedule (grow vs prune)."
+    },
+    {
+     "target": "increlora",
+     "rule": "A5",
+     "h": "h(q)=\\big(q,\\ (b_{\\rm new},0,a_{\\rm new})\\big)",
+     "note": "Adding a component at lambda=0 embeds stage r_k into stage r_k+1."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived (P Lambda Q at Lambda=0, dim S_1=r_k; A5 stage embedding). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "alora-allocating",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Plain LoRA with frozen binary gates; the contribution is the ablation-based reallocation of rank between modules.",
+    "shape": "Budgeted union of LoRA cones W_0+M_{<=r_m} with sum r_m fixed.",
+    "base_point": "Standard LoRA init (B_0=0), and new components enter with B-column 0: apex.",
+    "gauge": "Gates are not trained, so each module has GL_{r_m}; the ablation score is invariant under the torus but not under GL_r, since the split of BA into rank-one terms is gauge-dependent.",
+    "rebasing": "-> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "ALoRA trains plain LoRA with frozen binary gates, \\(\\rho=W_0+B\\,\\mathrm{diag}(\\alpha)A\\), and moves between objects of the rank filtration by pruning and re-granting rank-one components: its reachable set is a budgeted union of LoRA cones at fixed total rank. Its ablation score is a function of the rank-one split of \\(BA\\), which the \\(GL_r\\) gauge does not fix.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=(B\\,\\mathrm{diag}(\\alpha),\\ A)",
+     "note": "At each allocation, pointed at (0,A_0); with all gates 1 it is the identity."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "ALoRA starts at B=0 (dim S_1=m r_m), AdaLoRA at Lambda=0 (dim S_1=r): no pointed arrow, although both reallocate rank."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (frozen binary gates: plain LoRA, GL_r). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "autolora",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Recipe: the deliverable is plain LoRA_{r_l} retrained at meta-learned ranks; coordinates are LoRA's.",
+    "gauge": "GL_{r_l} for the retrained LoRA. In the search phase the softmax weights alpha_j>0 can be absorbed into b_j, so beta lies entirely in the fibre of rho.",
+    "base_point": "LoRA-style zero-product init: apex."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "AutoLoRA is a recipe whose output is LoRA\\(_{r_\\ell}\\) with meta-learned ranks; during the search \\(\\rho=W_0+\\sum_j\\mathrm{softmax}(\\beta)_jb_ja_j^\\top\\), and since each \\(\\mathrm{softmax}(\\beta)_j>0\\) can be absorbed into \\(b_j\\), the selection variables \\(\\beta\\) lie entirely in the fibre of \\(\\rho\\). They act only through the cometric (as per-component learning rates), so the thresholded rank depends on the gauge representative the bi-level dynamics picks, not on the update.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(b,a,\\beta)=\\big([\\mathrm{softmax}(\\beta)_jb_j]_j,\\ [a_j^\\top]_j\\big)",
+     "note": "Search-phase object into LoRA_k pointed at (0,A_0); after thresholding and retraining the recipe's output is LoRA_{r_l} itself (h=id)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived; recipe entry type sensible (output is LoRA_{r_l}); softmax weights absorbable into b_j, so beta lies in the fibre. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "elalora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Budgeted union of cones (P Lambda Q) whose per-matrix rank can shrink and grow.",
+    "base_point": "Lambda_0=0 (official loralib): dim S_1=r, apex, as AdaLoRA.",
+    "gauge": "Same P Lambda Q map as AdaLoRA: generic fibre r^2+r beyond the two torus edges (non-linear absorption).",
+    "rebasing": "-> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "ElaLoRA is AdaLoRA's \\(P\\Lambda Q\\) object at \\(\\Lambda=0\\) with an elastic schedule that both prunes (A2 sub-objects) and expands (A5 stages, Gram–Schmidt-orthogonalised new frames at \\(\\lambda=0\\)) inside the rank filtration; it shares AdaLoRA's coordinates, with the gauge recorded as non-linear because the generic fibre \\(r^2+r\\) exceeds the torus.",
+   "arrows": [
+    {
+     "target": "adalora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Same P Lambda Q object pointed at Lambda=0 with the same frames; only the rank schedule differs."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(P,\\Lambda,Q)=(P\\Lambda,\\ Q)",
+     "note": "Pointed at (0,Q_0)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived (AdaLoRA coordinates). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "lora-drop",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Product of per-layer LoRA cones on the kept layers and one LoRA cone embedded diagonally (same DeltaW) on the shared layers.",
+    "base_point": "Standard LoRA init (B=0): apex.",
+    "gauge": "GL_r per adapter; one GL_r for the shared adapter.",
+    "covariance": "Per box GL x GL, but the shared adapter violates the no-sharing hypothesis of Obs II.15: covariance needs the same (g,h) on all tied boxes.",
+    "rebasing": "theta_0+span C: on the shared layers this is the diagonal subspace {DeltaW_j equal for all shared j}, not Theta, if the sharing pattern is frozen."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA-drop composes per-layer LoRA on the important layers with a single LoRA pulled back along the diagonal \\(\\Theta_{\\rm box}\\to\\prod_{j\\in\\rm share}\\Theta_j\\): tying is a diagonal monomorphism into the product of per-layer LoRAs. Under merge-and-restart with the sharing pattern frozen the shared layers move together, so \\(R_\\infty\\) is the diagonal subspace on them, not \\(\\Theta\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h\\big((B_i,A_i)_{\\rm keep},(B_s,A_s)\\big)=\\big((B_i,A_i)_{\\rm keep},(B_s,A_s)_{j\\in\\rm share}\\big)",
+     "note": "Diagonal (tying) map into per-layer LoRA on all layers, pointed when every shared layer carries the same A_0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "tied-lora",
+     "test": "O1",
+     "reason": "Kept layers carry independent rank-r updates with their own row and column spaces, which a model-wide tied A,B with per-layer scalings cannot produce."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; tying is a diagonal monomorphism; covariance is the diagonal GL x GL on tied boxes; 'span' value correct with R_inf the diagonal subspace on shared layers. O1 against Tied-LoRA verified (shared row space row A). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "dora-dynamic-rank",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Budgeted union of cones W_0+M_{<=r_l} under a cubic schedule r'->r; pruned components can revive.",
+    "base_point": "c_0=0 with random a_i,b_i: only c moves to first order (Lemma II.4), dim S_1=r' (checked).",
+    "gauge": "B diag(c) A: fibre r'^2+r' beyond the torus; the variance regulariser R_DEM fixes the torus scale (a gauge fixing).",
+    "covariance": "Image GL x GL; the importance ||c_i b_i a_i^T||_F is torus-invariant but not invariant under the full fibre."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "DoRA (dynamic rank) is the map \\(W_0+B\\,\\mathrm{diag}(c)A\\) pointed at \\(c=0\\) with random \\(B_0,A_0\\) (only \\(c\\) moves to first order, \\(\\dim S_1=r'\\)), pruned along a cubic budget; it has nothing to do with weight-decomposed DoRA. Its importance \\(\\|c_ib_ia_i^\\top\\|_F\\) is invariant under the torus slides but not under the whole fibre, since the rank-one split of the update is not unique.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,c,A)=(B\\,\\mathrm{diag}(c),\\ A)",
+     "note": "Pointed at (0,A_0), stratum T_A."
+    },
+    {
+     "target": "adalora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Same P Lambda Q object pointed at the zero gate with the same frames."
+    },
+    {
+     "target": "sora",
+     "rule": "A3",
+     "h": "h(B,c,A)=\\big(B\\,\\mathrm{diag}(c)\\,\\mathrm{diag}(g_0)^{-1},\\ g_0,\\ A\\big)",
+     "note": "Into SoRA pointed at (0,g_0,A_0) with the same A_0; S_1={B_0 diag(delta) A_0} lies inside {XA_0}. The reverse fails (O3)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived; arrow into SoRA re-checked (rho and pointedness at (0,g_0,A_0)). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "lily",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Family over inputs (T=X): the mixture weights S(x)=softmax(R A x) depend on the activations (HF averages per-token softmaxes over the batch).",
+    "shape": "Input-dependent mixture: no single weight-space image, compared through the realisation (as MoLE, X-LoRA).",
+    "base_point": "Zero-initialised B experts reproduce f for every input; at that point only the experts move to first order (Lemma II.4, function-level). The table writes '-' for F_X rows.",
+    "gauge": "One global GL_r on the shared rank-r wire (A_g -> gA_g, B^i -> B^i g^{-1}, R_l -> R_l g^{-1}, common to all layers because the B^i are model-wide), plus a softmax shift per router and expert permutations.",
+    "covariance": "n/a: function-level family with cross-layer sharing (table '-').",
+    "merge": "Obstructed: the expert mixture depends on the input (HF disables merge); M1 only if the router is constant.",
+    "rebasing": "n/a: not mergeable, so merge-and-restart is undefined (table '-')."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "Lily is a family over inputs \\(F_X\\): a shared rank-\\(r\\) wire \\(x'=A_{g(l)}x\\) feeds a router-weighted mixture of model-wide up-projection experts, so there is no single weight-space image and merging is obstructed (M\\(\\infty\\)); at the zero-expert point it reproduces \\(f\\), and only the experts move to first order. Its continuous gauge is one global \\(GL_r\\) on the shared wire, acting on every \\(A_g\\), every \\(B^i\\) and every router at once.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Its realised functions x -> (W_0+DeltaW(x))x with input-dependent DeltaW(x) are not of the form Wx for one W, so no weight-space method (LoRA of any rank) contains its function image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; global GL_r gauge on the shared wire and per-router softmax shift checked numerically (3e-15); n/a covariance/rebasing justified in coord_notes. No changes. Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); table_row 'F_X' -> 'F_T' (kind axis value)."
+  },
+  {
+   "id": "c3a",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Block-circulant DeltaW, linear and injective in the kernels: d=mn/b, rank up to min(m,n).",
+    "base_point": "Regular for init_weights=True (zero kernels); HF default xavier init leaves a small defect (the table classifies the exactly pointed variant).",
+    "covariance": "Imposed cyclic order Pi_cyc in every block: a neuron permutation does not preserve it.",
+    "rebasing": "Fixed block size and frame: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "C3A is a linear method: a coordinate subspace in the block-circulant frame (a DFT transport of a mask, Prop II.13), so its rank is decoupled from \\(|M|=mn/b\\) while its covariance is the imposed cyclic order \\(\\Pi_{\\rm cyc}\\). Its blocks include odd circulants, which FourierFT's point-symmetric image never reaches.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "fourierft",
+     "test": "O1",
+     "reason": "Every FourierFT update satisfies DeltaW_{j,l}=DeltaW_{-j,-l}; a circulant block c(j-l) with odd part c(k)!=c(-k) violates it (checked numerically)."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Max rank min(m,n) independent of |M|, above r at matched budgets."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (d=mn/b, Pi_cyc); circulant block odd part breaks FourierFT's point symmetry (0.78). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "fourierft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "DeltaW=alpha Re(ifft2(sparse c)) is linear; d=|M| minus the number of sampled conjugate pairs (Prop II.12).",
+    "base_point": "Regular for init_weights=True; HF default N(0,1) coefficients leave a defect (table: 'HF default ~').",
+    "gauge": "Trivial, +1 per sampled conjugate frequency pair.",
+    "covariance": "Pi_cyc: the image lies in the point-symmetric subspace DeltaW_{j,l}=DeltaW_{-j,-l} of the cyclic index order.",
+    "rebasing": "Fixed (seeded, layer-shared) indices: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "FourierFT is a mask in the real Fourier frame: each frequency contributes a rank-two real pattern, so \\(\\Delta W=\\tfrac{\\alpha}{mn}B_F\\,\\mathrm{diag}(c,-c)A_F\\) with frozen trigonometric frames and FourierFT factors through LoRA-FA\\((A_F)\\), as VeRA does through LoRA-FA\\((A)\\). Its image lies in the point-symmetric subspace \\(\\Delta W_{j,l}=\\Delta W_{-j,-l}\\), an absolute invariant that neuron permutations do not respect.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(c)=\\tfrac{\\alpha}{mn}\\,B_F\\,\\mathrm{diag}(c,-c),\\ \\ B_F=[\\cos\\theta_k\\ \\sin\\theta_k]_k,\\ A_F=[\\cos\\varphi_k;\\ \\sin\\varphi_k]_k",
+     "note": "Into LoRA-FA_{2n_c} with frozen trigonometric A_F, pointed at 0; Re(e^{i(theta+phi)})=cos cos - sin sin (checked to 1e-16)."
+    },
+    {
+     "target": "fourierft",
+     "rule": "A2",
+     "h": "h(c_\\Omega)=(c_\\Omega,\\ 0_{\\Omega'\\setminus\\Omega})",
+     "note": "FourierFT on index set Omega is a sub-object of FourierFT on Omega' containing it."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "c3a",
+     "test": "O1",
+     "reason": "Random frequencies off the anti-diagonal {(u,-u)} give non-circulant patterns, so the image is not inside the block-circulant subspace."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Max rank min(2n_c,m,n), far above r at LoRA-matched budgets."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; factorisation through LoRA-FA_{2n_c} (1e-16) and point symmetry of every update (7e-18) checked numerically. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "frod",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "rho(Sigma_i,S_i)=U_i(Sigma_i+S_i)V^T is affine (diagonal plus fixed sparse pattern); full-rank updates.",
+    "base_point": "S_0=0, Sigma_0 = decomposition strengths: U_i Sigma_0 V^T = W_i (the paper reports max error <1e-5; the verified catalog states the PEFT reconstruction is exact), so rho(q_0)=theta_0 and the linear method is regular.",
+    "gauge": "Trivial when U_i is injective (d_out>=d_in); otherwise translations by the kernel.",
+    "covariance": "Spectral frames: at least CO on each side, but V is shared across a layer group, so the same input transformation must act on the whole group (Obs II.15 caveat).",
+    "rebasing": "Frames and pattern frozen: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "FRoD is the linear method \\((\\Sigma_i,S_i)\\mapsto U_i(\\Sigma_i+S_i)V^\\top\\): a diagonal-plus-sparse mask in a cross-layer spectral frame \\((U_i,V)\\), pointed (up to reconstruction error) at the decomposition's strengths. Because \\(V\\) is shared across a layer group, its covariance holds only for transformations common to the whole group.",
+   "arrows": [
+    {
+     "target": "frod",
+     "rule": "A2",
+     "h": "h(\\Sigma)=(\\Sigma,\\ S=0)",
+     "note": "The diagonal-only (spectral-rescaling) variant is the sub-object obtained by freezing the sparse off-diagonal entries at 0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "svft",
+     "test": "O1",
+     "reason": "Same U(Sigma+M)V^T form, but FRoD's V is a joint cross-layer basis, not W_i's own right-singular frame: linear images in different frames."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Updates are full rank, above any fixed r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; CO x CO with one transform per layer group confirmed under a stacked-Gram basis model (same GLxO or OxGL fails, ~8). Change: base_point note now cites the catalog's exact PEFT reconstruction. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "miss",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Balance mode: DeltaW=D(1^T_{d_in/r} (x) I_r), linear and injective, d=r d_out. The 'bat' mode adds (W_blk+I)D blockwise: linear in D but W_0-dependent (bilinear in (W_0,D)), so it is Lin but not additive (verified catalog: 'bilinear, not nonlinear'); 'mini' adds output-group tying.",
+    "covariance": "GL on the output side, the imposed input sharding Pi on the input side (table: GL x Pi).",
+    "rebasing": "Fixed summing projection: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "MiSS (balance mode) is isomorphic to LoRA-FA with the frozen summing projection \\(\\mathbf 1^\\top_{d_{\\rm in}/r}\\otimes I_r\\): a linear sub-object of LoRA pointed at \\((0,\\mathbf 1^\\top\\otimes I_r)\\) whose covariance is the imposed shard structure \\(\\Pi\\). Its BAT mode \\((W_{\\rm blk}+I)D\\) is still linear in \\(D\\) but depends on \\(W_0\\), so it is not additive.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(D)=D,\\ \\ A_0=\\mathbf 1^\\top_{d_{\\rm in}/r}\\otimes I_r",
+     "note": "Isomorphism MiSS = LoRA-FA(1^T (x) I_r) (axes.json A3 example)."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(D)=(D,\\ \\mathbf 1^\\top_{d_{\\rm in}/r}\\otimes I_r)",
+     "note": "Freezing A at the summing projection: monomorphism into LoRA pointed at (0, 1^T (x) I_r)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O2",
+     "reason": "d(MiSS)=r d_out > d(VeRA)=d_out+r-1 for r>=2, although both freeze part of the factorisation."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (balance mode = LoRA-FA(1^T (x) I_r)). Change: shape note and categorical_reading said BAT mode is non-linear; per the verified catalog it is (W_blk+I)D, linear in D but W_0-dependent (non-additive). framework.md Prop II.13 has the same wording. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "pvera",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "scalar",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "R under mean (deterministic) inference W=W_0+alpha Lambda_b B Lambda_{d_mu} A_mu; the training forward adds input-dependent noise eps (.) sigma(x), a family over the noise.",
+    "shape": "VeRA's toric cone, d=d_out+r-1 (checked).",
+    "base_point": "b_0=0: apex, only b moves to first order.",
+    "gauge": "VeRA's scalar slide (b,d_mu)->(cb,d_mu/c), plus the r-dim sigma-half of d on which the merged rho does not depend at all (rho factors through the projection).",
+    "covariance": "Frozen shared random A,B: covariance in law (Mon on the output side through Lambda_b).",
+    "merge": "M1 under mean inference; Monte-Carlo inference at test time is input-dependent and obstructed.",
+    "rebasing": "As VeRA: -> LoRA-FA(A_mu) when B has no zero entries."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "PVeRA is VeRA times a variational coordinate: its merged map factors as \\(\\rho_{\\rm VeRA}\\circ\\mathrm{pr}\\), the \\(\\sigma\\)-half of \\(d\\) never reaching \\(\\Theta\\) and only shaping the stochastic training forward and the KL term. Under mean inference it is VeRA (toric cone, apex, scalar gauge); Monte-Carlo inference makes it a family over noise that cannot be merged.",
+   "arrows": [
+    {
+     "target": "vera",
+     "rule": "A3",
+     "h": "h(b,d_\\mu,d_\\sigma)=(b,\\ d_\\mu)",
+     "note": "Projection forgetting the variance half; intertwines the merged rho, not the stochastic training objective."
+    },
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(b,d_\\mu,d_\\sigma)=\\alpha\\Lambda_bB\\Lambda_{d_\\mu}",
+     "note": "Composite with VeRA -> LoRA-FA(A_mu), pointed at 0."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived; merged-map d=m+r-1 confirmed (12, 15); sigma-half is a kernel translation, so 'scalar' kept with the note. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "randlora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "torus",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Sum of n=ceil(min(m,n)/r) VeRA-type cones B_j Lambda_j A Gamma_j; d=n(r-1+min(m,n)) (checked), full rank.",
+    "base_point": "Lambda_0=0, Gamma_0 constant: dim S_1=nr < d (checked), apex.",
+    "gauge": "One scalar slide (c Lambda_j, Gamma_j/c) per term: an n-dim torus.",
+    "covariance": "Frozen random B_j, A: in law.",
+    "rebasing": "In PEFT the distinct B_j sit on the larger side and the shared A and Gamma_j on the smaller side (min dim), so span C = span{b_jk} (x) R^min when A has no zero entries: R_inf = Theta iff N r >= max(m,n), i.e. only for (near-)square boxes; for rectangular (MLP) boxes it is a proper subspace (checked: span dim 36 < 60 at 10x6, r=2; 81 = mn at 9x9, r=3). The table's '-> Theta' needs this condition."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "RandLoRA is an \\(\\oplus\\)-sum of \\(n=\\lceil\\min(m,n)/r\\rceil\\) two-sided-diagonal random-frame terms \\(B_j\\Lambda_jA\\Gamma_j\\), with one scalar slide per term (a torus of dimension \\(n\\)) and \\(\\dim S_1=nr\\) at \\(\\Lambda=0\\); the sum reaches full rank and its rebasing span is \\(\\Theta\\). It factors through LoRA\\(_{nr}\\) at a degenerate pointing whose stacked \\(A_0\\) repeats rows.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\Lambda,\\Gamma)=\\big([B_1\\Lambda_1,\\dots,B_n\\Lambda_n],\\ [A\\Gamma_1;\\dots;A\\Gamma_n]\\big)",
+     "note": "Into LoRA_{nr} pointed at (0,[A Gamma_1^0;...;A Gamma_n^0]), a rank-r stacked A_0, outside the three strata."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O1",
+     "reason": "VeRA scales the output side (column space varies, row space = row A fixed), RandLoRA's terms scale the rank and input side; VeRA is not its n=1 case and the images are incomparable."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; d=N(r-1+min) and dim S_1=Nr confirmed at five sizes; torus gauge confirmed. Change: rebasing note made orientation-explicit (Theta iff N r >= max(m,n); span dim 36 < 60 at 10x6, r=2). Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "tinylora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "v -> W_0+U_r Sigma_r^{1/2}(sum v_i P_i) Sigma_r^{1/2} V_r^T: linear, d=u for generic P_i.",
+    "base_point": "HF default init_weights=True sets v=0 (exact, per the verified catalog); the table and axes.json mark TinyLoRA as near-identity, which matches only init_weights='uniform'.",
+    "covariance": "Top-r SVD frame of W_0 with a fixed random core subspace: CO x CO (in law for the P_i). Full weight tying shares v across boxes (Obs II.15 caveat).",
+    "rebasing": "Frames frozen: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "TinyLoRA is a \\(u\\)-dimensional random linear subspace of LoRA-XS's \\(r\\times r\\) core in the top-\\(r\\) SVD frame of \\(W_0\\): a linear method that maps into LoRA-XS and, composing with LoRA-XS\\(\\to\\)PiSSA, into PiSSA. Full weight tying shares one \\(v\\) across modules, so the per-box covariance of Obs II.15 needs the same transformation on every tied box.",
+   "arrows": [
+    {
+     "target": "lora-xs",
+     "rule": "A3",
+     "h": "h(v)=\\Sigma_r^{1/2}\\Big(\\sum_iv_iP_i\\Big)\\Sigma_r^{-1/2}",
+     "note": "Into LoRA-XS in the form W_0+U_rR Sigma_rV_r^T (Prop I.8(a)), pointed at R=0."
+    },
+    {
+     "target": "pissa",
+     "rule": "A3",
+     "h": "h(v)=\\Big(U_r\\Sigma_r^{1/2}\\big(I+\\textstyle\\sum_iv_iP_i\\big),\\ \\Sigma_r^{1/2}V_r^\\top\\Big)",
+     "note": "Composite with LoRA-XS -> PiSSA; h(0)=PiSSA's q_0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "uni-lora",
+     "test": "O1",
+     "reason": "TinyLoRA's image is a u-dim linear space in W_0's top-r SVD frame; Uni-LoRA's is a quadratic cone in theta_d with W_0-independent random factors: neither contains the other generically."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; arrows into LoRA-XS (catalog form W_0+U_rR Sigma_rV_r^T) and PiSSA checked to 4e-16. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "uni-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "rho=rho_LoRA o P with P linear: quadratic, homogeneous of degree 2 in theta_d, a cone with vertex theta_0 at theta_d=0.",
+    "base_point": "Defect: HF draws theta_d~U(-0.02,0.02). The exactly pointed variant theta_d=0 has S_1=0 (checked), which is why zero init is avoided.",
+    "gauge": "Discrete only (theta_d -> -theta_d): the random grouping mixes B and A entries, so no GL_r or scalar slide survives; Jacobian rank = |M| (checked). Table: 'discrete'.",
+    "covariance": "Frozen random one-hot projection: covariance in law, and only under coordinate permutations (a uniform random grouping is exchangeable but not rotation-invariant).",
+    "rebasing": "C = {q(theta_d)} is a quadratic image closed only under positive scaling (q(-theta)=q(theta)), so Thm V.3(a) gives R_inf = theta_0 + Mon(C) = theta_0 + L(PSD_d), L the linear map Sym_d -> Theta with q(theta)=L(theta theta^T): the convex cone generated by C, of dimension dim span C <= d(d+1)/2. It equals theta_0+span C only if ker L contains a positive-definite form; L is injective on Sym_d at d=4,8,12 (span dim = d(d+1)/2, checked), so there the reach is a pointed cone that never contains -q(theta). Theta additionally needs d(d+1)/2 >= dim Theta_adapted. 'span' is the nearest axis value; the table's '-> Theta' fails at small d."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Uni-LoRA is LoRA precomposed with a frozen random isometric linear map \\(P:\\mathbb R^d\\to\\mathbb R^D\\): \\(\\rho=\\rho_{\\rm LoRA}\\circ P\\), a quadratic cone in \\(\\theta_d\\) with \\(S_1=0\\) at \\(\\theta_d=0\\), which is why it must start off the base point. Its 'projection framework' parametrises a family of objects by \\(P\\); different fixed \\(P\\) give incomparable images, so it supplies arrows into LoRA, not arrows from the methods it 'generalises'.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\theta_d)=P\\theta_d=\\big(B^\\ell(P\\theta_d),A^\\ell(P\\theta_d)\\big)_\\ell",
+     "note": "The defining projection, pointed at (B_0,A_0)=P theta_{d,0} (an arrow over the common start), or at the origin (0,0) for the exactly pointed variant."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O1",
+     "reason": "VeRA is LoRA o P_VeRA for a structured P; a fixed random-grouping Uni-LoRA instance has a different image. 'Generalizes' is a relation between families of P, not an arrow."
+    },
+    {
+     "target": "vb-lora",
+     "test": "O1",
+     "reason": "VB-LoRA's mixing is trained and chunk-structured, Uni-LoRA's projection frozen and random: incomparable images at fixed hyperparameters."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; Jacobian rank = d and S_1=0 at theta_d=0 confirmed. Change: rebasing note corrected: reach is theta_0+L(PSD_d), a convex cone (pointed when L is injective on Sym_d, checked at d=4,8,12), not theta_0+span C; 'span' kept as nearest value (unresolved: axis has no cone value). Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "vb-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "On each top-k chamber rho=rho_LoRA o h with h bilinear in (simplex weights, bank): homogeneous of degree 2 in the bank, a cone with vertex theta_0 at a zero bank.",
+    "base_point": "Defect: bank ~U(-0.02,0.02), logits ~N(0,0.01); a zero bank is the exactly pointed variant with S_1=0.",
+    "gauge": "Table: 'discrete' (mapped to none), correct in the stored coordinates (k simplex weights + bank). In the training coordinates the fibre has dim h-k+1 per chunk: the softmax shift plus the unselected logits, which do not reach rho.",
+    "covariance": "Table says 'fr', but the bank is trained: no frozen random frame shapes the image. What is frozen is the chunk partition R^m=R^{m/b} (x) R^b (and R^n), tied across all boxes through the shared bank: imposed structure Pi.",
+    "rebasing": "The bank is free, so span C contains every block-supported rank-one matrix: -> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "VB-LoRA assembles every length-\\(b\\) chunk of LoRA's factors as a top-\\(k\\) softmax mixture of one shared trainable bank: on each top-\\(k\\) chamber \\(\\rho=\\rho_{\\rm LoRA}\\circ h\\) with \\(h\\) of degree two, so the image is a cone with \\(S_1=0\\) at a zero bank and the method starts at a small defect. Its geometry is the imposed chunk partition \\(\\Pi\\) (a reshape \\(\\mathbb R^m=\\mathbb R^{m/b}\\otimes\\mathbb R^b\\) tied across all boxes), not a random frame, since the bank is trained.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\alpha,\\sigma)=\\big(B(\\alpha,\\sigma),\\ A(\\alpha,\\sigma)\\big),\\ \\ u=\\textstyle\\sum_s\\mathrm{softmax}(\\mathrm{TopK}(\\sigma,k))_s\\,\\alpha_s",
+     "note": "Assembly map into LoRA, pointed at (B_0,A_0)=h(q_0); smooth on each top-k chamber only (top-k switches are non-smooth)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "uni-lora",
+     "test": "O1",
+     "reason": "Uni-LoRA writes VB-LoRA as a trainable projection, but a fixed Uni-LoRA instance (frozen random P) and VB-LoRA (trained bank, chunk structure) have incomparable images."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; Pi kept over the table's 'fr' (bank and logits are trained, no frozen random matrix; the chunk reshape tied across boxes is imposed structure). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "vera",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "scalar",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Toric cone {Lambda_b B Lambda_d A}, d=m+r-1, max rank r (table).",
+    "base_point": "b_0=0: only b moves to first order (Lemma II.4), apex.",
+    "gauge": "R^x slide (cb, d/c) through the frozen B (table).",
+    "covariance": "Table: Mon x fr (Mon on the output side from Lambda_b, random frame in law on the input side).",
+    "rebasing": "VeRA^infinity = LoRA-FA(A) when B has no zero entries (Thm V.3 Cor 3)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "VeRA is the toric cone \\(\\{\\Lambda_bB\\Lambda_dA\\}\\) of dimension \\(m+r-1\\): an A3 sub-object of LoRA-FA\\((A)\\) via \\(h(b,d)=\\Lambda_bB\\Lambda_d\\), with apex at \\(b=0\\), a one-scalar gauge and rebasing closure exactly LoRA-FA\\((A)\\) (Thm V.3, Cor 3). It is the NOLA construction with coordinate-structured bases \\(E_{ii}B\\), \\(E_{jj}A\\).",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(b,d)=\\Lambda_bB\\Lambda_d",
+     "note": "axes.json A3 example; pointed at 0 with frozen A."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(b,d)=(\\Lambda_bB\\Lambda_d,\\ A)",
+     "note": "Composite with LoRA-FA(A) -> LoRA, pointed at (0,A)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "randlora",
+     "test": "O1",
+     "reason": "VeRA's row space is fixed (row A) while its column space moves; RandLoRA's terms fix column spaces in col B_j and move row spaces through Gamma_j: VeRA is not RandLoRA's single-basis case."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (toric cone m+r-1, scalar slide, VeRA^inf = LoRA-FA(A)). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "waveft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "DeltaW=lambda IDWT_2D(C_Omega): linear and injective (IDWT invertible), d=p.",
+    "base_point": "C_0=0: exactly pointed, regular.",
+    "covariance": "The dyadic wavelet structure on the index order is imposed (Pi); neuron permutations break it.",
+    "rebasing": "Fixed indices: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "WaveFT is a mask in the 2-D wavelet frame, \\(\\Delta W=\\lambda\\,\\mathrm{IDWT}_{2D}(C_\\Omega)\\), i.e. SHiRA transported by the invertible IDWT: a transport is an automorphism of the slice and not an arrow, so WaveFT and SHiRA are the same kind of object in different frames, with different images. With a separable DWT every atom is a rank-one outer product, so WaveFT factors through LoRA-FA with frozen wavelet frames.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(c)=\\lambda\\,B_W\\,C_\\Omega(c),\\ \\ A_W=[\\psi_j^\\top]_{j\\in\\mathrm{cols}(\\Omega)}",
+     "note": "Separable 2-D DWT: atom (i,j) is w_i v_j^T, so DeltaW=B_W C_Omega A_W; into LoRA-FA with frozen wavelet rows A_W, pointed at 0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "shira",
+     "test": "O1",
+     "reason": "Related by the transport IDWT (an automorphism, not an arrow): p-sparse wavelet coefficients give a semi-local dense pattern, not a p-sparse matrix, so the images differ."
+    },
+    {
+     "target": "fourierft",
+     "test": "O1",
+     "reason": "FourierFT's image lies in the point-symmetric subspace DeltaW_{j,l}=DeltaW_{-j,-l}; wavelet atoms are not point-symmetric."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (IDWT invertible, d=p; separable atoms are rank one, so the LoRA-FA factorisation holds). No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "svft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "DeltaW=U M_Omega V^T: linear, d=|Omega|.",
+    "base_point": "Exactly pointed variant (table). The official code multiplies Kaiming-init M by sigmoid(g), g=0, so it starts at a defect and adds one scalar slide (g,M) per layer.",
+    "covariance": "SVD frame of W_0: CO x CO.",
+    "rebasing": "Frames frozen: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "SVFT is a coordinate mask \\(\\Omega\\) in the SVD frame of \\(W_0\\): \\(\\Delta W=\\sum_{(i,j)\\in\\Omega}m_{ij}u_iv_j^\\top\\), linear and regular, a \\(\\theta_0\\)-dependent transport of a sparse method. LoRA-XS is its dense top-left \\(r\\times r\\) block, and the diagonal mask SVFT\\(^P\\) shifts the spectrum at full rank.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(M)=U_{:,R}\\,M_{R,C},\\ \\ A_0=V_{:,C}^\\top",
+     "note": "R, C = row and column indices met by Omega; into LoRA-FA_{|C|} with frozen A_0=V_C^T, pointed at 0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "svdiff",
+     "test": "O1",
+     "reason": "Im SVFT is not inside Im SVDiff = {U diag(s) V^T : s>=0}: SVFT^P reaches negative coefficients sigma_i+m_i<0 and off-diagonal Omega reaches non-spectral directions. The converse inclusion Im SVDiff in Im SVFT^P does hold (m=ReLU(sigma+delta)-sigma, checked to 2e-15), but only set-level: that h is not smooth, so it is not an arrow of Meth."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "SVFT^P (diagonal Omega) reaches rank min(m,n), above r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (Lin in the SVD frame, CO x CO). Change: svdiff obstruction reason corrected: Im SVDiff is contained in Im SVFT^P (checked 2e-15) but only via a non-smooth h; SVFT -/-> SVDiff still holds by O1. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "fact",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Tucker-2 tensor-network variety {(U Sigma_i V^T)_i}: the intersection of the mode-2 and mode-3 flattening rank cones (table: 'meet of transported cones'); multihomogeneous, so Cone, as axes.json lists TT adapters.",
+    "base_point": "V_0=0: dim S_1=dr (checked) against d=2dr+12Lr^2-2r^2: apex.",
+    "gauge": "GL_r x GL_r on the two bonds (U g^{-1}, g Sigma_i h^T, V h^{-1}): prod GL_{r_e}; Jacobian deficit 2r^2 (checked).",
+    "covariance": "Shared U, V across all 12L matrices and the split of MLP matrices into d x d blocks impose a tensorisation: Pi_(x).",
+    "rebasing": "span C contains every single-box rank-r update: -> Theta."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "FacT-TT is the Tucker-2 tensor network \\(\\Delta W_i=sU\\Sigma_iV^\\top\\) on the stacked update tensor: an image-level meet of the two flattening determinantal cones, with gauge \\(GL_r\\times GL_r\\) on the bonds and covariance the imposed tensorisation \\(\\Pi_\\otimes\\). Box by box it maps into LoRA\\(_r\\), landing in the stratum \\(\\mathrm T_B\\) because \\(V_0=0\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(U,\\Sigma,V)=\\big(sU\\Sigma_i,\\ V^\\top\\big)_i",
+     "note": "Into per-box LoRA_r pointed at (sU_0Sigma_{i,0}, 0): stratum T_B in every box."
+    },
+    {
+     "target": "fact",
+     "rule": "A3",
+     "h": "h(U,P,C,V)=\\big(U,\\ (\\textstyle\\sum_tP_{i,t}C_t)_i,\\ V\\big)",
+     "note": "FacT-TK -> FacT-TT: the Tucker core constrains the per-matrix cores; both pointed at V=0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-xs",
+     "test": "O2",
+     "reason": "Same U Sigma_i V^T core form, but FacT trains shared U,V: d(FacT)=2dr+12Lr^2-2r^2 exceeds d(LoRA-XS on 12L boxes)=12Lr^2, and LoRA-XS's frames are W_i's frozen SVD frames."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; d=2dr+12Lr^2-2r^2 and dim S_1=dr confirmed (32/12, 69/21); T_B landing of the LoRA arrow checked. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  },
+  {
+   "id": "nola",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "scalar",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "Bilinear cone {(sum beta_j B_j)(sum alpha_i A_i)}, d=k+l-1 (paper form, checked); rank <= r.",
+    "base_point": "Paper's pure span at alpha=beta=0: S_1=0, apex with full deficit. Official code adds a frozen offset A_off (B_off=0): dim S_1=l, still apex.",
+    "gauge": "Paper form: one scalar slide (c beta, alpha/c) (table R^x). The code's offset kills it: d=k+l (checked).",
+    "covariance": "Frozen seeded random bases: in law.",
+    "rebasing": "-> theta_0+span{B_jA_i} (table); with the code offset also span{B_j A_off}."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "NOLA is LoRA precomposed with the linear map \\((\\alpha,\\beta)\\mapsto(\\sum\\beta_jB_j,\\sum\\alpha_iA_i)\\): a bilinear cone of dimension \\(k+l-1\\) with one scalar slide, an A3 arrow into LoRA\\(_r\\), and rebasing closure \\(\\mathrm{span}\\{B_jA_i\\}\\). The paper's pure-span zero init has \\(S_1=0\\); the official code's frozen offset \\(A_{\\rm off}\\) restores \\(\\dim S_1=l\\) and removes the scalar gauge (\\(d=k+l\\)).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\alpha,\\beta)=\\Big(\\sum_j\\beta_jB_j,\\ \\sum_i\\alpha_iA_i\\Big)",
+     "note": "axes.json A3 example; pointed at the origin (0,0) (paper) or, with h(alpha,beta)=(sum beta_j B_j, A_off+sum alpha_i A_i), at (0,A_off) in stratum T_A (code)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O1",
+     "reason": "NOLA's row space moves inside span{A_i} while VeRA's is fixed at row A; with dense random bases neither image contains the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; paper d=k+l-1, S_1=0 and code d=k+l, S_1=l confirmed numerically. No changes. Consolidation (2026-10-01): table_row 'R' -> 'R-additive' (atlas vocabulary)."
+  }
+ ]
+}

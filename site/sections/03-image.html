@@ -1,0 +1,193 @@
+<section class="expose" id="image" data-toc="II.A" data-toc-title="Initialisations">
+  <header class="expose-head"><span class="label">Exposé II.A</span><h2>What a method can say, and where it starts</h2><p class="summary">Expressivity is read off the germ of a method’s image at the pretrained point. An initialisation decides whether that point sits at the apex of a cone, on a smooth sheet of one, or just off the image.</p></header>
+  <blockquote class="epigraph"><p>A method is an arrow before it is a thing. Ask what it sees of the point where it lands.</p><footer>after Grothendieck</footer></blockquote>
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>Near the pretrained weights, a method reaches the local shape of its image, a linear space, a cone or a piece of a group orbit. Its first-step directions \(S_1\) and its expressive dimension tell whether training starts at an apex.</li>
+    <li>For \(r\lt\min(m,n)\), full-rank LoRA initialisations come in exactly three kinds up to reparametrisation, classified as sets by \(\mathrm{row}\,A_0\) (\(B_0=0\)), \(\mathrm{col}\,B_0\) (\(A_0=0\)) or the subtracted product \(B_0A_0\) (PiSSA-type splits).</li>
+    <li>Zero-factor starts sit at the apex of a cone with \(mr\) or \(nr\) first-order directions, split starts at a smooth point with all \(r(m+n-r)\), which for a \(4096\times4096\) matrix at rank 16 is 130,816 against 65,536. Neither kind reaches everything the other reaches.</li>
+    <li>No exact start of LoRA\(_r\) reaches an update of rank above \(2r\). A factor behind a closed gate, such as \(A\) when \(B_0=0\), does not move the weights at first order.</li>
+  </ul></div>
+  <div class="prose">
+
+    <h3 id="image-germ">The image germ</h3>
+
+    <p>Exposé I turned a PEFT method into a pointed map \(\rho:(Q,q_0)\to(\Theta,\theta_0)\). Its image \(\mathrm{Im}\,M=\rho(Q)\) is everything it can reach. Fine-tuning travels only a short way from the pretrained weights, so what matters is the image near \(\theta_0\), its <em>germ</em> at \(\theta_0\).</p>
+
+    <p>The germ takes few shapes. It is a linear space when \(\rho\) is affine, as for <a href="https://aclanthology.org/2022.acl-short.1/">BitFit</a>, <a href="https://arxiv.org/abs/2308.03303">LoRA-FA</a>, <a href="https://arxiv.org/abs/2405.17604">LoRA-XS</a>, <a href="https://arxiv.org/abs/2405.03003">FourierFT</a> and <a href="https://arxiv.org/abs/2205.05638">(IA)³</a>. It is a cone when \(\rho\) is multihomogeneous and non-linear and starts where the update vanishes, as <a href="https://arxiv.org/abs/2106.09685">LoRA</a>’s \(BA\) does at zero initialisation. It is a piece of a group orbit for exactly orthogonal methods such as exact-Cayley <a href="https://arxiv.org/abs/2306.07280">OFT</a>. <a href="https://arxiv.org/abs/2402.09353">DoRA</a> adds an output gain to LoRA’s cone (<a href="#thm-II-8">Prop II.8</a>), and <a href="https://arxiv.org/abs/2405.17484">HRA</a> meets that cone with a rotation orbit (<a href="#thm-II-7">Thm II.7</a>), each under its stated hypotheses. Adapters and prefixes change the network itself, and their germs live among functions (Exposé VI).</p>
+
+    <p>Four invariants of the germ carry most of the story, and isomorphic methods share them (<a href="#thm-I-6">Obs I.6</a>).</p>
+    <ul>
+      <li>The <strong>first-order image</strong> \(S_1(M)=d\rho_{q_0}(T_{q_0}Q)\), the directions a first step can take.</li>
+      <li>The <strong>type of the base point</strong>: <em>regular</em> when the first-order deficit \(d(M)-\dim S_1(M)\) vanishes, an <em>apex</em> when it is positive (<a href="#thm-I-5">Def I.5</a>).</li>
+      <li>The <strong>maximum rank</strong> of an update, bounded by a minimum cut (<a href="#thm-II-10">Thm II.10</a>).</li>
+      <li>The <strong>expressive dimension</strong> \(d(M)=\dim\mathrm{Im}\,M\), which falls short of the parameter count \(\lvert M\rvert\) by the gauge waste.</li>
+    </ul>
+
+    <p>II.A asks where a method starts, II.B what a group-type method can never change (<a href="#thm-II-5">Thm II.5</a>, <a href="#thm-II-6">Cor II.6</a>), and II.C how rank differs from dimension (<a href="#thm-II-12">Prop II.12</a>). Expressivity here means reach, and finding a reachable point is left to Exposé III.</p>
+    <aside class="note"><span class="label">Credit</span>Which functions a LoRA-adapted network can represent is studied by <a href="https://arxiv.org/abs/2310.17513">Zeng &amp; Lee, 2023</a>. The intrinsic dimension of <a href="https://arxiv.org/abs/1804.08838">Li et al., 2018</a> and <a href="https://arxiv.org/abs/2012.13255">Aghajanyan et al., 2020</a> depends on the data, while \(d(M)\) is a property of the method alone.</aside>
+
+    <h3 id="image-pointings">II.A Initialisations: pointings and strata</h3>
+
+    <p>Every LoRA recipe decides where training starts. <a href="https://arxiv.org/abs/2106.09685">LoRA</a> sets \(B_0=0\) and draws \(A_0\) at random. <a href="https://arxiv.org/abs/2404.02948">PiSSA</a> takes both factors from the top of the SVD of \(W_0\) and subtracts their product from the frozen weight, <a href="https://arxiv.org/abs/2407.05000">LoRA-GA</a> does the same with the first gradient, and <a href="https://arxiv.org/abs/2406.05223">CorDA</a>, <a href="https://arxiv.org/abs/2406.01775">OLoRA</a>, <a href="https://arxiv.org/abs/2406.09044">MiLoRA</a> and <a href="https://arxiv.org/abs/2410.07170">EVA</a> choose otherwise. Each recipe is a <em>pointing</em>, a parameter \(q_0\) with the frozen residual that makes \(\rho(q_0)=\theta_0\), and two pointings of one formula can be different objects of \(\mathsf{Meth}(\Theta,\theta_0)\). Figure 2 draws the typical cases.</p>
+
+    <figure class="figure wide" id="fig-apex">
+      <div data-figure="apex" aria-label="Interactive figure. Upper panel: the rank-one cone in the symmetric 2 by 2 slice, with the base point theta zero, the first-order image S1 and a draggable target T, for zero-init LoRA, a split initialisation and QLoRA. Lower panel: exact first-order dimension counters at real matrix sizes for the three strata, HF's orthogonal init and HRA's paired init."></div>
+      <figcaption><span class="fig-n">Figure 2</span><strong>The apex and the smooth point.</strong> The upper panel draws the symmetric slice \(S=\begin{pmatrix}x+y&amp;z\\ z&amp;x-y\end{pmatrix}\), where rank \(\le1\) is the double cone \(x^2=y^2+z^2\), and a model \(\rho(c,\phi)=W_{\rm res}+c\,v_\phi v_\phi^\top\) that plays LoRA (\(c\) for \(B\), \(v_\phi\) for \(A\)). At zero init \(\theta_0\) is the vertex, and \(S_1\) is one ruling although the image is the whole cone (<a href="#thm-II-2">Thm II.2(c)</a>). A split init moves the vertex to \(\theta_0-P\) and makes \(S_1\) the tangent plane. QLoRA puts the vertex at the quantised point \(\kappa\theta_0\) and dashes the defect \(e\). Turn the cone, set the pointing, and drag the target \(T\). The panel gives \(\dim S_1\), \(d\), the deficit, which images contain \(T\) (Thm II.2(d) when you switch modes), and the share of \(T-\rho(q_0)\) captured by its orthogonal projection onto \(S_1\), a purely geometric quantity. The lower panel counts \(\dim S_1\) and the deficit exactly at real sizes for the strata, HF’s <code>orthogonal</code> init and HRA’s paired init (<a href="#thm-II-7">Thm II.7(b)</a>). On load, a Jacobian-rank check in your browser reproduces the numerical lines of Thms II.2 and II.7.</figcaption>
+    </figure>
+
+    <h4 id="image-translates">Translates of one shape</h4>
+
+    <p>An additive method adds updates from a fixed shape \(C\), for LoRA the cone \(\mathcal M_{\le r}\) of matrices of rank at most \(r\). Pointing it at \(q\) slides the shape so that \(\delta(q)\) lands on \(\theta_0\), and reachable updates become differences of two points of \(C\).</p>
+
+    <div class="env theorem" id="thm-II-1"><span class="env-head">Theorem II.1 <span class="env-name">(pointings of an additive method)</span>.</span> <span class="env-body">Let \(M=(Q,q_0,\theta_0+\delta)\) be additive with shape \(C=\delta(Q)\). Write \(-v+C\) for a translate, and \(C-C:=\{c-c':c,c'\in C\}\) for the Minkowski difference.</span>
+      <div class="env-body">
+        <p>(a) For each \(q\in Q\), the re-pointed method \(M_q:=(Q,q,\theta_0-\delta(q)+\delta(\cdot))\), with frozen residual \(\theta_0-\delta(q)\), is pointed at \(\theta_0\), and \(\mathrm{Im}\,M_q=\theta_0+(-\delta(q)+C)\).</p>
+        <p>(b) \(\bigcup_q\mathrm{Im}\,M_q=\theta_0+(C-C)\).</p>
+        <p>(c) For LoRA\(_r\) on a single linear box with \(s\ne0\), \(C-C=\mathcal M_{\le\min(2r,m,n)}\); for several boxes, \(C-C\) is the product of the per-box varieties \(\mathcal M_{\le\min(2r,m_i,n_i)}\). Hence <strong>no exact pointing of LoRA\(_r\) (frozen residual \(\theta_0-\delta(q)\)), whether zero-init or split (PiSSA, OLoRA, CorDA, LoRA-GA), makes an update \(\theta-\theta_0\) of rank \(\gt 2r\) reachable in any adapted matrix.</strong> More robustly, from <em>any</em> starting point \(q_0\) of LoRA\(_r\), pointed or not, \(\rho(q)-\rho(q_0)=\delta(q)-\delta(q_0)\) has rank \(\le\min(2r,m,n)\). Quantised-residual schemes (QLoRA, LoftQ, QPiSSA) are pointed only up to a defect that depends on the order of operations (<a href="#thm-V-2">Prop V.2</a>). Measured from \(\theta_0\), their updates contain it, and its rank is generically at least \(\min(m,n)-r\). The bound \(2r\) is attained by split pointings when \(2r\le\min(m,n)\).</p>
+      </div>
+    </div>
+    <aside class="note"><span class="label">Credit</span>Elementary, and known in practice. <a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a> convert a trained PiSSA adapter into a rank-\(2r\) LoRA through \(BA-B_0A_0=[B\;\;B_0]\begin{bmatrix}A\\ -A_0\end{bmatrix}\), and HF PEFT ships the conversion. The theorem adds that it loses nothing and that rank \(2r\) is needed in general.</aside>
+    <details class="proof"><summary>(expand)</summary>
+      <p>(a) At \(q\) the re-pointed map gives \(\theta_0-\delta(q)+\delta(q)=\theta_0\), and its image is \(\theta_0-\delta(q)+C\). (b) Take the union over \(q\) of \(\theta_0+(C-\delta(q))\).</p>
+      <p>(c) For \(s\ne0\) the shape is \(C=s\,\mathcal M_{\le r}=\mathcal M_{\le r}\). The inclusion \(C-C\subseteq\mathcal M_{\le\min(2r,m,n)}\) is \(\operatorname{rank}(X-Y)\le\operatorname{rank}X+\operatorname{rank}Y\le 2r\). Conversely, \(C\) is a cone and so closed under negation. Split the SVD of a matrix \(Z\) of rank at most \(\min(2r,m,n)\) as \(Z=Z_1+Z_2\) with \(\operatorname{rank}Z_i\le r\), and write \(Z=Z_1-(-Z_2)\). With several boxes \(\delta\) acts box by box, so \(C\) and \(C-C\) are products. The robust form is the same inclusion applied to \(\delta(q)-\delta(q_0)\). For the defects, QLoRA’s \(e\) and QPiSSA’s \(\kappa(W_{\rm res})-W_{\rm res}\) are quantisation errors, generically of full rank, and one-step LoftQ’s \(e-s\,\mathrm{SVD}_r(e)\) has rank at least \(\operatorname{rank}e-r\). For attainment, a split pointing with \(P=\delta(q_0)\) of rank \(r\) has image \((\theta_0-P)+\mathcal M_{\le r}\), so it reaches \(\theta_0+(Y-P)\) for every \(Y\) of rank \(r\), and \(Y-P\) has rank \(2r\) for generic \(Y\) when \(2r\le\min(m,n)\).<span class="qed">∎</span></p>
+    </details>
+
+    <p class="explains">An initialisation chooses which translate of the shape passes through \(\theta_0\). Split initialisations gain updates \(Y-P\) of rank up to \(2r\) and lose generic updates of every rank \(\ge1\) (<a href="#thm-II-2">Thm II.2(d)</a>). Moving a weight matrix by more than rank \(2r\) needs rebasing, as in ReLoRA (<a href="#thm-V-3">Thm V.3</a>), or another shape.</p>
+
+    <h4 id="image-strata">Three strata</h4>
+
+    <p>Isomorphisms of methods are pointed diffeomorphisms over \(\Theta\) (<a href="#thm-I-2">Def I.2</a>), such as the gauge \((B,A)\mapsto(Bg^{-1},gA)\), \(g\in GL_r\). They preserve the image and \(S_1\) (<a href="#thm-I-6">Obs I.6</a>) but may change training (Exposé III). Up to isomorphism, a full-rank LoRA initialisation is determined by one subspace or one matrix.</p>
+
+    <div class="env theorem" id="thm-II-2"><span class="env-head">Theorem II.2 <span class="env-name">(three strata of LoRA initialisations)</span>.</span> <span class="env-body">Let \(\delta(B,A)=BA\) with \(1\le r\lt\min(m,n)\). Consider pointed LoRA objects in three distinguished strata of full-rank pointings:</span>
+      <div class="env-body">
+        <ul>
+          <li>\((\mathrm T_A)\): \(B_0=0\) and \(\operatorname{rank}A_0=r\);</li>
+          <li>\((\mathrm T_B)\): \(A_0=0\) and \(\operatorname{rank}B_0=r\);</li>
+          <li>\((\mathrm S)\): \(\operatorname{rank}B_0A_0=r\), with frozen residual \(\theta_0-B_0A_0\).</li>
+        </ul>
+        <p>(a) <strong>Classification.</strong> Within a stratum, \(M_{q_0}\cong M_{q_0'}\) iff, respectively, \(\mathrm{row}\,A_0=\mathrm{row}\,A_0'\); \(\mathrm{col}\,B_0=\mathrm{col}\,B_0'\); or \(B_0A_0=B_0'A_0'\). Objects in different strata are never isomorphic. As a <em>set</em>, the isomorphism classes of the three strata therefore form</p>
+        \[\mathrm{Gr}(r,\mathbb R^n)\ \sqcup\ \mathrm{Gr}(r,\mathbb R^m)\ \sqcup\ \mathcal M_r(m\times n).\]
+        <p>(b) <strong>First order.</strong> \(\dim S_1\) is \(mr\), \(nr\) and \(r(m+n-r)\) respectively, while \(d=r(m+n-r)\) in every case. The deficits are \(r(n-r)\), \(r(m-r)\) and \(0\).</p>
+        <p>(c) <strong>Geometry.</strong> In \(\mathrm T_A\) and \(\mathrm T_B\), \(\mathrm{Im}=\theta_0+\mathcal M_{\le r}\), whose vertex \(\theta_0\) is an <strong>apex</strong>. In \(\mathrm S\), \(\mathrm{Im}=(\theta_0-P)+\mathcal M_{\le r}\) with \(P=B_0A_0\), and \(\theta_0\) is a <strong>smooth point</strong>.</p>
+        <p>(d) <strong>Incomparability.</strong> The images of \(\mathrm S\)-type and \(\mathrm T\)-type objects are incomparable.</p>
+        <p>(e) <strong>Scope.</strong> The three strata do not exhaust the pointings of LoRA\(_r\). Outside them lie: \(B_0=0\) with \(\operatorname{rank}A_0\lt r\); \(A_0=0\) with \(\operatorname{rank}B_0\lt r\); \(B_0=A_0=0\); \(0\lt\operatorname{rank}B_0A_0\lt r\); and pointings with \(B_0,A_0\) both nonzero and \(B_0A_0=0\). HF PEFT ships one of the last kind: for even \(r\) and in exact arithmetic, <code>init_lora_weights="orthogonal"</code> has \((\operatorname{rk}B_0,\operatorname{rk}A_0,\operatorname{rk}B_0A_0)=(r/2,r/2,0)\). It is an apex with \(\dim S_1=\tfrac r2(m+n-\tfrac r2)\), isomorphic to no object of the three strata. In bf16 the two factors are rounded separately, so \(B_0A_0\) is small but nonzero and this init becomes a generic pointing with a tiny defect. For every pointing, the image determines \(P=B_0A_0\) (its vertex is \(\theta_0-P\)), and \(S_1=\{XA_0+B_0Y\}\) determines \((\mathrm{row}\,A_0,\mathrm{col}\,B_0)\) whenever these are proper subspaces.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <ul>
+        <li><em>“If” in (a).</em> Two full-row-rank matrices with the same row space satisfy \(A_0'=gA_0\) for a unique \(g\in GL_r\), and \((B,A)\mapsto(Bg^{-1},gA)\) is a pointed isomorphism over \(\Theta\). \(\mathrm T_B\) is symmetric. In \(\mathrm S\), the full-rank factorisations of \(P\) form one \(GL_r\)-orbit, and the residuals agree.</li>
+        <li><em>“Only if” in (a).</em> In \(\mathrm T_A\), \(d\rho_{(0,A_0)}(\dot B,\dot A)=\dot BA_0\), so \(S_1=\{XA_0\}\) is the set of matrices whose row space lies in \(\mathrm{row}\,A_0\). It determines \(\mathrm{row}\,A_0\), and it is an isomorphism invariant by <a href="#thm-I-6">Obs I.6</a>. \(\mathrm T_B\) is symmetric. In \(\mathrm S\), the image \((\theta_0-P)+\mathcal M_{\le r}\) is an isomorphism invariant, and a translate of \(\mathcal M_{\le r}\) determines its vertex. Suppose \(c+\mathcal M_{\le r}=c'+\mathcal M_{\le r}\) with \(D=c-c'\ne0\), so that \(D+\mathcal M_{\le r}=\mathcal M_{\le r}\), and let \(k=\operatorname{rank}D\). If \(k\gt r\), take \(X=0\). Otherwise take \(X\) of rank \(r-k+1\) whose column and row spaces meet those of \(D\) only in \(0\), which is possible since \(r+1\le\min(m,n)\). Then \(\operatorname{rank}(D+X)=r+1\) in both cases, a contradiction. Hence the image determines \(P\), for every pointing.</li>
+        <li><em>Separating the strata.</em> \(S_1(\mathrm T_A)=\{Z:\mathrm{row}\,Z\subseteq V\}\) contains \(e_iv^\top\) for every \(i\) and every \(v\in V\), so it can equal \(S_1(\mathrm T_B)=\{Z:\mathrm{col}\,Z\subseteq U\}\) only if \(U=\mathbb R^m\), which is impossible since \(r\lt m\). When \(m\ne n\) the dimensions \(mr\ne nr\) already differ. \(\mathrm S\) differs from both because \(\dim S_1=r(m+n-r)\) differs from \(mr\) (as \(n\gt r\)) and from \(nr\) (as \(m\gt r\)).</li>
+        <li><em>(b).</em> At a full-rank pair, \(S_1=\{XA_0+B_0Y\}=T_P\mathcal M_r\). In general \(\dim\{XA_0+B_0Y\}=m\operatorname{rk}A_0+n\operatorname{rk}B_0-\operatorname{rk}A_0\operatorname{rk}B_0\) (<a href="#thm-II-3">Prop II.3</a>).</li>
+        <li><em>(c).</em> Classically, \(\mathcal M_r\) is open in \(\mathcal M_{\le r}\) and is a manifold of dimension \(r(m+n-r)\), and \(\mathrm{Sing}\,\mathcal M_{\le r}=\mathcal M_{\le r-1}\). So \(P\), of rank \(r\), is a smooth point, and \(\theta_0\) is a smooth point of the \(\mathrm S\)-image. In the \(\mathrm T\) strata, \(\theta_0\) is the vertex of the non-linear cone \(\theta_0+\mathcal M_{\le r}\), a <a href="#app-c-singular" class="gloss">singular point</a> (<a href="#thm-I-5">Def I.5</a>), and by (b) its deficit is positive, so it is an apex.</li>
+        <li><em>(d).</em> A generic rank-one \(X\) satisfies \(\operatorname{rank}(P+X)=\operatorname{rank}(X-P)=r+1\). So \(\theta_0+X\) lies in the \(\mathrm T\)-image but not in the \(\mathrm S\)-image, and \(\theta_0-P+X\) lies in the \(\mathrm S\)-image but not in the \(\mathrm T\)-image.</li>
+        <li><em>(e).</em> The dimension is <a href="#thm-II-3">Prop II.3</a>. For any pointing, \(S_1=\{XA_0+B_0Y\}\) is the space of matrices that send \((\mathrm{row}\,A_0)^\perp\) into \(\mathrm{col}\,B_0\). Its Frobenius orthogonal complement is \((\mathrm{col}\,B_0)^\perp\otimes(\mathrm{row}\,A_0)^\perp\), whose column and row spans recover \((\mathrm{col}\,B_0)^\perp\) and \((\mathrm{row}\,A_0)^\perp\) when both subspaces are proper. HF’s <code>orthogonal</code> init draws one orthogonal \(Q\in O(r)\) and sets \(A_0=(G_AQ')^\top/10\) and \(B_0=G_BQ''/10\) with Gaussian \(G_A,G_B\), where \(Q'\) and \(Q''\) are the odd- and even-numbered rows of \(Q\) (HF’s <code>q_odd</code> and <code>q_even</code>). Distinct rows of \(Q\) are orthogonal, so \(B_0A_0=0\), with both factors of rank \(r/2\). Its image is \(\theta_0+\mathcal M_{\le r}\), with vertex \(\theta_0\), so it is not in \(\mathrm S\). Its pair \((\mathrm{col}\,B_0,\mathrm{row}\,A_0)\) has dimensions \((r/2,r/2)\), against \((0,r)\) for \(\mathrm T_A\) and \((r,0)\) for \(\mathrm T_B\), so its \(S_1\) differs from theirs. Its deficit is \(\tfrac r2(m+n-\tfrac{3r}2)\gt0\). In low precision the separately rounded factors acquire small extra singular values, so the placement holds only up to a small perturbation.</li>
+      </ul>
+      <p>Numerical check: \(\dim S_1=(14,10,20)\) for \((\mathrm T_A,\mathrm T_B,\mathrm S)\) at \((m,n,r)=(7,5,2)\), and \(11\) for HF’s <code>orthogonal</code> init.<span class="qed">∎</span></p>
+    </details>
+
+    <div class="env analogy"><span class="env-head">Analogy <span class="env-name">(a moduli space of initialisations)</span>.</span> <span class="env-body">Calling the three spaces a <a href="#app-c-moduli" class="gloss">moduli space</a> borrows a word. The bijection is of sets only. \(\mathrm T_A\) lies in the closure of \(\mathrm S\), since \((\varepsilon B',A_0)\to(0,A_0)\), so the quotient is not a topological disjoint union, and no universal family is built.</span></div>
+
+    <p>Most published schemes are points of the three strata. LoRA-FA and MiCA freeze one factor and are <a href="#app-a-mono" class="gloss">sub-objects</a>, and the last three rows lie outside the strata.</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>scheme</th><th>stratum</th><th>point</th></tr></thead>
+      <tbody>
+        <tr><td>vanilla <a href="https://arxiv.org/abs/2106.09685">LoRA</a> (linear layers)</td><td>\(\mathrm T_A\)</td><td>a random point of \(\mathrm{Gr}(r,n)\), <a href="#app-d-haar" class="gloss">Haar</a> under Gaussian \(A_0\), roughly Haar under Kaiming-uniform</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2410.07170">EVA</a></td><td>\(\mathrm T_A\)</td><td>the top-\(r\) principal subspace of the input activations, at its per-layer rank</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2308.03303">LoRA-FA</a></td><td>sub-object of \(\mathrm T_A\)</td><td>the same point, with \(A\) frozen</td></tr>
+        <tr><td>“Init[B]” (<a href="https://arxiv.org/abs/2406.08447">Hayou et al., 2024</a>); vanilla LoRA on embeddings</td><td>\(\mathrm T_B\)</td><td>a random point of \(\mathrm{Gr}(r,m)\) (on embeddings, loralib and HF set \(A_0=0\), \(B_0\) Gaussian)</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2604.01694">MiCA</a></td><td>sub-object of \(\mathrm T_B\)</td><td>the minor left-singular frame of \(W_0\), with \(B\) frozen</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2404.02948">PiSSA</a> / <a href="https://arxiv.org/abs/2406.09044">MiLoRA</a></td><td>\(\mathrm S\)</td><td>\(P\) = the top / bottom rank-\(r\) SVD part of \(W_0\) (HF absorbs the scale: \(P=sB_0A_0\))</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2406.01775">OLoRA</a></td><td>\(\mathrm S\)</td><td>\(P=sQ_rR_r\), from a truncated QR factorisation of \(W_0\)</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2406.05223">CorDA</a></td><td>\(\mathrm S\)</td><td>\(P\) from the SVD of \(W_0C\), with \(C\) the activation covariance</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2407.05000">LoRA-GA</a></td><td>\(\mathrm S\)</td><td>\(P\) from the SVD of the first gradient</td></tr>
+        <tr><td><a href="https://aclanthology.org/2026.findings-acl.1593/">Astra</a></td><td>\(\mathrm S\)</td><td>\(P=QQ^\top W_0\) (times \(s\) in HF), with \(Q\) output-activation eigenvectors (the centred tail in the paper, the uncentred top \(r\) in HF and the official code), when \(\operatorname{rank}Q^\top W_0=r\)</td></tr>
+        <tr><td>HF <code>orthogonal</code></td><td>outside: \((r/2,r/2,0)\)</td><td>an apex, for even \(r\) in exact arithmetic</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2305.14314">QLoRA</a>, <a href="https://arxiv.org/abs/2310.08659">LoftQ</a></td><td>defect pointing</td><td>zero-init (QLoRA) or approximately split (LoftQ) over a quantised base (<a href="#thm-V-2">Prop V.2</a>)</td></tr>
+        <tr><td>HF <code>init_lora_weights=False</code></td><td>unpointed</td><td>random \(A\) and \(B\), with no subtraction</td></tr>
+      </tbody>
+    </table></div>
+
+    <p class="explains">Zero-init LoRA starts at a <em>singular point</em> where the \(A\)-direction is dead at first order, so LoRA and LoRA-FA, trained with the same optimizer from the same \(A_0\), agree to first order (<a href="#thm-II-4">Lemma II.4</a>). Split initialisations start at a smooth point with full first-order reach. That this explains the faster early progress reported for PiSSA and LoRA-GA is a conjecture; LoRA-GA credits gradient alignment, and MiLoRA also starts at a smooth point.</p>
+    <aside class="note"><span class="label">Credit</span><a href="https://arxiv.org/abs/2406.08447">Hayou et al., 2024</a> compare the two zero-factor starts, “Init[A]” and “Init[B]”, through their training dynamics; here \(S_1\) already tells them apart. The facts about \(\mathcal M_{\le r}\) used in the proof are classical.</aside>
+    <details class="aside"><summary>More: the first-order deficit and the data</summary>
+      <p>\(S_1\) counts directions in weight space. The lazy-regime kernel \(J_f\,d\rho\,\Lambda\,d\rho^\top J_f^\top\) also involves the network Jacobian \(J_f\) and the optimizer’s metric \(\Lambda\), and for random-\(A_0\) zero-init LoRA it approximates the full fine-tuning kernel (<a href="https://arxiv.org/abs/2210.05643">Malladi et al., 2023</a>). A large first-order deficit need not cost much on the data.</p>
+    </details>
+
+    <h4 id="image-count">Counting first-order directions</h4>
+
+    <p>A first step of LoRA from \((B,A)\) adds \(s(\dot BA+B\dot A)\), a matrix with rows in \(\mathrm{row}\,A\) plus one with columns in \(\mathrm{col}\,B\). Counting both families and their overlap gives \(\dim S_1\).</p>
+
+    <div class="env proposition" id="thm-II-3"><span class="env-head">Proposition II.3 <span class="env-name">(first-order rank formula: smoothness, alignment and scale)</span>.</span> <span class="env-body">For \(\kappa(B,A)=W_{\rm base}+sBA\) with \(s\ne0\),</span>
+      <div class="env-body">
+        \[\operatorname{rank}d\kappa_{(B,A)}=m\operatorname{rk}A+n\operatorname{rk}B-\operatorname{rk}A\operatorname{rk}B\qquad\text{for all }(B,A),\]
+        <p>and \(\{XA\}\cap\{BY\}=\{BRA:R\in\mathbb R^{r\times r}\}\). For full-rank frames this overlap is the tangent space of the product \(\mathrm{FA}(A)\times\mathrm{FB}(B)\) of <a href="#thm-I-8">Prop I.8(a)</a>, re-based at \(\kappa(B,A)\), whose image is the meet of the two one-sided images. It is a generalised LoRA-XS, and LoRA-XS proper when \((B,A)\) span the top-\(r\) singular subspaces of \(W_0\) (with \(\sigma_r\gt0\)), as at a PiSSA init.</p>
+        <p>Under gradient flow \(\dot B=-\eta_B\nabla_BL\), \(\dot A=-\eta_A\nabla_AL\), with \(G=\nabla_WL\),</p>
+        \[\tfrac{d}{dt}L=-s^2\big(\eta_B\|GA^\top\|_F^2+\eta_A\|B^\top G\|_F^2\big)\]
+        <p>at every time, in particular at \((B_0,A_0)\). To first order in the step sizes the same holds for full-batch gradient descent, and in expectation for unbiased minibatch SGD. Under Adam (\(\varepsilon\to0\)) the first step instead lowers the loss, to first order in the step sizes, by \(s\big(\eta_B\|GA_0^\top\|_1+\eta_A\|B_0^\top G\|_1\big)\) for \(s\gt0\) (by the same expression with \(\lvert s\rvert\) in general): entrywise \(\ell_1\) norms, linear in \(s\).</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>The image of \(d\kappa\) is \(\{XA\}+\{BY\}\), since the factor \(s\ne0\) does not change it. Its summands are the matrices with row space in \(\mathrm{row}\,A\), of dimension \(m\operatorname{rk}A\), and the matrices with column space in \(\mathrm{col}\,B\), of dimension \(n\operatorname{rk}B\). A matrix \(D\) lies in both iff \(D\in\mathrm{col}\,B\otimes\mathrm{row}\,A\), of dimension \(\operatorname{rk}A\operatorname{rk}B\), and then \(D=B(B^+DA^+)A\).</p>
+      <p>The gradient-flow rate is \(\langle G,\dot W\rangle\) with \(\dot W=-s^2(\eta_BGA^\top A+\eta_ABB^\top G)\), because \(\nabla_BL=sGA^\top\) and \(\nabla_AL=sB^\top G\). Adam’s first step is \(\delta B=-\eta_B\,\mathrm{sign}(sGA^\top)\), so \(\langle G,s\,\delta B\,A\rangle=-\lvert s\rvert\eta_B\|GA^\top\|_1\), and likewise for \(A\).</p>
+      <p>Numerical check: the rank formula holds in 400 random cases, including rank-deficient factors, and the rate matches finite differences.<span class="qed">∎</span></p>
+    </details>
+
+    <div class="env example"><span class="env-head">Example <span class="env-name">(one attention projection of a 7B model)</span>.</span> <span class="env-body">At \(4096\times4096\) with \(r=16\), zero-factor initialisations (LoRA, QLoRA, EVA, LoRA-FA) have \(mr=65{,}536\) first-order directions and split ones \(r(m+n-r)=130{,}816\), the dimension of LoRA’s image.</span></div>
+
+    <p class="explains">“Better initialisation” mixes three mechanisms, and the proposition separates them.</p>
+    <ul>
+      <li><strong>Smoothness.</strong> PiSSA and LoRA-GA start off the apex, so their first step sees all \(r(m+n-r)\) directions.</li>
+      <li><strong>Alignment.</strong> At a zero-\(B\) start the rate is \(s^2\eta_B\|GA_0^\top\|_F^2\). Among \(A_0\) with orthonormal rows, the top-\(r\) right singular space of \(G\) maximises it, and that is LoRA-GA’s \(A_0\). Its \(B_0\), the next \(r\) left singular vectors, makes the first step approximate full fine-tuning and does not maximise the rate. EVA’s activation frame is a gradient-free proxy. Under Adam the rate depends on the basis of \(A_0\), so this alignment belongs to gradient flow and SGD.</li>
+      <li><strong>Scale.</strong> \(\|GA_0^\top\|_F^2\) grows with \(\|A_0\|^2\), and initial scale trades off against learning rate (<a href="#thm-III-10">Thm III.10</a>). HF’s Kaiming default has \(A_0A_0^\top\approx I/3\) and EVA with <code>whiten=False</code> has \(A_0A_0^\top=I\), so fair comparisons normalise \(A_0A_0^\top\).</li>
+    </ul>
+    <details class="aside"><summary>More: EVA’s frame and the factor scales</summary>
+      <p>EVA’s guarantee assumes inputs independent of the backpropagated errors and bounds the expected per-sample squared gradient norm, a different quantity from the rate above, and HF’s EVA centres the activations. PiSSA’s \(S_r^{1/2}\)-weighted factors and LoRA-GA’s stability scaling also change factor norms (both factors in LoRA-GA’s paper, only \(B\) in HF’s default).</p>
+    </details>
+    <aside class="note"><span class="label">Credit</span>The gradient-aligned frame is due to <a href="https://arxiv.org/abs/2407.05000">Wang et al., 2024 (LoRA-GA)</a>, the activation frame to <a href="https://arxiv.org/abs/2410.07170">Paischer et al., 2024 (EVA)</a>, and the spectral split to <a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024 (PiSSA)</a>. The proposition only sorts their effects into three terms.</aside>
+
+    <h4 id="image-gate">The zero gate</h4>
+
+    <p>At a zero-\(B\) start, \(BA\) is linear in \(B\) and \(B_0=0\), so moving \(A\) alone changes nothing. The same holds whenever a trainable gate starts closed. Below, \(K=D\rho\,\Lambda\,D\rho^\top\) is the cometric on weights induced by an optimizer’s metric \(\Lambda\) (Exposé III).</p>
+
+    <div class="env lemma" id="thm-II-4"><span class="env-head">Lemma II.4 <span class="env-name">(zero gate)</span>.</span> <span class="env-body">Let \(Q=U\times V\) with \(U\) a vector space, let \(\rho=\theta_0+\beta(u,v)\) with \(\beta\) smooth, and suppose \(\beta(u_0,v)=0\) for all \(v\); for example \(\beta(\cdot,v)\) linear and \(u_0=0\). Then \(D_v\rho_{q_0}=0\). Hence \(\nabla_v(L\circ\rho)(q_0)=0\), \(S_1=D_u\beta(u_0,v_0)(U)\) (\(=\beta(U,v_0)\) in the linear case), and the cometric at \(q_0\) is \(K_{q_0}=D_u\beta\,\Lambda_{uu}\,D_u\beta^\top\), where \(\Lambda_{uu}\) is the \(uu\)-block of \(\Lambda\); no block-diagonality is needed, since the \(v\)-columns of \(D\rho\) vanish. The weight trajectory \(\theta(t)\) agrees with that of the method with \(v\) frozen at \(v_0\) to first order in \(t\) (gradient flow), or in the step size (one or more Adam steps). The parameter \(v\) itself may still move: under terms not of the form \(L\circ\rho\) (regularisers, decoupled weight decay), and under Adam, whose step-2 move of \(v\) is \(O(\eta)\) although its effect on \(\theta\) is \(O(\eta^2)\).</span>
+      <div class="env-body">
+        <p><em>Function-level variant.</em> For an extension with realised function \(F(u,v,x)\), if \(F(u_0,v,x)=F_0(x)\) for all \(v\) and \(x\), then \(D_vF=0\) at \(q_0\), with the same conclusions at the level of functions. No linearity is needed.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>Since \(\beta(u_0,v)=0\) for all \(v\), differentiating in \(v\) gives \(D_v\beta(u_0,v_0)=0\). The rest is the chain rule. The gradient \(\nabla_v(L\circ\rho)=D_v\rho^\top\nabla L\) vanishes, \(S_1\) is the image of the \(u\)-columns alone, and in \(K=D\rho\,\Lambda\,D\rho^\top\) every term that touches a \(v\)-column is zero, which leaves \(D_u\beta\,\Lambda_{uu}\,D_u\beta^\top\). The function-level variant is the same argument applied to \(F\).</p>
+      <p>Numerical check: under Adam with \(\eta\in\{10^{-2},10^{-3},10^{-4}\}\), the step-2 move of \(A\) in zero-init LoRA scales as \(\eta\), while the deviation of \(\Delta W\) from the frozen-\(A\) method scales as \(\eta^2\).<span class="qed">∎</span></p>
+    </details>
+
+    <p>Instances, assuming no weight decay on \(v\):</p>
+    <ul>
+      <li><a href="https://arxiv.org/abs/2106.09685">LoRA</a> (\(u=B\)) and <a href="https://arxiv.org/abs/2310.11454">VeRA</a> (\(u=b\)).</li>
+      <li><a href="https://arxiv.org/abs/2303.10512">AdaLoRA</a>, with \(u\) its diagonal of singular values started at \(0\). \(\theta\) first moves only along the \(r\) directions \(p_iq_i^\top\), so \(\dim S_1=r\) for generic \(P,Q\). \(P\) and \(Q\) move at step one through the orthogonality penalty (HF default <code>orth_reg_weight=0.5</code>), with no first-order effect on \(\theta\).</li>
+      <li><a href="https://arxiv.org/abs/2108.06098">LoHa</a> with a zero factor (HF zero-initialises <code>hada_w2_b</code>).</li>
+      <li>By the function-level variant, the gate of <a href="https://arxiv.org/abs/2303.16199">LLaMA-Adapter</a> and bottleneck adapters whose up-projection starts at zero (<a href="https://arxiv.org/abs/1902.00751">Houlsby et al., 2019</a> start near that point).</li>
+    </ul>
+    <p>HRA’s paired initialisation, though of a different form, shows the same first-order collapse (<a href="#thm-II-7">Thm II.7(b)</a>).</p>
+    <aside class="note"><span class="label">Credit</span><a href="https://proceedings.mlr.press/v235/zhu24c.html">Zhu et al., 2024</a> find over whole runs that a random, untrained \(A\) does nearly as well as a tuned one, and that training \(B\) alone gives better generalisation bounds. Lemma II.4 is only the first-order statement.</aside>
+
+    <h4 id="image-defect">Off the point: quantised bases</h4>
+
+    <p>QLoRA quantises the frozen weight, so it is LoRA pointed at \(\kappa\theta_0\), with <em>pointing defect</em> \(e=\kappa\theta_0-\theta_0\) (<a href="#thm-V-1">Def V.1</a>, <a href="#thm-V-2">Prop V.2(a)</a>). As \(e\) is generically of full rank, \(\theta_0\) lies outside \(\mathrm{Im}\,\mathrm{LoRA}_r(\kappa\theta_0)\) unless \(\operatorname{rank}e\le r\), which is why Theorem II.1 speaks of <em>exact</em> pointings. When the initialisation also splits, the order of operations decides the defect (<a href="#thm-V-2">Prop V.2(b)</a>). Below, \(W\) is the full-precision weight, \(e=\kappa W-W\) and \(\delta_0=\delta(q_0)\).</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>pipeline</th><th>examples</th><th>defect \(\rho(q_0)-W\)</th></tr></thead>
+      <tbody>
+        <tr><td>quantise, then zero-init</td><td><a href="https://arxiv.org/abs/2305.14314">QLoRA</a></td><td>\(e\)</td></tr>
+        <tr><td>split, then quantise the residual</td><td>QPiSSA (<a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a>); HF’s recommended PiSSA/CorDA workflow; LoftQ’s later quantisation steps</td><td>\(\kappa(W_{\rm res})-W_{\rm res}\)</td></tr>
+        <tr><td>quantise, then fit the error</td><td><a href="https://arxiv.org/abs/2310.08659">LoftQ</a> with one iteration (HF default <code>loftq_iter=1</code>); HF <code>replace_lora_weights_loftq</code></td><td>\(e-\mathrm{SVD}_r(e)\), the part of \(e\) left after its best rank-\(r\) approximation (unit LoRA scale)</td></tr>
+        <tr><td>quantise, split, re-quantise</td><td>HF <code>olora_init</code> on bitsandbytes weights</td><td>\(e+\kappa(r')-r'\), with \(r'=\kappa W-\delta_0\)</td></tr>
+      </tbody>
+    </table></div>
+    <aside class="note"><span class="label">Caveat</span>HF PEFT’s LoftQ initialiser does not divide by the LoRA scale \(s=\alpha/r\), so for \(s\ne1\) the deployed defect is \(e-s\,\mathrm{SVD}_r(e)\). At \(s=2\) its Frobenius norm equals \(\|e\|\), and the fit buys nothing over QLoRA in that norm.</aside>
+    <aside class="note"><span class="label">Credit</span>Quantised bases for LoRA come from <a href="https://arxiv.org/abs/2305.14314">Dettmers et al., 2023 (QLoRA)</a>, fitting the adapter to the quantisation error from <a href="https://arxiv.org/abs/2310.08659">Li et al., 2023 (LoftQ)</a>, and the quantised PiSSA variant from <a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a>.</aside>
+
+    <p>The strata of Theorem II.2 classify what a start can express. The dynamics see a finer quotient. For a zero-\(B\) start, SGD sees \(A_0^\top A_0\) and Adam sees \(A_0\) up to signed permutations of its rows (<a href="#thm-III-13">Cor III.13</a>). A dynamical classification of initialisations, including the degenerate pointings, is <a href="#honesty-open">open</a>.</p>
+
+  </div>
+</section>

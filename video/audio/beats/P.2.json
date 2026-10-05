@@ -1,0 +1,67 @@
+{
+ "hash": "70f4827329ff49cd",
+ "seconds": 41.0,
+ "pauses": [
+  [
+   2.734,
+   3.348
+  ],
+  [
+   4.295,
+   6.621
+  ],
+  [
+   12.074,
+   12.735
+  ],
+  [
+   12.868,
+   13.26
+  ],
+  [
+   16.394,
+   17.21
+  ],
+  [
+   17.3,
+   17.65
+  ],
+  [
+   21.112,
+   22.102
+  ],
+  [
+   26.846,
+   27.225
+  ],
+  [
+   28.446,
+   29.317
+  ],
+  [
+   29.662,
+   30.047
+  ],
+  [
+   33.402,
+   33.742
+  ],
+  [
+   35.364,
+   36.139
+  ],
+  [
+   37.407,
+   37.859
+  ],
+  [
+   39.21,
+   39.559
+  ],
+  [
+   40.714,
+   41.0
+  ]
+ ],
+ "text": "Here are four nuts from fine-tuning. You've already met one. <short pause> No exact initialisation lets LoRA reach an update of rank above twice its own. LoRA-plus is LoRA with alpha rescaled. GaLore is one-sided LoRA with a moving frame. And exactly orthogonal methods never change a weight's singular values, however often you merge them. <short pause> Each sounds like a separate fact with its own clever proof, and most were first proved that way. We won't crack them again. We'll raise the sea, and watch them dissolve."
+}

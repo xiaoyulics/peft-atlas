@@ -1,0 +1,329 @@
+% Exposé XI. What is analogy, and what is open.
+% Sources: theory/framework.md (Exposé XI), site/sections/12-predictions.html (second half: "What the borrowed words
+% mean", "Open problems", "Debts", "The referee record"), theory/propositions.json (status, round2 and public statements).
+% Corrections applied from propositions.json: DoRA's generic dimension (Prop II.8) is now proved, and Obs IV.4 has a full
+% proof; the remaining sketch is corollary 4 of Thm V.3 (unconstrained generators), completed in Appendix C.
+\section{What is analogy, and what is open}\label{sec:analogy}
+
+This exposé gives a plain account of which borrowed words carry theorems, what is open, whose results are re-derived
+here, and what the referees changed. Referees repaired 27 of the \nPropositions{} results, and a second review narrowed
+19 of those again.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{What the borrowed words mean}\label{sec:analogy-words}
+
+Words borrowed from geometry and physics compress a great deal, and each also carries connotations no theorem here
+supports. Table~\ref{tab:analogy} gives, for seven such words, the sense each has in this paper, the results behind it,
+and what it leaves out.
+
+\begingroup
+\footnotesize
+\renewcommand{\arraystretch}{1.18}
+\setlength{\LTpre}{6pt}\setlength{\LTpost}{8pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{2.1cm}>{\raggedright\arraybackslash}p{3.75cm}>{\raggedright\arraybackslash}p{4.5cm}>{\raggedright\arraybackslash}p{3.75cm}@{}}
+\caption{Analogy versus theorem: seven borrowed words, their meaning here, what is proved under each, and what is not
+claimed.}\label{tab:analogy}\\
+\toprule
+\headrow \textbf{Word} & \textbf{Meaning here} & \textbf{Proved} & \textbf{Not claimed}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:analogy}, continued}\\
+\toprule
+\headrow \textbf{Word} & \textbf{Meaning here} & \textbf{Proved} & \textbf{Not claimed}\\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{@{}r}{\footnotesize\itshape continued on the next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\textbf{Grothendieck} & The relative point of view: a method is a map $\rho:(Q,q_0)\to(\Theta,\theta_0)$, methods
+  form the pointed slice $\Meth(\Theta,\theta_0)$, and changing $\theta_0$ is base change. & Frozen model initial and full
+  fine-tuning terminal; products are fibre products in $\Diff$ and can fail to exist (\thmref{Obs.}{I.4}); a symmetric
+  monoidal sum (\thmref{Obs.}{I.7}); automorphisms by transport (\thmref{Prop.}{II.13}); pushforward along
+  function-preserving maps (\thmref{Def.}{V.1}(a)). & No schemes, sheaves, descent theory or stacks. Quantisation and
+  rebasing borrow only the word ``base change'', and idle constructions such as $\int\Meth\to\mathbf{PNet}$ are left
+  out. ``Exposé'' and the rising sea are homage.\\
+\textbf{Erlangen} & After \citet{xklein1872vergleichende}, a method's geometry is its covariance group $\mathcal G_M$
+  (\thmref{Def.}{II.14}, \bgref{D.17}); what a group-type method can never change is a complete invariant of the
+  action. & Complete invariants of the orthogonal, torus and Hadamard actions (\thmref{Thm}{II.5}); exactly orthogonal
+  input-side methods keep $K_{\mathrm{out}}$ and the spectrum through any number of merges (\thmref{Cor.}{II.6},
+  \thmref{Thm}{V.3}); covariance groups of named methods (\thmref{Prop.}{II.9}(e), \thmref{Prop.}{II.16}). & For cones
+  such as LoRA's image the word only names the shape and its covariance. Keeping an invariant concerns reach; that it
+  causes knowledge retention is not shown.\\
+\textbf{Noether} & The pattern that turns a continuous symmetry of $\rho$ into a conserved quantity. &
+  \thmref{Thm}{III.5}, for gradient flow driven by any signal $\Lambda D\rho\T\gamma$, a mild extension of
+  \citet{zhao2022symmetries}; for LoRA the charges are the entries of $\Phi$. & No Lagrangian. Discrete steps drift by
+  $O(\eta^2)$ relative to the charge, and Adam and momentum break the law.\\
+\textbf{Gauge} & The symmetry group of a parametrisation (\thmref{Def.}{I.5}, \bgref{D.21}); for LoRA, $\GL_r$ acting by
+  $(Bg^{-1},gA)$. & Generic gauges and fibre dimensions (\thmref{Prop.}{II.12}); the part each optimizer respects,
+  $B_r\subset\Ort(r)\subset\GL_r$ (\thmref{Thm}{III.12}); the gauge dependence of factor-wise merging
+  (\thmref{Prop.}{V.4}). & No connection or curvature. Fibres are gauge orbits only on the full-rank stratum; away from it
+  the fibres jump.\\
+\textbf{Moduli} & A set of isomorphism classes (\bgref{C.20}). & Three strata of full-rank LoRA pointings are classified,
+  as a set, by $\Gr(r,n)\sqcup\Gr(r,m)\sqcup\MM_r$ (\thmref{Thm}{II.2}). & No topology: the natural quotient topology is
+  not a disjoint union ($\mathrm T_A$ lies in the closure of $\mathrm S$). No stack is built, and the strata miss some
+  pointings (HF's \texttt{orthogonal} init, defect pointings).\\
+\textbf{Fibre} & The preimage $\rho^{-1}(\theta)$, the parameters that give the same weights, as in the title. & Fibre
+  dimensions (\thmref{Prop.}{II.12}(a)); which points of the apex fibre $\{BA=0\}$ an optimizer can tell apart
+  (\thmref{Cor.}{III.13}). & $\rho$ is no fibre bundle; the fibre dimension jumps between strata.\\
+\textbf{Lens} & Backpropagation as the 2-functor $\Para(\mathsf R)$, which sorts tangent-side from cotangent-side methods
+  (\bgref{B.17}). & The degree-one collapse: GaLore with weight decay $0$ is one-sided LoRA with a moving frame and
+  carried optimizer state (\thmref{Prop.}{IV.2}). & The duality is exact only at degree one, for optimizers that do not
+  read the parameter tensor, with no weight decay; decoupled decay, default Adafactor and full-gradient clipping break
+  it.\\
+\end{longtable}
+\endgroup
+
+\paragraph{Credit}
+$\Para$ and the lens reading of backpropagation are due to \citet{fong2017backprop} and \citet{cruttwell2021categorical}.
+The ETHER control study that tempers the knowledge-retention reading of orthogonal methods is \citet{bini2024ether}.
+
+Three scopes travel with every claim. Expressivity is a different property from learnability. Only
+Exposé~\ref{sec:fibres} is dynamical, and each of its results names its optimizer. Mergeability is proved box by box
+under explicit side conditions (position-uniformity, no weight sharing, bias slots); the rewrite rules give sufficient
+conditions only, and whole-network statements are open.
+
+Most of the mathematics is real algebraic geometry, invariant theory, Lie generation and gradient-flow ODEs. The category
+theory does its own work in seven places: the interval [frozen, full FT] and simulation; invariants finer than the
+image; a product that yields LoRA-XS, and meets that organise others; base change along maps that change the function;
+the lens; naturality of gradient descent and of combination rules; and rank as a min-cut.
+
+Some statements rest on less than a full proof. The equalities in the dimensions of LoHa (\thmref{Proposition}{II.12})
+and VeRA are checked numerically, and the bounds are proved; for VeRA with $r\le n$ and generic frozen factors the
+equality also follows from the toric-cone description of \bgref{C.14}, and the generic equality for DoRA
+(\thmref{Proposition}{II.8}) is proved. The case of unconstrained generators in corollary 4 of \thmref{Theorem}{V.3} is
+recorded as a proof sketch, which Appendix~\ref{proof:V.3} completes. The continuous case of
+\thmref{Proposition}{V.4}(a) and the converse in \thmref{Corollary}{III.13} are proved in Appendix~\ref{app:proofs}, and
+\thmref{Proposition}{IV.3} is argued around Frobenius' theorem (\bgref{D.25}). The ancillary script
+\texttt{framework\_checks.py} re-runs the main numbers in about a minute (Appendix~\ref{app:repro}).
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Open problems}\label{sec:analogy-open}
+
+Each problem grew out of a proof that stopped short, and each is stated so that a solution would be recognisable.
+
+\begingroup\emergencystretch=2em
+\begin{enumerate}[label=\arabic*.,leftmargin=1.8em,itemsep=4pt]
+  \item \textbf{LoHa's dimension.} \thmref{Proposition}{II.12} proves
+    \begin{equation}\label{eq:open-loha}
+      d(\mathrm{LoHa}_{r_1,r_2})\le\min\big(mn,\ r_1(m+n-r_1)+r_2(m+n-r_2)-(m+n-1)\big),
+    \end{equation}
+    with equality checked only numerically. Prove it in general, and decide whether the Hadamard variety is closed.
+  \item \textbf{Initialisations, dynamically.} \thmref{Theorem}{II.2} classifies three strata by expressivity, and
+    \thmref{Corollary}{III.13} shows that Adam sees $A_0$ only up to signed row permutations. Classify the apex fibre
+    modulo $B_r$ for Adam, stratified by the charge $\Phi_0$ (\thmref{Corollary}{III.6}), including the degenerate
+    pointings outside the three strata of \thmref{Theorem}{II.2}.
+  \item \textbf{HRA's apex in practice.} HRA's paired initialisation, HF PEFT's default, starts at an apex
+    (\thmref{Theorem}{II.7}(b), for injective $W_0$ and even $r\le n-2$), with $\dim S_1=kn-\tfrac{k(k+1)}2$, $k=r/2$,
+    against $d=rn-\tfrac{r(r+1)}2$. Decide whether this apex is a practical first-order bottleneck that slows early
+    training, by comparison with a regular initialisation at matched budget.
+  \item \textbf{Charts for meets.} LoRA-XS (\thmref{Proposition}{I.8}(a)) and HRA's image (\thmref{Theorem}{II.7}(a))
+    are meets with a polynomial chart; the meet of LoRA with output scaling (\thmref{Proposition}{I.8}(b)) is a union of
+    coordinate planes. Characterise the pairs of named methods whose meet is parametrisable by a polynomial chart.
+  \item \textbf{The frontier.} Incomparable pairs are common: split against zero-init LoRA (\thmref{Theorem}{II.2}(d)),
+    Kronecker sums or GraLoRA against LoRA (\thmref{Theorem}{II.11}, \thmref{Proposition}{II.12}(c)). Find the size-$k$
+    frontier of $\Meth$, whose maximal elements are pairwise incomparable.
+  \item \textbf{An Adam analogue of the crossover.} \thmref{Theorem}{III.5} and \thmref{Theorem}{III.9} hold for
+    gradient flow. Find a conserved or monotone quantity for sign-like updates, whose symmetry is only $B_r$
+    (\thmref{Theorem}{III.12}).
+  \item \textbf{Prefixes and prompts.} For a vanilla softmax head with $W_o\ne0$ and $W_q\ne0$, a generic prefix is not
+    box-locally mergeable (\thmref{Theorem}{VI.5}(f)); prove or refute its non-mergeability for the whole network. In causal decoders every soft prompt is a deep prefix
+    (\thmref{Theorem}{VI.5}(e)). \citet{petrov2023prompting} and \citet{li2021prefix} assert that prompt tuning is
+    strictly weaker than deep prefix tuning (P-tuning v2, \citealp{liu2021p}), and the inclusion is strict in a
+    one-layer, one-token example. Prove the generic strictness, and settle encoders.
+\end{enumerate}
+\endgroup
+
+Conjectures \hyperref[res:A]{A}, \hyperref[res:C]{C} and \hyperref[res:D]{D} are open as well. They appear in
+Exposé~\ref{sec:predictions} as Predictions \hyperref[res:X.4]{X.4}, \hyperref[res:X.11]{X.11} and
+\hyperref[res:X.2]{X.2}.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Debts: known results we re-derive}\label{sec:analogy-known}
+
+Much of what this paper proves was known in another language or setting. A re-derivation earns its place only if the new
+language adds something, so Table~\ref{tab:known} states what we add next to each debt.
+
+\begingroup
+\footnotesize
+\renewcommand{\arraystretch}{1.18}
+\setlength{\LTpre}{6pt}\setlength{\LTpost}{8pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{6.15cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
+\caption{Known results we re-derive, whom they are due to, and what is added here.}\label{tab:known}\\
+\toprule
+\headrow \textbf{Here} & \textbf{Due to} & \textbf{Added here}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\footnotesize\itshape Table~\ref{tab:known}, continued}\\
+\toprule
+\headrow \textbf{Here} & \textbf{Due to} & \textbf{Added here}\\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{@{}r}{\footnotesize\itshape continued on the next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\thmref{Def.}{I.1}, Exposé~\ref{sec:lens} & \citet{fong2017backprop}; \citet{cruttwell2021categorical} & The pointed
+  slice of methods; tangent and cotangent sides.\\
+\thmref{Thm}{II.1} & The PiSSA-to-LoRA conversion of \citet{meng2024pissa}, in HF PEFT \citep{xmangrulkar2022peft} & The
+  rank-$2r$ bound for every exact pointing, and from any start.\\
+\thmref{Thm}{II.5} & Classical: the first fundamental theorem for $\Ort(n)$; Witt's extension theorem (\bgref{D.16}) &
+  Which invariant each group-type method keeps.\\
+\thmref{Thm}{II.10} & The standard cut-rank bound for tensor networks (\bgref{B.8}) & A rank census of PEFT plugs.\\
+\thmref{Thm}{II.11} & \citet{loan1993approximation}; the operator-Schmidt decomposition (\bgref{B.12}) & Kronecker sums
+  as LoRA across another cut; the LoKr inclusion criterion.\\
+\thmref{Prop.}{II.12}, TT/Tucker row & \citet{xkoch2010dynamical}; \citet{xuschmajew2013geometry};
+  \citet{xholtz2012manifolds} & The same count, at minimal ranks, beside other PEFT families.\\
+\thmref{Prop.}{III.4}, \thmref{Thm}{III.12}(c) & \citet{xtong2021accelerating}; \citet{zhang2024riemannian}; LoRA-Pro
+  \citep{wang2024lorac}; LoRA-FA \citep{zhang2023lora}; descent to the quotient: \citet{mishra2012fixed},
+  \citet{xmishra2016riemannian} & One cometric table for (S)GD; the hierarchy $B_r\subset\Ort(r)\subset\GL_r$.\\
+\thmref{Thm}{III.5} & \citet{zhao2022symmetries}; \citet{marcotte2023abide}; the principle: \citet{du2018algorithmic},
+  \citet{arora2018optimization}, \citet{kunin2020neural} & The formally immediate remark that the signal need not be a
+  gradient; PEFT instances (DoRA's detached norm, clipping, VeRA, AdaLoRA without its regulariser, HRA).\\
+\thmref{Prop.}{III.7} & \citet{xkempf1979length}, in the real form of \citet{xrichardson1990minimum};
+  \citet{xsrebro2004maximum} & Balance as the Kempf--Ness slice of LoRA's gauge; two decay conventions, two slices
+  (\thmref{Cor.}{III.6}).\\
+\thmref{Thm}{III.9} & \citet{xtarmoun2021understanding}; \citet{xmin2021explicit}; \citet{xdomine2025lazy};
+  \citet{xkunin2024get} & The PEFT reading of $\sigma^*$, its shift under LoRA+, PiSSA's balance, the Kaiming band.\\
+\thmref{Thm}{III.10}, \thmref{Cor.}{III.11} & \citet{schulman2025lora}, for LoRA+ \citep{hayou2024lora} & Any
+  multihomogeneous method; the SGD $c^2$ law; per-block $\varepsilon$, decay and clipping.\\
+\thmref{Prop.}{IV.2} & \citet{xtorrobahennigen2025duality}; for random projections, Flora \citep{hao2024flora} & The
+  projector-by-schedule table of cotangent methods; optimizer state carried across re-basings.\\
+\thmref{Prop.}{IV.3} & Frobenius' theorem (\bgref{D.25}) & When a $\theta$-dependent anchor foliates weight space by
+  images of forward methods; GaLore, LISA and MeZO keep a fixed anchor per period, so the test does not separate
+  them.\\
+\thmref{Lemma}{VI.2} & \citet{xsussmann1992uniqueness}; \citet{xchen1993geometry}; \citet{xgodfrey2022symmetries} &
+  Which symmetries a method may ignore; the monomial group of gated FFNs.\\
+\thmref{Thm}{VI.3} & (IA)$^3$ merging: \citet{liu2022few}, Sec.~3.3; SSF's re-parameterisation \citep{lian2022scaling};
+  LoRA's linearity \citep{hu2021lora}; scale migration through SwiGLU: AWQ \citep{xlin2024awq} & One calculus of
+  sufficient conditions, with explicit side conditions.\\
+\thmref{Thm}{VI.5} & The identity is standard; (b) \citet{he2021unified}; (c) and the prompt-to-prefix map (e)
+  \citet{petrov2023prompting}, Sec.~2.2, who also show that prefix-tuning a pretrained transformer can be a universal
+  approximator \citep{petrov2024prompting} & The homomorphism-then-perspective organisation; explicit position hypotheses
+  and the slice typing of (e).\\
+\end{longtable}
+\endgroup
+
+\paragraph{Credit}
+We also build on work without re-deriving it. \citet{malladi2022kernel} found the lazy kernel of random-$A_0$ LoRA close
+to that of full fine-tuning, which \thmref{Observation}{I.6} reads through $S_1$. The Init[B] scheme in the table of
+\thmref{Theorem}{II.2} is from \citet{hayou2024impact}. With a fixed support, the meet of \thmref{Proposition}{I.8}(b)
+is (IA)$^3$ masked to $r$ neurons; compare the sparse activation scaling of \citet{xstoehr2024activation}.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{The referee record}\label{sec:analogy-referee}
+
+The framework was synthesised from four proposals and three referee reports. Every numbered result then went to two
+independent referees, who checked it against its proof, the literature and the Hugging Face PEFT source, that is, for
+its proof and for its fit to the methods as published and as coded. Of the \nPropositions{} results, 14 stood as first
+written, with wording fixes, and 27 were repaired by an added hypothesis, a narrowed claim, a replaced proof or a
+withdrawn reading. A second review re-examined 26 of the repaired statements in 48 reports. It raised a major objection
+to 18 of them, mostly to a side clause: a missing hypothesis, a remark that went past its proof, or a description of a
+method that matched only one implementation. For example, HF PEFT's LoftQ initialiser turned out to ignore the LoRA
+scale $\alpha/r$ (\thmref{Proposition}{V.2}). In all it found a false or overreaching clause in 19 statements, and those
+were narrowed again. Only the final statements appear in this paper; the referee notes of both rounds are in the
+ancillary file \texttt{propositions.json}. Table~\ref{tab:referee} records what changed, result by result.
+
+\begingroup
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\setlength{\LTpre}{6pt}\setlength{\LTpost}{8pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{3.45cm}>{\raggedright\arraybackslash}p{1.75cm}>{\raggedright\arraybackslash}p{8.9cm}@{}}
+\caption{The referee record: the status of each numbered result after both rounds of review, and what the referees
+changed.}\label{tab:referee}\\
+\toprule
+\headrow \textbf{Result} & \textbf{Status} & \textbf{What the referees changed}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\footnotesize\itshape Table~\ref{tab:referee}, continued}\\
+\toprule
+\headrow \textbf{Result} & \textbf{Status} & \textbf{What the referees changed}\\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{@{}r}{\footnotesize\itshape continued on the next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\thmref{Obs.}{I.4}, universal properties & repaired & Products need a fibre product in $\Diff$ and can fail to exist
+  ($\mathrm{LoRA}_1\times\text{Frozen}$ on $1\times1$ weights).\\
+\thmref{Obs.}{I.6}, $S_1$ is functorial & verified & Monotonicity stated only along pointed morphisms.\\
+\thmref{Obs.}{I.7}, additive monoidal structure & repaired twice & $r\mapsto\mathrm{LoRA}_r$ is strong monoidal only
+  unpointed or at degenerate pointings ($\dim S_1$ is $mr$ against $2mr$); HF's \texttt{cat} merge described exactly.\\
+\thmref{Prop.}{I.8}, a product and a meet & verified & LoRA-XS needs $\rk W_0\ge r$; the set-level meet in (b) is no
+  new method.\\
+\thmref{Thm}{II.1}, pointings of an additive method & verified & Stated for exact pointings, with a robust form;
+  credited to \citet{meng2024pissa}.\\
+\thmref{Thm}{II.2}, three strata of LoRA initialisations & repaired & Full-rank pointings only, and only as a set; HF's
+  \texttt{orthogonal} init and QLoRA/LoftQ defects lie outside.\\
+\thmref{Prop.}{II.3}, first-order rank formula & repaired & Scale and gradient flow made explicit; Adam's first step has
+  an $\ell_1$ rate; LoRA-GA's $A_0$, not its $B_0$, maximises the rate.\\
+\thmref{Lemma}{II.4}, zero gate & verified & Hypotheses stated; a function-level variant for LLaMA-Adapter; AdaLoRA
+  instance corrected.\\
+\thmref{Thm}{II.5}, complete invariants & verified & Methods that can create zeros ((IA)$^3$, HiRA) keep only ``zeros of
+  $W_0$ stay zero''.\\
+\thmref{Cor.}{II.6}, what orthogonal methods never do & repaired twice & Exactly orthogonal input-side maps only; BOFT
+  keeps cosines up to sign; HF's Cayley--Neumann OFT and GOFT's scaler excluded.\\
+\thmref{Thm}{II.7}, HRA as a meet; its apex & repaired twice & An image-level meet with $W_0\cdot\SO(n)$, no product;
+  strictly above LoRA $\cap$ OFT only for exactly orthogonal OFT.\\
+\thmref{Prop.}{II.8}, DoRA's image & repaired twice & $\mathrm{Diag}_m\cdot(W_0+\Mr)$ for $W_0$ without zero rows; the
+  rank formula needs nonzero magnitudes; Conjecture~D made falsifiable.\\
+\thmref{Prop.}{II.9}, the torus ladder & repaired & $\mathrm{RoAd}_1$ is (IA)$^3$ over $\mathbb C$; only zeros of $W_0$
+  persist; (IA)$^3$'s FFN vector acts on the input of $W_{\mathrm{down}}$.\\
+\thmref{Thm}{II.10}, cut-rank bound & verified & A large min-cut is necessary for high rank and is not sufficient.\\
+\thmref{Thm}{II.11}, Kronecker incomparability & repaired twice & $\kappa_1$ is the maximal Kronecker rank for aligned
+  splits; LoKr with $r'\le\min(m_2,n_2)$ lies in $\mathrm{LoRA}_r$ iff $r\ge\min(m_1,n_1)\,r'$.\\
+\thmref{Prop.}{II.12}, gauge census & repaired twice & GraLoRA's maximum rank is $\min(kr,m,n)$; LoHa loses dimensions
+  to $\mathrm{LoRA}_{2r}$ only when $2r^2<m+n-1$.\\
+\thmref{Prop.}{II.13}, transport of structure & repaired twice & Any $T\in\GL(\Theta)$; commutes with rebasing for
+  additive families and fixed $T$; FourierFT needs no conjugate pair.\\
+\thmref{Obs.}{II.15}, descent & repaired twice & Reachable sets only, for box-wise methods without shared frames;
+  residual rotations need a gain-fused pre-norm model.\\
+\thmref{Prop.}{II.16}, covariant splits & repaired twice & MiLoRA and CorDA-KPM are bottom-$r$ splits; trace-relative
+  damping keeps $\CO(n)$; shipped CorDA code is not covered.\\
+\thmref{Obs.}{III.2}, chain rule for cometrics & verified & Scope stated: gradient flow, no LoRA dropout, constant
+  rates.\\
+\thmref{Thm}{III.3}, naturality of gradient descent & verified & The title ``natural only along isometries'' was false in
+  general and was replaced.\\
+\thmref{Prop.}{III.4}, cometrics that descend & repaired & Undamped (S)GD only; the published methods use AdamW or
+  damping.\\
+\thmref{Thm}{III.5}, Noether charges & repaired twice & Isometries need the signal to factor through $(t,\rho(q))$;
+  relabelled known; the per-channel-rate remark needs distinct rate products.\\
+\thmref{Cor.}{III.6}, charge at initialisation; decay & repaired & The decay commentary was reversed: coupled decay tends
+  to $\mu=0$, per-time decay to $\Phi=0$.\\
+\thmref{Prop.}{III.7}, Kempf--Ness slice & verified & Uniqueness up to $\Ort(r)$ proved; the Loewner floor renamed.\\
+\thmref{Prop.}{III.8}, balance--escape trilemma & verified & Balance generalised to $B_0\T B_0=cA_0A_0\T$.\\
+\thmref{Thm}{III.9}, isotropic-charge dynamics & verified & Pointwise on the rank-$r$ locus; the Kaiming crossover is a
+  band.\\
+\thmref{Thm}{III.10}, the hyperparameter torus & verified & Hypotheses explicit; extended to schedules, per-block
+  $\varepsilon$, decay and clipping.\\
+\thmref{Cor.}{III.11}, LoRA+ and rsLoRA & verified & A shared warm-up keeps the torus; linear modules only.\\
+\thmref{Thm}{III.12}, optimizer gauge hierarchy & repaired twice & Adam respects $B_r$, positive diagonals only with
+  per-channel rates, $\varepsilon$ and decay; damping cuts $\GL_r$ to $\Ort(r)$.\\
+\thmref{Cor.}{III.13}, what zero-$B$ chooses & repaired & The apex fibre is $\{BA=0\}$; the $\GL_r$ case needs
+  equivariance along the whole trajectory.\\
+\thmref{Prop.}{IV.2}, degree-one collapse & repaired & Decoupled decay, default Adafactor and full clipping break it;
+  GaLore carries optimizer state.\\
+\thmref{Prop.}{IV.3}, integrability & repaired twice & The ``only if'' was false; the top-$r$ gradient field is
+  non-involutive for every $r\ge1$.\\
+\thmref{Obs.}{IV.4}, the backprop cone & repaired twice & An upper bound; forward mode pays off only for $k=O(1)$.\\
+\thmref{Prop.}{V.2}, quantisation and splitting & repaired twice & Three orders, three defects; HF's LoftQ init ignores
+  the LoRA scale; QA-LoRA merges on-grid.\\
+\thmref{Thm}{V.3}, rebasing closure & repaired twice & BOFT reaches $\SO(n)$ only at full depth; HF's Cayley--Neumann
+  merges contract.\\
+\thmref{Prop.}{V.4}, combination rules & repaired twice & The ``iff'' needs full rank or continuity; factor-wise DARE is
+  gauge-dependent too.\\
+\thmref{Lemma}{VI.2}, activations fix the basis & verified & Gated FFNs have the full monomial group.\\
+\thmref{Thm}{VI.3}, the merge calculus & repaired twice & Sufficient conditions only; RoPE needs scales constant on
+  rotary pairs.\\
+\thmref{Prop.}{VI.4}, linear insertions, ReFT & repaired twice & LoReFT has dimension $r(2d+1-r)$ and a pyreft pointing
+  defect; the serial-adapter criterion needs $\rk A_0=r$.\\
+\thmref{Thm}{VI.5}, attention as a homomorphism & repaired twice & Rigidity is per layer; the prompt-to-prefix map
+  credited to \citet{petrov2023prompting}.\\
+\end{longtable}
+\endgroup
+
+A repair is a record of an error that was caught. We keep the record public so that a reader can weigh each result by
+its history, and so that the next error, when someone finds it, has an obvious place to go.

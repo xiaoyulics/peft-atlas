@@ -1,0 +1,43 @@
+{
+ "hash": "94962ef242caa4e4",
+ "seconds": 27.28,
+ "pauses": [
+  [
+   0.0,
+   0.322
+  ],
+  [
+   1.57,
+   1.899
+  ],
+  [
+   4.787,
+   5.249
+  ],
+  [
+   9.622,
+   9.917
+  ],
+  [
+   12.903,
+   13.512
+  ],
+  [
+   15.728,
+   16.143
+  ],
+  [
+   19.61,
+   20.356
+  ],
+  [
+   23.306,
+   23.857
+  ],
+  [
+   26.909,
+   27.28
+  ]
+ ],
+ "text": "That isn't luck, and it isn't the only coincidence of its kind. Parameter-efficient fine-tuning now has hundreds of methods; this atlas lists three hundred and eighty-two. We usually compare them with two numbers: how many parameters they train, and how well they score. Those numbers can't see a coincidence like this one. To see it, we have to compare methods by their shape."
+}

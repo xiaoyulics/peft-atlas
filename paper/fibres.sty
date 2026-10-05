@@ -1,0 +1,330 @@
+% fibres.sty — house style for "A Categorical Atlas of Parameter-Efficient Fine-Tuning: Cones, Orbits, and Gauges"
+% A restrained mathematical-manuscript look that shares the companion site's identity:
+% Source Serif text, newtx mathematics, IBM Plex Sans for labels, IBM Plex Mono for code and numbers,
+% one tidal-teal accent, SGA-style "Exposé" numbering (I, II, III, ...) so that every result
+% carries the same number in the paper and on the site (Theorem II.7, Corollary III.11, ...).
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{fibres}[2026/10/03 Categorical Atlas of PEFT house style]
+
+% ---------------------------------------------------------------- page
+\RequirePackage[a4paper,textwidth=15.4cm,textheight=23.6cm,top=3.1cm,headheight=14pt,headsep=0.9cm,footskip=1.1cm]{geometry}
+
+% ---------------------------------------------------------------- fonts
+\RequirePackage[T1]{fontenc}
+\RequirePackage{amsmath,amssymb,mathtools,amsthm}
+\IfFileExists{sourceserif.sty}{\RequirePackage{sourceserif}}{\RequirePackage{sourceserifpro}}% older TeX Live ships the same faces as sourceserifpro
+\RequirePackage[scale=0.86]{plex-sans}
+\RequirePackage[scale=0.84]{plex-mono}
+\RequirePackage[varbb,smallerops,cmintegrals]{newtxmath}
+\RequirePackage[final,protrusion=true,expansion=true,tracking=true]{microtype}
+\linespread{1.06}
+\setlength{\parskip}{0pt}
+% one word space after a full stop: with Source Serif the default wider sentence space left visible holes,
+% most of all in the reference list, where every block ends in a full stop
+\frenchspacing
+% a third line-breaking pass for paragraphs with long inline formulas, which otherwise ran into the margin
+\setlength{\emergencystretch}{1.5em}
+% break points for long words of the paper that the hyphenation patterns do not know
+\hyphenation{re-pa-ram-e-tri-sa-tion re-pa-ram-e-tri-sa-tions re-pa-ram-e-trise re-pa-ram-e-trised re-pa-ram-e-tris-ing}
+% no single line of a paragraph alone at the foot or the head of a page, also inside the breakable result boxes
+% (article sets \raggedbottom, so a page that ends a line early stays short instead of being stretched)
+\clubpenalty=10000 \@clubpenalty=\clubpenalty \widowpenalty=10000
+
+% ---------------------------------------------------------------- colour
+\RequirePackage[table]{xcolor}
+\definecolor{tide}{HTML}{0E7385}
+\definecolor{tidedark}{HTML}{0A5866}
+\definecolor{ochre}{HTML}{A8720C}
+\definecolor{seal}{HTML}{A3392B}
+\definecolor{moss}{HTML}{3C7A3A}
+\definecolor{ink}{HTML}{13233A}
+\definecolor{inkgray}{HTML}{46566A}
+\definecolor{rulegray}{HTML}{C7D0CC}
+\definecolor{headergray}{gray}{0.92}
+\definecolor{wongblue}{HTML}{0072B2}
+\definecolor{wongorange}{HTML}{E69F00}
+\definecolor{wonggreen}{HTML}{009E73}
+\definecolor{wongvermillion}{HTML}{D55E00}
+\definecolor{wongsky}{HTML}{56B4E9}
+\definecolor{wongpurple}{HTML}{CC79A7}
+
+% ---------------------------------------------------------------- general packages
+\RequirePackage{graphicx}
+\RequirePackage{booktabs,colortbl,longtable,array,multirow,tabularx}
+\RequirePackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt,parsep=0pt,leftmargin=1.6em}
+\RequirePackage{tikz,tikz-cd}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathmorphing,shapes.geometric}
+\RequirePackage[breakable,skins]{tcolorbox}
+\RequirePackage{caption}
+% captions are set flush left whatever their length, so one-line captions line up with the table or figure edge
+\captionsetup{font={small},labelfont={sf,bf,color=tide},labelsep=period,justification=justified,singlelinecheck=false}
+\captionsetup[table]{position=above,skip=4pt}
+\captionsetup[figure]{position=below,skip=6pt}
+% \headrow (after \toprule): a grey header band that runs exactly from rule end to rule end and fills the space
+% between \toprule and \midrule. colortbl's \rowcolor overhangs every cell by \tabcolsep, so with the house
+% @{...}@{} column specs the band stuck out past both rules and left white strips above and below the header.
+% Here each cell is coloured over its own left padding plus the previous cell's right padding, the outer edges
+% get the table's outer padding (zero with @{}), and the header strut absorbs \belowrulesep/\aboverulesep
+% so the band meets both rules.
+\newif\iffb@headfirst
+\newif\iffb@inhead
+\newdimen\fb@outerpad
+\newcommand{\fb@headrowcolor}{% \lastskip (the cell's left padding) is read before \color adds a whatsit
+  \iffb@headfirst\global\fb@outerpad\lastskip\@tempdimb\lastskip\global\fb@headfirstfalse
+  \else\@tempdimb\lastskip\advance\@tempdimb\col@sep\fi
+  \@tempdimc\fb@outerpad
+  \CT@color{headergray}}
+\newcommand{\fb@strutrestore}{}
+\newcommand{\headrow}{\noalign{%
+  \vskip-\belowrulesep
+  \global\fb@headfirsttrue\global\fb@inheadtrue
+  \global\let\CT@row@color\fb@headrowcolor
+  \xdef\fb@strutrestore{\global\setbox\@arstrutbox\hbox{\vrule\@height\the\ht\@arstrutbox
+    \@depth\the\dp\@arstrutbox\@width\z@}}%
+  \global\setbox\@arstrutbox\hbox{\vrule\@height\dimexpr\ht\@arstrutbox+\belowrulesep\relax
+    \@depth\dimexpr\dp\@arstrutbox+\aboverulesep\relax\@width\z@}}}
+\newcommand{\fb@afterhead}{\iffb@inhead\global\fb@inheadfalse\fb@strutrestore\vskip-\aboverulesep\fi}
+\CT@everycr{\noalign{\global\let\CT@row@color\relax\fb@afterhead}\the\everycr}
+% float pages start at the top of the text block instead of floating in the middle of an empty page
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 2fil}
+\setlength{\@fpbot}{0pt plus 1fil}
+% float placement. Tall figures with full captions may take up to 85% of a text page at its top. A float page is
+% made only when its floats fill at least 80% of it: with a lower threshold a single two-thirds-page figure became
+% a float page with its lower third empty, where it now heads a text page. Every exposé starts on a new page
+% (below), which flushes its floats, so no figure drifts into the next exposé.
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\RequirePackage[round,authoryear,sort]{natbib}
+\setlength{\bibsep}{3pt plus 1pt}
+% the reference list is set ragged right: almost every entry ends in a long URL, which left justified lines
+% with stretched word spaces (underfull boxes); xurl (loaded after hyperref) lets URLs break at any character
+\RequirePackage{ragged2e}
+% (with a little more room at the right than ragged2e's default 2em, for the long author lists)
+\renewcommand{\bibfont}{\small\setlength{\RaggedRightRightskip}{\z@ \@plus 3em}\RaggedRight}
+% the reference list starts on a new page, with a contents entry and a running head
+\renewcommand\bibsection{\clearpage\section*{\refname}\phantomsection\addcontentsline{toc}{section}{\refname}\markboth{\refname}{}}
+
+% ---------------------------------------------------------------- sections: SGA-style exposés
+\RequirePackage{titlesec}
+\newcommand{\fb@seclabel}{Exposé}
+\newcommand{\seclabel}[1]{\renewcommand{\fb@seclabel}{#1}}
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\thesection.\Alph{subsection}}
+\titleformat{\section}[display]
+  {\normalfont\color{ink}}
+  {\sffamily\footnotesize\color{tide}\textls[180]{\MakeUppercase{\fb@seclabel\ \thesection}}}
+  {0.35em}
+  {\LARGE\bfseries}
+  [\vspace{2pt}{\color{rulegray}\titlerule[0.4pt]}]
+\titleformat{name=\section,numberless}[display]
+  {\normalfont\color{ink}}
+  {}{0pt}{\LARGE\bfseries}[\vspace{2pt}{\color{rulegray}\titlerule[0.4pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .3ex}{2.2ex plus .3ex}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{ink}}{\thesubsection\hspace{0.7em}}{0pt}{}
+\titlespacing*{\subsection}{0pt}{2.6ex plus .8ex minus .3ex}{1.1ex plus .2ex}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+\titlespacing*{\subsubsection}{0pt}{2ex plus .6ex minus .2ex}{0.6ex plus .1ex}
+\titleformat{\paragraph}[runin]{\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}[.]
+\titlespacing*{\paragraph}{0pt}{1.2ex plus .4ex minus .2ex}{0.6em}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+% every numbered exposé and appendix starts on a new page, as the exposés of SGA do: the running head then names
+% the exposé the page belongs to, a heading never lands at the foot of a page, and each exposé's figures and
+% tables are placed before the next one begins. The opening page carries only the folio, since its heading
+% already names the exposé, and no float above the heading. Unnumbered sections (acknowledgements, the appendix
+% roadmap) run on, and so does the first appendix after the roadmap that \fbappendix starts.
+\newif\iffb@runonce
+\newcommand{\sectionbreak}{%
+  \ifttl@label
+    \iffb@runonce\global\fb@runoncefalse\addpenalty{\@secpenalty}\else\clearpage\thispagestyle{plain}\suppressfloats[t]\fi
+  \else\addpenalty{\@secpenalty}\fi}
+% Exposé 0 comes first
+\newcommand{\startatzero}{\setcounter{section}{-1}}
+\renewcommand{\thesection}{\ifnum\value{section}=0 0\else\Roman{section}\fi}
+
+% contents: number boxes wide enough for VIII.A, XIII and C.48; section entries closer together so the contents
+% fit on two pages
+\renewcommand*\l@section[2]{\ifnum\c@tocdepth>\z@\addpenalty\@secpenalty\addvspace{0.45em\@plus\p@}%
+  \setlength\@tempdima{2.4em}\begingroup\parindent\z@\rightskip\@pnumwidth\parfillskip-\@pnumwidth
+  \leavevmode\bfseries\advance\leftskip\@tempdima\hskip-\leftskip#1\nobreak\hfil
+  \nobreak\hb@xt@\@pnumwidth{\hss#2\kern-\p@\kern\p@}\par\endgroup\fi}
+\renewcommand*\l@subsection{\@dottedtocline{2}{2.4em}{3.4em}}
+
+% ---------------------------------------------------------------- running heads
+\RequirePackage{fancyhdr}
+\newcommand{\fb@shorttitle}{A Categorical Atlas of PEFT}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\scriptsize\color{inkgray}\textls[140]{\MakeUppercase{\fb@shorttitle}}}
+\fancyhead[R]{\small\itshape\color{inkgray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\sffamily\footnotesize\color{inkgray}\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{{\color{rulegray}\hrule height\headrulewidth width\headwidth}}
+\renewcommand{\sectionmark}[1]{\markboth{\ifnum\value{secnumdepth}>0 \fb@seclabel\ \thesection\enspace·\enspace\fi #1}{}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\sffamily\footnotesize\color{inkgray}\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---------------------------------------------------------------- results with fixed numbers
+% Every numbered result keeps its number from the theory (and the website): \begin{theorem}{II.7}{name} ... \end{theorem}
+% Labels are res:<number>, e.g. \ref{res:II.7}; \thmref{Theorem}{II.7} prints a linked "Theorem II.7".
+% A run-in heading (\paragraph) directly before a box: tcolorbox starts the box with \noindent, which fired the
+% heading's \everypar inside an unindented line, and titlesec's \hskip-\parindent then pushed the heading
+% into the left margin. \fb@runinflush sets such a heading as a line of its own; the optional argument
+% (\@nobreaktrue, local to the box) makes tcolorbox keep the heading with the first lines of the box, as it
+% does after a \subsubsection. A box needs room for four lines before it may start at the foot of a page: with
+% no club or widow lines allowed, a box whose first paragraph has three lines cannot break sooner, and with the
+% default of two lines tcolorbox broke the page between a heading and its box.
+\newcommand{\fb@runinflush}[1][]{\if@noskipsec\leavevmode\par\nobreak#1\fi}
+\newtcolorbox{fb@rulebox@}[2][]{breakable,enhanced jigsaw,frame hidden,interior hidden,
+  borderline west={#2}{0pt}{#1},left=10pt,right=0pt,top=1pt,bottom=1pt,boxsep=0pt,
+  before skip=9pt plus 2pt,after skip=9pt plus 2pt,parbox=false,lines before break=4}
+\newenvironment{fb@rulebox}[2][]{\fb@runinflush[\@nobreaktrue]\begin{fb@rulebox@}[#1]{#2}}{\end{fb@rulebox@}}
+\newcommand{\fb@resulthead}[3]{% word, number, name; an empty number (or \unskip) gives an unnumbered head, no label
+  \def\fb@tmpa{#2}\def\fb@tmpb{\unskip}%
+  \ifx\fb@tmpa\fb@tmpb\let\fb@tmpa\@empty\fi
+  \ifx\fb@tmpa\@empty
+    {\normalfont\bfseries\scshape #1}%
+  \else
+    \phantomsection\def\@currentlabel{#2}\label{res:#2}%
+    {\normalfont\bfseries\scshape #1\ #2}%
+  \fi
+  \if\relax\detokenize{#3}\relax.\else\ {\normalfont(#3).}\fi\ }
+\newcommand{\fb@defresult}[4]{% envname, word, colour, body font
+  \newenvironment{#1}[2]{\begin{fb@rulebox}[#3]{1.1pt}\noindent\fb@resulthead{#2}{##1}{##2}#4\ignorespaces}{\end{fb@rulebox}}}
+\fb@defresult{theorem}{Theorem}{tide}{\itshape}
+\fb@defresult{proposition}{Proposition}{tide}{\itshape}
+\fb@defresult{lemma}{Lemma}{tide}{\itshape}
+\fb@defresult{corollary}{Corollary}{tide}{\itshape}
+\fb@defresult{observation}{Observation}{tide!70}{\itshape}
+\fb@defresult{conjecture}{Conjecture}{wongpurple}{\itshape}
+\fb@defresult{definition}{Definition}{ochre}{\upshape}
+\fb@defresult{remark}{Remark}{rulegray}{\upshape}
+\fb@defresult{example}{Example}{rulegray}{\upshape}
+\fb@defresult{prediction}{Prediction}{wongvermillion!80}{\upshape}
+% analogy: dashed rule, upright
+\newtcolorbox{fb@dashbox@}{breakable,enhanced jigsaw,frame hidden,interior hidden,left=10pt,right=0pt,top=1pt,bottom=1pt,boxsep=0pt,
+  before skip=9pt plus 2pt,after skip=9pt plus 2pt,parbox=false,lines before break=4,
+  overlay={\draw[inkgray,line width=0.9pt,dash pattern=on 2.5pt off 2pt]([xshift=0.45pt]frame.north west)--([xshift=0.45pt]frame.south west);}}
+\newenvironment{fb@dashbox}{\fb@runinflush[\@nobreaktrue]\begin{fb@dashbox@}}{\end{fb@dashbox@}}
+\newenvironment{analogy}[2]{\begin{fb@dashbox}\noindent\fb@resulthead{Analogy}{#1}{#2}\upshape\ignorespaces}{\end{fb@dashbox}}
+% unnumbered analogy: \begin{analogy*}{name}
+\newenvironment{analogy*}[1]{\begin{fb@dashbox}\noindent\fb@resulthead{Analogy}{}{#1}\upshape\ignorespaces}{\end{fb@dashbox}}
+% unnumbered variants: \begin{example*}{name}
+\newenvironment{example*}[1]{\begin{fb@rulebox}[rulegray]{1.1pt}\noindent{\normalfont\bfseries\scshape Example}\if\relax\detokenize{#1}\relax.\else\ {\normalfont(#1).}\fi\ \ignorespaces}{\end{fb@rulebox}}
+\newenvironment{remark*}[1]{\begin{fb@rulebox}[rulegray]{1.1pt}\noindent{\normalfont\bfseries\scshape Remark}\if\relax\detokenize{#1}\relax.\else\ {\normalfont(#1).}\fi\ \ignorespaces}{\end{fb@rulebox}}
+\newcommand{\thmref}[2]{\hyperref[res:#2]{#1~#2}}
+% restated results (Appendix C): same head, no label, so the main-text label stays unique
+\newenvironment{restate}[3]{\begin{fb@rulebox}[tide!45]{0.8pt}\noindent{\normalfont\bfseries\scshape #1\ #2}\if\relax\detokenize{#3}\relax.\else\ {\normalfont(#3).}\fi\ \itshape\ignorespaces}{\end{fb@rulebox}}
+% background entries (Appendix A) keep the website's numbers (A.1 ... D.34) under the word "Background"
+\newcommand{\fb@prefixhead}[4]{% label prefix, word, number, name
+  \phantomsection\def\@currentlabel{#3}\label{#1:#3}%
+  {\normalfont\bfseries\scshape #2\ #3}\if\relax\detokenize{#4}\relax.\else\ {\normalfont(#4).}\fi\ }
+\newenvironment{bgentry}[2]{\begin{fb@rulebox}[ochre!80]{1.1pt}\noindent\fb@prefixhead{bg}{Background}{#1}{#2}\upshape\ignorespaces}{\end{fb@rulebox}}
+\newenvironment{bgfact}[2]{\begin{fb@rulebox}[tide!70]{1.1pt}\noindent\fb@prefixhead{bg}{Fact}{#1}{#2}\itshape\ignorespaces}{\end{fb@rulebox}}
+\newcommand{\bgref}[1]{\hyperref[bg:#1]{Background~#1}}
+% auxiliary results (Appendix B): external results in the exact form the proofs use
+\newenvironment{auxresult}[3]{\begin{fb@rulebox}[tide!70]{1.1pt}\noindent\fb@prefixhead{aux}{Auxiliary result}{#1}{#2}{\normalfont\itshape #3}\ \itshape\ignorespaces}{\end{fb@rulebox}}
+\newcommand{\auxref}[1]{\hyperref[aux:#1]{Auxiliary result~#1}}
+% "Used in" notes after an entry of Appendix A or B stay on the page of the entry they annotate. The penalty goes
+% in front of the box's after-skip, since a page break at that skip would otherwise leave the note alone at the
+% head of the next page. The section files declare these with \providecommand, so this definition is the one used.
+\newcommand{\fb@keepwithprevious}{\par
+  \ifdim\lastskip>\z@\@tempskipa\lastskip\vskip-\lastskip\nobreak\vskip\@tempskipa\else\nobreak\fi}
+\newcommand{\fbAusedin}[1]{\fb@keepwithprevious\smallskip\noindent
+  {\small\color{inkgray}{\sffamily\bfseries\color{tide}Used in.}\enspace #1\par}\medskip}
+\newcommand{\fbBusedin}[1]{\fbAusedin{#1}}
+
+
+% "What this explains" paragraphs
+% set as ordinary indented paragraphs rather than a minipage, so a long note can break across pages instead of
+% being pushed whole to the next page and leaving a large gap
+\newenvironment{explains}{\fb@runinflush\par\smallskip\begingroup\parindent\z@\leftskip=10pt\emergencystretch=1.5em\noindent\color{inkgray}%
+  \mbox{\sffamily\scriptsize\bfseries\color{tide}\textls[120]{WHAT THIS EXPLAINS}}\enspace\ignorespaces}{\par\endgroup\smallskip}
+
+% proofs (deferred proofs live in the appendix)
+\renewenvironment{proof}[1][\proofname]{\par\pushQED{\qed}\normalfont\topsep4pt plus2pt\trivlist
+  \item[\hskip\labelsep{\itshape #1.}]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\renewcommand{\qedsymbol}{\textcolor{inkgray}{$\square$}}
+
+% numbers and code in the sans/mono faces
+\newcommand{\num}[1]{\texttt{#1}}
+\newcommand{\labelsf}[1]{{\sffamily\footnotesize\textls[100]{\MakeUppercase{#1}}}}
+
+% ---------------------------------------------------------------- title block
+\newcommand{\fb@kicker}{}
+\newcommand{\kicker}[1]{\renewcommand{\fb@kicker}{#1}}
+\newcommand{\fb@companion}{}
+\newcommand{\companion}[1]{\renewcommand{\fb@companion}{#1}}
+\newcommand{\fb@reportnote}{}
+\newcommand{\reportnote}[1]{\renewcommand{\fb@reportnote}{#1}}
+\newcommand{\fb@subtitle}{}
+\newcommand{\subtitle}[1]{\renewcommand{\fb@subtitle}{#1}}
+% one author block: name, affiliation, email; set two per row in \author with \fbauthors
+\newcommand{\fbauthor}[3]{{\large\color{ink}#1\par}\vspace{1pt}{\small\color{ink}#2\par}{\small\ttfamily\color{inkgray}#3\par}}
+% a credit line under the author grid, for a non-author collaborator
+\newcommand{\fbwith}[1]{\par\vspace{0.35em}{\small\itshape\color{inkgray}#1\par}}
+\newcommand{\fbauthors}[1]{\begin{tabular}{@{}p{0.5\linewidth}@{}p{0.5\linewidth}@{}}#1\end{tabular}}
+\renewcommand{\maketitle}{%
+  \thispagestyle{plain}%
+  \begingroup\raggedright
+  \ifx\fb@kicker\@empty\else{\sffamily\footnotesize\color{tide}\textls[180]{\MakeUppercase{\fb@kicker}}\par}\vspace{0.6em}\fi
+  {\fontsize{25}{30}\selectfont\bfseries\color{ink}\@title\par}%
+  \ifx\fb@subtitle\@empty\else\vspace{0.45em}{\fontsize{18}{22}\selectfont\color{tide}\fb@subtitle\par}\fi
+  \vspace{0.6em}
+  {\@author\par}\vspace{0.55em}
+  {\sffamily\footnotesize\color{inkgray}\@date\par}
+  \ifx\fb@companion\@empty\else\vspace{0.3em}{\sffamily\footnotesize\color{inkgray}\fb@companion\par}\fi
+  \par\endgroup\vspace{0.5em}
+  {\color{rulegray}\rule{\linewidth}{0.4pt}}\par\vspace{0.4em}%
+  \global\let\fb@footnoterule\footnoterule
+  \gdef\footnoterule{\kern-3\p@{\color{rulegray}\hrule\@width\linewidth\@height0.4\p@}\kern2.6\p@}%
+  \AddToHookNext{shipout/after}{\global\let\footnoterule\fb@footnoterule}}
+\renewenvironment{abstract}{\par\noindent{\sffamily\footnotesize\bfseries\color{tide}\textls[160]{ABSTRACT}}\par\vspace{0.3em}\noindent\ignorespaces}{\par\ifx\fb@reportnote\@empty\else\vspace{0.55em}{\footnotesize\itshape\color{inkgray}\noindent\fb@reportnote\par}\fi\par}
+
+% ---------------------------------------------------------------- appendix
+\newcommand{\fbappendix}{\appendix\global\fb@runoncetrue\seclabel{Appendix}\renewcommand{\thesection}{\Alph{section}}\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}}
+
+% ---------------------------------------------------------------- links (load last)
+\RequirePackage[colorlinks=true,linkcolor=tide,citecolor=tidedark,urlcolor=tide,
+  linktoc=page,pdfborder={0 0 0},bookmarksnumbered=true,pdfusetitle]{hyperref}
+\RequirePackage{bookmark}
+\RequirePackage{xurl}
+
+% ---------------------------------------------------------------- mathematical vocabulary
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Meth}{\mathbf{Meth}}
+\newcommand{\Diff}{\mathbf{Diff}}
+\newcommand{\Para}{\mathbf{Para}}
+\newcommand{\Set}{\mathbf{Set}}
+\newcommand{\FinVect}{\mathbf{FinVect}}
+\newcommand{\Lens}{\mathbf{Lens}}
+\newcommand{\Mr}{\mathcal{M}_{\le r}}
+\newcommand{\MM}{\mathcal{M}}
+\DeclareMathOperator{\Imop}{Im}
+\renewcommand{\Im}{\Imop}
+\DeclareMathOperator{\rk}{rank}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Gr}{Gr}
+\DeclareMathOperator{\skewop}{skew}
+\DeclareMathOperator{\symop}{sym}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\vect}{vec}
+\DeclareMathOperator{\spanop}{span}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\gl}{\mathfrak{gl}}
+\newcommand{\so}{\mathfrak{so}}
+\newcommand{\Sym}{\mathrm{Sym}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\SO}{\mathrm{SO}}
+\newcommand{\Ort}{\mathrm{O}}
+\newcommand{\CO}{\mathrm{CO}}
+\newcommand{\T}{^{\top}}
+\newcommand{\dd}{\mathrm{d}}
+\endinput

@@ -1,0 +1,1814 @@
+{
+ "family": "multiplicative",
+ "family_title": "Multiplicative, Orthogonal, Scaling & Spectral Methods (group and monoid actions on W_0)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "oft",
+   "name": "OFT",
+   "full_name": "Orthogonal Finetuning (with constrained variant COFT)",
+   "paper_title": "Controlling Text-to-Image Diffusion by Orthogonal Finetuning",
+   "authors": "Qiu et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.07280",
+   "url": "https://arxiv.org/abs/2306.07280",
+   "code_url": "https://github.com/zqiu24/oft",
+   "hf_peft": true,
+   "hf_peft_config": "OFTConfig(use_cayley_neumann=False)",
+   "formula_latex": "W = W_0 R^{\\top},\\quad R = \\operatorname{diag}(R_1,\\dots,R_r),\\ R_i = (I+Q_i)(I-Q_i)^{-1}\\in SO(b),\\ Q_i=-Q_i^{\\top}\\in\\mathbb{R}^{b\\times b},\\ b=d_{in}/r;\\ \\text{COFT: } \\|R-I\\|\\le\\epsilon\\ (\\text{enforced as } \\|Q\\|\\le\\epsilon'\\ \\text{by projected gradient descent});\\ W_0 \\text{ frozen, } \\{Q_i\\} \\text{ trained}",
+   "trainable_params": "r\\cdot\\tfrac{b(b-1)}{2}=\\tfrac{d_{in}(b-1)}{2},\\ b=d_{in}/r\\ \\ (\\tfrac{b(b-1)}{2}\\text{ with block sharing})",
+   "locus": "any linear / conv layer (originally the attention projections of the Stable Diffusion UNet); acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of the block-diagonal orthogonal subgroup O(b)^r < O(d_in) on W_0 (paper writes z=(R W^0)^T x with W^0 of shape d_in x d_out; in the h=Wx convention this is W = W_0 R^T, and R^T ranges over the same group). Every neuron (row of W_0) is rotated by the same R, so all pairwise neuron angles and the hyperspherical energy are invariants; R is reached through the Cayley chart from the Lie algebra so(b)^r.",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 R^T is a dense matrix of the original shape that can be computed once and stored in place of W_0 (HF merges exactly this).",
+   "identity_at_init": "Q = 0 gives R = I, so the model is exactly the pretrained one at initialization.",
+   "key_idea": "Fine-tune by rotating all neurons of a layer with one shared orthogonal matrix. This keeps the angles between pretrained neurons (their hyperspherical energy), which the paper argues carries the semantic information. A block-diagonal R keeps the parameter count low.",
+   "results_note": "On Stable Diffusion subject-driven and controllable generation, OFT/COFT is reported to beat existing fine-tuning methods in generation quality and convergence speed.",
+   "relations": [
+    {
+     "target": "boft",
+     "type": "special-case-of",
+     "note": "OFT with r blocks of size b is BOFT(1,b); BOFT(1,d) is unconstrained OFT"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "OFT saves parameters with a sparse block-diagonal multiplicative structure where LoRA uses a low-rank additive one (128x128 example: OFT r=8 needs 960 vs LoRA r=8 2048 parameters)"
+    },
+    {
+     "target": "oftv2",
+     "type": "equivalent-to",
+     "note": "with exact Cayley (use_cayley_neumann=False) OFTv2 computes the same function as OFT and only changes the evaluation order (rotate the input, then apply W_0); with the truncated Neumann series it is an approximation of OFT"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.07280",
+    "https://arxiv.org/html/2306.07280",
+    "https://raw.githubusercontent.com/huggingface/peft/main/docs/source/package_reference/oft.md",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/oft/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2306.07280 (Qiu, 2023) matches; NeurIPS 2023 confirmed by arXiv comment and Semantic Scholar. Formula, 960-parameter example and identity init checked in Sec. 3.2-3.4 of the PDF. HF OFT layer is input-centric and merges as W_0 R^T.",
+   "corrections": [
+    "formula: paper's forward pass is z=(R W^0)^T x with W^0 in R^{d_in x d_out}, i.e. W = W_0 R^T in the h=Wx convention; written as W_0 R^T instead of W_0 R (mergeable_reason updated to match)",
+    "formula: Cayley map only reaches SO(b), so R_i in SO(b) rather than O(d_in)",
+    "formula: added that the COFT constraint ||R-I||<=eps is implemented as ||Q||<=eps' with projected gradient descent (Sec. 3.4)",
+    "hf_peft_config: current HF OFTConfig defaults to use_cayley_neumann=True (the OFTv2 parameterization); the original exact-Cayley OFT is OFTConfig(use_cayley_neumann=False)",
+    "relations: clarified the equivalent-to note for oftv2 (exact only without the Neumann approximation)"
+   ]
+  },
+  {
+   "id": "boft",
+   "name": "BOFT",
+   "full_name": "Butterfly Orthogonal Finetuning",
+   "paper_title": "Parameter-Efficient Orthogonal Finetuning via Butterfly Factorization",
+   "authors": "Liu et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2311.06243",
+   "url": "https://arxiv.org/abs/2311.06243",
+   "code_url": "https://github.com/wy1iu/butterfly-oft",
+   "hf_peft": true,
+   "hf_peft_config": "BOFTConfig",
+   "formula_latex": "W = W_0 R(m,b)^{\\top},\\quad R(m,b)=\\prod_{i=1}^{m}\\tilde{B}^{b}_{(d_{in},i)},\\ \\big(\\tilde{B}^{b}_{(d_{in},i)}\\big)^{\\top}\\tilde{B}^{b}_{(d_{in},i)}=I,\\ \\text{each factor a permuted block-diagonal matrix of } b\\times b \\text{ Cayley-parameterized orthogonal blocks};\\ W_0 \\text{ frozen}",
+   "trainable_params": "\\tfrac{1}{2}\\,m\\,(b-1)\\,d_{in}\\quad(\\mathcal{O}(d_{in}\\log d_{in})\\ \\text{for } b=2,\\ m=\\log_2 d_{in})",
+   "locus": "any linear / conv layer (attention and MLP of ViTs, LLMs, SAM, Stable Diffusion); acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of a product of m sparse butterfly factors, each a permutation conjugate of the block-diagonal subgroup O(b)^{d/b}; the product is a dense orthogonal matrix. The paper frames this as information transmission on a butterfly grid graph (a Cooley-Tukey style factorization of an O(d) element).",
+   "mergeable": "yes",
+   "mergeable_reason": "The product R(m,b) is a fixed orthogonal matrix after training, so W_0 R(m,b)^T can be precomputed.",
+   "identity_at_init": "All skew-symmetric generators start at 0, so every butterfly factor is the identity and R = I.",
+   "key_idea": "Build a dense orthogonal matrix as a product of sparse butterfly-structured orthogonal factors. OFT then gets dense rotations from O(d log d) parameters. Block-diagonal OFT is the m=1 case.",
+   "results_note": "Reports higher scores than LoRA and OFT on GLUE (DeBERTaV3), the best VTAB-1K average in its table (77.9% for BOFT m=2, b=8 with DINOv2-large), better Llama-2-7B MMLU and math (GSM8K/MATH) results, HQ-SAM-level segmentation with 3% of its parameters, and better controllable and subject-driven Stable Diffusion generation.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "generalizes",
+     "note": "BOFT(1,b) is block-diagonal OFT; BOFT(1,d) is full OFT"
+    },
+    {
+     "target": "goft",
+     "type": "competes-with",
+     "note": "both build O(d) elements from log-depth sparse factors; GOFT uses one Givens angle per pair and fewer pairs per layer"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "multiplicative sparse factorization in place of low-rank addition"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.06243",
+    "https://arxiv.org/html/2311.06243",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/boft/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2311.06243 (Liu, 2023) matches; ICLR 2024 confirmed (arXiv comment, ICLR 2024 proceedings). Parameter count (1/2)(b-1)dm, BOFT(1,b)=block-diagonal OFT and identity init checked in Sec. 4 of the PDF; BOFTConfig exists in HF PEFT.",
+   "corrections": [
+    "formula: paper's forward pass is z=(R(m,b) W^0)^T x, i.e. W = W_0 R(m,b)^T in the h=Wx convention (mergeable_reason updated to match)",
+    "results_note: the LLM experiments use Llama-2-7B, not LLaMA-7B; added the VTAB-1K configuration (m=2, b=8, DINOv2-large)"
+   ]
+  },
+  {
+   "id": "oftv2",
+   "name": "OFTv2",
+   "full_name": "Orthogonal Finetuning v2 (input-centric OFT with Cayley-Neumann parameterization; QOFT for quantized models)",
+   "paper_title": "Orthogonal Finetuning Made Scalable",
+   "authors": "Qiu et al.",
+   "year": 2025,
+   "venue": "EMNLP 2025",
+   "arxiv": "2506.19847",
+   "url": "https://arxiv.org/abs/2506.19847",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "OFTConfig (use_cayley_neumann=True is the default; num_cayley_neumann_terms=5)",
+   "formula_latex": "h = W_0\\,(R^{\\top}x),\\quad R=\\operatorname{diag}(R_1,\\dots,R_r),\\ R_i=(I+Q_i)\\Big(I+\\sum_{k=1}^{K}Q_i^{k}\\Big)\\approx(I+Q_i)(I-Q_i)^{-1},\\ Q_i=-Q_i^{\\top}\\in\\mathbb{R}^{b\\times b};\\ \\text{QOFT: } h=\\mathrm{Dequant}(W_q)\\,(R^{\\top}x);\\ W_0 \\text{ (or } W_q) \\text{ frozen}",
+   "trainable_params": "\\tfrac{d_{in}(b-1)}{2},\\ b=d_{in}/r",
+   "locus": "any linear layer (input activations are rotated before the frozen matmul); works on top of quantized base weights",
+   "modification_kind": "multiplicative-weight",
+   "structure": "the same block-diagonal (now only approximately) orthogonal action as OFT, evaluated as an action on the input vector x (two matrix-vector products, O(nd + d^2)) instead of on W_0 (matrix-matrix, O(nd^2)). The truncated Neumann series makes the Cayley map only approximately orthogonal.",
+   "mergeable": "yes",
+   "mergeable_reason": "For a full-precision base, R can be folded into the weight (W_0 R^T); for QOFT, merging requires dequantizing and re-quantizing the merged weight.",
+   "identity_at_init": "Q = 0 gives R = I.",
+   "key_idea": "Rotate the input instead of the weight, which cuts OFT's cost from cubic to quadratic. Replace the matrix inverse in the Cayley transform with a truncated Neumann series. Because R acts on activations, the method runs on any quantized backbone (QOFT).",
+   "results_note": "Reports up to 10x faster training and 3x lower GPU memory than the original OFT, and better results than QLoRA when fine-tuning quantized Qwen2.5 models (0.5B-72B) for math reasoning; also applied to Stable Diffusion 3.5.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "same group action; input-centric evaluation and Cayley-Neumann approximation"
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "QOFT targets the same quantized-base setting as QLoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.19847",
+    "https://arxiv.org/html/2506.19847",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/oft/config.py",
+    "https://raw.githubusercontent.com/huggingface/peft/main/src/peft/tuners/oft/layer.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2506.19847 (Qiu, 2025) matches; EMNLP 2025 Main confirmed by arXiv comment and DBLP (conf/emnlp/QiuLWS25). Input-centric form, Cayley-Neumann series, 10x/3x claims and Qwen2.5 0.5B-72B and SD3.5 experiments checked in the PDF.",
+   "corrections": [
+    "formula: paper's input-centric forward pass is z = W_0^T R^T x (Eq. 2-3), i.e. h = W_0 (R^T x); R x replaced by R^T x (mergeable_reason updated to W_0 R^T)",
+    "hf_peft_config: use_cayley_neumann=True is already the default of OFTConfig in current HF PEFT"
+   ]
+  },
+  {
+   "id": "hra",
+   "name": "HRA",
+   "full_name": "Householder Reflection Adaptation",
+   "paper_title": "Bridging The Gap between Low-rank and Orthogonal Adaptation via Householder Reflection Adaptation",
+   "authors": "Yuan et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.17484",
+   "url": "https://arxiv.org/abs/2405.17484",
+   "code_url": "https://github.com/DaShenZi721/HRA",
+   "hf_peft": true,
+   "hf_peft_config": "HRAConfig",
+   "formula_latex": "W = W_0 H^{(r)},\\quad H^{(r)}=\\prod_{i=1}^{r}\\Big(I-2\\tfrac{u_iu_i^{\\top}}{\\|u_i\\|^2}\\Big)=I+U_r\\Gamma_rU_r^{\\top},\\ u_i\\in\\mathbb{R}^{d_{in}};\\ \\text{loss}+\\lambda\\sum_{l}\\big\\|I_r-U_r^{(l)\\top}U_r^{(l)}\\big\\|_F^2;\\ W_0 \\text{ frozen, } U_r=[u_1,\\dots,u_r] \\text{ trained}",
+   "trainable_params": "r\\,d_{in}",
+   "locus": "any linear layer (LLM attention/MLP projections, Stable Diffusion attention); acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of a word of length r in Householder reflections (an element of O(d_in) that differs from I by a rank<=r matrix). W_0 H = W_0 + (W_0 U_r Gamma_r) U_r^T, so it is an orthogonal multiplicative update and an adaptive rank-r additive update at the same time. The regularizer lambda moves between free reflections (lambda=0) and Gram-Schmidt-orthonormal reflection planes (lambda -> infinity).",
+   "mergeable": "yes",
+   "mergeable_reason": "H^(r) is a fixed d_in x d_in matrix after training, so W_0 H^(r) can be precomputed.",
+   "identity_at_init": "In the HF PEFT implementation the reflection vectors are initialized in identical pairs (u_{2i-1} = u_{2i}), so consecutive reflections cancel and H^(r) = I; this needs even r (odd r falls back to random Kaiming init with a warning). The paper text does not state this initialization, and its strictly orthogonal variant (lambda = infinity, U_r = GS(V_r)) starts from a random reflection.",
+   "key_idea": "A chain of r learnable Householder reflections is an orthogonal matrix and also the identity plus a rank-r term. HRA is therefore both orthogonal fine-tuning and adaptive low-rank adaptation. A penalty on how far the reflection planes are from orthogonal trades capacity against regularity.",
+   "results_note": "Reports better performance than LoRA, OFT and BOFT variants with fewer trainable parameters on GLUE, LLaMA-2 math reasoning (GSM8K, MATH) and Stable Diffusion subject-driven/controllable generation.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "orthogonal right action on W_0, generated by reflections instead of Cayley blocks"
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "the paper shows W_0 H^(r) = W_0 + A(W_0,B)B, an adaptive rank-r LoRA whose left factor depends on W_0"
+    },
+    {
+     "target": "ether",
+     "type": "generalizes",
+     "note": "a block-diagonal ETHER with n blocks equals a product of n Householder reflections whose vectors have disjoint supports, i.e. HRA with r=n mutually orthogonal u_i (HRA also makes the identity reachable by pairing)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.17484",
+    "https://arxiv.org/html/2405.17484",
+    "https://neurips.cc/virtual/2024/poster/95554",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/hra/config.py",
+    "https://raw.githubusercontent.com/huggingface/peft/main/src/peft/tuners/hra/layer.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.17484 (Yuan, 2024) matches; NeurIPS 2024 (spotlight) confirmed in the NeurIPS 2024 accepted-paper data. Forward pass z = W H^(r) x with unit u_i, the identity I + U Gamma U^T, the regularizer and the r*d parameter count checked in the PDF. HRAConfig exists in HF PEFT.",
+   "corrections": [
+    "identity_at_init: the paired-vector identity initialization is an HF PEFT implementation detail (reset_hra_parameters); the paper does not state it, and the Gram-Schmidt variant is not the identity at init"
+   ]
+  },
+  {
+   "id": "goft",
+   "name": "GOFT",
+   "full_name": "Givens Orthogonal Fine-Tuning",
+   "paper_title": "Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation",
+   "authors": "Ma et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2404.04316",
+   "url": "https://arxiv.org/abs/2404.04316",
+   "code_url": "https://github.com/ArthurLeoM/peft-givens",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 R^{\\top},\\quad R=\\prod_{\\ell=1}^{\\log_2 d_{in}}P_\\ell,\\ P_\\ell=\\prod_{k=0}^{d_{in}/2^{\\ell}-1}G\\big(2^{\\ell}k,\\ 2^{\\ell-1}(2k+1);\\ \\theta_k^{\\ell}\\big),\\ G(i,j;\\theta) \\text{ a Givens rotation in the } (i,j) \\text{ plane};\\ W_0 \\text{ frozen, angles } \\theta \\text{ trained}",
+   "trainable_params": "d_{in}-1",
+   "locus": "any linear layer; acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of SO(d_in), with the group element written as a product of d-1 Givens rotations (one-parameter subgroups SO(2) embedded in coordinate planes) arranged in log2(d) parallel layers of non-overlapping rotations, a butterfly-like layout",
+   "mergeable": "yes",
+   "mergeable_reason": "The product of Givens rotations is a fixed orthogonal matrix that can be multiplied into W_0.",
+   "identity_at_init": "All angles start at 0 (each rotation initialized to the identity).",
+   "key_idea": "d-1 Givens rotations can map any vector to any other vector on the same sphere, so OFT-level expressiveness only needs O(d) angles instead of O(d^2) parameters. A parallel arrangement keeps the depth at O(log d) sequential layers.",
+   "results_note": "On GLUE with DeBERTaV3-base, GOFT with 0.08M parameters matches OFT (b=8, 0.66M parameters) at an 88.78 average; also evaluated on LLaMA-2-7B instruction tuning and VTAB-1K.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "same orthogonal right action; far sparser parameterization"
+    },
+    {
+     "target": "boft",
+     "type": "special-case-of",
+     "note": "up to factor-ordering and permutation conventions, GOFT's parallel layer P_l keeps only the first 2x2 rotation of each stride-2^{l-1} butterfly block, so it is a sparser instance of BOFT(log2 d, 2) with the other rotations fixed to the identity (a function-class inclusion, not a statement made in either paper)"
+    },
+    {
+     "target": "qgoft",
+     "type": "special-case-of",
+     "note": "qGOFT relaxes each Givens block to a general 2x2 matrix"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.04316",
+    "https://arxiv.org/html/2404.04316"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2404.04316 (Ma, 2024) matches; ICML 2024 confirmed by arXiv comment and DBLP. Forward pass h=(RW)^T x with R=prod P_r, P_r = prod G(2^r k, 2^{r-1}(2k+1)), d-1 angles, zero-angle init, and the GLUE numbers (GOFT 0.08M 88.78 = OFT b=8 0.66M 88.78) checked in the PDF.",
+   "corrections": [
+    "code_url: added the official repository linked in the paper (github.com/ArthurLeoM/peft-givens)",
+    "relations: clarified that the boft special-case-of link is a function-class inclusion derived here, not a claim of either paper"
+   ]
+  },
+  {
+   "id": "qgoft",
+   "name": "qGOFT",
+   "full_name": "quasi-Givens Orthogonal Fine-Tuning",
+   "paper_title": "Parameter Efficient Quasi-Orthogonal Fine-Tuning via Givens Rotation",
+   "authors": "Ma et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2404.04316",
+   "url": "https://arxiv.org/abs/2404.04316",
+   "code_url": "https://github.com/ArthurLeoM/peft-givens",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0\\tilde{R}^{\\top},\\quad \\tilde{R}=\\prod_{\\ell}\\tilde{P}_\\ell,\\ \\text{each Givens block replaced by a free } \\tilde{G}_i=[\\alpha_i\\ \\beta_i]\\in\\mathbb{R}^{2\\times 2};\\ \\min\\ \\mathcal{L}+\\lambda\\sum_i\\langle\\alpha_i,\\beta_i\\rangle^2;\\ W_0 \\text{ frozen}",
+   "trainable_params": "4(d_{in}-1)",
+   "locus": "any linear layer; acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of a product of embedded GL(2) blocks laid out like GOFT. Leaving SO(d) lets the update change neuron norms and angles, and a soft column-orthogonality penalty keeps it near the orthogonal group.",
+   "mergeable": "yes",
+   "mergeable_reason": "The product of 2x2 blocks is a fixed matrix that can be multiplied into W_0.",
+   "identity_at_init": "Every quasi-Givens block is initialized to the 2x2 identity.",
+   "key_idea": "Relax each Givens rotation to an arbitrary 2x2 linear map, so fine-tuning can also rescale neurons and shift their angles. A soft regularizer keeps the map close to orthogonal.",
+   "results_note": "Reports an 89.35 GLUE average on DeBERTaV3-base with 0.33M parameters (above OFT b=8 with 0.66M) and a 79.4% VTAB-1K average.",
+   "relations": [
+    {
+     "target": "goft",
+     "type": "generalizes",
+     "note": "Givens rotations relaxed to general 2x2 blocks with a soft orthogonality penalty"
+    },
+    {
+     "target": "road",
+     "type": "competes-with",
+     "note": "structural analogue: both act with 2x2 blocks (qGOFT on the input side with butterfly-style mixing, RoAd with scaled rotations on fixed output pairs); neither paper compares against the other"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.04316",
+    "https://arxiv.org/html/2404.04316"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Same paper as GOFT (arXiv 2404.04316, ICML 2024). Quasi-Givens 2x2 blocks (alpha_i, beta_i), the lambda * sum <alpha_i,beta_i>^2 regularizer, identity init of each block, the 89.35 GLUE (0.33M) and 79.4 VTAB-1K numbers checked in the PDF.",
+   "corrections": [
+    "code_url: added the official repository linked in the paper",
+    "relations: road note clarified as a structural analogy (neither paper compares against the other)"
+   ]
+  },
+  {
+   "id": "ether",
+   "name": "ETHER",
+   "full_name": "Efficient Finetuning with Hyperplane Reflections",
+   "paper_title": "ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections",
+   "authors": "Bini et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2405.20271",
+   "url": "https://arxiv.org/abs/2405.20271",
+   "code_url": "https://github.com/mwbini/ether",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 H^{B},\\quad H^{B}=\\operatorname{diag}(H_1,\\dots,H_n),\\ H_j=I-2u_ju_j^{\\top},\\ \\|u_j\\|=1,\\ u_j\\in\\mathbb{R}^{d_{in}/n};\\ \\|H_j-I\\|_F=2;\\ W_0 \\text{ frozen, } u_j \\text{ trained}",
+   "trainable_params": "d_{in}",
+   "locus": "any linear layer (diffusion attention, LLM projections); acts on the input side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "right action of a block-diagonal product of n hyperplane reflections, an element of O(d_in) that lies at fixed distance ||H_j - I||_F = 2 from the identity in every block",
+   "mergeable": "yes",
+   "mergeable_reason": "H^B is a fixed orthogonal matrix that can be multiplied into W_0.",
+   "identity_at_init": "No. A Householder reflection is never the identity (||H - I||_F = 2 per block), and the official code initializes u with Kaiming-uniform random values, so the model is moved by a bounded reflection at step 0. Training only re-orients the reflection hyperplanes.",
+   "key_idea": "Restricting the multiplicative update to hyperplane reflections bounds how far the fine-tuned weights can move from the pretrained ones, whatever the learning rate. The result needs very few parameters and is robust to hyperparameters.",
+   "results_note": "Reports performance matching or beating LoRA and OFT with about 10-100x fewer parameters on subject-driven and controllable Stable Diffusion generation, GLUE and LLaMA instruction tuning.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "block-diagonal orthogonal action with each block restricted to a single reflection"
+    },
+    {
+     "target": "hra",
+     "type": "special-case-of",
+     "note": "diag(H_1,...,H_n) is a product of n reflections with disjoint-support vectors, i.e. HRA with r=n orthogonal reflection vectors and without the identity-preserving pairing (the two methods were concurrent)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.20271",
+    "https://arxiv.org/html/2405.20271"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.20271 (Bini, 2024) matches; ICML 2024 confirmed (arXiv comment, PMLR 235 header). Paper convention (Q W)^T x with W in R^{d x f}; H is symmetric so W_0 H is exact. Block-diagonal form, ||H-I||_F=2, O(Ld) parameters and the 120x/30x fewer-than-OFT statements checked in the PDF. Not in HF PEFT.",
+   "corrections": [
+    "identity_at_init: confirmed from the official code (ether-instruct/lit_gpt/ether.py: Kaiming-random u, H = I - 2uu^T/||u||^2) that ETHER does not start at the identity; removed the 'not confirmed' hedge",
+    "confidence: medium -> high after checking the paper and official code"
+   ]
+  },
+  {
+   "id": "ether-plus",
+   "name": "ETHER+",
+   "full_name": "ETHER+ (relaxed two-hyperplane transformation applied on both sides)",
+   "paper_title": "ETHER: Efficient Finetuning of Large-Scale Models with Hyperplane Reflections",
+   "authors": "Bini et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2405.20271",
+   "url": "https://arxiv.org/abs/2405.20271",
+   "code_url": "https://github.com/mwbini/ether",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=\\tilde{H}^{+}\\,W_0\\,H^{+},\\quad H^{+}=I-uu^{\\top}+vv^{\\top}\\ (u,v\\in\\mathbb{R}^{d_{in}}\\ \\text{unit, block-diagonal}),\\ \\tilde{H}^{+}=I-\\tilde u\\tilde u^{\\top}+\\tilde v\\tilde v^{\\top}\\ (\\tilde u,\\tilde v\\in\\mathbb{R}^{d_{out}});\\ W_0 \\text{ frozen}",
+   "trainable_params": "2(d_{in}+d_{out})",
+   "locus": "any linear layer; acts on both the input and the output side of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "two-sided action (left on R^{d_out}, right on R^{d_in}) by rank<=2 perturbations of the identity. These are not orthogonal in general, so they leave the group O(d), but their distance to I is bounded by ETHER's.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both transforms are fixed matrices after training, so H~+ W_0 H+ can be precomputed.",
+   "identity_at_init": "Yes. The official code initializes the second vector as the negative copy of the first (v = -u), so vv^T = uu^T and H+ = I on both sides; the paper notes that H+ returns the identity when the two hyperplanes coincide.",
+   "key_idea": "Relax the Householder reflection to I - uu^T + vv^T so that two hyperplanes can interact or cancel. Applied on both sides of W_0, this gives finer, still norm-bounded updates.",
+   "results_note": "Reports e.g. 0.666 DINO for subject-driven generation with 0.4M parameters vs OFT's 0.652 with 11.6M, and 27.3 mIoU vs 24.5 for controllable generation.",
+   "relations": [
+    {
+     "target": "ether",
+     "type": "generalizes",
+     "note": "a two-hyperplane relaxation of the reflection that can reach the identity"
+    },
+    {
+     "target": "delora",
+     "type": "competes-with",
+     "note": "DeLoRA is derived from ETHER+ by making the bound on the deviation learnable and the rank arbitrary"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.20271",
+    "https://arxiv.org/html/2405.20271",
+    "https://arxiv.org/html/2503.18225"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Same paper as ETHER. H+ = I - uu^T + vv^T, two-sided forward (H+ W H~+)^T x (which is H~+ W_0 H+ in the h=Wx convention), ||H+ - I||_F <= 2, O(L(d+f)) parameters and the 0.666 vs 0.652 DINO and 27.3 vs 24.5 mIoU numbers checked in the PDF.",
+   "corrections": [
+    "identity_at_init: confirmed from the official code (ether_R2 = -ether_R, also for the two-sided etherplusHH variant) that ETHER+ starts exactly at the identity",
+    "confidence: medium -> high after checking the paper and official code"
+   ]
+  },
+  {
+   "id": "psoft",
+   "name": "PSOFT",
+   "full_name": "Principal Subspace Orthogonal Fine-Tuning",
+   "paper_title": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2505.11235",
+   "url": "https://arxiv.org/abs/2505.11235",
+   "code_url": "https://github.com/fei407/PSOFT",
+   "hf_peft": true,
+   "hf_peft_config": "PsoftConfig",
+   "formula_latex": "W=W_{res}+B\\,\\operatorname{diag}(\\beta)\\,R^{\\top}\\operatorname{diag}(\\alpha)\\,A,\\quad W_0=U\\Sigma V^{\\top},\\ A=V_{:,:r}^{\\top}\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{(row-orthonormal)},\\ B=U_{:,:r}\\Sigma_{:r,:r}\\in\\mathbb{R}^{d_{out}\\times r},\\ W_{res}=W_0-BA\\ \\text{(all frozen)};\\ R\\in SO(r)\\ \\text{(Cayley or Cayley-Neumann)},\\ \\alpha,\\beta\\in\\mathbb{R}^{r}\\ \\text{trained};\\ \\alpha=\\beta=\\mathbf{1}\\Rightarrow W=W_0\\big(I+A^{\\top}(R^{\\top}-I)A\\big)",
+   "trainable_params": "\\tfrac{r(r-1)}{2}+2r",
+   "locus": "any linear layer; acts on the principal input subspace of W_0",
+   "modification_kind": "multiplicative-weight",
+   "structure": "OFT restricted to the r-dimensional principal input subspace. O(r) acts on W_0 from the right through the embedding R -> I + A^T(R-I)A in O(d_in), which is the identity on the orthogonal complement. Two diagonal scalings (alpha, beta) gradually relax exact orthogonality.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapted weight W_res + B diag(beta) R diag(alpha) A is a fixed dense matrix after training.",
+   "identity_at_init": "Q = 0 (so R = I) and alpha = beta = 1 give W = W_0 exactly.",
+   "key_idea": "Confine orthogonal fine-tuning to the principal subspace of W_0 found by SVD. An r x r rotation plus two tunable scaling vectors then preserves the subspace geometry the way OFT does, with LoRA-like memory and far fewer parameters.",
+   "results_note": "Across 35 NLP/CV tasks and four backbones, avoids the out-of-memory failures of BOFT and GOFTv2/qGOFTv2, gives up to 18x higher parameter efficiency than BOFT, OFTv2 and LoRA variants on the smaller models, the best VTAB-1K average (73.4%), +2.28% over LoRA on LLaMA-3.2-3B GSM8K and +1.4% over LoRA on LLaMA-3.1-8B commonsense reasoning.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "orthogonal action restricted to a principal subspace"
+    },
+    {
+     "target": "oftv2",
+     "type": "builds-on",
+     "note": "uses the Cayley-Neumann parameterization"
+    },
+    {
+     "target": "spectral-adapter-r",
+     "type": "competes-with",
+     "note": "with alpha=beta=1, PSOFT is mathematically a one-sided (right) Spectral Adapter^R: a rotation of the top-r right singular subspace"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "both use the top-r SVD (principal subspace) of W_0; PiSSA is a baseline in the PSOFT paper (+1.02% on MATH)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.11235",
+    "https://arxiv.org/html/2505.11235",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/psoft/config.py",
+    "https://iclr.cc/virtual/2026/poster/10010597"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2505.11235 (Wu, 2025) matches; ICLR 2026 confirmed by the arXiv journal-ref. Eqs. 6-8, the r(r-1)/2+2r count, alpha=beta=1 init and the Cayley-Neumann option checked in the PDF; PsoftConfig exists in HF PEFT.",
+   "corrections": [
+    "formula: paper writes h=(A' diag(alpha) R diag(beta) B' + W_res)^T x with A'=U_r (input side) and B'=Sigma_r V_r^T; transposing gives B diag(beta) R^T diag(alpha) A, so R -> R^T and the SVD factors are stated explicitly",
+    "formula: the Cayley map gives SO(r), not O(r)",
+    "results_note: the 18x claim is relative to BOFT, OFTv2 and LoRA variants on small models; the +1.4% commonsense gain is over LoRA",
+    "relations: pissa type builds-on -> competes-with (PiSSA is a baseline; PSOFT does not build on its initialization)"
+   ]
+  },
+  {
+   "id": "spectral-adapter-r",
+   "name": "Spectral Adapter^R",
+   "full_name": "Spectral Adapter, rotational variant",
+   "paper_title": "Spectral Adapter: Fine-Tuning in Spectral Space",
+   "authors": "Zhang & Pilanci",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.13952",
+   "url": "https://arxiv.org/abs/2405.13952",
+   "code_url": "https://github.com/pilancilab/spectral_adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=[U_1R_U,\\ U_2]\\,S\\,[V_1R_V,\\ V_2]^{\\top}=\\tilde{U}\\,W_0\\,\\tilde{V}^{\\top},\\quad \\tilde{U}=I+U_1(R_U-I)U_1^{\\top},\\ \\tilde{V}=I+V_1(R_V-I)V_1^{\\top};\\ W_0=USV^{\\top}\\ \\text{frozen},\\ R_U,R_V\\in O(r)\\ \\text{(Cayley) trained}",
+   "trainable_params": "2r^2\\ \\ (r(r-1)\\ \\text{with skew-symmetric Cayley generators})",
+   "locus": "any linear layer (top-r spectral space of each pretrained weight)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "two-sided orthogonal action of O(r) x O(r), embedded in O(d_out) x O(d_in) as rotations of the top-r left and right singular subspaces of W_0 (identity on their complements). Singular values are unchanged and only the principal singular frames are rotated.",
+   "mergeable": "yes",
+   "mergeable_reason": "The rotated singular factors recombine into one dense matrix of the original shape.",
+   "identity_at_init": "R_U = R_V = I.",
+   "key_idea": "Run the SVD of each pretrained weight and fine-tune only by rotating its top singular vectors. The adapter is very compact, and keeping the adapted subspaces orthogonal helps when several adapters are fused.",
+   "results_note": "",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "OFT-style orthogonal action restricted to the principal spectral subspace"
+    },
+    {
+     "target": "spectral-adapter-a",
+     "type": "competes-with",
+     "note": "same paper; rotational vs additive tuning of the top singular vectors"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.13952",
+    "https://arxiv.org/html/2405.13952",
+    "https://neurips.cc/virtual/2024/poster/94943"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.13952 (Zhang, 2024) matches; NeurIPS 2024 confirmed in the NeurIPS 2024 accepted-paper data. Definition [U_1 R_U, U_2] S [V_1 R_V, V_2]^T, identity init, Cayley with Q=(A-A^T)/2 (so 2r^2 stored parameters) checked in Sec. 2 and 4.3 of the PDF. Not in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "spectral-adapter-a",
+   "name": "Spectral Adapter^A",
+   "full_name": "Spectral Adapter, additive variant",
+   "paper_title": "Spectral Adapter: Fine-Tuning in Spectral Space",
+   "authors": "Zhang & Pilanci",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.13952",
+   "url": "https://arxiv.org/abs/2405.13952",
+   "code_url": "https://github.com/pilancilab/spectral_adapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=[U_1+A_U,\\ U_2]\\,S\\,[V_1+A_V,\\ V_2]^{\\top},\\quad A_U\\in\\mathbb{R}^{d_{out}\\times r},\\ A_V\\in\\mathbb{R}^{d_{in}\\times r}\\ \\text{trained};\\ W_0=USV^{\\top}\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer (top-r singular vectors)",
+   "modification_kind": "additive-weight",
+   "structure": "additive perturbation of the top-r singular-vector factors: Delta W = A_U S_1 V_1^T + U_1 S_1 A_V^T + A_U S_1 A_V^T. This has rank <= 2r for LoRA's parameter budget (the paper's 'twice the rank capacity' lemma).",
+   "mergeable": "yes",
+   "mergeable_reason": "The perturbed factors recombine into a single dense matrix.",
+   "identity_at_init": "A_U = A_V = 0.",
+   "key_idea": "Fine-tune the top singular vectors of the pretrained weight additively. For the same number of trainable parameters this doubles LoRA's rank capacity and uses the pretrained spectrum.",
+   "results_note": "Reports 49.73 on GSM8K with Mistral-7B vs 44.81 for LoRA and 43.82 for DoRA (r=8), and an 88.03 GLUE average on DeBERTaV3-base, above LoRA, DoRA, OFT and AdaLoRA.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "same parameter budget, twice the rank capacity"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "both adapt the principal singular subspace of W_0 (concurrent work)"
+    },
+    {
+     "target": "spectral-adapter-r",
+     "type": "competes-with",
+     "note": "same paper; additive vs rotational"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.13952",
+    "https://arxiv.org/html/2405.13952"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Same paper as Spectral Adapter^R (arXiv 2405.13952, NeurIPS 2024). Zero init of A_U, A_V, the rank-capacity lemma (2r) and Tables 1-2 checked in the PDF.",
+   "corrections": [
+    "results_note: the GSM8K experiment (49.73 vs 44.81) uses Mistral-7B, not Llama-3-8B (Llama3-8B appears only in the Figure 1 loss curves)"
+   ]
+  },
+  {
+   "id": "svdiff",
+   "name": "SVDiff",
+   "full_name": "Singular-value spectral-shift fine-tuning (SVDiff)",
+   "paper_title": "SVDiff: Compact Parameter Space for Diffusion Fine-Tuning",
+   "authors": "Han et al.",
+   "year": 2023,
+   "venue": "ICCV 2023",
+   "arxiv": "2303.11305",
+   "url": "https://arxiv.org/abs/2303.11305",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=U\\,\\operatorname{diag}\\big(\\mathrm{ReLU}(\\sigma+\\delta)\\big)\\,V^{\\top},\\quad W_0=U\\operatorname{diag}(\\sigma)V^{\\top}\\ \\text{(SVD, frozen)},\\ \\delta\\in\\mathbb{R}^{\\min(d_{in},d_{out})}\\ \\text{trained}",
+   "trainable_params": "\\min(d_{in},d_{out})",
+   "locus": "2-D linear weights and reshaped 4-D conv kernels of the diffusion UNet (1-D weights such as biases and norms are not decomposed and are tuned directly); optimizing the cross-attention layers gives the best subject preservation in the paper's layer ablation",
+   "modification_kind": "multiplicative-weight",
+   "structure": "the singular values are adjusted by a diagonal (torus) map while the singular vectors stay fixed. For sigma > 0 this equals W = U diag(s/sigma) U^T W_0 with s = ReLU(sigma+delta) >= 0, a positive-semidefinite rescaling that commutes with W_0 W_0^T.",
+   "mergeable": "yes",
+   "mergeable_reason": "U diag(ReLU(sigma+delta)) V^T is a fixed dense matrix.",
+   "identity_at_init": "delta = 0.",
+   "key_idea": "Fine-tune only the singular values of every weight matrix (spectral shifts). The tiny parameter space resists overfitting in personalization and supports multi-subject training (Cut-Mix-Unmix) and single-image editing (CoSINE).",
+   "results_note": "About 1.7MB of parameters for Stable Diffusion vs 3.66GB for full DreamBooth (roughly 2,200x smaller) and 1/2-1/3 of a LoRA checkpoint.",
+   "relations": [
+    {
+     "target": "svf",
+     "type": "competes-with",
+     "note": "SVF scales singular values multiplicatively; SVDiff shifts them additively (equivalent reparameterizations for sigma > 0)"
+    },
+    {
+     "target": "svft",
+     "type": "special-case-of",
+     "note": "SVFT with a diagonal mask is a spectral shift without the ReLU"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "much smaller checkpoint for diffusion personalization"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.11305",
+    "https://arxiv.org/html/2303.11305"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2303.11305 (Han, 2023) matches; ICCV 2023 confirmed (DBLP conf/iccv, Semantic Scholar). W_delta = U diag(ReLU(sigma+delta)) V^T, the 1.7MB vs 3.66GB and ~2,200x figures and the 1/2-1/3 of LoRA checkpoint size checked in the PDF. Not in HF PEFT.",
+   "corrections": [
+    "locus: removed 'optionally the text encoder' (not found in the paper); added that 1-D weights are tuned directly and rephrased the cross-attention finding as reported in the layer ablation"
+   ]
+  },
+  {
+   "id": "svf",
+   "name": "SVF (Transformer²)",
+   "full_name": "Singular Value Fine-tuning (Transformer-Squared)",
+   "paper_title": "Transformer-Squared: Self-adaptive LLMs",
+   "authors": "Sun et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2501.06252",
+   "url": "https://arxiv.org/abs/2501.06252",
+   "code_url": "https://github.com/SakanaAI/self-adaptive-llms",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=U\\big(\\Sigma\\otimes\\operatorname{diag}(z)\\big)V^{\\top}=U\\operatorname{diag}(\\sigma\\odot z)V^{\\top}\\ \\Big(\\times\\tfrac{\\sum_i\\sigma_i}{\\sum_i\\sigma_iz_i}\\ \\text{in the official code}\\Big),\\quad W_0=U\\operatorname{diag}(\\sigma)V^{\\top}\\ \\text{frozen},\\ z\\in\\mathbb{R}^{\\min(d_{in},d_{out})}\\ \\text{trained (REINFORCE + KL)};\\ \\text{test time: } z'=\\sum_k\\alpha_kz_k",
+   "trainable_params": "\\min(d_{in},d_{out})",
+   "locus": "weight matrices of the LLM (the official code adapts the MLP matrices)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "multiplicative diagonal (torus) action on the singular values with fixed singular vectors. Trained expert vectors z_k can be linearly mixed at inference.",
+   "mergeable": "yes",
+   "mergeable_reason": "Once z (or the mixture z') is chosen, W is a fixed dense matrix; self-adaptation is a two-pass procedure that sets z before the second pass.",
+   "identity_at_init": "z starts near a constant value (the paper's hyperparameter table lists an initial mean of 0.1). The official code passes z through a sigmoid and renormalizes by sum(sigma)/sum(sigma*z), so a uniform z leaves W_0 unchanged up to this normalization (approximately the identity).",
+   "key_idea": "Train one scaling vector over each weight's singular values with RL to get compact, composable 'expert' vectors. At test time a dispatcher identifies the task and mixes the experts, so the LLM adapts itself.",
+   "results_note": "On Llama-3-8B-Instruct, SVF beats LoRA on GSM8K (79.15 vs 77.18) and ARC-Easy while training less than 10% of LoRA's parameters.",
+   "relations": [
+    {
+     "target": "svdiff",
+     "type": "competes-with",
+     "note": "multiplicative instead of additive adjustment of singular values"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "far fewer parameters; experts can be mixed"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2501.06252",
+    "https://arxiv.org/html/2501.06252",
+    "https://raw.githubusercontent.com/SakanaAI/self-adaptive-llms/main/policy/base.py",
+    "https://raw.githubusercontent.com/SakanaAI/self-adaptive-llms/main/utils.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2501.06252 (Sun, 2025) matches; ICLR 2025 confirmed (arXiv comment, ICLR 2025 accepted-paper data). W'=U(Sigma (x) diag(z))V^T, REINFORCE with KL penalty, z init mean 0.1 (Table 6), test-time mixing z'=sum alpha_k z_k, the 79.15 vs 77.18 GSM8K result and <10% of LoRA's parameters checked; sigmoid and sum(sigma)/sum(sigma*z) renormalization confirmed in the official utils.py/policy/base.py. Not in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "svft",
+   "name": "SVFT",
+   "full_name": "Singular Vectors guided Fine-Tuning",
+   "paper_title": "SVFT: Parameter-Efficient Fine-Tuning with Singular Vectors",
+   "authors": "Lingam et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.19597",
+   "url": "https://arxiv.org/abs/2405.19597",
+   "code_url": "https://github.com/VijayLingam95/SVFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=U(\\Sigma+M)V^{\\top}=W_0+UMV^{\\top},\\quad U,\\Sigma,V\\ \\text{from the SVD of frozen } W_0,\\ M\\ \\text{sparse with fixed pattern } \\Omega\\ \\text{(plain/diagonal, banded, random, top-}k\\text{)};\\ \\text{only } M_{\\Omega} \\text{ trained}",
+   "trainable_params": "|\\Omega|\\ (+1\\ \\text{gate scalar per layer in the official code});\\ \\ \\min(d_{in},d_{out})\\ \\text{for SVFT}^{P}",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "sparse additive update in the singular-vector basis of W_0: Delta W = sum over (i,j) in Omega of m_ij u_i v_j^T, a fixed dictionary that depends on the weight rather than a free low-rank factorization. A diagonal Omega reduces it to a spectral shift.",
+   "mergeable": "yes",
+   "mergeable_reason": "U M V^T is a fixed dense matrix after training.",
+   "identity_at_init": "Not exactly in the official code: the coefficients of M are Kaiming-normal initialized and multiplied by a learnable gate sigmoid(g) with g = 0, so Delta W = U (0.5 M_init) V^T is non-zero at step 0. The paper does not state an initialization.",
+   "key_idea": "Use the outer products of W_0's own singular vectors as a fixed dictionary and learn sparse coefficients for it, including off-diagonal ones. This trades parameters against expressivity smoothly.",
+   "results_note": "Recovers up to 96% of full fine-tuning performance while training 0.006-0.25% of parameters (e.g. Gemma-2B and LLaMA-3-8B on GSM8K/MATH); baselines reach at most 85% with 0.03-0.8%.",
+   "relations": [
+    {
+     "target": "svdiff",
+     "type": "generalizes",
+     "note": "a diagonal mask gives SVDiff's spectral shift without the ReLU"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "weight-dependent fixed basis instead of learned low-rank factors"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.19597",
+    "https://arxiv.org/html/2405.19597",
+    "https://neurips.cc/virtual/2024/poster/93272"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.19597 (Lingam, 2024) matches; NeurIPS 2024 confirmed in the NeurIPS 2024 accepted-paper data. h = U(Sigma+M)V^T x, the Plain/Banded/Random/Top-k patterns and the 96% / 0.006-0.25% abstract claim checked in the PDF. Not in HF PEFT.",
+   "corrections": [
+    "identity_at_init: the official svft_layers.py initializes the sparse coefficients with kaiming_normal_ (times sigmoid(gate)=0.5), not M=0",
+    "trainable_params: added the per-layer gate scalar used in the official code"
+   ]
+  },
+  {
+   "id": "osf",
+   "name": "OSF",
+   "full_name": "Orthogonal Subspace Fine-tuning (adaptive-SVD constrained full fine-tuning)",
+   "paper_title": "Sculpting Subspaces: Constrained Full Fine-Tuning in LLMs for Continual Learning",
+   "authors": "Nayak et al.",
+   "year": 2025,
+   "venue": "arXiv",
+   "arxiv": "2504.07097",
+   "url": "https://arxiv.org/abs/2504.07097",
+   "code_url": "https://github.com/Red-Hat-AI-Innovation-Team/orthogonal-subspace-learning",
+   "hf_peft": true,
+   "hf_peft_config": "OSFConfig",
+   "formula_latex": "W=U_hS_hV_h^{\\top}+U_{\\ell}S_{\\ell}V_{\\ell}^{\\top},\\quad (U_h,S_h,V_h)=\\text{top-}k\\ \\text{singular triplets of } W_0\\ \\text{(frozen)},\\ (U_\\ell,S_\\ell,V_\\ell)\\ \\text{trained with projected gradients } \\nabla W\\leftarrow\\nabla W-U_hU_h^{\\top}\\,\\nabla W\\,V_hV_h^{\\top}",
+   "trainable_params": "(m-k)(d_{in}+d_{out}+1),\\ m=\\min(d_{in},d_{out}),\\ k=\\text{effective rank}",
+   "locus": "any linear layer (all-linear in LLMs)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "splits W_0 along its singular spectrum into a frozen top-k subspace and a trainable complement. Gradient projection keeps every update orthogonal to the frozen principal subspace, and k is set per layer from an input-output similarity score.",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained low-singular components are summed back into a single dense weight.",
+   "identity_at_init": "Exact: the two SVD parts reconstruct W_0 at initialization.",
+   "key_idea": "For continual learning, freeze each weight's high-singular-value directions and let new tasks change only the orthogonal low-singular-value subspace, chosen adaptively per layer. This keeps full-rank capacity with little forgetting and no per-task parameters.",
+   "results_note": "Reports up to 7% higher average accuracy than O-LoRA on standard continual-learning benchmarks (T5-Large) and 48.4% average accuracy on TRACE with LLaMA-2-7B-Chat while preserving general ability and safety.",
+   "relations": [
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "both put adaptation in the minor singular subspace of W_0 (MiLoRA via LoRA initialization)"
+    },
+    {
+     "target": "psoft",
+     "type": "dual-to",
+     "note": "PSOFT adapts only inside the principal subspace; OSF freezes it and adapts its complement"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.07097",
+    "https://arxiv.org/html/2504.07097",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/osf/config.py",
+    "https://raw.githubusercontent.com/huggingface/peft/main/docs/source/package_reference/osf.md"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2504.07097 (Nayak, 2025) matches; no peer-reviewed venue found (Semantic Scholar lists arXiv only), so venue stays arXiv. The projection grad_proj = grad - U_high U_high^T grad V_high V_high^T (Sec. 3) matches; OSFConfig exists in HF PEFT and its trainable rank min(shape)-effective_rank gives the stated (m-k)(d_in+d_out+1).",
+   "corrections": [
+    "code_url: added the official repository named in the paper's Code Availability statement"
+   ]
+  },
+  {
+   "id": "dora",
+   "name": "DoRA",
+   "full_name": "Weight-Decomposed Low-Rank Adaptation",
+   "paper_title": "DoRA: Weight-Decomposed Low-Rank Adaptation",
+   "authors": "Liu et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.09353",
+   "url": "https://arxiv.org/abs/2402.09353",
+   "code_url": "https://github.com/NVlabs/DoRA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_dora=True)",
+   "formula_latex": "W=\\operatorname{diag}(m)\\,\\frac{W_0+\\tfrac{\\alpha}{r}BA}{\\big\\|W_0+\\tfrac{\\alpha}{r}BA\\big\\|_{row}},\\quad m\\in\\mathbb{R}^{d_{out}},\\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ W_0\\ \\text{frozen},\\ m,B,A\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})+d_{out}",
+   "locus": "any linear layer (commonly all attention and MLP projections)",
+   "modification_kind": "hybrid",
+   "structure": "polar-type (magnitude x direction) reparameterization: a rank-r additive update of the direction, then normalization of each output neuron's weight vector onto the unit sphere, then a learned diagonal magnitude. This is weight normalization applied to W_0 + BA. The paper's 'column-wise' norm refers to its transposed d x k convention; the official and HF code take one norm per output neuron.",
+   "mergeable": "yes",
+   "mergeable_reason": "After training, diag(m) times the normalized (W_0 + BA) is a fixed dense matrix that replaces W_0.",
+   "identity_at_init": "B = 0 and m = ||W_0|| (per output neuron), so W = W_0 exactly.",
+   "key_idea": "Split each weight into a magnitude and a direction, as weight normalization does. Learn the magnitude directly and the direction with LoRA. This reproduces the negative correlation between magnitude and direction changes seen in full fine-tuning, which LoRA lacks.",
+   "results_note": "Outperforms LoRA at a similar parameter count, e.g. +3.7 points on LLaMA-7B commonsense reasoning, with gains on LLaVA visual instruction tuning and VL-BART image/video-text tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "the direction is updated by a LoRA term"
+    },
+    {
+     "target": "bidora",
+     "type": "competes-with",
+     "note": "BiDoRA keeps DoRA's parameterization and changes the optimization to bi-level; DoRA is its main baseline"
+    },
+    {
+     "target": "delora",
+     "type": "competes-with",
+     "note": "DeLoRA normalizes inside the rank-r bottleneck instead of per neuron of W_0 + BA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.09353",
+    "https://arxiv.org/html/2402.09353",
+    "https://raw.githubusercontent.com/huggingface/peft/main/src/peft/tuners/lora/dora.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.09353 (Liu, 2024) matches; ICML 2024 (oral) confirmed. Magnitude/direction formula, B=0 and m=||W_0|| init and the +3.7 LLaMA-7B commonsense gain (78.4 vs 74.7) checked. The alpha/r factor in the formula follows the HF implementation; the paper writes W_0 + BA without it. LoraConfig(use_dora=True) exists in HF PEFT.",
+   "corrections": [
+    "relations: bidora type special-case-of -> competes-with (DoRA is not a special case of BiDoRA's bi-level training procedure)"
+   ]
+  },
+  {
+   "id": "bidora",
+   "name": "BiDoRA",
+   "full_name": "Bi-level Optimization-Based Weight-Decomposed Low-Rank Adaptation",
+   "paper_title": "BiDoRA: Bi-level Optimization-Based Weight-Decomposed Low-Rank Adaptation",
+   "authors": "Qin et al.",
+   "year": 2024,
+   "venue": "TMLR 2025",
+   "arxiv": "2410.09758",
+   "url": "https://arxiv.org/abs/2410.09758",
+   "code_url": "https://github.com/t2ance/BiDoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=\\operatorname{diag}(m)\\,\\frac{W_0+BA}{\\|W_0+BA\\|_{row}};\\quad \\min_{m}\\ \\mathcal{L}_{val}\\big(\\mathcal{V}^{*}(m),m\\big)\\ \\ \\text{s.t.}\\ \\ \\mathcal{V}^{*}(m)=\\arg\\min_{\\mathcal{V}=\\{B,A\\}}\\ \\mathcal{L}_{tr}(\\mathcal{V},m)+\\gamma\\sum_k\\big\\|(V_k+\\Delta V_k)^{\\top}(V_k+\\Delta V_k)-I\\big\\|_F^2",
+   "trainable_params": "r(d_{in}+d_{out})+d_{out}",
+   "locus": "any linear layer (as DoRA)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "DoRA's magnitude-direction parameterization, with magnitude and direction optimized at different levels of a bi-level program (hypergradient for the magnitude) and an orthogonality regularizer on the direction",
+   "mergeable": "yes",
+   "mergeable_reason": "Same final parameterization as DoRA, so it folds into a single dense matrix.",
+   "identity_at_init": "As DoRA: B = 0 and m = ||W_0|| per neuron.",
+   "key_idea": "Train DoRA's magnitude and direction asynchronously: the direction on the training split and the magnitude on a validation split via hypergradients, then refit the direction. This decouples the two further and reduces overfitting.",
+   "results_note": "Reports an 85.2 GLUE average on RoBERTa-base vs 84.6 for DoRA, a smaller train-test gap, and consistent gains over DoRA on NLU, NLG, token classification and extremely small biomedical datasets (Wilcoxon p = 2.4e-4 on GLUE).",
+   "relations": [
+    {
+     "target": "dora",
+     "type": "builds-on",
+     "note": "same parameterization, bi-level training"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.09758",
+    "https://arxiv.org/html/2410.09758",
+    "https://groups.google.com/g/tmlr-announce-weekly/c/ORN_YuQljI8"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.09758 (Qin, 2024) matches; TMLR (07/2025, OpenReview v2xCm3VYl4) confirmed on the PDF header. DoRA parameterization, Gram regularizer on V+Delta V, upper-level magnitude on the validation split, and Table 1 (85.2 vs 84.6) checked. Not in HF PEFT.",
+   "corrections": [
+    "code_url: added the official repository from the abstract",
+    "results_note: removed the unverified '14 datasets' count; restated the evaluated task families from the abstract",
+    "confidence: medium -> high (TMLR 07/2025 confirmed on the paper's first page)"
+   ]
+  },
+  {
+   "id": "delora",
+   "name": "DeLoRA",
+   "full_name": "Decoupled Low-rank Adaptation",
+   "paper_title": "DeLoRA: Decoupling Angles and Strength in Low-rank Adaptation",
+   "authors": "Bini et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2503.18225",
+   "url": "https://arxiv.org/abs/2503.18225",
+   "code_url": "https://github.com/ExplainableML/DeLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "DeloraConfig",
+   "formula_latex": "W=W_0+\\frac{\\lambda}{r}\\,B\\,\\Xi\\,A\\,\\operatorname{diag}\\big(\\|W_{0,:,j}\\|_2\\big)_{j=1}^{d_{in}},\\quad \\Xi=\\operatorname{diag}\\Big(\\tfrac{1}{\\|b_i\\|\\,\\|a_i\\|}\\Big)_{i=1}^{r},\\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}},\\ \\lambda\\ \\text{learnable};\\ \\text{paper: }\\Delta W=\\tfrac{\\lambda\\|W\\|}{r}B\\Xi A,\\ \\|B\\Xi A\\|_F\\le r",
+   "trainable_params": "r(d_{in}+d_{out})+1",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "rank-r additive update in which each of the r rank-one directions b_i a_i^T is normalized (pure 'angles') and the overall strength is a single learnable bound lambda ||W_0||/r. This is a magnitude-direction decoupling in the r-dimensional bottleneck rather than per neuron.",
+   "mergeable": "yes",
+   "mergeable_reason": "The bounded rank-r update is a fixed matrix that can be added to W_0.",
+   "identity_at_init": "Paper: subtract a copy of the Kaiming-initialized update (W_0 <- W_0 - Delta W_init, following PiSSA/ETHER); the official code keeps frozen copies of the initial A, B and subtracts their normalized product inside Delta W. HF PEFT default (init_weights=True): B = 0 (norms clamped), so Delta W = 0.",
+   "key_idea": "Normalize each rank-one component of the LoRA update and scale the sum by a learnable bound lambda ||W_0||/r. This separates learning the angle from the adaptation strength and makes training robust to learning rate and long schedules. The method can be derived from either LoRA or ETHER+.",
+   "results_note": "Reports an 85.6 GLUE average on RoBERTa-base (vs 84.7 for LoRA), subject-driven generation on par with DoRA/LoRA, and the best average in LLaMA-2-7B instruction tuning among the methods compared.",
+   "relations": [
+    {
+     "target": "ether-plus",
+     "type": "builds-on",
+     "note": "derived from ETHER+: its fixed distance bound becomes a learnable bound and the rank becomes arbitrary"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "normalized LoRA factors with a learnable norm bound"
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "normalizes inside the r-dim bottleneck and bounds ||Delta W|| instead of normalizing columns of W_0 + BA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.18225",
+    "https://arxiv.org/html/2503.18225",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/delora/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2503.18225 (Bini, 2025) matches; ICLR 2025 confirmed (paper header, ICLR 2025 accepted-paper data as 'Decoupling Angles and Strength in Low-rank Adaptation'). Normalization Xi, learnable lambda, the r(d_in+d_out)+1 count and the 85.6 vs 84.7 RoBERTa-base GLUE numbers checked; DeloraConfig exists in HF PEFT.",
+   "corrections": [
+    "formula: the paper writes the scale as lambda*||W||/r; both the official code (Wnorm = weight.norm(dim=0)) and HF PEFT (delora_w_norm, 'per-input channel') multiply column j of the update by the norm of the j-th input column of W_0, so the formula now shows that, with the paper's form kept as a note",
+    "identity_at_init: added how the official code realizes the subtract-a-copy initialization"
+   ]
+  },
+  {
+   "id": "polar",
+   "name": "PoLAR",
+   "full_name": "Polar-Decomposed Low-Rank Adapter Representation",
+   "paper_title": "PoLAR: Polar-Decomposed Low-Rank Adapter Representation",
+   "authors": "Lion et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.03133",
+   "url": "https://arxiv.org/abs/2506.03133",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+X\\,\\Theta\\,Y^{\\top},\\quad X\\in\\mathrm{St}(d_{out},r),\\ Y\\in\\mathrm{St}(d_{in},r),\\ \\Theta\\in\\mathbb{R}^{r\\times r};\\ \\text{retraction-free landing field } \\Gamma(X)=\\psi(X)X+\\lambda\\nabla\\mathcal{N}(X);\\ W_0\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})+r^2",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "rank-r additive update in polar form: two direction factors on Stiefel manifolds (orthonormal r-frames, i.e. points of O(d)/O(d-r)) and an unconstrained r x r scale/core matrix, optimized by Riemannian 'landing' without retractions",
+   "mergeable": "yes",
+   "mergeable_reason": "X Theta Y^T is a fixed rank-r matrix that can be added to W_0.",
+   "identity_at_init": "Theta_0 = 0, with X_0 and Y_0 drawn uniformly at random from the Stiefel manifolds.",
+   "key_idea": "LoRA updates collapse to a very low stable rank. Writing the update as two orthonormal direction frames times a free core, and training with GPU-friendly Riemannian landing, keeps the directions diverse and provably speeds up convergence on a canonical low-rank problem.",
+   "results_note": "Reports gains over LoRA on GLUE (DeBERTa-v3-base 88.94 vs 88.18), commonsense reasoning (Llama-2-7B, 73.71 vs 72.18) and math (Gemma-3-27B) across models from 350M to 27B parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "the same rank-r update, polar-decomposed"
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "orthogonality over the whole factor instead of DoRA's per-neuron normalization"
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "an SVD-shaped P Lambda Q update, with hard Stiefel constraints instead of an orthogonality penalty"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.03133",
+    "https://arxiv.org/html/2506.03133",
+    "https://neurips.cc/virtual/2025/poster/116485"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2506.03133 (Lion, 2025) matches; NeurIPS 2025 confirmed in the NeurIPS 2025 accepted-paper data. Delta W = X Theta Y^T with Stiefel X, Y, free Theta, landing field Gamma(X)=psi(X)X+lambda grad N(X), Theta_0=0 with random Stiefel X_0, Y_0, and the GLUE (88.94 vs 88.18) and commonsense (73.71 vs 72.18) averages checked in the PDF. No official code link found in the paper. Not in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "road",
+   "name": "RoAd",
+   "full_name": "2D Rotary Adaptation",
+   "paper_title": "3-in-1: 2D Rotary Adaptation for Efficient Finetuning, Efficient Batching and Composability",
+   "authors": "Liao & Monz",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2409.00119",
+   "url": "https://arxiv.org/abs/2409.00119",
+   "code_url": "https://github.com/BaohaoLiao/road",
+   "hf_peft": true,
+   "hf_peft_config": "RoadConfig",
+   "formula_latex": "W=R\\,W_0,\\quad R=\\operatorname{diag}(R_1,\\dots,R_{d_{out}/2}),\\ R_i=\\begin{pmatrix}\\alpha_i\\cos\\theta_i&-\\alpha_i\\sin\\theta_i\\\\ \\alpha_i\\sin\\theta_i&\\alpha_i\\cos\\theta_i\\end{pmatrix};\\ W_0\\ \\text{frozen},\\ (\\alpha_i,\\theta_i)\\ \\text{trained}",
+   "trainable_params": "d_{out}\\ (\\mathrm{RoAd}_1),\\ 2d_{out}\\ (\\mathrm{RoAd}_2),\\ 4d_{out}\\ (\\mathrm{RoAd}_4)",
+   "locus": "output representation of any linear layer",
+   "modification_kind": "multiplicative-weight",
+   "structure": "left action of the conformal group CO(2)^{d_out/2}, isomorphic to (C^x)^{d_out/2}: output coordinates are paired into complex numbers and each pair is multiplied by alpha e^{i theta} (RoAd_1). RoAd_2 and RoAd_4 untie the scales and angles inside each 2x2 block. The paper's z = R h implementation pairs element j with element j + group_size/2.",
+   "mergeable": "yes",
+   "mergeable_reason": "The paper notes R folds into the weights (W_0 R^T in its transposed convention), with no inference overhead.",
+   "identity_at_init": "alpha_i = 1 and theta_i = 0.",
+   "key_idea": "Pilot studies show that fine-tuning mostly changes the angle of representations, not their magnitude, so RoAd learns scaled 2D rotations of paired output features. The element-wise form batches heterogeneous adapters efficiently and fits the distributed interchange intervention framework for composition and interpretability.",
+   "results_note": "Matches or beats other PEFT methods on GLUE, eight commonsense reasoning tasks and arithmetic reasoning with <0.1% trainable parameters (about 0.02% for commonsense), and about twice LoRA's throughput on heterogeneous batches.",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "theta = 0 reduces RoAd to IA3-style output scaling (scales tied within pairs for RoAd_1, untied for RoAd_4)"
+    },
+    {
+     "target": "loreft",
+     "type": "competes-with",
+     "note": "both are framed as representation interventions; RoAd's intervention is an element-wise rotation"
+    },
+    {
+     "target": "qgoft",
+     "type": "competes-with",
+     "note": "structural analogue: both act with 2x2 blocks (qGOFT on the input side with butterfly-style mixing, RoAd on fixed output pairs); neither paper compares against the other"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.00119",
+    "https://arxiv.org/html/2409.00119",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/road/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2409.00119 (Liao, 2024) matches; NeurIPS 2024 confirmed (arXiv comment, NeurIPS 2024 accepted-paper data). z = R h with block 2x2 scaled rotations on output pairs, variants with d_out / 2d_out / 4d_out parameters (Table 1), alpha=1, theta=0 init and merging as W = W^0 R^T (paper convention) checked. RoadConfig (variants road_1/2/4, group_size pairing) exists in HF PEFT.",
+   "corrections": [
+    "relations: qgoft note clarified as a structural analogy (the RoAd paper does not cite GOFT/qGOFT)"
+   ]
+  },
+  {
+   "id": "ia3",
+   "name": "(IA)³",
+   "full_name": "Infused Adapter by Inhibiting and Amplifying Inner Activations",
+   "paper_title": "Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning",
+   "authors": "Liu et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2205.05638",
+   "url": "https://arxiv.org/abs/2205.05638",
+   "code_url": "https://github.com/r-three/t-few",
+   "hf_peft": true,
+   "hf_peft_config": "IA3Config",
+   "formula_latex": "W_k=\\operatorname{diag}(l_k)\\,W_k^{0},\\quad W_v=\\operatorname{diag}(l_v)\\,W_v^{0},\\quad W_2=W_2^{0}\\operatorname{diag}(l_{ff})\\ \\ \\big(\\text{i.e. } (l_{ff}\\odot\\gamma(W_1x))W_2\\big);\\ \\text{all } W^{0}\\ \\text{frozen},\\ l_k\\in\\mathbb{R}^{d_k},\\ l_v\\in\\mathbb{R}^{d_v},\\ l_{ff}\\in\\mathbb{R}^{d_{ff}}\\ \\text{trained}",
+   "trainable_params": "L(d_k+d_v+d_{ff})\\ \\text{for an } L\\text{-block encoder},\\ L(2d_k+2d_v+d_{ff})\\ \\text{for an } L\\text{-block decoder (self- and cross-attention)};\\ \\text{i.e. } d_{out}\\ \\text{per key/value projection and } d_{ff}\\ \\text{per FFN}",
+   "locus": "keys and values in every attention block, and the inner FFN activation (input of the down-projection)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "diagonal scaling: a left action of the torus (R^x)^{d_out} on the rows of W_k and W_v, and a right action of (R^x)^{d_ff} on the columns of the FFN down-projection",
+   "mergeable": "yes",
+   "mergeable_reason": "Each diag(l) multiplies directly into the corresponding frozen weight matrix.",
+   "identity_at_init": "All l vectors are initialized to ones.",
+   "key_idea": "Learn only element-wise rescaling vectors that inhibit or amplify keys, values and FFN activations. With the T-Few recipe (unlikelihood and length-normalized losses, multitask pre-training of the vectors), this beats in-context learning at a fraction of the inference cost.",
+   "results_note": "T-Few with (IA)³ on T0 (11B) reaches 75.8% on RAFT, the first result above the human baseline (73.5%), while updating or adding about 0.01% of the parameters; the recipe itself was designed on T0-3B.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "diagonal multiplicative scaling vs low-rank addition"
+    },
+    {
+     "target": "flora-batched",
+     "type": "special-case-of",
+     "note": "the FLoRA paper describes IA3 as a 'rank 0.5' FLoRA that rescales only columns"
+    },
+    {
+     "target": "ssf",
+     "type": "competes-with",
+     "note": "same per-channel scaling idea; SSF adds a shift and targets vision backbones"
+    },
+    {
+     "target": "glora",
+     "type": "special-case-of",
+     "note": "GLoRA's multiplicative support with a vector parameterization gives diag(1+a) W_0"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.05638",
+    "https://arxiv.org/html/2205.05638",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/ia3/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2205.05638 (Liu, 2022) matches; NeurIPS 2022 confirmed (DBLP conf/nips/LiuTMMHBR22). l_k, l_v, l_ff rescalings, ones init and parameter counts checked in Sec. 3.3 of the PDF; IA3Config exists in HF PEFT (feedforward_modules scale the input of the FFN down-projection).",
+   "corrections": [
+    "results_note: the 75.8% RAFT result is with T0 (11B parameters), not T0-3B (T0-3B was used to design the recipe)",
+    "trainable_params: added the decoder count L(2d_k+2d_v+d_ff) stated in the paper"
+   ]
+  },
+  {
+   "id": "ssf",
+   "name": "SSF",
+   "full_name": "Scaling & Shifting Features",
+   "paper_title": "Scaling & Shifting Your Features: A New Baseline for Efficient Model Tuning",
+   "authors": "Lian et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2210.08823",
+   "url": "https://arxiv.org/abs/2210.08823",
+   "code_url": "https://github.com/dongzelian/SSF",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y=\\gamma\\odot x+\\beta\\ \\text{after each operation (MSA, MLP, LayerNorm)};\\ \\text{after a linear op: } W=\\operatorname{diag}(\\gamma)\\,W_0,\\ b=\\gamma\\odot b_0+\\beta;\\ W_0,b_0\\ \\text{frozen},\\ \\gamma,\\beta\\in\\mathbb{R}^{d}\\ \\text{trained}",
+   "trainable_params": "2d\\ \\text{per SSF-wrapped operation}",
+   "locus": "after every operation of a ViT block (attention, MLP, LayerNorm)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "a per-channel affine map (diagonal scaling plus shift), i.e. an action of the diagonal affine group (R^x)^d semidirect R^d on output channels, re-parameterizable into the preceding linear layer",
+   "mergeable": "yes",
+   "mergeable_reason": "The paper re-parameterizes (gamma, beta) into the preceding linear/conv weight and bias, so inference runs the original architecture.",
+   "identity_at_init": "gamma ~ N(1, 0.02) and beta ~ N(0, 0.02) in the official code (init_ssf_scale_shift): close to, but not exactly, the identity.",
+   "key_idea": "Fine-tuning a pretrained vision backbone can be reduced to learning a per-channel scale and shift of its features. These fold back into the weights, so there is no inference overhead.",
+   "results_note": "With ViT-B/16, reports 90.72% on FGVC and 73.10% on VTAB-1k (about 0.3M trainable parameters), above full fine-tuning (88.54% and 65.57%).",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "per-channel scaling, plus a shift, for vision models"
+    },
+    {
+     "target": "bitfit",
+     "type": "generalizes",
+     "note": "SSF's shift is a bias update; SSF adds a multiplicative scale"
+    },
+    {
+     "target": "glora",
+     "type": "special-case-of",
+     "note": "GLoRA reports SSF as a special case of its unified formulation"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2210.08823",
+    "https://arxiv.org/html/2210.08823"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2210.08823 (Lian, 2022) matches; NeurIPS 2022 confirmed (arXiv comment, DBLP). y = gamma (.) x + beta after each operation, the re-parameterization into the preceding linear layer, and the 90.72/88.54 FGVC and 73.10/65.57 VTAB-1k numbers with ~0.3M parameters checked. Not in HF PEFT.",
+   "corrections": [
+    "identity_at_init: added the official initialization standard deviation (0.02) from the SSF repository"
+   ]
+  },
+  {
+   "id": "red",
+   "name": "RED",
+   "full_name": "Representation EDiting",
+   "paper_title": "Advancing Parameter Efficiency in Fine-tuning via Representation Editing",
+   "authors": "Wu et al.",
+   "year": 2024,
+   "venue": "ACL 2024",
+   "arxiv": "2402.15179",
+   "url": "https://aclanthology.org/2024.acl-long.726/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_2=l_{scaling}\\odot h_1+l_{bias},\\ h_1=\\text{output of each FFN sub-layer};\\ \\text{equivalently } W_{down}=\\operatorname{diag}(l_{scaling})\\,W_{down}^{0},\\ b=l_{scaling}\\odot b^{0}+l_{bias};\\ \\text{model frozen},\\ l_{scaling},l_{bias}\\in\\mathbb{R}^{d}\\ \\text{trained}",
+   "trainable_params": "2dL",
+   "locus": "outputs of the FFN sub-layer in every Transformer layer (ablations also edit Q, K, V)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "per-channel affine edit (diagonal scaling plus shift) of each FFN's contribution to the residual stream; the same algebraic form as SSF, applied to LLM FFN outputs",
+   "mergeable": "conditional",
+   "mergeable_reason": "The scaling always folds into the FFN down-projection; the shift folds into its bias only if that layer has one (LLaMA-style down-projections have no bias, so a bias term must be added).",
+   "identity_at_init": "l_scaling = 1 and l_bias = 0.",
+   "key_idea": "Instead of adding modules, edit hidden representations directly with one scaling vector and one bias vector per layer. This uses about 25,700x fewer parameters than full fine-tuning and about 32x fewer than LoRA, with no rank to tune.",
+   "results_note": "Comparable to or better than full fine-tuning and other PEFT methods on GLUE (RoBERTa, T5), E2E NLG (GPT-2) and LLaMA-2 instruction tuning (AlpacaEval) with far fewer parameters.",
+   "relations": [
+    {
+     "target": "ssf",
+     "type": "competes-with",
+     "note": "same scale-and-shift form applied to LLM FFN outputs"
+    },
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "IA3 scales keys/values/FFN activations without a shift"
+    },
+    {
+     "target": "loreft",
+     "type": "competes-with",
+     "note": "both edit representations; RED's edit is a diagonal affine map"
+    }
+   ],
+   "sources": [
+    "https://aclanthology.org/2024.acl-long.726/",
+    "https://aclanthology.org/2024.acl-long.726.pdf",
+    "https://arxiv.org/abs/2402.15179"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.15179 (Wu, 2024) matches; ACL 2024 (long, 2024.acl-long.726) confirmed on the ACL Anthology. h2 = l_scaling (.) h1 + l_bias on FFN outputs, ones/zeros init, the 25,700x / 32x parameter reductions and the RoBERTa/GPT-2/T5/LLaMA-2 experiments checked in the PDF. Not in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "ln-tuning",
+   "name": "LN Tuning",
+   "full_name": "LayerNorm Tuning",
+   "paper_title": "Tuning LayerNorm in Attention: Towards Efficient Multi-Modal LLM Finetuning",
+   "authors": "Zhao et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2312.11420",
+   "url": "https://arxiv.org/abs/2312.11420",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LNTuningConfig",
+   "formula_latex": "\\mathrm{LN}(x)=g\\odot\\frac{x-\\mu}{\\sigma}+b,\\ \\text{only } (g,b)\\ \\text{of the attention-block LayerNorms trained};\\ \\text{equivalently } W=W_0\\operatorname{diag}(g/g_0)\\ \\text{for the linear map that follows, plus a bias shift}",
+   "trainable_params": "2d\\ \\text{per LayerNorm } (d\\ \\text{for RMSNorm}),\\ \\text{i.e. } \\mathcal{O}(Ld)",
+   "locus": "LayerNorm gains and biases in every attention block (input and post-attention LayerNorm)",
+   "modification_kind": "selective",
+   "structure": "selective tuning of existing per-channel gains, which equals a diagonal scaling of the input of the next linear map (a right action of (R^x)^d on W_0) plus a shift",
+   "mergeable": "yes",
+   "mergeable_reason": "The tuned LayerNorm parameters simply replace the old ones; no modules are added.",
+   "identity_at_init": "Starts from the pretrained LayerNorm parameters (exact identity).",
+   "key_idea": "Treat turning an LLM into a multimodal LLM as domain adaptation. For that, tuning only the LayerNorm gains and biases inside attention blocks is enough.",
+   "results_note": "At 13B scale, beats LoRA by over 20% on average across five multimodal benchmarks with 41.9% fewer trainable parameters and 17.6% less GPU memory.",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "competes-with",
+     "note": "both rescale channels; LN tuning reuses existing gains instead of adding vectors"
+    },
+    {
+     "target": "bitfit",
+     "type": "competes-with",
+     "note": "selective tuning of a tiny existing parameter subset"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "main baseline in the paper"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.11420",
+    "https://arxiv.org/html/2312.11420",
+    "https://iclr.cc/virtual/2024/poster/18422",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/ln_tuning/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.11420 (Zhao, 2023) matches; ICLR 2024 (spotlight) confirmed in the ICLR 2024 accepted-paper data. The abstract's >20% gain over LoRA at 13B with 41.9% fewer trainable parameters and 17.6% less GPU memory checked. LNTuningConfig exists in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "difffit",
+   "name": "DiffFit",
+   "full_name": "DiffFit (bias tuning plus learnable residual scaling for diffusion transformers)",
+   "paper_title": "DiffFit: Unlocking Transferability of Large Diffusion Models via Simple Parameter-Efficient Fine-Tuning",
+   "authors": "Xie et al.",
+   "year": 2023,
+   "venue": "ICCV 2023",
+   "arxiv": "2304.06648",
+   "url": "https://arxiv.org/abs/2304.06648",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "x\\leftarrow x+\\gamma_1\\odot\\mathrm{Attn}(x),\\quad x\\leftarrow x+\\gamma_2\\odot\\mathrm{FFN}(x),\\ \\gamma_1,\\gamma_2\\in\\mathbb{R}^{d}\\ (\\text{init } \\mathbf{1});\\ \\text{trained: } \\gamma,\\ \\text{biases, normalization parameters, class embedding; all other weights frozen}",
+   "trainable_params": "\\approx 0.12\\%\\ \\text{of DiT-XL/2 (0.83M of 673.8M)}",
+   "locus": "learnable scales gamma on the residual branches of the first 14 DiT-XL/2 blocks, plus QKV-linear and final layers; all biases, normalization parameters and the class embedding are also tuned",
+   "modification_kind": "hybrid",
+   "structure": "diagonal scaling of each residual branch's output (foldable into the branch's output projection) combined with BitFit-style selective tuning of biases and normalization parameters",
+   "mergeable": "yes",
+   "mergeable_reason": "gamma folds into the output projection weight and bias of the attention/FFN branch; the tuned biases and norms replace the old ones.",
+   "identity_at_init": "gamma = 1, and biases and norms start from their pretrained values.",
+   "key_idea": "For diffusion transformers, tuning the biases plus a learnable per-channel scale on each residual branch is enough to transfer quickly to new domains and resolutions.",
+   "results_note": "About 2x faster training than full fine-tuning, storing about 0.12% of the parameters; FID 3.02 on ImageNet 512x512 after 25 epochs from a 256x256 checkpoint.",
+   "relations": [
+    {
+     "target": "bitfit",
+     "type": "builds-on",
+     "note": "bias tuning plus added scaling factors"
+    },
+    {
+     "target": "ssf",
+     "type": "competes-with",
+     "note": "per-channel scaling of features in vision transformers"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2304.06648",
+    "https://arxiv.org/html/2304.06648",
+    "https://openaccess.thecvf.com/content/ICCV2023/html/Xie_DiffFit_Unlocking_Transferability_of_Large_Diffusion_Models_via_Simple_Parameter-efficient_ICCV_2023_paper.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2304.06648 (Xie, 2023) matches; ICCV 2023 confirmed (DBLP conf/iccv, CVF open access). gamma initialized to 1.0, trainable set bias/norm/gamma/y_embed (Algorithm 1), 0.83M of 673.8M (0.12%), ~2x faster training and FID 3.02 at 512x512 checked. Not in HF PEFT.",
+   "corrections": [
+    "locus: added that the final setting also places gamma in the QKV-linear and final layers (Sec. 5, Table 4c)"
+   ]
+  },
+  {
+   "id": "hira",
+   "name": "HiRA",
+   "full_name": "Hadamard High-Rank Adaptation",
+   "paper_title": "HiRA: Parameter-Efficient Hadamard High-Rank Adaptation for Large Language Models",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "",
+   "url": "https://openreview.net/forum?id=TwJrTz9cRS",
+   "code_url": "https://github.com/hqsiswiliam/hira",
+   "hf_peft": true,
+   "hf_peft_config": "HiraConfig",
+   "formula_latex": "W=W_0+W_0\\odot(BA)=W_0\\odot(\\mathbf{1}\\mathbf{1}^{\\top}+BA),\\quad B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ W_0\\ \\text{frozen},\\ B,A\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer (LLM attention and MLP projections)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "entry-wise (Hadamard) multiplicative modulation of W_0 by J + BA. Delta W = W_0 ⊙ BA has rank <= rank(W_0)·r, so the update is high-rank at LoRA's parameter cost. LoRA is recovered by replacing W_0 with the all-ones matrix.",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 + W_0 ⊙ BA is precomputed for deployment; the original weight can be recovered by element-wise division by 1 + BA.",
+   "identity_at_init": "One factor is zero (the paper zero-initializes its d x r factor and Kaiming-initializes the other), so Delta W = 0.",
+   "key_idea": "Multiply the pretrained matrix element-wise by a low-rank matrix. The Hadamard product with W_0 raises the possible rank of the update (up to rank(W_0)·r) without extra parameters and carries the pretrained structure into the update.",
+   "results_note": "Reports gains over LoRA and other PEFT baselines on commonsense reasoning with Llama-2-7B and Llama-3-8B, plus further generation tasks, at LoRA's parameter count (ICLR 2025 oral).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "with W_0 replaced by the all-ones matrix, HiRA's update is LoRA's BA"
+    },
+    {
+     "target": "glora",
+     "type": "special-case-of",
+     "note": "GLoRA's official code already implements W_0 + W_0 ⊙ A + B; HiRA is the case of a low-rank A and B = 0"
+    },
+    {
+     "target": "liera",
+     "type": "equivalent-to",
+     "note": "the LieRA variant evaluated in its paper is the first-order form W_0 + W_0 (.) BA, the same parameterization as HiRA (concurrent work); LieRA's exact exponential form W_0 (.) exp(BA) differs"
+    },
+    {
+     "target": "flora-batched",
+     "type": "competes-with",
+     "note": "both modulate W_0 entry-wise by a low-rank matrix; HiRA's J + BA has rank <= r+1"
+    }
+   ],
+   "sources": [
+    "https://openreview.net/forum?id=TwJrTz9cRS",
+    "https://proceedings.iclr.cc/paper_files/paper/2025/hash/48c368f105e8145b945227b73255635a-Abstract-Conference.html",
+    "https://proceedings.iclr.cc/paper_files/paper/2025/file/48c368f105e8145b945227b73255635a-Paper-Conference.pdf",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/hira/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "No arXiv version (arXiv title search returns nothing). ICLR 2025 Oral confirmed in the ICLR 2025 accepted-paper data (Accept (Oral)) and on the proceedings PDF. Delta W = W_0 (.) (AB), zero init of the d_out x r factor with Kaiming init of the other, rank bound r_0 r, and merging/recovery by element-wise division checked in Sec. 4. HiraConfig exists in HF PEFT.",
+   "corrections": [
+    "relations: liera type special-case-of -> equivalent-to (the evaluated first-order LieRA and HiRA are the same parameterization)"
+   ]
+  },
+  {
+   "id": "liera",
+   "name": "LieRA",
+   "full_name": "Lie-group Rank Adaptation (Lie-group-based generalized tensor PEFT)",
+   "paper_title": "Generalized Tensor-based Parameter-Efficient Fine-Tuning via Lie Group Transformations",
+   "authors": "Si et al.",
+   "year": 2025,
+   "venue": "ICCV 2025",
+   "arxiv": "2504.00851",
+   "url": "https://arxiv.org/abs/2504.00851",
+   "code_url": "https://github.com/Chongjie-Si/Subspace-Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0\\odot\\exp_{\\odot}(\\Delta W)\\approx W_0+W_0\\odot\\Delta W\\ \\ (\\text{first-order form used in all experiments}),\\quad \\Delta W=BA\\ (\\text{LoRA-factorized; conv kernels are treated as tensors}),\\ \\exp_{\\odot}\\ \\text{entry-wise};\\ W_0\\ \\text{frozen (non-zero entries)},\\ B,A\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "linear layers and higher-order (convolutional) kernels",
+   "modification_kind": "multiplicative-weight",
+   "structure": "action of the abelian Lie group of entry-wise non-zero tensors under the Hadamard product (identity = all-ones tensor) on W_0. The update lives in its Lie algebra (all real tensors) and is mapped back through the entry-wise exponential; truncating at first order gives W_0 + W_0 ⊙ Delta W.",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained first-order update W_0 + W_0 (.) BA (or W_0 (.) exp(BA)) is a fixed tensor of the original shape.",
+   "identity_at_init": "B = 0 (A Gaussian), so exp(0) = 1 and W = W_0.",
+   "key_idea": "Treat parameters as elements of a Lie group under element-wise multiplication. Matrix PEFT updates (LoRA-style) then lift to high-dimensional (conv) tensors without flattening, via the exponential map from the Lie algebra.",
+   "results_note": "Reports gains over LoRA, e.g. a 75.5 vs 74.1 VTAB-1K average with ConvNeXt-V2-B (r=16), plus improvements on COCO detection, LLaMA commonsense reasoning and GLUE.",
+   "relations": [
+    {
+     "target": "hira",
+     "type": "equivalent-to",
+     "note": "LieRA's evaluated first-order form W_0 + W_0 (.) BA is HiRA's parameterization (concurrent work)"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Delta W in the Lie algebra is LoRA-factorized"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2504.00851",
+    "https://arxiv.org/html/2504.00851",
+    "https://openaccess.thecvf.com/content/ICCV2025/papers/Si_Generalized_Tensor-based_Parameter-Efficient_Fine-Tuning_via_Lie_Group_Transformations_ICCV_2025_paper.pdf"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2504.00851 (Si, 2025) matches; ICCV 2025 confirmed (arXiv comment, CVF proceedings per Semantic Scholar). Hadamard Lie group, entry-wise exponential, the first-order approximation W + W (.) Delta W and B=0/A Gaussian init checked in Sec. 4. Not in HF PEFT.",
+   "corrections": [
+    "code_url: added the repository linked in the abstract (github.com/Chongjie-Si/Subspace-Tuning)",
+    "formula: stated that the paper integrates the first-order approximation (Eq. 8) with LoRA for all experiments",
+    "results_note: the VTAB-1K numbers are for ConvNeXt-V2-B",
+    "relations: hira type generalizes -> equivalent-to",
+    "mergeable_reason: now refers to the first-order update that is actually trained"
+   ]
+  },
+  {
+   "id": "flora-batched",
+   "name": "FLoRA",
+   "full_name": "Fast LoRA (batched, example-specific multiplicative low-rank adaptation)",
+   "paper_title": "Batched Low-Rank Adaptation of Foundation Models",
+   "authors": "Wen & Chaudhuri",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2312.05677",
+   "url": "https://arxiv.org/abs/2312.05677",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_i=W_0\\odot(B_iA_i),\\quad h_i=\\operatorname{reduce}_{j=1..r}\\Big[b^{(i)}_j\\odot\\big(W_0\\,(a^{(i)}_j\\odot x_i)\\big)\\Big]\\ (\\text{the paper uses a reduction such as torch.mean over the } r \\text{ terms}),\\ B_i=[b^{(i)}_1,\\dots,b^{(i)}_r]\\in\\mathbb{R}^{d_{out}\\times r},\\ A_i^{\\top}=[a^{(i)}_1,\\dots,a^{(i)}_r]\\in\\mathbb{R}^{d_{in}\\times r}\\ \\text{per example/adapter } i;\\ W_0\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapter}",
+   "locus": "linear layers, with per-request adapters in multi-tenant serving",
+   "modification_kind": "multiplicative-weight",
+   "structure": "entry-wise (Hadamard) modulation of W_0 by a rank-r matrix. The rank-1 case is a two-sided diagonal scaling diag(b) W_0 diag(a), an action of the torus (R^x)^{d_out} x (R^x)^{d_in}; rank r is a sum of r such scalings, so a batch with different adapters needs only element-wise operations around one shared matmul.",
+   "mergeable": "yes",
+   "mergeable_reason": "For a fixed adapter, W_0 ⊙ BA can be precomputed; the point of the method is to keep it unmerged so different examples in a batch can use different adapters.",
+   "identity_at_init": "Not specified in the method section read. The parameterization reproduces W_0 only when B_iA_i is the all-ones matrix (e.g. rank-1 all-ones vectors), not with LoRA's B = 0.",
+   "key_idea": "Make each request's adapter multiply W_0 entry-wise. A minibatch with heterogeneous adapters can then be served with cheap element-wise operations around one shared matmul, giving better throughput and latency than batched LoRA.",
+   "results_note": "Reports about 2x throughput over LoRA on StarCoder-15B when each request needs a different low-rank adapter, while keeping LoRA-level accuracy on MultiPL-E multilingual code generation and on multilingual speech recognition (Whisper).",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "the paper describes IA3 as a 'rank 0.5' special case that rescales only columns"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "same parameter count, multiplicative instead of additive, built for heterogeneous batching"
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "HiRA's J + BA modulation is a FLoRA modulation of rank <= r+1"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.05677",
+    "https://arxiv.org/pdf/2312.05677",
+    "https://openreview.net/forum?id=w4abltTZ2f"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2312.05677 (Wen & Chaudhuri, 2023) matches; ICLR 2024 (oral) confirmed in the ICLR 2024 accepted-paper data. W_i = Delta W_i o W_0 with Delta W_i = B_i A_i and the 'rank 0.5' IA3 connection checked in Sec. 3. No initialization is stated. Not in HF PEFT.",
+   "corrections": [
+    "formula: the paper combines the r rank-one terms with a dimension reduction such as torch.mean, not a plain sum",
+    "results_note: added the 2x StarCoder-15B throughput figure and the speech-recognition experiment from the paper"
+   ]
+  },
+  {
+   "id": "glora",
+   "name": "GLoRA",
+   "full_name": "Generalized LoRA",
+   "paper_title": "One-for-All: Generalized LoRA for Parameter-Efficient Fine-tuning",
+   "authors": "Chavan et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2306.07967",
+   "url": "https://arxiv.org/abs/2306.07967",
+   "code_url": "https://github.com/Arnav0400/ViT-Slim/tree/master/GLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "GloraConfig",
+   "formula_latex": "W=W_0+W_0\\odot A+B,\\quad b=b_0+b_0\\odot D+E+W_0C;\\ \\text{each support } A,B,C,D,E\\in\\{\\text{low-rank},\\ \\text{vector},\\ \\text{scalar},\\ \\text{none}\\}\\ \\text{chosen per layer by evolutionary search};\\ W_0,b_0\\ \\text{frozen}",
+   "trainable_params": "\\le 2r(d_{in}+d_{out})+r(d_{in}+1)+2d_{out}\\ \\text{(all supports low-rank or vector); per-layer configuration searched}",
+   "locus": "any linear layer (weights and biases) of ViTs and LLaMA models",
+   "modification_kind": "hybrid",
+   "structure": "a unified affine reparameterization that combines a Hadamard-multiplicative modulation of W_0 (W_0 ⊙ A), an additive update B, multiplicative and additive bias terms, and a weight-dependent 'prompt' bias W_0 C. Every term is linear in (W_0, b_0), so all of them fold into one weight and bias. The paper writes W_0 A as a product, but the official code and HF PEFT use the element-wise product.",
+   "mergeable": "yes",
+   "mergeable_reason": "The paper's structural re-parameterization folds every support tensor into a single weight and bias, so inference has no extra cost.",
+   "identity_at_init": "Supports start at zero (one factor of each low-rank support is zero, vector/scalar supports are zero), so W = W_0 and b = b_0.",
+   "key_idea": "One supernet of re-parameterizable scaling and shifting terms on weights, biases and features covers LoRA-, SSF- and prompt-style tuning. An evolutionary search picks a configuration per layer, and everything merges back with no inference cost.",
+   "results_note": "Reports a 78.0% VTAB-1K average with 0.86M parameters (up to +2.9 points over prior PEFT methods), strong few-shot results, and gains over LoRA for LLaMA-1/2-7B on Open LLM Leaderboard tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "the additive support B in low-rank form is LoRA"
+    },
+    {
+     "target": "ssf",
+     "type": "generalizes",
+     "note": "per-channel scaling and shifting via vector supports"
+    },
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "a vector multiplicative support gives diag(1+a) W_0"
+    },
+    {
+     "target": "hira",
+     "type": "generalizes",
+     "note": "a low-rank multiplicative support A with B = 0 is HiRA's W_0 + W_0 ⊙ BA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.07967",
+    "https://arxiv.org/html/2306.07967",
+    "https://raw.githubusercontent.com/Arnav0400/ViT-Slim/master/GLoRA/layer.py",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/glora/config.py"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2306.07967 (Chavan, 2023) matches; technical report with no confirmed peer-reviewed venue (Semantic Scholar: arXiv), so venue stays arXiv. Paper Eq. 10 writes W_0 A, but the official ViT-Slim code (self.weight*A, matmul(weight, C)) and HF PEFT (weight + weight*A + B, bias + bias*D + E + W C) use the Hadamard product; the C support has shape d_in x r and r x 1 in HF, matching r(d_in+1). GloraConfig exists in HF PEFT.",
+   "corrections": []
+  },
+  {
+   "id": "para",
+   "name": "PaRa",
+   "full_name": "Parameter Rank Reduction",
+   "paper_title": "PaRa: Personalizing Text-to-Image Diffusion via Parameter Rank Reduction",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2406.05641",
+   "url": "https://arxiv.org/abs/2406.05641",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "DeftConfig(para=True, decomposition_method=\"qr\")",
+   "formula_latex": "W=(I-QQ^{\\top})\\,W_0,\\quad Q=\\mathrm{qr}(B),\\ B\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained};\\ W_0\\ \\text{frozen};\\ \\operatorname{rank}(W)\\le\\operatorname{rank}(W_0)-r\\ \\text{(Thm. 1)}",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "linear layers of the text-to-image diffusion UNet",
+   "modification_kind": "multiplicative-weight",
+   "structure": "left multiplication by an orthogonal projector onto the complement of a learned r-dimensional output subspace. This is an idempotent, non-invertible element of the matrix monoid rather than a group element; it removes r directions from the column space of W_0. Sequential application composes subjects: W_m = W_1 - Q_2 Q_2^T W_1.",
+   "mergeable": "yes",
+   "mergeable_reason": "(I - QQ^T) W_0 is a fixed dense matrix of the original shape.",
+   "identity_at_init": "No. The paper initializes B to zero, but the QR factor Q is still orthonormal, so QQ^T W_0 is removed from step 0; the HF DeftConfig docs state that the PaRa variant cannot be an identity at init.",
+   "key_idea": "For personalization, shrink the parameter space instead of growing it. Explicitly lowering the rank of each weight, by projecting out a learned subspace, constrains the sampling trajectory toward the target concept while keeping text editability.",
+   "results_note": "Better target-image alignment than LoRA with about 2x fewer trainable parameters; in the human study, raters preferred PaRa over LoRA in 91-97% of single-subject comparisons.",
+   "relations": [
+    {
+     "target": "deft",
+     "type": "special-case-of",
+     "note": "DEFT without the injection term (HF: DeftConfig(para=True))"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "rank reduction instead of a rank-increasing additive update; the two can be combined as W_0 - QQ^T W_0 + BA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.05641",
+    "https://arxiv.org/html/2406.05641",
+    "https://openreview.net/forum?id=KZgo2YQbhc",
+    "https://raw.githubusercontent.com/huggingface/peft/main/docs/source/package_reference/deft.md"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2406.05641 (Chen, 2024) matches; ICLR 2025 (spotlight) confirmed in the ICLR 2025 accepted-paper data. W_reduce = W_0 - QQ^T W_0 with B=QR (Eq. 3), the column-space theorem, sequential composition and the 2x parameter saving vs LoRA checked in the PDF.",
+   "corrections": [
+    "hf_peft_config: DeftConfig defaults to decomposition_method='relu' (non-orthogonal projector); PaRa's QR projector needs decomposition_method='qr'",
+    "identity_at_init: added the paper's zero initialization of B and why it still does not give the identity",
+    "results_note: human preference over LoRA is 91.18-97.13% across the five single-subject cases (Table 3), not 96-97%; removed the unverified comparison with SVDiff"
+   ]
+  },
+  {
+   "id": "deft",
+   "name": "DEFT",
+   "full_name": "Decompositional Efficient Fine-Tuning",
+   "paper_title": "DEFT: Decompositional Efficient Fine-Tuning for Text-to-Image Models",
+   "authors": "Kumar et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2509.22793",
+   "url": "https://arxiv.org/abs/2509.22793",
+   "code_url": "https://github.com/MAXNORM8650/DEFT",
+   "hf_peft": true,
+   "hf_peft_config": "DeftConfig (decomposition_method=\"relu\" by default, \"qr\" for the orthogonal projector)",
+   "formula_latex": "W=(I-P_{proj})\\,W_0+Q_PR,\\quad P_{proj}=Q_PQ_P^{\\top},\\ Q_P=\\mathrm{qr}(P)\\ \\ (\\text{paper's main form; variants use other decompositions, e.g. } \\mathrm{ReLU}(P)\\mathrm{ReLU}(P)^{\\top};\\ \\text{HF default: } P_{proj}=P\\,\\mathrm{relu}(P)^{\\top},\\ Q_P=P),\\ P\\in\\mathbb{R}^{d_{out}\\times r},\\ R\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{trained};\\ W_0\\ \\text{frozen}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "linear layers of text-to-image (and unified image-generation) models",
+   "modification_kind": "hybrid",
+   "structure": "a projector (idempotent) left action that removes an r-dimensional output subspace from W_0, followed by an additive rank-r injection into exactly that subspace. The net update Q_P(R - Q_P^T W_0) has rank <= r.",
+   "mergeable": "yes",
+   "mergeable_reason": "The HF docs state the update is a low-rank additive delta Q_P(R - Q_P^T W_0) that can be merged into the base weights.",
+   "identity_at_init": "R is initialized to Q_P^T W_0, so the removed component is re-injected and W = W_0 exactly (HF PEFT default).",
+   "key_idea": "Split the update into removing a low-rank subspace from the pretrained weight and injecting new content into that same subspace. Text-to-image models can then learn new concepts while keeping instruction following and editability.",
+   "results_note": "Reports state-of-the-art results on DreamBooth and DreamBench Plus personalization, InsDet object/scene adaptation and VisualCloze universal image generation.",
+   "relations": [
+    {
+     "target": "para",
+     "type": "generalizes",
+     "note": "adds an injection term to PaRa's subspace removal and restores the identity at init"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "the injection is a rank-r additive term"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.22793",
+    "https://neurips.cc/virtual/2025/poster/118053",
+    "https://raw.githubusercontent.com/huggingface/peft/main/docs/source/package_reference/deft.md",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/deft/config.py"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2509.22793 (Kumar, 2025) matches; NeurIPS 2025 confirmed (arXiv comment, NeurIPS 2025 accepted-paper data). W_total = (I - QQ^T)W_0 + QR, the generalized decompositions, zero init of P (Appendix C) and the DreamBooth/DreamBench Plus/InsDet/VisualCloze evaluation checked. Identity-at-init via R = Q_P^T W_0 is the HF default described in the DeftConfig docs.",
+   "corrections": [
+    "formula: the paper's ReLU variant is ReLU(P)ReLU(P)^T; P relu(P)^T is HF PEFT's default 'relu' projector, so both are now attributed separately",
+    "hf_peft_config: noted the decomposition_method option of DeftConfig"
+   ]
+  },
+  {
+   "id": "quantum-peft",
+   "name": "Quantum-PEFT",
+   "full_name": "Quantum-inspired PEFT with Pauli-parameterized unitary factors",
+   "paper_title": "Quantum-PEFT: Ultra parameter-efficient fine-tuning",
+   "authors": "Koike-Akino et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2503.05431",
+   "url": "https://arxiv.org/abs/2503.05431",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+U\\Lambda V^{\\top},\\quad U=Q_{\\mathsf P}(\\theta_U)\\,I_{d_{out}\\times r},\\ V=Q_{\\mathsf P}(\\theta_V)\\,I_{d_{in}\\times r},\\ Q_{\\mathsf P}=\\text{product of } L \\text{ layers of } R_Y\\ \\text{rotations and CZ gates on } \\log_2 d\\ \\text{qubits},\\ \\Lambda\\ \\text{diagonal};\\ \\text{only } \\theta_U,\\theta_V,\\Lambda\\ \\text{trained}",
+   "trainable_params": "\\mathcal{O}\\big(L(\\log_2 d_{in}+\\log_2 d_{out})\\big)+r",
+   "locus": "any linear layer",
+   "modification_kind": "additive-weight",
+   "structure": "a rank-r additive update in SVD shape whose orthonormal frames are images of a fixed frame under an orthogonal group element generated by a logarithmic-depth quantum-circuit (Pauli) parameterization. The Stiefel factors are orbits in a homogeneous space of O(d).",
+   "mergeable": "yes",
+   "mergeable_reason": "U Lambda V^T is a fixed rank-r matrix that can be added to W_0.",
+   "identity_at_init": "Delta W = U Lambda V^T vanishes when Lambda = 0; the paper's exact initialization was not confirmed.",
+   "key_idea": "Generate the orthonormal factors of an SVD-shaped adapter from a quantum-circuit (Pauli) parameterization of unitary matrices, so the number of trainable parameters grows only logarithmically with layer width.",
+   "results_note": "Reports about 25x fewer parameters than LoRA on DeBERTaV3-base GLUE (0.013M vs 0.33M) and 4.67x fewer on Mistral-7B, with competitive or better accuracy.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "logarithmic instead of linear parameter growth"
+    },
+    {
+     "target": "polar",
+     "type": "competes-with",
+     "note": "both use Stiefel-frame x core factorizations; Quantum-PEFT generates the frames from a small Lie-group parameterization"
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "both use an SVD-shaped P Lambda Q additive update"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.05431",
+    "https://arxiv.org/html/2503.05431"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2503.05431 (Koike-Akino, 2025) matches; ICLR 2025 confirmed (arXiv comment, ICLR 2025 accepted-paper data). Delta W = U Lambda V^T with Stiefel U, V from Pauli-parameterized unitaries (RY + CZ layers), O(2((2L+1)log2 N - 2L) + K) parameters, 0.013M (25x fewer than LoRA) on DeBERTaV3 and 4.67x fewer on Mistral-7B checked in the PDF. No initialization is stated. Not in HF PEFT.",
+   "corrections": []
+  }
+ ],
+ "papers": [
+  {
+   "id": "minimum-hyperspherical-energy",
+   "title": "Learning towards Minimum Hyperspherical Energy",
+   "authors": "Liu et al.",
+   "year": 2018,
+   "venue": "NeurIPS 2018",
+   "arxiv": "1805.09298",
+   "url": "https://arxiv.org/abs/1805.09298",
+   "claim": "Defines hyperspherical energy, a Thomson-problem-style potential of neurons on the unit sphere, as a measure of neuron diversity, and regularizes networks to minimize it.",
+   "relevance": "Hyperspherical energy is the invariant that OFT, BOFT, GOFT and HRA preserve. Orthogonal group actions are exactly the isometries that fix pairwise neuron angles, so orthogonal PEFT is fine-tuning inside an orbit that keeps this invariant.",
+   "sources": [
+    "https://arxiv.org/abs/1805.09298",
+    "https://raw.githubusercontent.com/huggingface/peft/main/docs/source/package_reference/oft.md"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1805.09298 (Liu, 2018) matches; NeurIPS 2018 confirmed by arXiv comment and Semantic Scholar. Claim matches the abstract (Thomson-problem MHE regularizer).",
+   "corrections": []
+  },
+  {
+   "id": "orthogonal-over-parameterized-training",
+   "title": "Orthogonal Over-Parameterized Training",
+   "authors": "Liu et al.",
+   "year": 2020,
+   "venue": "CVPR 2021",
+   "arxiv": "2004.04690",
+   "url": "https://arxiv.org/abs/2004.04690",
+   "claim": "Trains a network by learning an orthogonal transformation applied to fixed, randomly initialized neurons. This provably keeps the hyperspherical energy constant and improves generalization.",
+   "relevance": "Direct precursor of OFT: the trainable object is only a group element of O(d) acting on a frozen weight, which is the template for every multiplicative PEFT method.",
+   "sources": [
+    "https://arxiv.org/abs/2004.04690"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2004.04690 (Liu, 2020) matches; CVPR 2021 (oral) confirmed by arXiv comment. Claim matches the abstract (fixed random neurons, learned orthogonal transformation, provably minimal hyperspherical energy).",
+   "corrections": []
+  },
+  {
+   "id": "weight-normalization",
+   "title": "Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks",
+   "authors": "Salimans & Kingma",
+   "year": 2016,
+   "venue": "NeurIPS 2016",
+   "arxiv": "1602.07868",
+   "url": "https://arxiv.org/abs/1602.07868",
+   "claim": "Reparameterizes each weight vector as w = g v/||v||, separating magnitude from direction, which improves conditioning and speeds up SGD.",
+   "relevance": "The template for the magnitude-direction decompositions in DoRA, BiDoRA and DeLoRA: a polar-type factorization of each neuron into a radial scalar and a point on the sphere.",
+   "sources": [
+    "https://arxiv.org/abs/1602.07868",
+    "https://arxiv.org/html/2402.09353"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1602.07868 (Salimans, 2016) matches; NeurIPS (NIPS) 2016 confirmed by DBLP conf/nips/SalimansK16.",
+   "corrections": []
+  },
+  {
+   "id": "film",
+   "title": "FiLM: Visual Reasoning with a General Conditioning Layer",
+   "authors": "Perez et al.",
+   "year": 2017,
+   "venue": "AAAI 2018",
+   "arxiv": "1709.07871",
+   "url": "https://arxiv.org/abs/1709.07871",
+   "claim": "A feature-wise affine modulation (gamma ⊙ x + beta), predicted from a conditioning input, is a simple and general conditioning layer for neural networks.",
+   "relevance": "Feature-wise scale and shift is the algebraic building block behind (IA)³, SSF, RED, DiffFit and LN tuning: an action of the diagonal affine group on channels, learned as a static vector instead of predicted per input.",
+   "sources": [
+    "https://arxiv.org/abs/1709.07871"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1709.07871 (Perez, 2017) matches; AAAI 2018 confirmed by arXiv comment and DBLP.",
+   "corrections": []
+  },
+  {
+   "id": "butterfly-factorization",
+   "title": "Learning Fast Algorithms for Linear Transforms Using Butterfly Factorizations",
+   "authors": "Dao et al.",
+   "year": 2019,
+   "venue": "ICML 2019",
+   "arxiv": "1903.05895",
+   "url": "https://arxiv.org/abs/1903.05895",
+   "claim": "Products of O(log n) sparse butterfly factors can represent and learn fast transforms (FFT, DCT, Hadamard, ...) with O(n log n) parameters.",
+   "relevance": "The structural basis of BOFT and of GOFT's parallel Givens layers: dense group elements written as short words in sparse generators, which is how multiplicative PEFT reaches dense rotations cheaply.",
+   "sources": [
+    "https://arxiv.org/abs/1903.05895",
+    "https://arxiv.org/html/2311.06243"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1903.05895 (Dao, 2019) matches; ICML 2019 confirmed by arXiv comment.",
+   "corrections": []
+  },
+  {
+   "id": "cheap-orthogonal-constraints",
+   "title": "Cheap Orthogonal Constraints in Neural Networks: A Simple Parametrization of the Orthogonal and Unitary Group",
+   "authors": "Lezcano-Casado & Martínez-Rubio",
+   "year": 2019,
+   "venue": "ICML 2019",
+   "arxiv": "1901.08428",
+   "url": "https://arxiv.org/abs/1901.08428",
+   "claim": "Parameterizes the special orthogonal and unitary groups through the exponential map from skew-symmetric (Lie-algebra) matrices, so optimization is unconstrained while orthogonality holds exactly.",
+   "relevance": "Supplies the Lie algebra to Lie group charts (exponential, Cayley) that OFT, BOFT, OFTv2, PSOFT and Spectral Adapter use. In these terms, multiplicative PEFT is gradient descent in a Lie algebra pushed forward to a group acting on W_0.",
+   "sources": [
+    "https://arxiv.org/abs/1901.08428"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1901.08428 (Lezcano-Casado, 2019) matches; ICML 2019 confirmed by DBLP conf/icml/CasadoM19. Abstract confirms the exponential-map parameterization of SO(n), U(n) and compact connected Lie groups.",
+   "corrections": [
+    "confidence: medium -> high (venue and claim confirmed)"
+   ]
+  },
+  {
+   "id": "householder-orthogonal-rnn",
+   "title": "Efficient Orthogonal Parametrisation of Recurrent Neural Networks Using Householder Reflections",
+   "authors": "Mhammedi et al.",
+   "year": 2016,
+   "venue": "ICML 2017",
+   "arxiv": "1612.00188",
+   "url": "https://arxiv.org/abs/1612.00188",
+   "claim": "Parameterizes orthogonal transition matrices as products of Householder reflections, which gives exact orthogonality and a tunable trade-off between the number of reflections and expressivity at low cost.",
+   "relevance": "The ancestor of HRA and ETHER: Householder words generate O(d), and word length controls capacity. HRA's 'r reflections = identity plus rank r' is the PEFT version of this fact.",
+   "sources": [
+    "https://arxiv.org/abs/1612.00188"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1612.00188 (Mhammedi, first version Dec 2016) matches; ICML 2017 confirmed by DBLP conf/icml/MhammediHRB17.",
+   "corrections": [
+    "confidence: medium -> high (venue and claim confirmed)"
+   ]
+  },
+  {
+   "id": "lora-vs-full-ft-illusion",
+   "title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+   "authors": "Shuttleworth et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.21228",
+   "url": "https://arxiv.org/abs/2410.21228",
+   "claim": "LoRA and full fine-tuning reach structurally different solutions. LoRA introduces 'intruder dimensions' (new high-ranking singular vectors unlike the pretrained ones) that cause forgetting, and scaling them down recovers much of the pretraining behaviour.",
+   "relevance": "A spectral test that separates additive low-rank updates from updates that preserve the pretrained spectrum. It motivates methods such as SVF, SVDiff, PSOFT, OSF, Spectral Adapter and OFT that keep the singular frame of W_0.",
+   "sources": [
+    "https://arxiv.org/abs/2410.21228",
+    "https://neurips.cc/virtual/2025/poster/115207"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.21228 (Shuttleworth, 2024) matches; NeurIPS 2025 (poster) confirmed in the NeurIPS 2025 accepted-paper data. Claim matches the abstract (intruder dimensions cause forgetting; scaling them down helps).",
+   "corrections": []
+  },
+  {
+   "id": "primacy-of-magnitude",
+   "title": "The Primacy of Magnitude in Low-Rank Adaptation",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2507.06558",
+   "url": "https://arxiv.org/abs/2507.06558",
+   "claim": "Argues that the magnitude of the weight update is the main driver of LoRA performance and that low-rank structure bounds it. Proposes LoRAM, a magnitude-driven initialization that matches spectral initializations without their SVD cost.",
+   "relevance": "Isolates the magnitude half of magnitude-direction decompositions (DoRA, DeLoRA, PoLAR) and suggests that many spectral or initialization gains come down to controlling update magnitude.",
+   "sources": [
+    "https://arxiv.org/abs/2507.06558"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2507.06558 (Zhang, 2025) matches; NeurIPS 2025 (spotlight) confirmed by arXiv journal-ref and NeurIPS 2025 data. Claim matches the abstract (LoRAM 'Basis & Basis' magnitude-driven initialization).",
+   "corrections": [
+    "confidence: medium -> high (venue and claim confirmed)"
+   ]
+  }
+ ],
+ "notes": "Convention: all formulas use h = W x with W_0 of shape d_out x d_in. Many source papers (OFT, BOFT, GOFT, ETHER, RoAd, PSOFT) write z = (R W)^T x with W of shape d_in x d_out, so their 'left' rotation is a right action on W_0 here. Since R and R^T lie in the same group, these are rewritten as W = W_0 R (or W = W_0 R^T). The family splits into algebraic sub-types useful for a categorical treatment. (1) Orthogonal group actions on the input side: OFT, BOFT, OFTv2, GOFT, HRA, ETHER, and PSOFT / Spectral Adapter^R restricted to principal subspaces. (2) Actions that leave O(d): qGOFT (GL(2) blocks), ETHER+ (rank-2 perturbations), RoAd (CO(2) ≅ C^x on output pairs). (3) Diagonal torus actions on channels: (IA)³, SSF, RED, LN tuning, DiffFit. (4) Torus actions on the spectrum: SVDiff, SVF, SVFT-plain. (5) Entry-wise Hadamard group actions: FLoRA, HiRA, LieRA, the W_0 ⊙ A term of GLoRA. (6) Magnitude-direction (polar) decompositions: DoRA, BiDoRA, DeLoRA, PoLAR. (7) Non-invertible projector (monoid) actions: PaRa, DEFT. (8) Lie-group-generated frames for additive updates: Quantum-PEFT. Membership choices: PoLAR, DeLoRA, Spectral Adapter^A, SVFT and Quantum-PEFT are honestly additive-weight but are kept because their structure is a polar, spectral or group-generated decomposition; other families may also list them. OSF is a gradient-projection method in the singular basis (in HF PEFT). LN tuning is selective. Uncertainties: (a) HiRA has no arXiv version (ICLR 2025 oral, OpenReview TwJrTz9cRS); its year is recorded as 2025. (b) GLoRA's paper writes W_0 A (a matrix product), but the official code and HF PEFT use the Hadamard product W_0 ⊙ A. The entry follows the code; GLoRA has no confirmed peer-reviewed venue. (c) The ETHER/ETHER+ initialization is not stated clearly in the text read. A single Householder reflection cannot be the identity, while ETHER+ can be (u = v). (d) Transformer² SVF: the paper gives W' = U(Σ ⊗ diag(z))V^T, while the official code adds sigmoid(z) and a sum(σ)/sum(σz) renormalization, which is what makes initialization near-identity. (e) DoRA's paper calls its norm 'column-wise' in its transposed convention; the official and HF implementations use one magnitude per output neuron, which is what the formula shows. (f) FLoRA's identity-preserving initialization is not stated in the section read. (g) The PaRa and Quantum-PEFT initialization details are medium-confidence. (h) The OSF paper (Sculpting Subspaces) is listed as arXiv only, since no venue was confirmed. Excluded as low-uptake or out of scope: HOFT (Householder Orthogonal Fine-tuning, arXiv 2505.16531, no venue found), BoRA and EDoRA (DoRA variants), StelLA (Stiefel LoRA), and SVD-initialized additive methods (PiSSA, MiLoRA, KaSA, SORSA, LoRA-XS, TinyLoRA, AdaMSS, which belong with the additive/low-rank family). Relation targets outside this family use the assumed ids lora, qlora, pissa, milora, adalora, bitfit and loreft.",
+ "verification_summary": "Adversarial verification on 2026-10-01 of 32 methods and 9 reference papers. All 37 arXiv ids were batch-checked against the arXiv API (title, first author, first-version year all matched); HiRA has no arXiv version and was confirmed on the ICLR 2025 proceedings. Venues were confirmed via arXiv comments/journal-refs, DBLP, the ACL Anthology (RED) and the official ICLR 2024/2025 and NeurIPS 2024/2025 accepted-paper data; OSF and GLoRA remain arXiv-only. Every method's formula was checked against the paper PDF and, where the paper is silent, the official code. Main fixes: transpose conventions (OFT, BOFT, OFTv2, PSOFT now W_0 R^T / R^T x as in the papers), wrong experimental attributions ((IA)^3 RAFT result is T0-11B not T0-3B; Spectral Adapter GSM8K is Mistral-7B not Llama-3-8B; BOFT uses Llama-2-7B), initialization facts from official code (ETHER never identity, ETHER+ exactly identity via v=-u, SVFT not identity because of Kaiming-initialized coefficients, SSF std 0.02), DeLoRA's per-input-column weight norm, LieRA/HiRA equivalence, and HF PEFT configs (OFTConfig now defaults to Cayley-Neumann, so exact OFT is use_cayley_neumann=False; PaRa needs DeftConfig(para=True, decomposition_method='qr')). HF PEFT support was re-checked against src/peft/tuners on main: OFT, BOFT, HRA, PSOFT, OSF, DoRA (LoraConfig), DeLoRA, RoAd, IA3, LN Tuning, HiRA, GLoRA, DEFT/PaRa are present; GOFT/qGOFT, ETHER/ETHER+, Spectral Adapter, SVDiff, SVF, SVFT, BiDoRA, PoLAR, SSF, RED, DiffFit, LieRA, FLoRA and Quantum-PEFT are not. No entries were dropped. Total corrections: 54."
+}

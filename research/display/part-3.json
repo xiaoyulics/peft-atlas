@@ -1,0 +1,571 @@
+{
+ "mad-x": {
+  "structure": "Serial composition (stacking) \\(\\mathrm{TA}\\circ\\mathrm{LA}\\) of two bottleneck adapters that share the FFN residual, plus an invertible NICE additive-coupling bijection \\(A_{inv}\\) on token embeddings whose exact inverse is applied before the tied output embedding; language modules are swappable at inference (zero-shot transfer by replacing \\(\\mathrm{LA}^{src}\\) with \\(\\mathrm{LA}^{tgt}\\)).",
+  "identity_at_init": "Not explicitly enforced: adapters use the standard small random init of Pfeiffer adapters; the coupling \\(A_{inv}\\) equals the identity only when \\(F=G=0\\)."
+ },
+ "compacter": {
+  "structure": "Adapter projections are sums of \\(n\\) Kronecker products of shared 'slow' \\(n \\times n\\) matrices \\(A_i\\) with layer-specific rank-\\(\\rho\\) 'fast' matrices \\(s_i t_i^{\\top}\\) (low-rank PHM, LPHM).",
+  "key_idea": "Combine hypercomplex (Kronecker-sum) layers, cross-layer sharing of the slow factors, and rank-one fast factors to bring adapter cost from \\(O(kd)\\) to \\(O(k+d)\\)."
+ },
+ "unipelt": {
+  "identity_at_init": "Not exact: inherits submodule initializations (LoRA \\(B = 0\\) and near-zero adapters, but prefixes perturb attention from the start).",
+  "locus": "sequential adapter after the FFN, prefixes at attention keys/values, LoRA on \\(W_q\\) and \\(W_v\\), each with its own gate in every layer"
+ },
+ "side-tuning": {
+  "structure": "Late-fusion side network: an \\(\\alpha\\)-blend (convex combination) of frozen base features and side-network features computed from the same input, with no access to intermediate backbone activations; \\(\\alpha = 1\\) is feature extraction, \\(\\alpha = 0\\) with \\(S\\) a copy of \\(B\\) is fine-tuning.",
+  "identity_at_init": "Exact when \\(S\\) is initialized as a copy of \\(B\\) (the paper's default when architectures match): \\(R(x) = B(x)\\) for any \\(\\alpha\\); otherwise \\(S\\) is initialized by distillation from \\(B\\) (approximate)."
+ },
+ "t2i-adapter": {
+  "identity_at_init": "Not guaranteed by construction (no zero-init is described); the original model is recovered exactly when no adapter is attached or its weight \\(\\omega_k = 0\\)."
+ },
+ "st-adapter": {
+  "structure": "Serial residual bottleneck with a depth-wise spatio-temporal convolution in the compressed space, i.e. a token-mixing linear operator across neighbouring frames inserted between down- and up-projection; it gives an image model temporal reasoning. (The official code has no activation between the depth-wise convolution and \\(W_{up}\\), and adapts only the patch tokens, leaving [CLS] unchanged.)",
+  "identity_at_init": "Exact in the official code: depth-wise 3D-conv weights and all biases are zero-initialized, so the adapter outputs \\(X\\) at init.",
+  "locus": "one adapter before the MHSA of every ViT block (operating on the \\(T\\) frames' patch tokens)"
+ },
+ "clip-adapter": {
+  "structure": "Residual-blended bottleneck MLP on the output embedding: a convex combination with residual ratio \\(\\alpha\\) of the frozen feature and its adapted image, i.e. post-composition of the encoder with an endomorphism of the embedding space.",
+  "identity_at_init": "No exact identity: the bottleneck is randomly initialized; closeness to zero-shot CLIP is controlled by the residual ratio \\(\\alpha\\) (small for generic datasets, larger for fine-grained or shifted domains)."
+ },
+ "model-soups": {
+  "structure": "Equal-weight barycentre (convex combination) of \\(N\\) points in weight space that share the base point \\(W_0\\); the greedy soup is the barycentre of a validation-selected subset."
+ },
+ "ties-merging": {
+  "results_note": "With validation-tuned hyper-parameters, TIES outperforms averaging, Fisher merging, RegMean and Task Arithmetic across T5, ViT and (IA)\\(^3\\)-PEFT merges, in-domain and out-of-domain. Without a validation set, the fixed recipe (\\(k = 20\\%\\), \\(\\lambda = 1\\)) is weaker than Task Arithmetic for the T5-base (IA)\\(^3\\) merge (69.7 vs 73.2).",
+  "locus": "task vectors of full fine-tuning or of PEFT parameters (e.g. (IA)\\(^3\\) vectors, LoRA factors in HF PEFT)"
+ },
+ "knots": {
+  "structure": "Joint SVD of the column-concatenated LoRA updates: a shared orthonormal output basis \\(U\\Sigma\\) (rank \\(\\le N r\\)) and task-specific input-side factors \\(V^{(i)}\\); any existing merge rule is applied in this aligned coordinate system.",
+  "mergeable_reason": "The merged update \\(U\\Sigma V^{(m)\\top}\\) is a dense matrix added to \\(W_0\\).",
+  "locus": "LoRA-adapted attention projections (\\(q\\), \\(k\\), \\(v\\), \\(o\\)) of ViT-B/32, ViT-L/16 and Llama3-8B LoRA models in the paper (rank 16)"
+ },
+ "lora-soups": {
+  "structure": "Rank-concatenation (direct sum along the rank axis) of LoRA factors with learned layer-wise scalars: a weighted sum of the LoRA updates without the cross terms of factor averaging; merged rank \\(\\sum_i r_i\\). HF PEFT's add_weighted_adapter(combination_type='cat') builds the same concatenated adapter with fixed, user-given weights.",
+  "mergeable_reason": "Coefficients are input-independent, so the concatenated LoRA is a fixed low-rank update that can be folded into \\(W_0\\)."
+ },
+ "orthogonal-adaptation": {
+  "mergeable_reason": "Each concept update is a fixed low-rank matrix and the merge is a sum, foldable into \\(W_0\\)."
+ },
+ "mole": {
+  "structure": "Hierarchical, layer-wise learned gating over the outputs of \\(N\\) frozen pre-trained LoRAs, with a gate-balancing loss \\(-\\log\\prod_i q^{(i)}\\) against collapse onto one LoRA.",
+  "identity_at_init": "Not applicable: starts from trained LoRAs. Each expert output \\(E_{\\Delta \\theta_i}(x)\\) is a full Transformer-block output computed with LoRA \\(i\\), and the gate initialization is not specified."
+ },
+ "lily": {
+  "structure": "Cross-layer factor sharing: locally shared down-projections and a global pool of up-projection experts mixed per input by a router acting in the \\(r\\)-dimensional space, which allows a much larger rank at LoRA's budget.",
+  "identity_at_init": "HF PEFT zero-initializes the \\(B\\) experts (\\(A\\) and router Kaiming-uniform), so the model is unchanged at init.",
+  "mergeable_reason": "The combination of \\(B\\) experts depends on the input activations (HF PEFT explicitly disables merge/unmerge).",
+  "key_idea": "Replace per-layer LoRA pairs by a few shared \\(A\\) adapters and a model-wide pool of \\(B\\) experts selected by data-dependent routers, so every layer can draw on all layers' adapters and use a higher rank for the same parameters.",
+  "coord_notes": {
+   "kind": "Family over inputs (\\(T=X\\)): the mixture weights \\(S(x)=\\mathrm{softmax}(R A x)\\) depend on the activations (HF averages per-token softmaxes over the batch).",
+   "base_point": "Zero-initialised \\(B\\) experts reproduce \\(f\\) for every input; at that point only the experts move to first order (Lemma II.4, function-level). The table writes '-' for \\(F_X\\) rows.",
+   "gauge": "One global \\(GL_r\\) on the shared rank-\\(r\\) wire (\\(A_g\\mapsto gA_g\\), \\(B^i\\mapsto B^i g^{-1}\\), \\(R_l\\mapsto R_l g^{-1}\\), common to all layers because the \\(B^i\\) are model-wide), plus a softmax shift per router and expert permutations."
+  }
+ },
+ "lora-flow": {
+  "structure": "Token- and layer-wise softmax gate over the outputs of \\(k\\) frozen LoRAs (output mixing, which also allows LoRAs of different ranks)."
+ },
+ "text-to-lora": {
+  "structure": "Amortized adapter generation: one MLP hypernetwork maps (task-description embedding, module-type embedding, layer embedding) to the rank-\\(r\\) factors of every LoRA in a single batched forward pass.",
+  "identity_at_init": "Bias-HyperInit (App. G): the hypernetwork's output head starts with zero weights, a \\(U(-1/d, 1/d)\\) bias for \\(A\\) and a zero bias for \\(B\\), so the untrained hypernetwork emits \\(B = 0\\) (\\(\\Delta W = 0\\)). Trained, it emits non-zero task-specific adapters."
+ },
+ "qerl": {
+  "structure": "QLoRA-type composite: additive rank-\\(r\\) delta on a frozen 4-bit (NVFP4) base, plus a scheduled channel-wise Gaussian noise vector added to the RMSNorm scale. This is equivalent to row-wise multiplicative noise (\\(Z/w + 1\\)) on the following \\(W_q\\), \\(W_k\\), \\(W_v\\) (shared norm) and \\(W_{gate}\\), \\(W_{up}\\) (shared norm).",
+  "identity_at_init": "\\(B = 0\\), but the starting policy is the NVFP4-quantized base, not the exact bf16 model. In stage 0 only the inherent quantization noise acts (\\(\\sigma = 0\\)); AQN then starts at \\(\\sigma_{start}\\) (1e-2 in the main text, range 5e-2 to 5e-4 in experiments) and decays exponentially over \\(K\\) stages.",
+  "coord_notes": {
+   "covariance": "The NVFP4 grid with 16-element micro-block scales is coordinate structure. As for QLoRA it is recorded as \\(\\mathrm{Mon}\\times\\mathrm{Mon}\\); the micro-blocks restrict the input side further, to block-preserving monomials."
+  }
+ },
+ "shine": {
+  "structure": "In-context hypernetwork: the frozen LLM itself (with a meta-LoRA and learnable memory tokens) encodes the context into an \\(L\\times M\\) memory grid, which an axial (row/column) attention Transformer maps jointly to every LoRA factor. The deployed modification is additive low-rank.",
+  "locus": "all linear layers of each backbone layer (Qwen3-8B; generated rank-8 LoRA); \\(D\\) is the summed input and output width of those linear layers"
+ },
+ "k-lora": {
+  "structure": "Layer-wise, timestep-dependent hard selection between two pretrained LoRA deltas (content vs style), decided by comparing their Top-\\(K\\) \\(\\ell_1\\) mass with a time-ramped scale (\\(\\alpha=1.5\\), \\(\\beta=0.5\\)): content dominates early denoising steps, style later ones.",
+  "key_idea": "Only the few largest LoRA entries matter, and early denoising steps set content while later ones set style; so at each attention layer use whichever LoRA has more Top-\\(K\\) mass, rescaled over time, with no training."
+ },
+ "sd-lora": {
+  "structure": "Linear combination of frozen unit-Frobenius-norm rank-\\(r\\) directions with trainable scalar magnitudes (initialized to 1; one magnitude set shared across the adapted projections): each task adds one direction, while the magnitudes of all earlier directions keep being re-weighted. Variants shrink later ranks (RR) or absorb a new direction into old ones by least squares (KD).",
+  "identity_at_init": "Not identity: magnitudes are initialized to 1 and each direction has unit norm, so a new task starts with a nonzero perturbation (initialization of \\(A_t\\), \\(B_t\\) is not specified in the paper)."
+ },
+ "loreft": {
+  "structure": "Low-rank affine edit of hidden states confined to an \\(r\\)-dimensional subspace. With the orthogonal projector \\(P = R^T R\\), \\(\\Phi(h) = (I - P)h + R^T(Wh + b)\\): the component of \\(h\\) in \\(\\mathrm{row}(R)\\) is replaced by a learned affine function of \\(h\\), and the orthogonal complement is untouched. The edit is sparse in both positions (prompt prefix and suffix) and layers. DiReFT drops the orthonormality and the difference term, giving a LoRA-shaped map \\(h \\to h + W_2^T(W_1 h + b)\\) on activations.",
+  "identity_at_init": "Not identity-preserving. In pyreft \\(R\\) gets a random orthogonal initialization (torch orthogonal parametrization) and \\(W\\), \\(b\\) use the default nn.Linear initialization, so \\(\\Phi(h) \\neq h\\) at step 0; the identity is recovered only when \\(W = R\\) and \\(b = 0\\)."
+ },
+ "textual-inversion": {
+  "structure": "Extends the frozen vocabulary with one learned point \\(v_*\\) in input-embedding space. The update is a single new row of the embedding matrix, used compositionally inside arbitrary natural-language prompts rather than as a fixed task prefix.",
+  "identity_at_init": "The model itself is untouched. \\(v\\) is initialized to the embedding of a single-word coarse descriptor (e.g. 'cat', 'sculpture'), so prompts without \\(S_*\\) behave exactly as before and \\(S_*\\) starts out as that word.",
+  "locus": "token-embedding table of the frozen text encoder (one new row for the pseudo-word \\(S_*\\)); the pseudo-word can appear anywhere in a prompt"
+ },
+ "coda-prompt": {
+  "structure": "Input-conditioned linear combination of a growing dictionary of prefix components, \\(p(x) = \\sum_m \\alpha_m(x) P_m\\). The weights are unnormalized cosine similarities between a feature-gated query \\(q(x) \\odot A_m\\) and a key \\(K_m\\). Each task adds \\(M/N\\) components, and the components, keys and attention vectors of earlier tasks are frozen, so the trainable space is an increasing chain of component sets with soft orthogonality penalties.",
+  "identity_at_init": "No identity: prefix slots change attention from the first step. \\(P\\), \\(K\\) and \\(A\\) are orthogonally initialized.",
+  "mergeable_reason": "The prompt depends on the input through the query pass, and its prefix slots lengthen the key/value sequence, so nothing folds into \\(W_0\\)."
+ },
+ "moslora": {
+  "structure": "Three-factor low-rank update \\(B M A\\), in which a learnable \\(r \\times r\\) mixer weights all \\(r^2\\) rank-one 'subspaces' \\(b_i a_j^T\\). The reachable set is still \\(\\{\\mathrm{rank} \\le r\\}\\), the same as LoRA's, so the mixer changes the parametrization and the optimization, not the expressivity. The gauge symmetry grows from \\(GL(r)\\) to \\(GL(r) \\times GL(r)\\): \\((B, M, A) \\sim (BG, G^{-1}MH, H^{-1}A)\\) (derived here).",
+  "identity_at_init": "\\(B = 0\\) (\\(A\\) Kaiming-uniform; mixer Kaiming-uniform or orthogonal), so \\(\\Delta W = 0\\). A zero-initialized mixer gives all three factors zero gradient and training stalls (paper, Appendix C).",
+  "mergeable_reason": "\\(BMA\\) is a single \\(d_{out} \\times d_{in}\\) matrix that folds into \\(W_0\\).",
+  "key_idea": "Splitting LoRA into rank-one subspaces and mixing them improves results. MoSLoRA generalizes the fixed identity between \\(A\\) and \\(B\\) (LoRA), or the fixed butterfly (two-subspace mixing), to a learnable \\(r \\times r\\) mixer, at negligible extra parameters and compute.",
+  "locus": "any linear layer; \\(q\\), \\(k\\), \\(v\\), up and down projections in the LLaMA-3 8B commonsense experiments (Table 7); \\(q\\), \\(k\\), \\(v\\), \\(o\\), up, down and gate for LLaVA visual instruction tuning (Table 8); also used for SDXL subject-driven generation"
+ },
+ "blob": {
+  "structure": "Stochastic low-rank update \\(\\Delta W = BA\\) in which only the down-projection \\(A\\) is a random matrix with a mean-field Gaussian posterior (mean \\(M\\), std \\(\\Omega = G^{\\circ 2}\\)); \\(B\\) is a point estimate. The induced full-weight posterior is a degenerate Gaussian centred at \\(W_0 + BM\\) whose covariance \\((I\\otimes B)\\,\\mathrm{diag}(\\Omega)^2(I\\otimes B^\\top)\\) has rank at most \\(r\\,d_{in}\\). The prior is a matching low-rank Gaussian, so the full-weight KL reduces exactly to the KL on \\(A\\). Sampling uses Flipout restricted to \\(A\\).",
+  "identity_at_init": "\\(B = 0\\), as in LoRA. The mean \\(M\\) of \\(A\\) is uniform-Kaiming and \\(G \\sim \\mathcal{U}(\\epsilon/\\sqrt2,\\epsilon)\\). The sampled update \\(B A\\) is therefore exactly zero at initialization. The authors fix the variance of \\(B\\) to 0 for this reason: a stochastic \\(B\\) would make the early forward passes noisy.",
+  "mergeable_reason": "The posterior mean \\(W_0 + BM\\) can be merged into \\(W_0\\) (BLoB with \\(N=0\\) samples), but the Bayesian predictive that gives the calibration gains averages \\(N\\) (default 10) sampled \\(A\\) matrices, and this cannot be folded into one weight.",
+  "key_idea": "BLoB does variational Bayes inside the LoRA subspace and trains the posterior mean and variance jointly during fine-tuning, instead of adding a Laplace approximation afterwards. Only \\(A\\) is made stochastic (asymmetric Bayesianization), and the prior is designed so that the full-weight ELBO equals a cheap ELBO on \\(A\\). The posterior std is parameterized as \\(G\\) squared for fast KL convergence, and LoRA-Flipout decorrelates the samples within a mini-batch.",
+  "results_note": "On Llama2-7B over six commonsense tasks, BLoB (\\(N=10\\) samples) keeps accuracy close to MLE-LoRA while cutting ECE sharply (e.g. WG-S 29.8% to 9.4%, ARC-C 29.0% to 9.6%); it also improves NLL over MC-dropout, ensembles, BBB and Laplace-LoRA on most datasets, and the gains extend to OOD shifts.",
+  "locus": "LoRA-targeted linear layers (paper: \\(W_q\\), \\(W_v\\) of every attention layer plus the output layer of Llama2-7B; RoBERTa for classification)"
+ },
+ "meft": {
+  "structure": "Bottleneck adapters inserted so that each pretrained layer becomes the \\(\\mathcal{F}\\) or \\(\\mathcal{G}\\) of an additive RevNet coupling with scalings \\(\\lambda\\), \\(\\beta\\) (0.1 for the coupling scaled toward 0) and an optional stream swap. The layer map is then a bijection \\((h^1,h^2)\\mapsto({h^1}',{h^2}')\\) with an explicit inverse, so activations are recomputed backwards from the outputs and activation memory is \\(O(1)\\) in depth instead of \\(O(L)\\).",
+  "identity_at_init": "Approximate only. Adapters are initialized with \\(W_{down}\\), \\(W_{up} \\sim \\mathcal{N}(0, 0.02^2)\\) rather than zero, and the scaling of the coupling sent toward 0 is 0.1 rather than exactly 0, so one stream reproduces the PLM's hidden state \\(h_n\\) up to a small perturbation (the 'starting point hypothesis'). The stream swap keeps the input of each pretrained block continuous with the original network.",
+  "mergeable_reason": "Inference keeps the two-stream reversible topology, the \\(\\lambda/\\beta\\) scalings and the nonlinear bottleneck adapters, so the result cannot be folded back into the original single-stream PLM weights."
+ },
+ "concept-sliders": {
+  "structure": "Each slider is a rank-\\(r\\) ray \\(\\{W_0+\\alpha BA:\\alpha\\in\\mathbb{R}\\}\\) through \\(W_0\\), i.e. a one-parameter additive family in weight space; \\(K\\) sliders span the affine slice \\(W_0+\\mathrm{span}_{\\mathbb{R}}\\{B_kA_k\\}_{k=1}^{K}\\), navigated by the coefficient vector (\\(\\alpha_1,\\dots,\\alpha_K\\)). The training target is an output-space (score) contrast \\(\\epsilon(c_+)-\\epsilon(c_-)\\) distilled into this weight direction.",
+  "identity_at_init": "Standard LoRA initialization (\\(B = 0\\)); in addition, \\(\\alpha = 0\\) recovers the base model exactly at any time after training, since every slider is a ray through \\(W_0\\).",
+  "mergeable_reason": "For any fixed strength vector the update \\(\\sum_k \\alpha_k B_k A_k\\) is a plain matrix that folds into \\(W_0\\); the SDEdit-style schedule only switches between \\(W_0\\) and the merged weights across denoising steps.",
+  "locus": "LoRA on the diffusion U-Net (SD-XL, SD-1.4); the official text-slider config adapts all layers except cross-attention ('noxattn'), including \\(3\\times3\\) conv layers ('c3lier'), with rank 4 and \\(\\alpha\\) 1, so the code applies the fixed internal scale \\(\\alpha/r = 1/4\\) times the slider multiplier; at inference the slider is switched on only after the first \\(t\\) denoising steps (SDEdit-style)"
+ },
+ "wise-ft": {
+  "structure": "The segment \\(\\{\\theta_0+\\alpha(\\theta_1-\\theta_0)\\}_{\\alpha\\in[0,1]}\\) joining the pre-trained point and the fine-tuned point in weight space (a two-point convex combination); when only the linear head is fine-tuned it coincides with the output-space ensemble \\((1-\\alpha)f(x,\\theta_0)+\\alpha f(x,\\theta_1)\\).",
+  "identity_at_init": "\\(\\alpha = 0\\) returns the zero-shot model and \\(\\alpha = 1\\) the fine-tuned one; for end-to-end fine-tuning the head is initialized with the (temperature-scaled) zero-shot classifier."
+ },
+ "flora-federated": {
+  "structure": "Direct sum of the clients' rank spaces \\(\\mathbb{R}^{r_1}\\oplus\\cdots\\oplus\\mathbb{R}^{r_K}\\): block concatenation of factors satisfies \\([B_1\\cdots B_K][A_1;\\dots;A_K]=\\sum_kB_kA_k\\) exactly, so the aggregate factors through \\(\\sum_kr_k\\) dimensions with no cross terms \\(B_iA_j\\) (which FedAvg of \\(A\\) and \\(B\\) separately introduces) and with no constraint that ranks agree.",
+  "identity_at_init": "Clients re-initialize their local LoRA each round (the official code uses PEFT's LoraConfig, i.e. \\(B = 0\\)), so each round starts exactly at the current global model.",
+  "mergeable_reason": "After each round the aggregated \\(BA\\) is added into the base weights, so the final model is the original architecture.",
+  "key_idea": "Averaging LoRA's \\(A\\) and \\(B\\) separately does not average the products; stacking the client factors instead gives the exact weighted sum of updates and naturally supports clients with different ranks."
+ },
+ "lora": {
+  "structure": "\\(\\Delta W\\) factors through an \\(r\\)-dimensional space: \\(\\Delta W = BA\\), \\(\\operatorname{rank}\\Delta W \\le r\\)",
+  "identity_at_init": "\\(B = 0\\) (\\(A\\) Kaiming-uniform in PEFT, Gaussian in the paper; init_lora_weights='gaussian' keeps \\(B = 0\\)); scaling \\(\\alpha/r\\).",
+  "mergeable_reason": "\\(BA\\) is a dense \\(d_{out} \\times d_{in}\\) matrix that can be added to \\(W_0\\) after training (merge_and_unload), giving zero inference overhead.",
+  "key_idea": "Fine-tuning updates have low intrinsic rank, so freeze \\(W_0\\) and learn only a rank-\\(r\\) factorization of the update.",
+  "locus": "any linear layer (PEFT also: Embedding, Conv1d/2d/3d, MultiheadAttention, raw nn.Parameter e.g. MoE experts via target_parameters); originally \\(W_q\\), \\(W_v\\), commonly 'all-linear'",
+  "coord_notes": {
+   "base_point": "\\(\\mathrm T_A\\) stratum (\\(B_0=0\\), \\(\\operatorname{rank}A_0=r\\)): \\(S_1=\\{XA_0\\}\\), deficit \\(r(n-r)\\) (Thm II.2). HF's embedding default is \\(\\mathrm T_B\\); `init_lora_weights=\"orthogonal\"` lies outside the three strata."
+  }
+ },
+ "boft": {
+  "structure": "right action of a product of \\(m\\) sparse butterfly factors, each a permutation conjugate of the block-diagonal subgroup \\(O(b)^{d/b}\\); the product is a dense orthogonal matrix. The paper frames this as information transmission on a butterfly grid graph (a Cooley-Tukey style factorization of an \\(O(d)\\) element).",
+  "identity_at_init": "All skew-symmetric generators start at 0, so every butterfly factor is the identity and \\(R = I\\).",
+  "mergeable_reason": "The product \\(R(m,b)\\) is a fixed orthogonal matrix after training, so \\(W_0 R(m,b)^T\\) can be precomputed.",
+  "key_idea": "Build a dense orthogonal matrix as a product of sparse butterfly-structured orthogonal factors. OFT then gets dense rotations from \\(O(d \\log d)\\) parameters. Block-diagonal OFT is the \\(m=1\\) case.",
+  "results_note": "Reports higher scores than LoRA and OFT on GLUE (DeBERTaV3), the best VTAB-1K average in its table (77.9% for BOFT \\(m=2\\), \\(b=8\\) with DINOv2-large), better Llama-2-7B MMLU and math (GSM8K/MATH) results, HQ-SAM-level segmentation with 3% of its parameters, and better controllable and subject-driven Stable Diffusion generation.",
+  "locus": "any linear / conv layer (attention and MLP of ViTs, LLMs, SAM, Stable Diffusion); acts on the input side of \\(W_0\\)",
+  "coord_notes": {
+   "base_point": "Regular when the factors' plane sets are disjoint (\\(b = 2\\)) and at the HF default factor 1 (block OFT times a scale). For two factors it is regular even when blocks overlap: \\(S_1\\) contains \\(\\mathfrak g_1+\\mathfrak g_2\\) and the generic fibre is \\(G_1\\cap G_2\\) (Jacobian \\(29 = 29\\) at \\(d=8\\), \\(b=4\\), with scale). Deeper overlapping products were not checked.",
+   "gauge": "VIII.B 'inter-factor': elements of \\(G_i\\cap G_{i+1}\\) slide between consecutive factors and act non-linearly on the Cayley generators; trivial at the HF default factor 1 and for \\(b=2\\). Check: fibre \\(4 = \\dim SO(2)^4=G_1\\cap G_2\\) at \\(d=8\\), \\(b=4\\), two factors; fibre 0 for \\(b=2\\) at full depth.",
+   "covariance": "VIII.B: \\(\\mathrm{Mon} \\times \\Pi\\). \\(\\mathrm{Mon}\\) on the output side from boft_s; the butterfly blocks are imposed on the input side. axes.json also lists 'BOFT as in HF PEFT' under MonxGL, which is wrong on the input side."
+  }
+ },
+ "deft": {
+  "structure": "rank-\\(r\\) update that removes an \\(r\\)-dimensional output subspace of \\(W_0\\) and injects new content into it: \\(\\Delta W = Q(R - Q^\\top W_0)\\)",
+  "identity_at_init": "PEFT (init_weights=True) draws \\(P \\sim N(0, 0.02^2)\\) and sets \\(R\\) so that the injection exactly cancels the removal term, so \\(W = W_0\\) at init.",
+  "mergeable_reason": "The update equals a low-rank additive delta \\(Q(R - Q^T W_0)\\) that can be merged into \\(W_0\\)."
+ },
+ "frod": {
+  "identity_at_init": "\\(S_i = 0\\) and \\(U_i \\Sigma_i V^{\\top}\\) reconstructs \\(W_i\\) (maximum error below 1e-5), so the model is essentially unchanged at init; \\(\\Sigma_i\\) (trained) starts at the decomposition's strengths; the joint decomposition is a costly one-off initialisation. HF PEFT: frod_lambda_l = diag strengths, frod_lambda_s_values = 0",
+  "mergeable_reason": "\\(U_i(\\Sigma_i + S_i)V^T\\) is a dense matrix that replaces \\(W_i\\) at no extra inference cost.",
+  "coord_notes": {
+   "shape": "\\(\\rho(\\Sigma_i,S_i)=U_i(\\Sigma_i+S_i)V^T\\) is affine (diagonal plus fixed sparse pattern); full-rank updates.",
+   "base_point": "\\(S_0=0\\), \\(\\Sigma_0\\) = decomposition strengths: \\(U_i \\Sigma_0 V^T = W_i\\) (the paper reports max error <1e-5; the verified catalog states the PEFT reconstruction is exact), so \\(\\rho(q_0)=\\theta_0\\) and the linear method is regular.",
+   "gauge": "Trivial when \\(U_i\\) is injective (\\(d_{out}\\ge d_{in}\\)); otherwise translations by the kernel.",
+   "covariance": "Spectral frames: at least CO on each side, but \\(V\\) is shared across a layer group, so the same input transformation must act on the whole group (Obs II.15 caveat)."
+  }
+ },
+ "hra": {
+  "structure": "product of \\(r\\) Householder reflections (orthogonal) acting on the input side of \\(W_0\\); equivalently \\(W_0 + W_0U\\Gamma U^\\top\\), an 'adaptive LoRA'",
+  "identity_at_init": "Reflection vectors initialized in identical pairs (\\(u_{2i} = u_{2i-1}\\)), so consecutive reflections cancel and \\(H = I\\); requires even \\(r\\) in PEFT.",
+  "mergeable_reason": "\\(W_0 H\\) is a single dense matrix.",
+  "key_idea": "A chain of \\(r\\) Householder reflections is simultaneously an orthogonal transform and a rank-\\(r\\) additive update, bridging OFT and LoRA."
+ },
+ "lokr": {
+  "structure": "Kronecker product of a small dense block \\(C\\) with a low-rank block \\(BA\\): \\(\\mathrm{rank}(\\Delta W)=\\mathrm{rank}(C)\\,\\mathrm{rank}(BA)\\le \\min(u_p,u_q)\\,r\\). Block sizes: paper Eq. 5 sets \\(u_p\\) = largest divisor of \\(d_{out}\\) not exceeding \\(\\min(f, \\sqrt{d_{out}})\\); HF's factorization() returns \\((f, d/f)\\) when \\(f\\) divides \\(d\\) and otherwise the divisor pair nearest \\(\\sqrt{d}\\) subject to the smaller factor \\(\\le f\\) (default \\(f = -1\\), i.e. near-square).",
+  "identity_at_init": "HF PEFT zero-initializes the left Kronecker factor \\(C\\) (lokr_w1) and Kaiming-initializes the right factors, so \\(\\Delta W = 0\\).",
+  "mergeable_reason": "\\(C \\otimes (BA)\\) is materialised as a dense matrix of \\(W_0\\)'s shape and added to it."
+ },
+ "oftv2": {
+  "structure": "the same block-diagonal (now only approximately) orthogonal action as OFT, evaluated as an action on the input vector \\(x\\) (two matrix-vector products, \\(O(nd + d^2)\\)) instead of on \\(W_0\\) (matrix-matrix, \\(O(nd^2)\\)). The truncated Neumann series makes the Cayley map only approximately orthogonal.",
+  "identity_at_init": "\\(Q = 0\\) gives \\(R = I\\).",
+  "mergeable_reason": "For a full-precision base, \\(R\\) can be folded into the weight (\\(W_0 R^T\\)); for QOFT, merging requires dequantizing and re-quantizing the merged weight.",
+  "key_idea": "Rotate the input instead of the weight, which cuts OFT's cost from cubic to quadratic. Replace the matrix inverse in the Cayley transform with a truncated Neumann series. Because \\(R\\) acts on activations, the method runs on any quantized backbone (QOFT)."
+ },
+ "prefix-tuning": {
+  "structure": "Learned key/value vectors prepended at every layer, i.e. a learned initial KV-cache state of length \\(\\ell\\). By He et al. (2022) this is equivalently a gated parallel attention-adapter: \\(h \\leftarrow (1-\\lambda(x))\\,h+\\lambda(x)\\,\\mathrm{softmax}(xW_qP_k^\\top)P_v\\), with gate \\(\\lambda(x)\\) = attention mass on the prefix.",
+  "identity_at_init": "No exact identity: any prefix diverts attention mass \\(\\lambda(x)>0\\) away from the content. HF PEFT's init_weights='zero' zeroes keys and values, which still rescales attention outputs by \\(1-\\lambda(x)\\). Li & Liang initialize the prefix with activations of real (preferably task-relevant) words, which substantially helps in low-data settings; direct optimization of \\(P\\) is unstable, hence the MLP reparametrization.",
+  "mergeable_reason": "The prefix adds \\(\\ell\\) extra key/value slots to every attention layer (extra attention cost per token); it can be served as a cached prefix but not folded into \\(W_0\\).",
+  "coord_notes": {
+   "shape": "Function-level: each layer becomes a gated parallel adapter \\((1-\\lambda_q)\\mathrm{Attn}_q(C)+\\lambda_q \\mathrm{Attn}_q(P)\\) (Thm VI.5(b)), with rigid content ratios at that layer.",
+   "base_point": "As in the table. Soft tokens always take softmax mass, and on a head with \\(W_oW_v\\ne0\\) no prompt leaves the output unchanged, so no prompt reproduces \\(f(\\theta_0,-)\\) (Thm VI.5(f)). HF init_weights='zero' still rescales attention by \\(1-\\lambda(x)\\).",
+   "gauge": "Li–Liang train \\(P = \\mathrm{MLP}_\\theta(P')\\), a non-linear fibre of dimension \\(\\ell k+|\\mathrm{MLP}|-2L\\ell d\\) (image unchanged when hidden \\(\\ge \\ell-1\\), Obs III.2). The stored prefix (and HF's default prefix_projection=False) has only the discrete slot permutations of Thm VI.5(a).",
+   "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so \\(R_K\\) is the same method at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing."
+  },
+  "formula_latex": "h_i=\\begin{cases}P_\\theta[i,:] & i\\in P_{\\mathrm{idx}}\\\\ \\mathrm{LM}_\\phi(z_i,h_{<i}) & \\text{otherwise}\\end{cases};\\quad \\text{equivalently, in each layer } l=1,\\dots,L:\\quad \\mathrm{head}^{(l)}=\\mathrm{Attn}\\big(XW_q^{(l)},\\,[P_k^{(l)};XW_k^{(l)}],\\,[P_v^{(l)};XW_v^{(l)}]\\big),\\quad P_k^{(l)},P_v^{(l)}\\in\\mathbb{R}^{\\ell\\times d};\\quad \\text{training: } P_\\theta[i,:]=\\mathrm{MLP}_\\theta(P'_\\theta[i,:]),\\quad P'_\\theta\\in\\mathbb{R}^{\\ell\\times k};\\quad \\phi\\ (W_0)\\ \\text{frozen}"
+ },
+ "randlora": {
+  "structure": "sum of \\(n\\) frozen random rank-\\(r\\) bases with trainable diagonal scalings on both sides, reaching full rank; parameter count grows as the basis rank shrinks",
+  "identity_at_init": "PEFT sets \\(\\Lambda_j = 0\\) and \\(\\Gamma_j\\) to the constant \\(1/\\max(n, \\min(d_{in},d_{out}))\\) (in practice \\(1/\\min(d_{in},d_{out})\\)), so \\(\\Delta W = 0\\).",
+  "coord_notes": {
+   "shape": "Sum of \\(n=\\lceil\\min(m,n)/r\\rceil\\) VeRA-type cones \\(B_j \\Lambda_j A \\Gamma_j\\); \\(d=n(r-1+\\min(m,n))\\) (checked), full rank.",
+   "base_point": "\\(\\Lambda_0=0\\), \\(\\Gamma_0\\) constant: \\(\\dim S_1=nr < d\\) (checked), apex.",
+   "gauge": "One scalar slide \\((c \\Lambda_j, \\Gamma_j/c)\\) per term: an \\(n\\)-dim torus.",
+   "covariance": "Frozen random \\(B_j\\), \\(A\\): in law.",
+   "rebasing": "In PEFT the distinct \\(B_j\\) sit on the larger side and the shared \\(A\\) and \\(\\Gamma_j\\) on the smaller side (min dim), so \\(\\mathrm{span}\\,C = \\mathrm{span}\\{b_{jk}\\} \\otimes \\mathbb{R}^{\\min}\\) when \\(A\\) has no zero entries: \\(R_\\infty = \\Theta\\) iff \\(N r \\ge \\max(m,n)\\), i.e. only for (near-)square boxes; for rectangular (MLP) boxes it is a proper subspace (checked: span dim \\(36 < 60\\) at \\(10\\times6\\), \\(r=2\\); \\(81 = mn\\) at \\(9\\times9\\), \\(r=3\\)). The table's '\\(\\to \\Theta\\)' needs this condition."
+  }
+ },
+ "tinylora": {
+  "structure": "LoRA-XS core \\(R=\\sum_i v_iP_i\\) confined to a \\(u\\)-dimensional random subspace of \\(r\\times r\\) matrices in the top-\\(r\\) singular frame of \\(W_0\\)",
+  "identity_at_init": "PEFT default init_weights=True sets \\(v = 0\\), an exact no-op. init_weights='uniform' draws \\(v \\sim U(-0.02, 0.02)\\).",
+  "mergeable_reason": "The update is a fixed rank-\\(r\\) matrix after training.",
+  "coord_notes": {
+   "shape": "\\(v \\mapsto W_0+U_r \\Sigma_r^{1/2}(\\sum v_i P_i) \\Sigma_r^{1/2} V_r^T\\): linear, \\(d=u\\) for generic \\(P_i\\).",
+   "base_point": "HF default init_weights=True sets \\(v=0\\) (exact, per the verified catalog); the table and axes.json mark TinyLoRA as near-identity, which matches only init_weights='uniform'.",
+   "covariance": "Top-\\(r\\) SVD frame of \\(W_0\\) with a fixed random core subspace: \\(CO \\times CO\\) (in law for the \\(P_i\\)). Full weight tying shares \\(v\\) across boxes (Obs II.15 caveat)."
+  }
+ },
+ "vera": {
+  "identity_at_init": "\\(b = 0\\) (\\(d = 0.1\\)), so the update is zero.",
+  "mergeable_reason": "\\(\\Lambda_b B \\Lambda_d A\\) is a fixed low-rank matrix.",
+  "locus": "linear layers (shared \\(A\\)/\\(B\\) sliced to each layer's shape)",
+  "coord_notes": {
+   "shape": "Toric cone \\(\\{\\Lambda_b B \\Lambda_d A\\}\\), \\(d=m+r-1\\), max rank \\(r\\) (table).",
+   "base_point": "\\(b_0=0\\): only \\(b\\) moves to first order (Lemma II.4), apex.",
+   "gauge": "\\(\\mathbb{R}^\\times\\) slide \\((cb, d/c)\\) through the frozen \\(B\\) (table).",
+   "covariance": "Table: \\(\\mathrm{Mon} \\times \\mathrm{fr}\\) (\\(\\mathrm{Mon}\\) on the output side from \\(\\Lambda_b\\), random frame in law on the input side).",
+   "rebasing": "\\(\\mathrm{VeRA}^\\infty\\) = LoRA-FA\\((A)\\) when \\(B\\) has no zero entries (Thm V.3 Cor 3)."
+  }
+ },
+ "pissa": {
+  "structure": "\\(\\Delta W\\) factors through an \\(r\\)-dimensional space (\\(\\Delta W = BA - B_0A_0\\)); the base point is moved from \\(W_0\\) to the rank-\\((\\min(d_{in},d_{out})-r)\\) residual \\(W^{res}\\) and the adapter starts on the principal rank-\\(r\\) SVD component of \\(W_0\\)",
+  "identity_at_init": "Exact: \\(W^{res}+B_0A_0=W_0\\) by construction (data-free truncated SVD of \\(W_0\\); fast randomized SVD makes it seconds).",
+  "mergeable_reason": "\\(W^{res}+BA\\) is a dense matrix of the original shape; to ship as a plain LoRA on the untouched \\(W_0\\) the paper converts it to \\(\\Delta W=[B'\\ B][A';-A]\\) at rank \\(2r\\).",
+  "key_idea": "Instead of zero-initializing the adapter, put the top-\\(r\\) singular triplets of \\(W_0\\) into the trainable factors and freeze the residual, so training updates the directions that matter most and converges faster; the residual also quantizes better (QPiSSA).",
+  "coord_notes": {
+   "base_point": "\\(\\mathrm S\\) stratum, so \\(\\theta_0\\) is smooth: \\(\\dim S_1=r(m+n-r)\\)."
+  }
+ },
+ "corda": {
+  "structure": "\\(\\Delta W\\) factors through an \\(r\\)-dimensional space; the base point is split along the singular directions of \\(W_0C\\) (covariance-whitened weight), i.e. a generalized SVD of \\(W_0\\) w.r.t. the input-activation metric \\(C\\)",
+  "identity_at_init": "Exact: \\(W'+B_0A_0=W_0\\) because the \\(C^{-1}\\) factor undoes the covariance orientation; data-driven (covariance from a few hundred task or QA samples).",
+  "mergeable_reason": "\\(W'+BA\\) is an ordinary dense matrix of the original shape.",
+  "categorical_reading": "CorDA is a Type II pointing of LoRA (stratum \\(\\mathrm S\\)): the cone is translated to the vertex \\(W_0-P\\), \\(P=[W_0C]_rC^{-1}\\) (IPM) or its covariance-oriented tail (KPM), so \\(\\theta_0\\) is a smooth point with full first-order reach \\(S_1=T_P\\mathcal M_r\\). The split is \\(CO(m)\\times CO(n)\\)-covariant undamped (Prop II.16(b)); damping \\(C+\\lambda I\\) cuts the input side to \\(O(n)\\).",
+  "coord_notes": {
+   "shape": "Translated cone \\((W_0-P)+\\mathcal M_{\\le r}\\) with \\(P=[W_0C]_rC^{-1}\\) (IPM) or the covariance-oriented tail (KPM); \\(\\operatorname{rank} P=r\\).",
+   "base_point": "Stratum \\(\\mathrm S\\): \\(\\theta_0\\) is a smooth point, \\(S_1=T_P\\mathcal M_r\\), deficit 0 (both IPM and KPM).",
+   "covariance": "Undamped split is \\(CO(n)\\)-covariant on the input side exactly (Prop II.16(b)) and \\(CO(m)\\) on the output side (truncated SVD of \\(W_0C\\)); damping \\(C+\\lambda I\\) reduces the input side to \\(O(n)\\). In law, data transformed.",
+   "rebasing": "Table: \\(\\to \\Theta\\) (cone closed under scaling)."
+  }
+ },
+ "kasa": {
+  "structure": "SVD-shaped update \\(\\Delta W=B\\,\\mathrm{diag}(\\Delta\\sigma)\\,A\\) with soft orthogonality on \\(B,A\\) and a learnable singular-value vector, added on top of a base whose \\(r\\) smallest singular components were removed",
+  "identity_at_init": "Not exact: \\(B=0\\) (official repo and HF KasaLinearVariant; \\(\\Delta\\sigma\\sim\\mathcal{N}(0,1)\\), \\(A\\) Kaiming-uniform) makes the adapter zero, but the base is permanently truncated by its \\(r\\) smallest singular components (a small, data-free perturbation of \\(W_0\\)).",
+  "mergeable_reason": "\\(B\\,\\mathrm{diag}(\\Delta\\sigma)\\,A\\) is a dense \\(d_{out}\\times d_{in}\\) matrix that folds into the (truncated) base, though the truncation itself is irreversible.",
+  "key_idea": "Treat the smallest singular components of \\(W_0\\) as task-irrelevant noise, discard them, and relearn that subspace with an explicitly SVD-shaped adapter whose singular values are learned and regularized.",
+  "coord_notes": {
+   "kind": "Base change along the non-function-preserving truncation \\(\\kappa\\): \\(W_0 \\to W_0-[W_0]_{\\mathrm{tail}\\,r}\\), then a diagonal-core LoRA at \\(\\kappa \\theta_0\\) (Def V.1(b), the QLoRA template).",
+   "shape": "Image \\(W_{world}+\\mathcal M_{\\le r}\\), a cone whose vertex is the start \\(\\rho(q_0)=W_{world}\\) (as QLoRA's 'cone at \\(\\kappa \\theta_0\\)'). \\(\\theta_0\\) itself lies in the image, at a smooth point.",
+   "base_point": "Defect \\(e=-[W_0]_{\\mathrm{tail}\\,r}\\) (truncated base); \\(B_0=0\\) makes the adapter zero but the base is permanently truncated.",
+   "gauge": "\\((B,d\\sigma,A) \\mapsto B\\,\\mathrm{diag}(d\\sigma)\\,A\\): generic fibre \\(r^2+r\\) (Jacobian check) against the \\(2r\\)-dim torus \\((BD_1^{-1}, D_1D_2\\,d\\sigma, D_2^{-1}A)\\); the rest is absorption of \\(\\mathrm{diag}(d\\sigma)\\) into \\(B\\), as for AdaLoRA (axes.json lists AdaLoRA under nonlinear).",
+   "covariance": "The cone part is \\(GL \\times GL\\), but the truncation \\([W_0]_{\\mathrm{tail}\\,r}\\) is spectral: \\(CO(m) \\times CO(n)\\).",
+   "rebasing": "With the truncation applied once, \\(W_{world}+\\mathcal M_{\\le Kr} \\to \\Theta\\)."
+  }
+ },
+ "velora": {
+  "identity_at_init": "\\(B = 0\\) as in LoRA.",
+  "locus": "input activations of the LoRA \\(A\\) projection",
+  "coord_notes": {
+   "covariance": "The image is LoRA's (\\(GL\\times GL\\)). The backward compression groups consecutive input features into sub-tokens and projects them on a fixed \\(v\\), which is only \\(\\Pi\\)-covariant (a block partition of input coordinates)."
+  }
+ },
+ "lora-fa": {
+  "structure": "\\(\\Delta W=sBA_0\\) with \\(A_0\\) a frozen random row space: the update lives in the fixed \\(r\\)-dimensional subspace \\(\\mathbb{R}^{d_{out}}\\otimes\\mathrm{row}(A_0)\\); the corrected \\(B\\)-gradient is the orthogonal projection of the full gradient onto that subspace",
+  "identity_at_init": "\\(B = 0\\) with \\(A_0\\) random (Gaussian or uniform; the paper ablates the choice), so the initial model equals the pretrained one.",
+  "mergeable_reason": "\\(sBA_0\\) is an ordinary rank-\\(r\\) matrix that folds into \\(W_0\\) exactly, as in LoRA.",
+  "key_idea": "Freezing \\(A\\) has two effects. Memory: LoRA no longer stores the full \\(d_{in}\\)-dimensional input activation, only the \\(r\\)-dimensional \\(A_0x\\). Optimization: with SGD, \\(\\Delta W=-\\eta s^{2}GA_0^{\\top}A_0\\) is a fixed random projection of the gradient, and the \\((A_0A_0^{\\top})^{-1}\\) correction turns it into the exact least-squares projection of the full gradient.",
+  "coord_notes": {
+   "covariance": "The frozen \\(A_0\\) is random, so covariance holds only in law (\\(GL \\times\\) frame)."
+  }
+ },
+ "kappatune": {
+  "identity_at_init": "Inherits from the chosen tuner (LoRA: \\(B = 0\\)).",
+  "key_idea": "Well-conditioned (low-\\(\\kappa\\), high-entropy) tensors encode less specialized information and can absorb new tasks with less forgetting.",
+  "categorical_reading": "KappaTune is the coordinate sub-object of full fine-tuning spanned by a spectrally chosen block of tensors, i.e. full FT with the complement frozen. Its only dependence on \\(\\theta_0\\) is through the \\(CO\\times CO\\)-invariant \\(\\kappa\\): a spectral selection at the granularity of whole tensors.",
+  "coord_notes": {
+   "covariance": "Inside a selected tensor the image is all of \\(\\mathbb R^{m\\times n}\\) (\\(GL\\times GL\\)). The selection statistic \\(\\kappa=\\sigma_{\\max}/\\sigma_{\\min}\\) is invariant only under \\(CO(m)\\times CO(n)\\), so a general change of basis can move a tensor into or out of \\(\\mathcal S\\)."
+  }
+ },
+ "lora-sb": {
+  "structure": "\\(\\Delta W=BRA\\) with frozen orthonormal outer factors \\(B,A\\) (from the SVD of an approximate first full-FT update) and a trainable \\(r\\times r\\) core \\(R\\)",
+  "identity_at_init": "No: \\(W_0\\) is not offset, so the model starts at \\(W_0\\) plus the optimal rank-\\(r\\) approximation of the simulated first AdamW step (sign of summed gradients over ~0.1% of the training data).",
+  "mergeable_reason": "\\(BRA\\) is a dense matrix of the original shape and folds into \\(W_0\\).",
+  "key_idea": "With the LoRA-XS architecture (frozen \\(B,A\\), trainable \\(r\\times r\\) \\(R\\)), initializing \\(B,A\\) from the SVD of an approximate full-FT update makes the learning dynamics hyperparameter-free in the scale \\(s\\) and gives the optimal low-rank approximation of full-FT gradients.",
+  "coord_notes": {
+   "shape": "\\(R \\mapsto W_0+sU_rRV_r^T\\): affine and injective, \\(d=r^2\\) (a generalised LoRA-XS = \\(\\mathrm{FA}\\times\\mathrm{FB}\\) product, Prop I.8(a)).",
+   "base_point": "Defect by design: \\(R_0=S_r/s\\) puts the start at \\(W_0+[\\Delta W_{avg}]_r\\).",
+   "covariance": "Table says \\(CO\\times CO\\) (data), but the frame is the SVD of \\(\\mathrm{sign}(\\sum \\mathrm{grad})\\) (simulated first Adam step); sign() commutes only with signed permutations and homotheties, so the group is \\(\\mathbb R_{>0}B_m\\times\\mathbb R_{>0}B_n\\) inside \\(\\mathrm{Mon}\\times\\mathrm{Mon}\\) (numerically: the frame moves by 1.5 under a rotation, 2e-15 under a signed permutation). \\(CO\\times CO\\) would hold for an SGD-step frame."
+  }
+ },
+ "increlora": {
+  "identity_at_init": "\\(\\lambda_i=0\\) for active components (reserve components held at \\(\\lambda\\approx10^{-5}\\)).",
+  "results_note": "Reported GLUE average 89.61 (1.33M params) vs AdaLoRA 89.46 (1.27M) and LoRA \\(r=8\\) 88.50 (1.33M) on DeBERTaV3-base, with larger advantages at low budgets.",
+  "coord_notes": {
+   "shape": "Budgeted union of cones \\(W_0+\\mathcal M_{\\le r_k}\\) with \\(r_k\\) growing from 1; no per-module ceiling as in AdaLoRA.",
+   "base_point": "\\(\\lambda_i=0\\) for active components: only \\(\\Lambda\\) moves to first order, \\(\\dim S_1=r_k\\) (Lemma II.4); reserve components at \\(\\lambda\\approx10^{-5}\\) leave a negligible defect.",
+   "gauge": "\\(B \\Lambda A\\): fibre \\(r^2+r\\) beyond the \\(2r\\)-dim torus (non-linear absorption, as AdaLoRA).",
+   "covariance": "Image \\(GL\\times GL\\); the importance score \\(|\\Delta W \\cdot \\mathrm{grad}|\\) is coordinatewise and affects only the allocation.",
+   "rebasing": "\\(\\to \\Theta\\)."
+  }
+ },
+ "lora-drop": {
+  "structure": "layer-wise allocation: important layers keep their own rank-\\(r\\) \\(\\Delta W_i=B_iA_i\\), the rest are tied to a single shared rank-\\(r\\) update",
+  "identity_at_init": "Standard LoRA initialization (\\(B=0\\)); importance measured after a few warm-up steps on about 10% of the data.",
+  "mergeable_reason": "Each layer's (own or shared) \\(BA\\) folds into its \\(W_0\\).",
+  "coord_notes": {
+   "shape": "Product of per-layer LoRA cones on the kept layers and one LoRA cone embedded diagonally (same \\(\\Delta W\\)) on the shared layers.",
+   "base_point": "Standard LoRA init (\\(B=0\\)): apex.",
+   "gauge": "\\(GL_r\\) per adapter; one \\(GL_r\\) for the shared adapter.",
+   "covariance": "Per box \\(GL\\times GL\\), but the shared adapter violates the no-sharing hypothesis of Obs II.15: covariance needs the same \\((g,h)\\) on all tied boxes.",
+   "rebasing": "\\(\\theta_0+\\mathrm{span}\\,C\\): on the shared layers this is the diagonal subspace \\(\\{\\Delta W_j \\text{ equal for all shared } j\\}\\), not \\(\\Theta\\), if the sharing pattern is frozen."
+  }
+ },
+ "relora": {
+  "structure": "Sum of \\(N\\) rank-\\(r\\) increments accumulated by periodic merge-and-reinit: the total update lies in \\(\\mathcal M_{\\le r}+\\cdots+\\mathcal M_{\\le r}=\\mathcal M_{\\le Nr}\\) while each phase optimizes only a rank-\\(r\\) chart; uses a jagged cosine schedule and magnitude-pruned (~99%) optimizer state at each restart.",
+  "identity_at_init": "Each restart re-initializes \\(B = 0\\) (\\(A\\) Kaiming) so merge-and-reinit leaves the function unchanged; from-scratch training needs a full-rank warm start (e.g. 5k steps) before switching to ReLoRA.",
+  "key_idea": "Since \\(\\mathrm{rank}(X+Y)\\) can exceed \\(\\mathrm{rank}(X)\\), repeatedly merging low-rank updates into the weights and restarting the adapter yields a high-rank total update with low-rank memory; partial optimizer reset and LR re-warm-up stop the new adapter from relearning the old subspace."
+ },
+ "lora-dropout": {
+  "structure": "Bernoulli masks on the input columns of \\(A\\) and output rows of \\(B\\) (not on the rank dimension), so each entry of the product is zeroed with probability \\(2p-p^2\\); analysed as sparsity-regularized empirical risk minimization with a stability-based generalization bound, plus a Monte-Carlo test-time ensemble.",
+  "identity_at_init": "Standard LoRA initialization (\\(B = 0\\)).",
+  "mergeable_reason": "Without test-time ensembling the trained \\(BA\\) merges like LoRA; the proposed test-time ensemble needs several stochastic forward passes and cannot be folded into a single weight.",
+  "locus": "same as LoRA; also applied to AdaLoRA's \\(P\\), \\(Q\\) factors",
+  "coord_notes": {
+   "covariance": "The image is \\(GL\\times GL\\); the regulariser itself is only \\(\\mathrm{Mon}\\times\\mathrm{Mon}\\)-natural (coordinate masks)."
+  }
+ },
+ "altlora": {
+  "structure": "Alternating one-sided projections of the full gradient onto \\(\\mathrm{col}(B)\\) and \\(\\mathrm{row}(A)\\) (each the exact least-squares solution for the factor being updated), with momentum transported into the new low-rank subspace by an \\(r\\times r\\) change-of-basis; avoids LoRA-Pro's non-unique \\(X\\) and full-size optimizer state.",
+  "identity_at_init": "Standard LoRA initialization; Gram inverses are damped as \\((B^T B + \\lambda I)^{-1}\\) to stay invertible when a factor is rank-deficient.",
+  "key_idea": "Instead of jointly matching the full gradient (LoRA-Pro), alternately update \\(A\\) and \\(B\\) so each step is an exact projection of the full gradient, and keep momentum aligned with the changing subspace without extra memory; this gives stable feature learning and transformation invariance."
+ },
+ "qgoft": {
+  "structure": "right action of a product of embedded free \\(2\\times2\\) blocks (singular ones included) laid out like GOFT. Leaving \\(SO(d)\\) lets the update change neuron norms and angles, and a soft column-orthogonality penalty keeps it near the orthogonal group.",
+  "identity_at_init": "Every quasi-Givens block is initialized to the \\(2\\times2\\) identity.",
+  "mergeable_reason": "The product of \\(2\\times2\\) blocks is a fixed matrix that can be multiplied into \\(W_0\\).",
+  "key_idea": "Relax each Givens rotation to an arbitrary \\(2\\times2\\) linear map, so fine-tuning can also rescale neurons and shift their angles. A soft regularizer keeps the map close to orthogonal.",
+  "results_note": "Reports an 89.35 GLUE average on DeBERTaV3-base with 0.33M parameters (above OFT \\(b=8\\) with 0.66M) and a 79.4% VTAB-1K average.",
+  "locus": "any linear layer; acts on the input side of \\(W_0\\)",
+  "coord_notes": {
+   "shape": "A product of \\(d - 1\\) free \\(2\\times2\\) blocks in GOFT's layout: action type into the monoid of matrices (axes.json: 'monoid of arbitrary 2x2 blocks').",
+   "covariance": "The pairing is imposed (\\(\\Pi\\))."
+  }
+ },
+ "spectral-adapter-a": {
+  "structure": "additive perturbation of the top-\\(r\\) singular-vector factors: \\(\\Delta W = A_U S_1 V_1^T + U_1 S_1 A_V^T + A_U S_1 A_V^T\\). This has rank \\(\\le 2r\\) for LoRA's parameter budget (the paper's 'twice the rank capacity' lemma).",
+  "identity_at_init": "\\(A_U = A_V = 0\\).",
+  "results_note": "Reports 49.73 on GSM8K with Mistral-7B vs 44.81 for LoRA and 43.82 for DoRA (\\(r=8\\)), and an 88.03 GLUE average on DeBERTaV3-base, above LoRA, DoRA, OFT and AdaLoRA.",
+  "locus": "any linear layer (top-\\(r\\) singular vectors)"
+ },
+ "bidora": {
+  "identity_at_init": "As DoRA: \\(B = 0\\) and \\(m = \\|W_0\\|\\) per neuron."
+ },
+ "liera": {
+  "structure": "action of the abelian Lie group of entry-wise non-zero tensors under the Hadamard product (identity = all-ones tensor) on \\(W_0\\). The update lives in its Lie algebra (all real tensors) and is mapped back through the entry-wise exponential; truncating at first order gives \\(W_0 + W_0 \\odot \\Delta W\\).",
+  "identity_at_init": "\\(B = 0\\) (\\(A\\) Gaussian), so \\(\\exp(0) = 1\\) and \\(W = W_0\\).",
+  "mergeable_reason": "The trained first-order update \\(W_0 + W_0 \\odot BA\\) (or \\(W_0 \\odot \\exp(BA)\\)) is a fixed tensor of the original shape.",
+  "results_note": "Reports gains over LoRA, e.g. a 75.5 vs 74.1 VTAB-1K average with ConvNeXt-V2-B (\\(r=16\\)), plus improvements on COCO detection, LLaMA commonsense reasoning and GLUE."
+ },
+ "warp": {
+  "coord_notes": {
+   "kind": "Sum of an unpointed input-prompt extension of a masked LM and a Lin edit of the \\(|C|\\) verbalizer rows of the output head.",
+   "gauge": "Prompt coordinates enter injectively. The verbalizer is read through a softmax over the \\(|C|\\) classes, so a common shift \\(\\Theta^V \\to \\Theta^V + \\mathbf 1c^T\\) changes every logit by \\(c\\cdot f\\) and leaves the posterior unchanged: a \\(d\\)-dimensional kernel translation, recorded under \"none\" as for linear methods (Prop II.12); no other continuous fibre.",
+   "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so \\(R_K\\) is the same method at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing."
+  }
+ },
+ "dept": {
+  "structure": "Short soft prompt (concatenation) plus a rank-\\(r\\) additive, position-indexed offset \\(AB\\) to the frozen \\(s\\times d\\) input-embedding matrix, i.e. a LoRA-style low-rank update applied to the input activation matrix rather than to a weight (the paper writes the product as \\(BA\\); dimensionally it is the \\(s\\times d\\) matrix \\(A B\\)).",
+  "identity_at_init": "The low-rank offset is zero at init (\\(B=0\\)); the short prompt is not an identity.",
+  "mergeable_reason": "The short prompt still lengthens the input; the positional offset \\(AB\\) could only be folded into absolute position embeddings, which T5-style relative-position models lack.",
+  "coord_notes": {
+   "kind": "Sum of an unpointed short prompt and an additive position-indexed offset \\(AB\\) on the frozen \\(s\\times d\\) input-embedding matrix; the prompt summand fixes the kind.",
+   "shape": "Function-level overall; the offset summand alone is LoRA\\(_r\\) on an \\(s\\times d\\) position-indexed slot (a cone with apex at \\(B=0\\)). It is a weight only where the model has learned absolute position embeddings; T5 has none.",
+   "base_point": "Unpointed (short prompt); the offset summand sits at the apex \\(B=0\\).",
+   "gauge": "\\(GL_r\\) on the offset factors, \\((A,B)\\mapsto(Ag,g^{-1}B)\\); the prompt adds nothing.",
+   "covariance": "Function-level: prompt basis-free; the offset image \\(\\mathcal M_{\\le r}(s\\times d)\\) is \\(GL\\times GL\\)-covariant.",
+   "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so \\(R_K\\) is the same method at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing. The offset summand alone would rebase to its span."
+  }
+ },
+ "xprompt": {
+  "coord_notes": {
+   "covariance": "Piece masks split each embedding into contiguous coordinate blocks, a block partition the network does not have (Lemma VI.2 test), so \\(\\Pi\\).",
+   "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so \\(R_K\\) is the same method at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing. With the mask fixed."
+  }
+ },
+ "coop": {
+  "structure": "Soft prompt (shared or per-class context vectors) prepended to each class-name token sequence; the classifier weights are the frozen text encoder's images \\(g(t_i)\\) of the prompted class names.",
+  "mergeable_reason": "In closed-set classification the \\(K\\) prompted class embeddings \\(g(t_i)\\) are computed once after training and cached as a linear classifier, so inference costs exactly as much as zero-shot CLIP; the learned context itself cannot be folded into the text encoder's weights, and any new class name requires re-running the text encoder with the prompt.",
+  "coord_notes": {
+   "kind": "Prompt tuning on CLIP's text tower, one context shared across the \\(K\\) class sequences (class-specific: \\(K\\) independent contexts).",
+   "merge": "Closed set of class names: the realisation factors through the \\(K\\times d\\) head \\(W(V)=[g([V;c_i])]_i\\), which is cached as a linear classifier (no inference cost); a new class name needs the text encoder again (M∞ there).",
+   "rebasing": "The closed-set merge caches the head \\(W(V)\\), on which no further context can act (a new context re-runs the text encoder). Re-prompting with \\(V\\) frozen concatenates contexts, so \\(R_K\\) is CoOp at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing."
+  }
+ },
+ "dualprompt": {
+  "structure": "A task-invariant prefix \\(g\\) shared by all tasks at shallow layers plus a pool of task-specific prefixes \\(e_t\\) at deeper layers, the latter retrieved by key matching against a frozen-model query.",
+  "coord_notes": {
+   "kind": "\\(F_X\\): a static shared prefix (G-prompt) at shallow layers plus a task prefix (E-prompt) retrieved per input by key matching.",
+   "gauge": "Cosine task-key matching: each task key rescales freely (torus \\(\\mathbb R_{>0}^T\\)); prefixes contribute only discrete slot permutations.",
+   "covariance": "Cosine matching on the frozen query wire: \\(CO(d)\\)-invariant.",
+   "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so \\(R_K\\) is the same method at length \\(K\\ell\\) rather than a fixed shape; no weight-space rebasing."
+  }
+ },
+ "ir-qlora": {
+  "structure": "LoRA with parameter-free 'elastic' shortcuts: \\(\\Delta W=\\alpha(B+\\beta_2E)(A+\\beta_1P)\\), where \\(P\\in\\mathbb{R}^{r\\times d_{in}}\\) averages \\(r\\) contiguous input groups and \\(E\\in\\{0,1\\}^{d_{out}\\times r}\\) repeats each of the \\(r\\) entries \\(d_{out}/r\\) times; still rank \\(\\le r\\). Base is an entropy-calibrated NF-k quantizer with a per-block shift \\(\\tau\\)",
+  "identity_at_init": "Exact relative to the quantized base: \\(B = 0\\) and, in the official code, \\(\\beta_1=\\beta_2=0\\) (the paper itself does not state their initialization), so the adapter is zero at step 0. The starting model is the ICQ-quantized one, not \\(W_0\\)."
+ },
+ "efficientqat": {
+  "identity_at_init": "E2E-QP starts from the Block-AP-calibrated quantized model (step sizes from Block-AP); there is no exact identity with \\(W_0\\), by design of quantization."
+ },
+ "online-subspace-descent": {
+  "structure": "projected optimizer whose projector \\(P_t\\) evolves continuously by one online-PCA gradient step per iteration (no SVD); any Hamiltonian-descent optimizer (SGD, momentum, Lion, Adam) can run inside the subspace",
+  "mergeable_reason": "Optimizer-only method; updates go directly into \\(W\\)."
+ },
+ "adalomo": {
+  "key_idea": "Of Adam's two ingredients, the adaptive learning rate matters more than momentum for closing LOMO's gap to AdamW. AdaLomo adds a factored, sublinear-memory second moment and a grouped normalization compatible with fused, single-pass backward updates. (The paper's Algorithm 1 line 10 prints \\(u=g/v\\); the official implementation lomo_optim/adalomo.py uses \\(g/\\sqrt{v}\\) via rsqrt, as written here.)"
+ },
+ "diff-pruning": {
+  "structure": "learned sparse coordinate mask: \\(\\Delta W = Z\\odot V\\) with \\(Z\\) a stretched Hard-Concrete relaxation of a binary gate (differentiable \\(L_0\\) penalty), projected onto an \\(L_0\\) ball by magnitude pruning of the diff; optional group gates \\(z^{g}\\) shared within each weight matrix/bias vector",
+  "identity_at_init": "\\(w_\\tau\\) initialized to 0 so \\(\\delta_\\tau = 0\\); gate logits \\(\\alpha_\\tau\\) initialized to 5 so that \\(z \\approx 1\\) at the start.",
+  "key_idea": "Treat fine-tuning as learning a task-specific diff vector added to frozen pretrained weights and make it sparse with a relaxed \\(L_0\\) penalty, so each new task costs only a small sparse vector.",
+  "coord_notes": {
+   "base_point": "Apex as in VIII.B: \\(\\theta_0\\) is the one point shared by all strata, where the union is not a manifold. The relaxed map at \\((z,w)=(\\mathbf 1,0)\\) has full \\(S_1\\), so 'apex' describes the \\(L_0\\)-projected image, not the relaxation.",
+   "covariance": "Support structure in the standard basis; magnitude/\\(L_0\\) selection commutes with signed permutations and homotheties, not with rotations."
+  }
+ },
+ "spt": {
+  "structure": "per-matrix choice between a sparse coordinate mask (top-\\(\\tau\\) gradient-squared sensitivity) and a low-rank (LoRA) or adapter update on matrices that contain many sensitive entries",
+  "identity_at_init": "Unstructured part starts at \\(\\Delta W = 0\\); structured part uses the zero-initialized LoRA/adapter of the host method. Sensitivity is accumulated in one pass over \\(C = 800\\) training samples before training (400 are shown to suffice).",
+  "mergeable_reason": "SPT-LoRA and the unstructured part merge into \\(W_0\\); the SPT-Adapter variant keeps inserted adapter modules."
+ },
+ "gps": {
+  "structure": "row-balanced sparse mask: exactly \\(K\\) nonzeros in every row of \\(\\Delta W\\), so each neuron's activation can be adjusted through its \\(K\\) most gradient-relevant input connections",
+  "identity_at_init": "Starts from the pretrained weights (\\(\\Delta W = 0\\)); selection uses a supervised contrastive loss so that no randomly initialized head biases the gradients."
+ },
+ "surgical-fine-tuning": {
+  "structure": "layer-block coordinate mask: \\(\\Delta W\\) nonzero only on the weights of one contiguous block (soft version: per-tensor learning rates from relative gradient norms)"
+ },
+ "lift": {
+  "structure": "sparse coordinate mask given by the largest-magnitude entries of the rank-\\(r\\) truncation of \\(W_0\\) ('Principal Weights'), refreshed at fixed intervals; the resulting update is high-rank",
+  "identity_at_init": "\\(\\Delta W = 0\\); the mask is data-free (SVD of the pretrained weight)."
+ },
+ "phm-adapter": {
+  "structure": "Bottleneck MLP inserted serially with residual connection whose down/up projections are PHM layers: sums of \\(n\\) Kronecker products (Kronecker rank \\(\\le n\\), i.e. rank \\(\\le n\\) after Van Loan-Pitsianis rearrangement), reducing parameters by about \\(1/n\\).",
+  "key_idea": "Learn the 'multiplication rule' of an \\(n\\)-dimensional hypercomplex algebra: a dense projection becomes a sum of \\(n\\) Kronecker products, cutting adapter parameters by ~\\(n\\).",
+  "results_note": "On GLUE with T5-base, PHM-Adapter (\\(n = 12\\)) trains 0.179% of parameters and is competitive with full fine-tuning and standard adapters.",
+  "coord_notes": {
+   "shape": "Function-level: projections are sums of \\(n\\) Kronecker products.",
+   "gauge": "With full fast weights \\(B_i\\), \\(\\sum_iA_i\\otimes B_i\\) is invariant under \\(GL_n\\) mixing of the summation index (\\(A'_j=\\sum_iA_ig_{ij}\\), \\(B'_j=\\sum_i(g^{-1})_{ji}B_i\\)), separately for \\(D\\) and \\(U\\). Here the table's 'GL on PHM index' is correct."
+  }
+ },
+ "tt-lora": {
+  "structure": "\\(\\Delta W\\) reshaped into a \\(D\\)-way tensor held in tensor-train (MPS) format; the input is contracted core-by-core without reconstructing \\(\\Delta W\\).",
+  "identity_at_init": "Does not preserve the function: \\(\\Delta W\\) is drawn from a Gaussian and then TT-decomposed, so the adapted model differs from the base model at step 0.",
+  "mergeable_reason": "The TT cores can be contracted into a dense \\(\\Delta W\\) and added to \\(W_0\\).",
+  "locus": "\\(W_q\\) and \\(W_v\\) attention projections",
+  "coord_notes": {
+   "shape": "\\(\\Delta W\\) is reshaped into a \\(D\\)-way tensor in TT format. The TT variety is the meet of the bond-cut determinantal cones, itself a cone with vertex \\(\\theta_0\\)."
+  }
+ },
+ "lorta": {
+  "structure": "Rank-\\(r\\) CP (Candecomp/Parafac) model of the 5th-order tensor of all attention updates indexed by (input dim, head dim, head, layer, matrix type).",
+  "coord_notes": {
+   "shape": "A rank-\\(r\\) CP model of the 5-way tensor (input, head-dim, head, layer, type), multilinear in its five factors. Each box update is \\(\\mathcal B\\,\\mathrm{Diag}(C_L[l,:]\\odot C_M[i,:])\\,A^\\top\\) with \\(\\mathcal B=[B\\,\\mathrm{Diag}(C_H[k,:])]_k\\).",
+   "covariance": "\\(B\\) is shared across heads and \\(A\\) across all boxes, so the per-box image carries a head-block structure (\\(\\Pi\\)) and couples layers and types."
+  }
+ },
+ "melora": {
+  "structure": "Block-diagonal direct sum of \\(n\\) independent mini-LoRAs acting on disjoint feature slices; rank is the sum of block ranks, so rank \\(r\\) is reached with \\(n\\) times fewer parameters than LoRA.",
+  "identity_at_init": "\\(A_i\\) Gaussian and \\(B_i = 0\\), as in LoRA.",
+  "mergeable_reason": "The block-diagonal \\(\\Delta W\\) is a dense matrix of \\(W_0\\)'s shape.",
+  "coord_notes": {
+   "covariance": "A fixed block partition of both sides (\\(\\Pi\\), blocks)."
+  }
+ },
+ "nola": {
+  "structure": "LoRA factors constrained to the linear span of \\(k\\) (resp. \\(l\\)) frozen random basis matrices; \\(\\Delta W\\) is bilinear in the two coefficient vectors and has rank \\(\\le r\\)",
+  "identity_at_init": "Not specified in the paper. Official code (UCDvision/NOLA, gpt/examples/NLG/src/model_nola.py) zero-initialises both coefficient vectors, and each NOLA factor also carries a frozen offset matrix (LoRA-style reset: Kaiming for \\(A\\), zero for \\(B\\)), so \\(\\Delta W = 0\\) at init with non-zero gradients for the \\(B\\)-side coefficients; with the paper's pure-span formula, zero-initialising both \\(\\alpha\\) and \\(\\beta\\) would give zero gradients. Bases are \\(U(-1,1)\\) from a stored seed and are regenerated on the fly in forward/backward to save memory",
+  "mergeable_reason": "After training the two linear combinations are materialised, and their product \\(BA\\) is added to \\(W_0\\).",
+  "coord_notes": {
+   "shape": "Bilinear cone \\(\\{(\\sum \\beta_j B_j)(\\sum \\alpha_i A_i)\\}\\), \\(d=k+l-1\\) (paper form, checked); rank \\(\\le r\\).",
+   "base_point": "Paper's pure span at \\(\\alpha=\\beta=0\\): \\(S_1=0\\), apex with full deficit. Official code adds a frozen offset \\(A_{off}\\) (\\(B_{off}=0\\)): \\(\\dim S_1=l\\), still apex.",
+   "gauge": "Paper form: one scalar slide \\((c \\beta, \\alpha/c)\\) (table \\(\\mathbb R^\\times\\)). The code's offset kills it: \\(d=k+l\\) (checked).",
+   "rebasing": "\\(\\to \\theta_0+\\mathrm{span}\\{B_jA_i\\}\\) (table); with the code offset also \\(\\mathrm{span}\\{B_j A_{off}\\}\\)."
+  }
+ },
+ "prolora": {
+  "structure": "intra-layer sharing: each LoRA factor is a broadcast of one small chunk along the hidden dimension, the copies differentiated by rank-dimension cyclic permutations, plus \\(u\\) unshared ranks; \\(\\Delta W\\) is block-structured with blocks related by rank permutations",
+  "identity_at_init": "\\(B = 0\\) (whole matrix); \\(A_u\\) Kaiming-uniform and the shared chunk \\(A_0\\) with a rectified Kaiming bound computed from the full hidden size \\(d_{in}\\) so both parts have equal scale",
+  "mergeable_reason": "The expanded \\(B\\) and \\(A\\) are ordinary matrices, so \\(BA\\) merges into \\(W_0\\) exactly as in LoRA.",
+  "coord_notes": {
+   "base_point": "\\(B=0\\) for the whole matrix, \\(A\\) Kaiming (rectified bound): only the \\(B\\)-parameters move to first order, with \\(\\dim S_1=u\\,d_{out}+(r-u)d_{out}/n<d(M)\\) [Num: 24 vs 44 at \\((d_{out},d_{in},r,u,m,n)=(12,12,4,1,3,3)\\)]."
+  }
+ },
+ "lamda": {
+  "structure": "PiSSA-style residual split with a trainable \\(r \\times r\\) core between frozen spectral factors; the up-projection is progressively frozen, so late training is a pure \\(r^2\\)-parameter basis change",
+  "identity_at_init": "\\(S = I_r\\) and the main path holds the residual \\(W_0 - U_r\\Sigma_rV_r^{\\top}\\), so \\(W = W_0\\) at init (for \\(\\alpha = 1\\))",
+  "categorical_reading": "LaMDA is PiSSA with its \\(A\\)-factor frozen (an A2 sub-object), reparametrised redundantly as \\(B=\\alpha US\\Sigma_r^{1/2}\\) and then progressively restricted to the LoRA-XS sub-object. Its training is a descending chain of sub-objects inside the linear method LoRA-FA\\((\\Sigma_rV_r^\\top)\\).",
+  "coord_notes": {
+   "shape": "\\(\\rho(U,S)=W_0+(\\alpha US-U_r)\\Sigma_rV_r^\\top\\). Although bilinear in \\((U,S)\\), the product \\(US\\) ranges over all of \\(\\mathbb R^{m\\times r}\\), so the image is the linear space \\(W_0+\\{X\\Sigma_rV_r^\\top\\}\\), which is LoRA-FA\\((\\Sigma_rV_r^\\top)\\). The late phase (\\(U\\) frozen) is a LoRA-XS-type \\(r^2\\)-dimensional subspace of it."
+  }
+ },
+ "loca": {
+  "structure": "sparse coefficients in the 2-D DCT basis with learnable discrete support: \\(\\Delta W\\) is a sum of \\(\\mathcal{B}\\) rank-1 outer products of cosine vectors",
+  "identity_at_init": "Coefficients \\(a\\) initialised to zero (\\(\\Delta W = 0\\)); locations initialised uniformly at random",
+  "mergeable_reason": "The iDCT of the learned sparse spectrum is a dense matrix that merges into \\(W_0\\)."
+ },
+ "paper:adapters-library": {
+  "claim": "Unifies about ten adapter methods (sequential/parallel bottleneck, Compacter, prefix tuning, LoRA, (IA)\\(^3\\), MAM, UniPELT, and more) behind one interface with composition blocks (Stack, Fuse, Split, BatchSplit, Parallel, Average) for building complex adapter setups."
+ },
+ "paper:git-re-basin": {
+  "relevance": "Shows that merging is well-defined only up to a symmetry group acting on weights; LoRA factorizations carry an analogous \\(GL(r)\\)/permutation gauge (cf. LoRA-LEGO, KnOTS), so adapters are naturally objects up to isomorphism."
+ },
+ "paper:inference-time-intervention": {
+  "claim": "Shifting activations along probe-derived 'truthful' directions in a small set of top-\\(K\\) attention heads, with no training, raises Alpaca's TruthfulQA truthfulness from 32.5% to 65.1%. There is a tunable trade-off between truthfulness and helpfulness.",
+  "relevance": "ITI is the training-free precursor of learned representation interventions: LoFiT casts ITI in its localize-then-offset framework and replaces both steps with learning, and ReFT's appendix shows how inference-time interventions fit its framework. Its edit, a constant offset on selected head outputs, is the zero-training corner of representation-level PEFT and is algebraically a bias on \\(W^O\\). This makes 'steering' and 'fine-tuning' two ways of choosing the same kind of morphism."
+ },
+ "paper:laser-layer-selective-rank-reduction": {
+  "relevance": "LASER is the spectral precursor of Spectrum's SNR-based layer selection. With PiSSA, MiLoRA and LoRA-Dash, it shows that the singular spectrum of \\(W_0\\) is a natural coordinate system in which to place, prune or select PEFT updates."
+ },
+ "paper:nystrom-init-matrix-factorization": {
+  "claim": "Nyström initialization (\\(X_0=A\\Omega\\) with Gaussian \\(\\Omega\\), \\(Y_0=0\\)) lets ScaledGD converge quadratically for matrix factorization where only linear rates were known; applied to LoRA as NoRA (\\(B_0=W_0\\Omega\\), \\(A_0=0\\)) and NoRA+ (with ScaledGD) it improves fine-tuning of 1B-7B LLMs and diffusion models.",
+  "relevance": "Provides an optimization-theoretic justification for weight-aware (sketch-of-\\(W_0\\)) initialization and its pairing with preconditioned optimizers, the same pairing LoRA-One uses."
+ },
+ "paper:weight-normalization": {
+  "claim": "Reparameterizes each weight vector as \\(w = g v/\\|v\\|\\), separating magnitude from direction, which improves conditioning and speeds up SGD."
+ },
+ "paper:householder-orthogonal-rnn": {
+  "relevance": "The ancestor of HRA and ETHER: Householder words generate \\(O(d)\\), and word length controls capacity. HRA's '\\(r\\) reflections = identity plus rank \\(r\\)' is the PEFT version of this fact."
+ },
+ "paper:effectiveness-of-peft-sparse-view": {
+  "claim": "Shows that random, rule-based and projection-based PEFT methods are all \\(p\\)-sparse fine-tuned models (with respect to an equivalent model for structure-changing methods) and proves that sparsity regularizes by bounding stability, which yields generalization bounds.",
+  "relevance": "A theorem-level unification of PEFT under the selective view (\\(\\theta = \\theta_0 + M \\Delta \\theta\\)), directly usable as the 'mask' object in a categorical account; also motivates the SAM selection method."
+ },
+ "paper:lora-redux": {
+  "relevance": "A recent survey that names 'gauge-invariant optimization' as a category of its own. This indicates that the \\(GL(r)\\) symmetry viewpoint has become an organising principle for LoRA research."
+ },
+ "paper:neural-mechanics-symmetry": {
+  "relevance": "Supplies the Noether framework (symmetry -> conserved quantity, broken at finite step size) needed to treat LoRA's \\(GL(r)\\) gauge and the scaling symmetries of DoRA- and (IA)\\(^3\\)-style methods uniformly."
+ },
+ "paper:riemannian-preconditioned-lora": {
+  "claim": "Adds an \\(r \\times r\\) preconditioner to each LoRA step (\\(W = W_0 + BA\\)): \\(A \\leftarrow A - \\eta (B^\\top B)^{-1}\\nabla_A L\\) and \\(B \\leftarrow B - \\eta \\nabla_B L\\,(A A^\\top)^{-1}\\), i.e. left-multiplication for \\(A\\) and right-multiplication for \\(B\\). It is derived from a Riemannian metric on the quotient manifold of fixed-rank matrices. In the infinite-width limit, with Adam, this gives stable feature learning with a single \\(\\Theta(1)\\) learning rate for both factors (Theorem 4.1), and it makes SGD and AdamW more robust on LLMs and diffusion models.",
+  "relevance": "Shows directly that choosing a \\(GL(r)\\)-compatible (quotient) metric removes the \\(A\\)/\\(B\\) learning-rate asymmetry of LoRA+. Optimization geometry on the gauge bundle is a first-class part of a PEFT method."
+ },
+ "paper:backprop-as-functor": {
+  "claim": "Defines a symmetric monoidal category Learn whose morphisms are learners \\((P, I, U, r)\\): a parameter space, implementation \\(I: P \\times A \\to B\\), update \\(U: P \\times A \\times B \\to P\\) and request function \\(r: P \\times A \\times B \\to A\\). For a fixed step size \\(\\epsilon > 0\\) and an error function \\(e\\) with \\(\\partial e/\\partial x(x_0,-)\\) invertible, gradient descent defines a faithful, injective-on-objects, strong symmetric monoidal functor \\(L_{\\epsilon,e}: \\mathbf{Para} \\to \\mathbf{Learn}\\), so backpropagation is functorial.",
+  "relevance": "The original categorical semantics of learning. A PEFT method changes the parameter object \\(P\\) of each learner (restricting, extending or reparametrising it) while keeping \\(I\\)'s frozen part fixed. Whether and how such changes commute with \\(L_{\\epsilon,e}\\) is a natural first theorem for a categorical PEFT theory."
+ },
+ "paper:geometric-deep-learning": {
+  "relevance": "The Erlangen-style template for organising a zoo of methods by their symmetry groups. Applied to PEFT, it suggests classifying updates by the group acting on \\(W_0\\) or on the adapter (\\(GL(r)\\) for LoRA, \\(O(d)\\) for OFT/BOFT, diagonal tori for (IA)\\(^3\\) and scaling methods), with LoRA's \\(GL(r)\\) redundancy acting as a gauge group."
+ }
+}

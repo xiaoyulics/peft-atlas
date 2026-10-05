@@ -1,0 +1,49 @@
+{
+ "m": 7,
+ "n": 5,
+ "r": 2,
+ "dimS1": {
+  "zero_B": 14,
+  "zero_A": 10,
+  "split": 20
+ },
+ "check": {
+  "zero_B": {
+   "finite_difference_rank": 14,
+   "smallest_kept_singular_value": 1.43414983612856,
+   "singular_gap": null,
+   "rank_B0": 0,
+   "rank_A0": 2,
+   "rank_B0A0": 0
+  },
+  "zero_A": {
+   "finite_difference_rank": 10,
+   "smallest_kept_singular_value": 1.4037243736447582,
+   "singular_gap": 9634785115100290.0,
+   "rank_B0": 2,
+   "rank_A0": 0,
+   "rank_B0A0": 0
+  },
+  "split": {
+   "finite_difference_rank": 20,
+   "smallest_kept_singular_value": 2.04304592681847,
+   "singular_gap": 2890586211503150.5,
+   "rank_B0": 2,
+   "rank_A0": 2,
+   "rank_B0A0": 2
+  }
+ },
+ "image_dim_formula": 20,
+ "image_dim_generic_jacobian_rank": 20,
+ "formulas": {
+  "zero_B": 14,
+  "zero_A": 10,
+  "split": 20
+ },
+ "paper": {
+  "zero_B": 14,
+  "zero_A": 10,
+  "split": 20
+ },
+ "agrees_with_paper": true
+}

@@ -1,0 +1,1385 @@
+{
+ "batch": 9,
+ "methods": [
+  {
+   "id": "textual-inversion",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Lin",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The extension adds one row \\(v\\) to the embedding table, i.e. one new input symbol \\(S_*\\). On the original input space \\(X\\) every \\(v\\) is neutral, since no prompt without \\(S_*\\) reads the row. So on \\(X\\) the method is the frozen model, and its whole effect lives on the enlarged input space \\(X^+\\supset X\\).",
+    "shape": "Affine in \\(v\\): \\(E^+=[E_0;\\,v]\\), with \\(d=d_{\\rm emb}\\) (\\(kd\\) for a \\(k\\)-vector pseudo-word). Linear in the extended weight space \\(\\Theta^+\\); function-level relative to \\(\\Theta\\), which has no row for \\(S_*\\).",
+    "base_point": "\\(v_0=E_w\\) for a coarse descriptor \\(w\\) ('cat'). Then \\(\\tilde f(\\theta_0,v_0,-)=f(\\theta_0,-)\\circ(S_*\\mapsto w)\\), so the extension is pointed relative to substituting \\(w\\) for \\(S_*\\).",
+    "gauge": "\\(v\\mapsto[E_0;v]\\) is injective.",
+    "covariance": "As for Trainable Tokens: the row is a free vector on the embedding side (\\(GL\\)); on the vocabulary side only token-preserving (monomial) maps are allowed.",
+    "merge": "The learned row is an ordinary embedding entry, so inference cost is unchanged: M1 into its own box. It cannot be merged into \\(\\Theta\\) itself only because \\(f\\) has no input \\(S_*\\). That is a change of input type, not an M∞ obstruction.",
+    "rebasing": "One fixed row: idempotent."
+   },
+   "table_row": "E",
+   "table_col": "Lin",
+   "categorical_reading": "Textual inversion is a pointed extension of the input alphabet rather than of the network. It adjoins one symbol \\(S_*\\) whose embedding is a free point \\(v\\in\\mathbb R^d\\), neutral at \\(v_0=E_w\\) via the substitution \\(S_*\\mapsto w\\). On the old inputs it is the initial object (Frozen). On prompts containing \\(S_*\\) it is Trainable Tokens on the extended table, the Lin row method of \\(\\mathsf{Meth}(\\Theta^+,\\theta_0^+)\\).",
+   "arrows": [
+    {
+     "target": "trainable-tokens",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}:\\ v\\mapsto V_{\\{S_*\\}}",
+     "note": "Trainable Tokens on the extended vocabulary with \\(T=\\{S_*\\}\\), pointed at the descriptor row \\(E_w\\). This is HF PEFT's TrainableTokensConfig on a newly added token after resize_token_embeddings."
+    },
+    {
+     "target": "custom-diffusion",
+     "rule": "A2",
+     "h": "h(v)=(\\Delta W^k=0,\\ \\Delta W^v=0,\\ V^*=v)",
+     "note": "Freezing Custom Diffusion's cross-attention \\(W^k,W^v\\) at \\(W_0\\) leaves its modifier-token row. The target is Custom Diffusion pointed at \\((0,0,E_w)\\) rather than at its rare-token init."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "prompt-tuning",
+     "test": "O3",
+     "reason": "Textual inversion is pointed: \\(v_0=E_w\\) reproduces the prompt with the word \\(w\\). A soft prompt always draws attention mass, and on a head with \\(W_oW_v\\ne0\\) it has no neutral value (Thm VI.5(f)). The base-point strata differ, so there is no pointed arrow either way."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived all seven coordinates; agree (E on the extended vocabulary, Lin d=d_emb, neutral on X, injective, MonxGL as for trainable-tokens, M1 in Theta^+, idempotent). A3 to trainable-tokens (h=id on Theta^+) and A2 to custom-diffusion (rho_CD(0,0,v)=rho_TI(v); target re-pointed at (0,0,E_w), as the note says) verified. O3 to prompt-tuning valid: no neutral prompt exists; the converse fails by O1 since prompt tuning moves outputs on X. No changes. Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "custom-diffusion",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Lin",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Two summands. One is a selective block: dense \\(W^k,W^v\\) in every cross-attention layer, an R part. The other is a new modifier-token row \\(V^*\\), a vocabulary extension as in Textual Inversion. The extension makes the whole object E: an extension followed by a reparametrisation of \\(\\Theta\\times\\mathbb R^{d_{\\rm text}}\\).",
+    "shape": "Affine: a coordinate block of the extended weight space, of dimension \\(2d_{\\rm out}d_{\\rm text}\\) per cross-attention layer plus \\(d_{\\rm text}\\) for \\(V^*\\).",
+    "base_point": "\\(\\Delta W=0\\), and \\(V^*_0\\) is a rare token's embedding. The model is unchanged on ordinary prompts and treats \\(V^*\\) as that rare token.",
+    "gauge": "A coordinate inclusion: injective.",
+    "covariance": "Each selected box is fully trainable (\\(GL\\times GL\\)). The modifier row is Mon×GL on the vocabulary side, as for Textual Inversion.",
+    "merge": "The fine-tuned \\(W^k,W^v\\) replace the originals and \\(V^*\\) is one vocabulary row. The closed-form multi-concept merge is a separate post-hoc operation, a constrained least squares of RegMean type.",
+    "rebasing": "Fixed block: idempotent."
+   },
+   "table_row": "E",
+   "table_col": "Lin",
+   "categorical_reading": "Custom Diffusion is Textual Inversion \\(\\oplus\\) a selective block. The block is surgical fine-tuning of exactly the boxes that read the text wire (\\(W^k,W^v\\)), plus one adjoined vocabulary symbol. Its multi-concept merge is a P operation \\(\\Theta^N\\to\\Theta\\). It solves a least-squares problem under hard equality constraints on the concepts' features, so it is a constrained RegMean rather than task arithmetic.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Dense \\(W^k,W^v\\) updates reach rank \\(\\min(d_{\\rm out},d_{\\rm text})>r\\). The paper finds low-rank training worse; only post-hoc SVD compression comes close."
+    },
+    {
+     "target": "svdiff",
+     "test": "O1",
+     "reason": "SVDiff keeps \\(W_0\\)'s singular frames, an absolute invariant; dense K/V updates move them."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: E (selective K/V block plus an adjoined vocabulary row), Lin, neutral, none, M1, idempotent agree. Covariance is a product of box groups (GLxGL on W^k, W^v; MonxGL on the V* row); GLxGL labels the principal boxes and the note records the row, so kept. O2 to LoRA (dense rank > r) and O1 to SVDiff (frames move) valid. No changes."
+  },
+  {
+   "id": "esft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The selected routed experts are fine-tuned in place. Router, attention, shared experts and embeddings stay frozen.",
+    "shape": "A coordinate subspace: the full weights of the selected experts \\(E_s^l\\) in each layer, \\(d=\\sum_l|E_s^l|\\cdot3dd_{ff}^{(e)}\\).",
+    "covariance": "Each selected expert is fully trainable box by box (\\(GL\\times GL\\)). Experts are blocks the MoE already has, so no partition is imposed. The selection is a data statistic of the frozen router, which every function-preserving reparametrisation carries along.",
+    "rebasing": "Fixed expert set: idempotent. Recomputing relevance scores after a merge could change the set and gain."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "ESFT is surgical fine-tuning indexed by experts instead of layers: the trainable set is a union of whole expert boxes, chosen from router statistics on task data. Like surgical FT and Spectrum, it is a Lin, regular, idempotent coordinate block. Only the selection rule (routing mass) is new.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Each selected expert gets a dense update of rank up to \\(\\min(d,d_{ff}^{(e)})>r\\)."
+    },
+    {
+     "target": "lisa",
+     "test": "O1",
+     "reason": "ESFT trains a few experts in every MoE layer at once, on a fixed support. A LISA stage trains only \\(\\gamma\\) sampled layers (all experts in them) plus embeddings and head. So, when \\(\\gamma\\) is below the number of MoE layers, no single stage contains ESFT's image. (That ESFT never touches the embeddings blocks only the converse LISA \\(\\to\\) ESFT.)"
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin / regular / none / GLxGL (router statistics are function-level, carried by box-wise function-preserving gauges) / M1 / idempotent; agree. O2 to LoRA valid. Change: LISA obstruction reason now states the gamma < #MoE-layers condition and moves the 'never touches the embeddings' remark to the converse direction, where it belongs."
+  },
+  {
+   "id": "intruder-dimension-reduction",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "P",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Training-free: an endomorphism of the space of trained LoRA adapters. The catalog files it as a training procedure, but it is post hoc.",
+    "shape": "With \\(W_1=W_0+\\Delta W\\), the \\(\\lambda\\)-family \\(\\lambda\\mapsto W_1+(\\lambda-1)\\sum_{j\\in\\mathcal I}\\sigma_ju_jv_j^\\top\\) rescales the intruder singular values of \\(W_1\\) along fixed singular vectors. It is affine in \\(\\lambda\\) (the closure of a one-parameter torus orbit). Since a single \\(\\lambda\\) (HF mitigation_lambda) is shared by every adapted matrix, \\(d=1\\) for the whole model, not per matrix. HF's rank-\\(r\\) re-factorisation makes it smooth but not affine near \\(\\lambda=1\\).",
+    "base_point": "\\(\\lambda=1\\) returns the trained adapter, so relative to \\(\\theta_0\\) the family carries the defect \\(e=\\Delta W\\) by design. In the slice at \\(W_1\\) it is regular. No \\(\\lambda\\) returns \\(\\theta_0\\) unless \\(\\Delta W\\) lies in the intruder span.",
+    "gauge": "Injective in \\(\\lambda\\) once an intruder is detected. The rule reads only \\(W_0+sBA\\), so it is constant on LoRA's \\(GL_r\\) fibres: gauge-invariant (Prop V.4(a)), unlike factor-wise rules.",
+    "covariance": "Intruders are detected by \\(|\\langle u_j,u^0_i\\rangle|\\) between the left singular frames of \\(W_1\\) and \\(W_0\\): \\(CO\\times CO\\).",
+    "merge": "The output is again a LoRA adapter.",
+    "rebasing": "Applying the rule again to \\(W'\\) finds the same singular vectors with values \\(\\lambda\\sigma_j\\). The family is a multiplicative monoid on fixed directions, hence idempotent (until an intruder drops out of the top \\(k\\))."
+   },
+   "table_row": "P",
+   "table_col": "Lin",
+   "categorical_reading": "A post-hoc spectral operation on the image of \\(\\mathrm{LoRA}_r\\). A one-parameter torus acts on those singular values of the merged weight whose left singular vectors are nearly orthogonal to \\(W_0\\)'s. In other words it is SVDiff re-based at the trained point and restricted to the intruder directions. It reads only the product \\(BA\\), so it descends to adapters (Prop V.4(a)).",
+   "arrows": [
+    {
+     "target": "svdiff",
+     "rule": "A3",
+     "h": "h(\\lambda)=\\delta,\\quad \\delta_j=(\\lambda-1)\\sigma_j\\ (j\\in\\mathcal I),\\ \\ \\delta_j=0\\ \\text{otherwise}",
+     "note": "Into SVDiff re-based at \\(W_1=W_0+\\Delta W\\) (its SVD frame), with \\(\\lambda=1\\) sent to \\(\\delta=0\\). Paper variant (no rank-\\(r\\) re-truncation), \\(\\lambda\\ge0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "wise-ft",
+     "test": "O1",
+     "reason": "WiSE-FT moves along \\(W_0+\\alpha\\Delta W\\), shrinking the whole update toward \\(\\theta_0\\). Intruder reduction moves along \\(W_1+(\\lambda-1)\\sigma_ju_jv_j^\\top\\). The two lines meet only at \\(W_1\\), unless \\(\\Delta W\\) is itself the intruder component."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived P / Lin / defect (lambda=1 returns W_1) / none / CO x CO / M1 / idempotent; agree. numpy: rho_SVDiff@W1(h(lambda)) = W_1+(lambda-1)sigma_j u_j v_j^T to 1e-14, and re-SVD of W' keeps u_j with value lambda*sigma_j (monoid on fixed directions, so idempotent). A3 to SVDiff re-based at W_1 verified (pointed lambda=1 -> delta=0; needs lambda>=0 for the ReLU). O1 to WiSE-FT valid (two lines through W_1). Change: shape note d=1 'per matrix' -> d=1 for the whole model (lambda is global)."
+  },
+  {
+   "id": "coda-prompt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "MonxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "\\(F_X\\): the prefix \\(p(x)=\\sum_m\\alpha_m(x)P_m\\) is a family over inputs, with weights read from a separate frozen forward pass.",
+    "shape": "Function-level: for each \\(x\\), a prefix in the span of the components at layers 1–5.",
+    "base_point": "Prefix slots always draw softmax mass, even for \\(p=0\\): zero keys have logit 0.",
+    "gauge": "\\(\\alpha_m=\\cos(q\\odot A_m,K_m)\\) is invariant under positive rescalings of \\(A_m\\) and of \\(K_m\\), and under a joint sign flip: a torus of dimension \\(2M\\). \\(P_m\\) has no slide, since \\(\\alpha_m\\) is not a parameter.",
+    "covariance": "The Hadamard feature gate \\(q\\odot A_m\\) on the frozen query wire commutes only with monomial changes of basis there. The prefix components are free vectors on the key/value wire (\\(GL\\)).",
+    "merge": "Input-dependent prefix slots lengthen the key/value sequence (Thm VI.5(f)).",
+    "rebasing": "Nothing merges. Continual learning grows the component set instead, with earlier components frozen. That is an increasing chain of objects, not a rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "CODA-Prompt is a continuous family over inputs, \\(x\\mapsto\\sum_m\\alpha_m(x)P_m\\), of points of prefix tuning, with unnormalised cosine weights read from a frozen query pass. Each task adds components and freezes the earlier ones at their trained values. That freezing, not any property of the image, is how it limits forgetting.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "l2p",
+     "test": "O1",
+     "reason": "CODA's prompt varies continuously with \\(x\\), while L2P's is piecewise constant (hard top-\\(N\\) retrieval). So generic CODA realisations are not L2P realisations."
+    },
+    {
+     "target": "prefix-tuning",
+     "test": "O1",
+     "reason": "A static prefix is a single point. CODA's prefix depends on \\(x\\) through \\(q(x)\\), so its realisations are generically not those of any single prefix."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_X / Fun / unpointed / torus / MonxGL / Minf / n/a; agree. numpy: Jacobian of (A,K) -> {cos(q_i*A_m,K_m)} over 40 queries has fibre exactly 2M (M=3, D=5), confirming the torus of positive rescalings of A_m and K_m. O1 to L2P (continuous vs piecewise constant in x) and to prefix tuning (static prefix) valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "trans-lora",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The transported object is an ordinary target-side LoRA (or DoRA, or soft prompt) trained by distillation. The source pair and the discriminator are training data, not part of \\(\\rho\\).",
+    "base_point": "Target LoRA at \\(B=0\\): the \\(\\mathrm T_A\\) apex of \\(\\mathsf{Meth}(\\Theta_t,\\theta_t)\\).",
+    "rebasing": "As LoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Trans-LoRA moves an adapter to a new base model that has no weight correspondence with the old one, so no base-change functor \\(\\phi_!\\) exists. Instead it lifts the source realisation \\(\\Phi_{f_s}(\\theta_s+\\Delta_s)\\) along the target realisation \\(\\Phi_{f_t}\\circ\\rho_{\\rm LoRA}\\), by distillation on synthetic inputs. The output is an object of the target slice, which is why the PEFT type may change in transit.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same object on the target base. The distillation loss and the synthetic data are trained-method data."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-x",
+     "test": "O2",
+     "reason": "The target is the full rank-\\(r\\) cone, \\(d=r(m+n-r)\\). LoRA-X's target is confined to frozen singular subspaces, with \\(d=r\\) (or \\(r^2\\)). So a Trans-LoRA output is generically not a LoRA-X point."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: the transported object is the target LoRA (R / Cone / apex T_A / GL / GLxGL / M1 / span); agree. A3 h=id to LoRA is an isomorphism on the target slice. O2 to LoRA-X valid: r(m+n-r) > r (or r^2). recipe entry type sensible. No changes."
+  },
+  {
+   "id": "lora-x",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Training uses \\(W_0+\\tilde U_r\\Delta\\Sigma\\tilde V_r^\\top\\) with frozen top-\\(r\\) SVD frames. Transfer is a separate, training-free map between slices.",
+    "shape": "Diagonal \\(\\Delta\\Sigma\\): \\(W_0+U_r\\mathrm{diag}(\\mathbb R^r)V_r^\\top\\), the closure of the torus orbit on the top-\\(r\\) singular values, \\(d=r\\). The constraint \\(\\sigma_i+\\delta\\sigma_i\\ge0\\) keeps \\(\\theta_0\\) an interior point. Full core: \\(d=r^2\\), the image of LoRA-XS.",
+    "base_point": "\\(\\Delta\\Sigma=0\\) is inferred; the paper does not state the init.",
+    "gauge": "Injective (diagonal or full core).",
+    "covariance": "Truncated SVD frames: \\(CO\\times CO\\) (Prop II.16).",
+    "rebasing": "With the top-\\(r\\) frames frozen: idempotent (a diagonal in \\(W_0\\)'s own frame keeps the frames). Recomputing the SVD after a merge keeps the same singular vectors, but if a shifted value \\(\\sigma_i+\\delta\\sigma_i\\) drops below \\(\\sigma_{r+1}\\) the top-\\(r\\) set changes and a new direction becomes trainable, so recomputation can gain (up to the full-frame torus \\(U\\mathrm{diag}(\\mathbb R^{\\min})V^\\top\\))."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "categorical_reading": "Diagonal LoRA-X is the torus acting on the top-\\(r\\) singular values of \\(W_0\\), i.e. SVDiff truncated to rank \\(r\\); its full-core variant is LoRA-XS. The transfer \\(\\Delta W\\mapsto U_tU_t^\\top\\Delta W\\,V_tV_t^\\top\\) is a two-sided orthogonal projection between slices at different base points \\(\\theta_s\\to\\theta_t\\), not an arrow. With a thin SVD it is the identity on full-rank square layers (catalog caveat).",
+   "arrows": [
+    {
+     "target": "svdiff",
+     "rule": "A2",
+     "h": "h(\\delta\\sigma)=(\\delta\\sigma_1,\\dots,\\delta\\sigma_r,0,\\dots,0)",
+     "note": "Freeze SVDiff's shifts for \\(i>r\\) at 0. On the constraint set \\(\\sigma_i+\\delta\\sigma_i\\ge0\\) the ReLU is the identity."
+    },
+    {
+     "target": "svft",
+     "rule": "A2",
+     "h": "h(\\delta\\sigma)=M,\\ \\ M_{ii}=\\delta\\sigma_i\\ (i\\le r),\\ \\ 0\\ \\text{otherwise}",
+     "note": "SVFT with the plain (diagonal) pattern pointed at \\(M=0\\), its tail \\(i>r\\) frozen. SVFT's official init is a small defect."
+    },
+    {
+     "target": "lora-xs",
+     "rule": "A3",
+     "h": "h(\\Delta\\Sigma)=\\Delta\\Sigma\\,\\Sigma_r^{-1}",
+     "note": "LoRA-XS in the form \\(W_0+U_rR\\,\\Sigma_rV_r^\\top\\), pointed at \\(R=0\\) (needs \\(\\sigma_r>0\\)). An isomorphism for the full-core variant."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\Delta\\Sigma)=(U_r,\\ \\Delta\\Sigma V_r^\\top)",
+     "note": "Into LoRA pointed at \\((U_r,0)\\), the \\(\\mathrm T_B\\) stratum."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "At LoRA's default pointing \\((0,A_0)\\), \\(S_1=\\{XA_0\\}\\) has the random row space \\(\\mathrm{row}A_0\\), which does not contain LoRA-X's directions \\(u_iv_i^\\top\\). The arrow exists only into the \\(\\mathrm T_B\\) stratum."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin (d=r diagonal, r^2 core) / regular / none / CO x CO / M1 / idempotent; agree. numpy: LoRA-X -> LoRA-XS (R = dS Sigma_r^-1 in the form W_0+U_r R Sigma_r V_r^T, as in the catalog) and LoRA-X -> SVDiff (shifts frozen at 0 for i>r, ReLU inactive) hold to 1e-15. A2 to SVFT and A3 to LoRA at the T_B point (U_r,0) verified; O3 to LoRA at its default (0,A_0) pointing valid. Change: rebasing note no longer says recomputing the SVD 'gains nothing'; a value dropping below sigma_{r+1} swaps in a new direction."
+  },
+  {
+   "id": "lofit",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Step 2 is an input-independent translation \\(z\\mapsto z+v\\) of selected head outputs, which enter \\(W^O\\) linearly. By Thm VI.3(a) it equals the bias edit \\(\\Delta b_O=\\sum_{i\\in T_l}W^O_{(i)}v_l^i\\), so it reads as a weight-space method on the affine closure of \\(o\\_proj\\) (the Table VIII.B convention for SSF and RED). Step 1, the \\(L_1\\)-penalised scaling probe, only chooses the support and is then discarded.",
+    "shape": "Linear: \\(\\{\\sum_{i\\in T}W^O_{(i)}v_i\\}\\), \\(d=Kd_{head}\\).",
+    "base_point": "The exactly pointed variant \\(v=0\\) is regular. The official init \\(v\\sim\\mathcal N(0,10^{-6})\\) leaves a negligible defect (the \\(\\approx\\) convention of Table VIII.B).",
+    "gauge": "Injective when the selected head blocks of \\(W^O\\) have independent columns (\\(|T_l|d_{head}\\le d\\), generic).",
+    "covariance": "As for BitFit, the offsets are free vectors on each selected head's wire. The support is a set of whole heads, a partition the attention already has, and the per-head \\(W_V\\)–\\(W_O\\) gauge carries the image to itself. So no structure is imposed.",
+    "merge": "M1→ into \\(o\\_proj\\)'s bias, by R1 through the linear \\(W^O\\). Llama and Gemma \\(o\\_proj\\) have no bias slot, so one bias vector per edited layer must be added.",
+    "rebasing": "Fixed heads: idempotent."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "LoFiT is BitFit on the attention-output bias, restricted to a learned sparse set of heads. It is a Lin method whose image \\(\\sum_{i\\in T}W^O_{(i)}\\mathbb R^{d_{head}}\\) lies inside the bias space. Its localisation step is an (IA)\\(^3\\)-type scaling probe, used only to choose the support.",
+   "arrows": [
+    {
+     "target": "bitfit",
+     "rule": "A3",
+     "h": "h(v)=\\big(\\Delta b_O^{(l)}=\\textstyle\\sum_{i\\in T_l}W^{O}_{(i)}v_l^i,\\ \\text{other biases }0\\big)",
+     "note": "Into BitFit on a model with \\(o\\_proj\\) biases, pointed at 0. The image is a proper subspace of the \\(o\\_proj\\) bias space."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "loreft",
+     "test": "O1",
+     "reason": "LoReFT edits the residual stream only at selected positions (M∞); LoFiT shifts head outputs at every position. A position-uniform shift lies outside LoReFT's realisations, and conversely."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: Step 2 is a position-uniform shift of head outputs before the linear W^O, i.e. a bias edit on o_proj: R / Lin d=K d_head / regular (exactly pointed variant; official 1e-3 init is the table's ~ convention) / none / GLxGL (head blocks are the attention's own partition, preserved by per-head W_V-W_O gauges) / M1-> (needs an added o_proj bias) / idempotent; agree. A3 to BitFit with o_proj biases verified (pointed at 0). O1 to LoReFT valid. No changes."
+  },
+  {
+   "id": "moslora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\{BMA\\}=\\mathcal M_{\\le r}\\): exactly LoRA's cone. The mixer changes the parametrisation, not the image.",
+    "base_point": "\\(B_0=0\\) with \\(M_0,A_0\\) random, so \\(S_1=\\{XM_0A_0\\}\\) has dimension \\(mr\\) when \\(M_0\\) is invertible. The deficit is \\(r(n-r)\\), as for LoRA.",
+    "gauge": "\\((B,M,A)\\sim(BG,G^{-1}MH,H^{-1}A)\\): \\(GL_r\\times GL_r\\). The generic fibre dimension is \\(|Q|-d=r(m+n)+r^2-r(m+n-r)=2r^2\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "MoSLoRA is LoRA with a gauge-enlarging middle factor. \\(\\rho(B,M,A)=W_0+sBMA\\) factors through LoRA by \\(h=(BM,A)\\), and LoRA factors back through it by freezing \\(M\\). The two simulate each other with the same image and the same \\(S_1\\), but they are not isomorphic (\\(|Q|\\) differs by \\(r^2\\)). Any gain is therefore in the cometric \\(K=D\\rho\\,\\Lambda\\,D\\rho^\\top\\), not in expressivity.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,M,A)=(BM,\\ A)",
+     "note": "Pointed at \\((0,A_0)\\), with equal images and equal \\(S_1=\\{YA_0\\}\\). The reverse arrow \\(h(B,A)=(BM_0^{-1},M_0,A)\\) also exists."
+    },
+    {
+     "target": "flora-tucker",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same three-factor form on 2-D weights, but FLoRA is pointed at \\(h(q_0)=(0,M_0,A_0)\\) rather than at its zero-core init."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "flora-tucker",
+     "test": "O3",
+     "reason": "At FLoRA's default zero-core pointing, \\(S_1=\\{U_0XV_0^\\top\\}\\) has dimension \\(r^2\\), against MoSLoRA's \\(mr\\). \\(S_1\\) is not contained, so there is no pointed arrow at the default pointings."
+    },
+    {
+     "target": "lora-xs",
+     "test": "O2",
+     "reason": "\\(d=r(m+n-r)>r^2\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / apex / GL (GL_r x GL_r) / GLxGL / M1 / span; agree. numpy (m,n,r)=(7,6,2): generic rank 22 = r(m+n-r), fibre 8 = 2r^2, S1 at (0,M_0,A_0) has dim 14 = mr, deficit 8 = r(n-r). A3 to LoRA (h=(BM,A), pointed) and the reverse h=(BM_0^-1,M_0,A) verified; A3 to FLoRA re-pointed at (0,M_0,A_0) and O3 to FLoRA at its zero-core pointing (S1 dim r^2 < mr) consistent; O2 to LoRA-XS valid. No changes."
+  },
+  {
+   "id": "noah",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Each searched subnet is LoRA (on \\(W_q,W_k\\)) \\(\\oplus\\) a serial bottleneck adapter \\(\\oplus\\) VPT-Deep tokens, each truncated in depth and width. The VPT summand has no neutral value, so the sum is unpointed (as for UniPELT and MAM).",
+    "shape": "Function-level: the adapter and prompt parts live on extensions, so the object is not a \\(\\oplus\\)-word of \\(\\mathsf{Meth}\\).",
+    "base_point": "VPT tokens always draw attention. The official adapter is Xavier-initialised on both projections, so even the adapter starts off its neutral point \\(U=0\\).",
+    "gauge": "LoRA's \\(GL_r\\) on its summand; the adapter and the prompts add only discrete symmetries.",
+    "covariance": "All parts are dense: basis-free.",
+    "merge": "Only the LoRA part fuses (M1). Adapter and prompts remain unless the search sets their depth to 0.",
+    "rebasing": "Nothing merges as a whole."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "NOAH searches the truncations of one supernet \\(\\mathrm{LoRA}\\oplus\\mathrm{Adapter}\\oplus\\mathrm{VPT}\\). For LoRA and adapter widths, a prefix slice is an A2 sub-object (freeze the trailing coordinates at 0). For VPT it is not: dropping a token is not freezing it at a base value, because a zero token still draws attention mass. The candidates therefore form a lattice of sub-objects only along the LoRA and adapter axes, and the chosen object is an unpointed extension.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "glora",
+     "test": "O1",
+     "reason": "Every GLoRA path is a weight-space reparametrisation (M1), so its realisations lie in \\(\\Phi_f(\\Theta)\\). NOAH's VPT tokens and non-linear adapter leave that set (Thm VI.3(c), VI.5(f))."
+    },
+    {
+     "target": "autopeft",
+     "test": "O1",
+     "reason": "NOAH's LoRA on \\(W_q,W_k\\) changes every token's queries and keys. AutoPEFT has no module there: its adapters sit at the FFN and its prefixes only add key/value slots, so neither reproduces a generic low-rank change of the attention logits. (The VPT-Deep part alone would not obstruct, since a deep prompt acts at its layer as a constrained K/V prefix; the LoRA summand does.)"
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 (VPT summand has no neutral value; adapters Xavier-initialised on both projections) / Fun / unpointed / GL (LoRA summand) / GLxGL / Minf / n/a; agree. O1 to GLoRA valid. Change: AutoPEFT obstruction reason rewritten. The old text cited 'input tokens' as a difference, but VPT-Deep tokens act as constrained K/V prefixes, which AutoPEFT's prefixes contain; the obstruction comes from LoRA on W_q, W_k. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "autopeft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Each configuration is serial adapter \\(\\oplus\\) parallel adapter \\(\\oplus\\) K/V prefix on a layer mask. Any nonzero prefix length leaves no neutral point.",
+    "shape": "Function-level (non-linear adapters and prefixes).",
+    "base_point": "AdapterHub adapters start near \\(U=0\\), but prefixes always draw attention mass. Only configurations with \\(L_{PT}=0\\) are pointed (neutral).",
+    "gauge": "ReLU bottlenecks: the positive per-unit torus (R3) times permutations. The prefix adds nothing continuous.",
+    "covariance": "Dense modules: basis-free.",
+    "merge": "ReLU adapters and prefix slots are generically non-affine in the box input (Thm VI.3(c), VI.5(f)).",
+    "rebasing": "Nothing merges."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "AutoPEFT optimises over a finite grid of objects \\(\\mathrm{SA}_{D_{SA}}\\oplus\\mathrm{PA}_{D_{PA}}\\oplus\\mathrm{Prefix}_{L_{PT}}\\) on a layer mask and returns a Pareto front in (performance, budget \\(|M|\\)). Size 0 removes a module, so the grid contains Pfeiffer-adapter, parallel-adapter and prefix-tuning objects as faces. The base-point type of a configuration jumps from neutral to unpointed as soon as \\(L_{PT}>0\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "mam-adapter",
+     "test": "O1",
+     "reason": "AutoPEFT's serial post-FFN adapter reads \\(F(x)\\), and a generic ReLU function of \\(F(x)\\) is not reproduced by MAM's parallel FFN adapter (which reads \\(x\\)) plus a key/value prefix (as for UniPELT vs MAM). Separately, the converse also fails: MAM's sizes (prefix length 30, fixed scaling) are not points of AutoPEFT's grid."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "ReLU adapters and prefixes are non-affine inserted boxes (Thm VI.3(c)); no weight of the original architecture realises them."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 (any L_PT>0 leaves no neutral point) / Fun / unpointed / torus (ReLU positive per-unit scalings) / GLxGL / Minf / n/a; agree. O1 to LoRA valid. Change: MAM obstruction reason now says why the serial adapter is not simulated and marks the grid remark as the converse direction. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "laplace-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "It is built post hoc from a trained LoRA (P-like), but the deployed object is a family over a probability space \\(T=(\\mathbb R^{|Q|},\\mathcal N(0,I))\\). The T-point is \\(a(\\varepsilon)=q_{MAP}+\\Sigma^{1/2}\\varepsilon\\), and the predictive \\(\\int\\Phi_f(\\rho(a(\\varepsilon)))\\,d\\mu\\) is taken in linearised form. axes.json lists tasks, inputs, simplices and tenants as bases; this one is a noise base.",
+    "shape": "Every sample lies in LoRA's cone \\(W_0+\\mathcal M_{\\le r}\\); the mean is the MAP point.",
+    "base_point": "The underlying LoRA is trained from the \\(\\mathrm T_A\\) apex. The Laplace family is centred at \\(q_{MAP}\\), not at \\(q_0\\).",
+    "gauge": "\\(\\rho\\) has LoRA's \\(GL_r\\) fibres, but the Laplace map is not constant on them. Writing \\(G\\) for the GGN in factor coordinates, a gauge change \\(\\phi\\) turns the predictive \\(J\\,D\\rho\\,(G+\\lambda I)^{-1}D\\rho^\\top J^\\top\\) into the same expression with \\(\\lambda I\\) replaced by \\(\\lambda\\,d\\phi^\\top d\\phi\\). So only the \\(O(r)\\) half of \\(GL_r\\) preserves it, and per-factor K-FAC does not restore the rest. Rescaling to \\((cB,A/c)\\) changes the uncertainty while fixing the mean.",
+    "covariance": "The image is LoRA's (\\(GL\\times GL\\)). The isotropic prior on the factors makes the posterior geometry only \\(O\\times O\\).",
+    "merge": "The mean merges (M1). The calibrated predictive needs \\(J_\\ast\\) and \\(\\Sigma\\) at test time and averages outputs, so it is M∞.",
+    "rebasing": "A one-shot post-hoc step."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "Laplace-LoRA turns a trained point of LoRA into a Gaussian family over \\(Q\\), pushed forward by the linearised realisation. The Gaussian lives on \\(Q\\) rather than on \\(\\Theta\\), and its isotropic prior is not gauge-invariant. As a result the predictive keeps only the isometric \\(\\mathfrak{so}(r)\\) half of LoRA's gauge, and the \\(\\mathrm{Sym}_r\\) half changes the calibrated uncertainty while fixing the mean.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}\\ \\ \\text{(the MAP object)}",
+     "note": "The family's mean (\\(\\varepsilon=0\\)) is the LoRA point it was built from; the Laplace step adds trained-method data."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "blob",
+     "test": "O1",
+     "reason": "BLoB's samples \\(W_0+BA\\) keep the trained \\(\\mathrm{col}\\,B\\), since \\(B\\) is deterministic. Laplace samples perturb \\(B\\) as well and change the column space, so the Laplace posterior's support is not contained in BLoB's."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: F_T over a Gaussian noise base (an extension of axes.json's T list, flagged in the note), Cone (samples in LoRA's cone), apex (underlying LoRA from T_A), GL (fibres of rho), GLxGL (image; posterior only OxO), Minf (predictive needs J and Sigma), n/a. numpy: the linearised predictive J(G+lam I)^-1 J^T is invariant under (Bg^-1, gA) for g in O(r) (2.8e-10) but changes for generic GL(r) and for scalar c=3 (about 0.2), confirming the note's lam dphi^T dphi formula. A3 h=id to LoRA (the MAP object) and O1 to BLoB (B deterministic there) valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "blob",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over the noise space \\(T=(\\mathbb R^{r\\times n},\\mathcal N(0,I))\\), with \\(a(\\varepsilon)=(B,\\,M+\\Omega\\odot\\varepsilon)\\). It is trained jointly through the ELBO, whereas Laplace-LoRA is built post hoc.",
+    "shape": "Each sample lies in LoRA's cone. For the trained \\(B\\), all samples lie in the linear fibre \\(\\mathrm{FB}(B)=\\{W_0+BA\\}\\). Since \\(\\rho\\) is of degree one in \\(A\\), the Gaussian on \\(A\\) pushes forward to a Gaussian. That is why the full-weight KL reduces exactly to the KL on \\(A\\).",
+    "base_point": "\\(B_0=0\\), so every sample equals \\(W_0\\) at initialisation: the \\(\\mathrm T_A\\) apex for each \\(\\varepsilon\\).",
+    "gauge": "The mean map \\((B,M)\\mapsto W_0+BM\\) has \\(GL_r\\) fibres. The mean-field family \\(\\mathcal N(M,\\Omega^2)\\), however, is preserved only by monomial \\(g\\) (permutations and nonzero diagonals, with \\(\\Omega\\mapsto|D|\\Omega\\)): a torus, times \\(S_r\\).",
+    "covariance": "The image is LoRA's (\\(GL\\times GL\\)). The mean-field posterior is diagonal in the input coordinates of \\(A\\), so the distribution itself is covariant only under \\(GL\\times\\mathrm{Mon}\\).",
+    "merge": "The mean merges (BLoB with \\(N=0\\) samples). The Bayesian predictive averages \\(N\\) sampled \\(A\\)'s, so it is M∞.",
+    "rebasing": "Nothing merges as a whole."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "BLoB is a family over a Gaussian noise space whose samples all lie in one linear sub-object \\(\\mathrm{FB}(B)\\) of LoRA. Making only \\(A\\) stochastic keeps \\(\\rho\\) affine in the random variable, so the induced weight posterior is an honest, degenerate Gaussian. Because it is trained jointly, its symmetry is the monomial part of \\(GL_r\\). Laplace-LoRA is its post-hoc counterpart, as LoraHub is to Poly.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(M,G,B)=(B,\\ M)",
+     "note": "Projection to the mean, forgetting the variance coordinates \\(G\\) (as for MonteCLoRA). Pointed at \\((0,M_0)\\)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived F_T (noise base) / Cone (samples in FB(B)) / apex (B_0=0) / torus / GLxGL (image; distribution GL x Mon) / Minf / n/a; agree. numpy: the map (B,M,Omega) -> (BM, {B diag(Omega_:j^2) B^T}_j) has generic fibre exactly r (=2), i.e. the monomial torus, not GL_r. A3 to LoRA via the mean h=(B,M) verified for the N=0 (mean) realisation, pointed at (0,M_0). No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "loraprune",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Sat",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "\\(\\rho(B,A,m)=\\mathrm{diag}(m)(W_0+BA)\\), with a discrete mask \\(m\\in\\{0,1\\}^G\\) broadcast over dependency groups and set by a score rather than by gradient.",
+    "shape": "The 0/1 diagonal monoid acting on LoRA's cone: \\(\\mathrm{Im}=\\{0,1\\}^G\\cdot(W_0+\\mathcal M_{\\le r})\\). A Sat object like DoRA, with a discrete idempotent monoid in place of the torus. Because the monoid is discrete, the germ at \\(\\theta_0\\) is only the \\(m=\\mathbf 1\\) component, LoRA's cone; the masked components are isolated pieces away from \\(\\theta_0\\) (for generic \\(W_0\\) with no near-zero rows).",
+    "base_point": "\\(m=\\mathbf 1\\) and \\(B=0\\): LoRA's \\(\\mathrm T_A\\) apex. Pruning then leaves the base point on purpose.",
+    "gauge": "\\(GL_r\\) on \\((B,A)\\). Rows killed by \\(m\\) add a non-generic fibre.",
+    "covariance": "The mask acts on output channels and heads (dependency groups), so only group-preserving monomial changes of basis are allowed on the masked side. \\(BA\\) itself is \\(GL\\)-covariant.",
+    "merge": "\\(BA\\) fuses and the masked groups are deleted, leaving a smaller dense model.",
+    "rebasing": "The LoRA part spans. Masks compose by \\(m\\cdot m'\\), an idempotent monoid, so \\(R_\\infty=\\{0,1\\}^G\\cdot\\Theta\\), which as a set is \\(\\Theta\\) itself (\\(\\mathrm{diag}(m)\\Theta\\subseteq\\Theta\\))."
+   },
+   "table_row": "R-action",
+   "table_col": "Sat",
+   "categorical_reading": "LoRAPrune is a 0/1 diagonal monoid acting on LoRA's cone (Sat). Its importance score replaces the weight gradient \\(G\\) by the one-step LoRA update \\(\\nabla_BA+B\\nabla_A-\\nabla_B\\nabla_A=K(G)-\\nabla_B\\nabla_A\\). This is the cometric \\(K=D\\rho\\,D\\rho^\\top\\) applied to \\(G\\), plus the second-order term. So pruning needs no backward pass through \\(W_0\\).",
+   "arrows": [
+    {
+     "target": "dora",
+     "rule": "A3",
+     "h": "h(B,A,m)=\\big(\\mu=m\\odot\\lVert W_0+sBA\\rVert_{\\rm row},\\ B,\\ A\\big)",
+     "note": "On each mask component, for boxes masked by output rows (q, k, v, gate, up); DoRA pointed at \\((\\lVert W_0\\rVert_{\\rm row},0,A_0)\\). It fails on o_proj and down_proj, where head and channel masks act on input columns."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Pruned groups contribute the update \\(-\\mathrm{diag}(\\mathbf 1-m)W_0\\), whose rank, up to the number of pruned rows, exceeds \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Sat / apex (m=1, B=0) / GL / MonxGL / M1 / span; agree. numpy: diag(mu) N(W_0+sBA) with mu = m*rownorm equals diag(m)(W_0+sBA) to 2e-16, so the A3 arrow to DoRA (pointed at (||W_0||_row,0,A_0)) holds on output-row-masked boxes. O2 to LoRA valid. Changes: shape note records that the germ at theta_0 is LoRA's cone (discrete monoid); rebasing note adds that R_inf = Theta as a set."
+  },
+  {
+   "id": "modulora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "LoRA pointed at \\(\\kappa\\theta_0\\) for a black-box quantiser \\(\\kappa=\\mathcal D\\circ\\mathcal Q\\) (OPTQ, QuIP#). Prop V.2(a) holds for any \\(\\kappa\\).",
+    "shape": "LoRA's cone translated to \\(\\kappa\\theta_0\\).",
+    "base_point": "\\(e=\\kappa\\theta_0-\\theta_0\\), generically of full rank. Unlike LoftQ, ModuLoRA does not compensate it.",
+    "covariance": "Mon (grid), as for QLoRA. QuIP#'s incoherence processing uses fixed random orthogonal maps, so for it the grid geometry holds only in that rotated frame.",
+    "merge": "An exact merge leaves the 2–4-bit grid; requantising is lossy.",
+    "rebasing": "As LoRA, at \\(\\kappa\\theta_0\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "ModuLoRA is the family \\(\\kappa\\mapsto\\mathrm{LoRA}_r(\\kappa\\theta_0)\\) over all quantisers, not just NF4. Additive families commute with translation, so changing the quantiser only moves the base point and its defect \\(e\\). Its real contribution is on the lens side: the backward pass recomputes \\(\\hat W\\) instead of caching it (Obs IV.4), which changes memory, not the object.",
+   "arrows": [
+    {
+     "target": "qlora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Valid only when \\(\\kappa\\) is NF4 with double quantisation; then the objects are identical (an isomorphism). For the paper's quantisers (OPTQ, QuIP#) the vertices \\(\\kappa\\theta_0\\) and \\(\\kappa_{\\rm NF4}\\theta_0\\) differ by a generically full-rank matrix, so the cones are disjoint translates and O1 blocks any arrow; ModuLoRA is then the same construction at a different base point, not an object over QLoRA."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "loftq",
+     "test": "O3",
+     "reason": "Over a common \\(\\kappa\\theta_0\\), ModuLoRA sits at the apex (\\(B=0\\)) and LoftQ at the smooth point \\(-\\mathrm{SVD}_r(e)\\): same image, different strata."
+    },
+    {
+     "target": "qa-lora",
+     "test": "O1",
+     "reason": "QA-LoRA's updates are constant on quantisation groups. ModuLoRA's generic \\(BA\\) is not, so its image is not contained."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / defect e = kappa theta_0 - theta_0 / GL / MonxMon (grid) / Mq / span; agree. O3 to LoftQ (apex vs smooth point over a common kappa theta_0) and O1 to QA-LoRA (group-constant updates) valid. Change: the h=id arrow to QLoRA holds only for kappa = NF4-DQ; for OPTQ/QuIP# the vertices differ and O1 applies. The note now says so explicitly."
+  },
+  {
+   "id": "sltrain",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "SLTrain-FT is \\(\\mathrm{LoRA}_r\\oplus\\) a fixed-support sparse method (Obs I.7), with the support \\(\\mathcal I\\) drawn uniformly at random and frozen.",
+    "shape": "The Minkowski sum \\(W_0+\\mathcal M_{\\le r}+\\mathbb R^{\\mathcal I}\\): a cone, full rank w.h.p. for \\(\\delta=\\Omega(\\log n/n)\\) (the paper's Prop. 1).",
+    "base_point": "\\(B_0=0\\), but the sparse values start uniform in \\(\\pm1/\\sqrt{d_{in}}\\) (App. G refers back to the pretraining init). So \\(\\rho(q_0)=W_0+S_0\\ne W_0\\), a defect of weight scale on \\(\\delta d_{out}d_{in}\\) entries. At that point \\(S_1=\\{XA_0\\}+\\mathbb R^{\\mathcal I}\\), so the LoRA deficit \\(r(n-r)\\) persists (checked numerically). With \\(S_0=0\\) it would be RoSA-type: an apex.",
+    "gauge": "\\(GL_r\\) on the LoRA summand. The sparse summand is injective, and for \\(|\\mathcal I|+r(m+n-r)\\le mn\\) the two summands generically do not trade.",
+    "covariance": "Support structure in the standard basis (Mon×Mon). A uniformly random support is permutation-invariant in law.",
+    "rebasing": "\\(\\to\\Theta\\), since the LoRA summand already spans."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "SLTrain is the \\(\\oplus\\)-word \\(\\mathrm{LoRA}_r\\oplus\\mathrm{Mask}_{\\mathcal I}\\) with a uniformly random frozen mask, i.e. RoSA with the support drawn instead of selected. The random sparse summand lifts \\(\\mathrm{LoRA}_r\\)'s rank obstruction (O2) at cost \\(O(\\mathrm{nnz})\\), but its non-zero init moves the base point.",
+   "arrows": [
+    {
+     "target": "rosa",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "RoSA with its mask taken to be \\(\\mathcal I\\), pointed at \\(S=S_0\\). With RoSA's own gradient-chosen support the images differ."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "\\(BA+S\\) is full rank w.h.p., so \\(\\rho_{\\max}>r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone (W_0+M_<=r+R^I) / defect (S_0 != 0, inferred from App. G as the catalog says) / GL / MonxMon / M1 / span; agree. numpy (9x8, r=2, |I|=14): generic rank 44 = r(m+n-r)+|I|, fibre 4 = r^2 (summands do not trade when |I|+r(m+n-r) <= mn), S1 at q_0 has dim mr+|I| = 32, deficit 12 = r(n-r). A3 to RoSA with mask I re-pointed at S_0 and O2 to LoRA valid. Change: base_point note records the persisting first-order deficit."
+  },
+  {
+   "id": "meft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Each layer becomes an additive RevNet coupling with fixed scalars \\(\\lambda,\\beta\\) (0.1 for the one sent toward 0), and adapters serve as the second coupling function. With \\(\\lambda=0.1\\) fixed, no adapter value reproduces \\(f\\) exactly, so the extension is unpointed. It is only approximately pointed, with a defect of order \\(\\lambda\\) plus the \\(\\mathcal N(0,0.02^2)\\) adapter init.",
+    "shape": "Function-level: a two-stream topology the PLM does not have.",
+    "base_point": "Exact pointing needs \\(\\lambda=0\\) (or \\(\\beta=0\\)). But the inverse \\(h^1_{n-1}=(h^1_n-\\mathcal F_n(h^2_{n-1}))/\\lambda\\) needs \\(\\lambda\\ne0\\). Invertibility and pointedness are incompatible, and MEFT gives up the neutral point to keep reversibility. In addition the new head reads \\((h^1_L+h^2_L)/2\\), where one stream carries only \\(\\approx\\beta h_{L-1}\\) (MEFT\\(_1\\)), so even at the adapters' init the head input is not \\(h_L\\).",
+    "gauge": "Bottleneck adapters: hidden-unit permutations (discrete), plus the positive torus \\(\\mathbb R_{>0}^r\\) if the bottleneck is ReLU (the catalog does not record the activation). The coupling scalars are fixed.",
+    "covariance": "Dense adapters: basis-free.",
+    "merge": "The two-stream topology, the coupling scalars and the non-linear adapters all remain at inference.",
+    "rebasing": "Nothing merges."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "MEFT embeds the PLM into a reversible two-stream architecture. The would-be neutral point of this extension (\\(\\lambda=0\\)) is exactly where the coupling stops being invertible. MEFT therefore lives in the unpointed slice with a small fixed defect. Its payoff is on the lens side: reversibility lets the backward pass recompute activations instead of storing them (Obs IV.4).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "parallel-adapter",
+     "test": "O3",
+     "reason": "A parallel adapter is pointed at \\(U=0\\). MEFT's fixed coupling scalar \\(\\lambda=0.1\\) leaves no exactly neutral value, so the two lie in different base-point strata."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Non-linear adapters inside a two-stream coupling are non-affine inserted boxes (Thm VI.3(c)); no weight of the original architecture realises them."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 / Fun / unpointed / none (discrete perms; torus only if the bottleneck were ReLU, which the paper does not state) / GLxGL / Minf / n/a; agree. Checked the paper (Sec. 3, Fig. 4): adapters N(0,0.02^2), lambda or beta set to 0.1, head on (h^1_N+h^2_N)/2. O3 to the parallel adapter and O1 to LoRA valid. Change: base_point note adds the stream-average head input, which also blocks exact pointing. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "spectrum",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The selected whole matrices are fully trained, plus embeddings and lm_head in the official script; everything else is frozen.",
+    "shape": "A coordinate subspace, \\(d=\\sum_{W\\in\\mathcal S}d_{out}d_{in}\\) plus embeddings and head.",
+    "covariance": "Within a selected box the image is \\(GL\\times GL\\), but the selection reads \\(W_0\\)'s singular values. The SNR is \\(O\\times O\\)-invariant and homogeneous of degree \\(-1\\) under scaling (the \\(1/\\sigma_{\\max}\\) factor). So only orthogonal changes of basis preserve the selected set. Recorded under the spectral-frame key, restricted to \\(O\\times O\\).",
+    "rebasing": "Fixed set: idempotent. Recomputing the SNR after a merge could change the set."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "Spectrum is a Lin coordinate block of whole matrices, chosen data-free by a Marchenko–Pastur signal-to-noise score of \\(W_0\\). Its image is of the same type as surgical fine-tuning's. What is new is the selection rule: it depends on \\(W_0\\) only through its spectrum, so it is natural only under orthogonal changes of basis.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Selected matrices get dense full-rank updates, so \\(\\rho_{\\max}>r\\)."
+    },
+    {
+     "target": "lisa",
+     "test": "O1",
+     "reason": "Spectrum's fixed support spans matrices in many layers, chosen per module type. A LISA stage trains \\(\\gamma\\) whole sampled layers, so no single stage contains Spectrum's image, and Spectrum never resamples."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin / regular / none / OxO (SNR is O x O-invariant and of degree -1 under scaling, so homotheties change the selection: O x O, not CO x CO) / M1 / idempotent; agree. O2 to LoRA and O1 to LISA (support spans more than gamma layers) valid. No changes."
+  },
+  {
+   "id": "lora-dash",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "\\(\\mathrm{LoRA}_r\\oplus\\) an \\(s\\)-dimensional diagonal method in \\(W_0\\)'s own singular frame. The pairs \\(\\bar u_k\\bar v_k^\\top\\) are chosen from LoRA's update after a 100-step warm-up.",
+    "shape": "The Minkowski sum \\(W_0+\\mathcal M_{\\le r}+\\mathrm{span}\\{\\bar u_k\\bar v_k^\\top\\}\\): a cone with vertex \\(\\theta_0\\), of rank up to \\(r+s\\).",
+    "base_point": "\\(B_0=0\\) and \\(\\Delta\\sigma_0=0\\): LoRA's \\(\\mathrm T_A\\) apex. The dash coordinates join at step 100 at their base value 0.",
+    "gauge": "\\(GL_r\\) on the LoRA summand. The dash coordinates are injective and generically do not trade with \\(BA\\).",
+    "covariance": "The dash directions are singular pairs of \\(W_0\\), selected by \\(|u_i^\\top\\Delta Wv_i|/\\sigma_i\\): an SVD frame plus a data statistic, so \\(CO\\times CO\\) (data).",
+    "rebasing": "\\(\\to\\Theta\\) through the LoRA summand."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA-Dash is \\(\\mathrm{LoRA}_r\\oplus\\) a frozen-frame spectral line method: SVDiff on \\(s\\) singular pairs, selected from LoRA's own early trajectory. The dash summand moves along directions already present in \\(W_0\\)'s spectrum, so it supplies \\(s\\) dimensions of 'amplification' on which \\(BA\\) would otherwise spend rank.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A,\\Delta\\sigma)=\\big([B\\ \\ \\bar U\\mathrm{diag}(\\Delta\\sigma)],\\ [A;\\ \\bar V^\\top]\\big)",
+     "note": "Into \\(\\mathrm{LoRA}_{r+s}\\) pointed at \\((0,[A_0;\\bar V^\\top])\\). This is a standard \\(\\mathrm T_A\\) pointing iff \\(\\mathrm{row}A_0\\cap\\mathrm{span}\\bar V=0\\), which is generic (Obs I.7)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O3",
+     "reason": "PiSSA is a Type II object (a smooth point of a translated cone); LoRA-Dash sits at the apex of an untranslated cone. The strata differ, and the images are incomparable."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Against \\(\\mathrm{LoRA}_r\\) at equal rank: \\(\\rho_{\\max}=r+s>r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / apex / GL / CO x CO (data) / M1 / span; agree. numpy (7x6, r=2, s=2): generic rank 24 = r(m+n-r)+s, fibre 4 = r^2, S1 at (0,A_0,0) dim 16 = mr+s, deficit 8 = r(n-r); the A3 map into LoRA_{r+s} reproduces rho to 4e-16 and is pointed at (0,[A_0;V_bar^T]). O3 to PiSSA and O2 to LoRA_r valid. No changes."
+  },
+  {
+   "id": "lcm-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "P",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The acceleration LoRA \\(\\tau_{\\rm LCM}=B_{\\rm LCM}A_{\\rm LCM}\\) is trained once, as LoRA, by latent consistency distillation. The method as used is post hoc: \\(\\theta_{\\rm pre}+\\lambda_1\\tau'+\\lambda_2\\tau_{\\rm LCM}\\), with no further training.",
+    "shape": "The coefficient family \\((\\lambda_1,\\lambda_2)\\mapsto W_0+\\lambda_1B'A'+\\lambda_2B_{\\rm LCM}A_{\\rm LCM}\\) (applied to every adapted matrix at once) is affine, \\(d=2\\) for the whole model: the two strengths are global scalars, not per-matrix.",
+    "base_point": "\\(\\lambda=0\\) returns \\(\\theta_0\\), and the family is injective: regular.",
+    "gauge": "Injective when the two updates are linearly independent; only products enter, so the factor gauge cancels.",
+    "covariance": "Task arithmetic on updates is \\(GL\\)-natural.",
+    "merge": "The weighted sum fuses, conv LoRAs included.",
+    "rebasing": "Frozen task vectors: idempotent."
+   },
+   "table_row": "P",
+   "table_col": "Lin",
+   "categorical_reading": "LCM-LoRA is task arithmetic with two LoRA task vectors, one of which encodes a sampler (a distilled PF-ODE solver) rather than a skill. It ports to fine-tuned checkpoints of the same base because LoRA is additive (Def I.2, Prop V.2(a)). Since \\(\\delta_{\\rm LCM}\\) does not depend on \\(\\theta_0\\), the same update is a method at every base \\(\\theta_{\\rm pre}+\\tau'\\).",
+   "arrows": [
+    {
+     "target": "task-arithmetic",
+     "rule": "A3",
+     "h": "h(\\lambda_1,\\lambda_2)=(\\lambda_1,\\lambda_2),\\quad \\tau_1=B'A',\\ \\tau_2=B_{\\rm LCM}A_{\\rm LCM}",
+     "note": "Task arithmetic with two LoRA task vectors (the catalog's special-case edge)."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\lambda_1,\\lambda_2)=\\big([\\lambda_1B'\\ \\ \\lambda_2B_{\\rm LCM}],\\ [A';A_{\\rm LCM}]\\big)",
+     "note": "Into \\(\\mathrm{LoRA}_{r'+r}\\) pointed at \\((0,[A';A_{\\rm LCM}])\\), as for HF's cat (Obs I.7)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pem-arithmetic",
+     "test": "O2",
+     "reason": "PEM addition merges factors, so its result has rank \\(\\le r\\); LCM-LoRA's sum of products reaches rank \\(r'+r\\). Conversely, PEM's cross terms \\(B'A_{\\rm LCM}\\) leave LCM-LoRA's span."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived P / Lin / regular / none / GLxGL / M1 / idempotent; agree (consistent with task-arithmetic). A3 to task arithmetic (h=id on coefficients) and to LoRA_{r'+r} via stacking (pointed T_A when [A';A_LCM] has full row rank) verified. O2 to PEM arithmetic valid. Change: shape note d=2 'per matrix' -> d=2 for the whole model (global strengths)."
+  },
+  {
+   "id": "concept-sliders",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Architecturally LoRA. The contribution is the training target, either a guidance-style score contrast \\(\\epsilon(c_+)-\\epsilon(c_-)\\) or image pairs at \\(\\alpha=\\pm1\\), together with the exposed multiplier \\(\\alpha\\).",
+    "shape": "LoRA's cone. A slider is the ray \\(\\{W_0+\\alpha BA\\}\\) through the trained point; the image is a cone with vertex \\(\\theta_0\\), so the whole line stays inside it.",
+    "merge": "For fixed \\(\\alpha\\) the update fuses. The SDEdit-style schedule switches between two merged models across denoising steps.",
+    "rebasing": "As LoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "A concept slider is a ruling line of LoRA's cone through a trained point. \\(\\alpha\\mapsto W_0+\\alpha BA\\) is the scalar action that every cone with vertex \\(\\theta_0\\) carries, exposed as a user control. \\(K\\) sliders give the \\(\\oplus\\) of \\(K\\) frozen line methods inside \\(\\mathrm{LoRA}_{Kr}\\), i.e. task arithmetic with low-rank task vectors.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The trained object is LoRA (rank 4, \\(\\alpha/r=1/4\\) in the official config)."
+    },
+    {
+     "target": "task-arithmetic",
+     "rule": "A3",
+     "h": "h(\\alpha_1,\\dots,\\alpha_K)=(\\lambda_k=\\alpha_k),\\quad \\tau_k=B_kA_k",
+     "note": "The source here is the deployed P-object (strengths \\(\\alpha_k\\) trainable, slider factors frozen after training), not the training object classified above, whose \\(Q=(B,A)\\) has no map to coefficients. On that deployed object \\(\\rho_{\\rm TA}\\circ h=W_0+\\sum_k\\alpha_kB_kA_k\\), pointed at \\(\\alpha=0\\); signed coefficients are allowed."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "wise-ft",
+     "test": "O1",
+     "reason": "For the training object O2 already applies (\\(d=r(m+n-r)>1\\)). Even on its deployed line, a slider's strength ranges over \\(\\mathbb R\\) (negative values erase a concept). WiSE-FT's \\(\\alpha\\in[0,1]\\) gives a segment whose germ at \\(\\theta_0\\) is a half-line. The converse arrow exists when \\(\\theta_1-\\theta_0=BA\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: architecturally LoRA (R / Cone / apex / GL / GLxGL / M1 / span); agree; recipe entry type sensible. A3 h=id to LoRA verified. Changes: the task-arithmetic arrow note now states that its source is the deployed coefficient object, not the (B,A) training object (h is undefined on (B,A)); the WiSE-FT obstruction notes that O2 already holds for the training object."
+  },
+  {
+   "id": "ic-lora",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Plain LoRA on FLUX.1-dev. The task is carried by the input format (a panel canvas plus a merged caption), which is data, not part of \\(\\rho\\).",
+    "base_point": "\\(B=0\\) on an unmodified architecture: the \\(\\mathrm T_A\\) apex."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "IC-LoRA changes nothing in the object: it is LoRA, and the in-context behaviour comes from the base DiT's full attention over a panel canvas. Categorically it is a choice of data distribution on an unchanged input space, which the slice does not see. OminiControl, by contrast, extends the input sequence and gates its LoRA by token.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The trainable object is an ordinary LoRA (\\(r=\\alpha=16\\))."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ominicontrol",
+     "test": "O1",
+     "reason": "OminiControl's LoRA acts only on condition tokens, a position-selective edit (M∞ by Thm VI.3(a)), so its noise and text tokens always pass through \\(W_0\\). IC-LoRA's position-uniform \\(W_0+BA\\) on every token lies outside its realisations."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: plain LoRA on FLUX.1-dev (R / Cone / apex / GL / GLxGL / M1 / span); agree; recipe entry type sensible. A3 h=id to LoRA verified. O1 to OminiControl (condition-token-only LoRA is position-selective) valid. No changes."
+  },
+  {
+   "id": "proxy-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "P",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": null,
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A post-hoc operation on three trained checkpoints, \\(\\mathrm{softmax}(s_{\\mathcal M}+s_{\\mathcal M^+}-s_{\\mathcal M^-})\\). It acts on realisations (next-token logits) rather than on \\(\\Theta^N\\), so it is the realisation-level analogue of axes.json's P (\\(\\Theta^N\\to\\Theta\\)).",
+    "shape": "No weight-space image: the large model's weights are never accessed.",
+    "base_point": "The logit offset \\(s_{\\mathcal M^+}-s_{\\mathcal M^-}\\) is a parallel box on the logit wire. Its neutral value \\(\\mathcal M^+=\\mathcal M^-\\) returns \\(\\mathcal M\\) exactly.",
+    "gauge": "n/a: the method has no parameters of its own. The tuned object is the small model (any method), and its fibres play no role here.",
+    "covariance": "It reads only realisations, so it is invariant under every function-preserving reparametrisation of the large model. The only structure it imposes is a shared vocabulary basis on the logit wire.",
+    "merge": "Three forward passes per token; nothing folds into the large model.",
+    "rebasing": "n/a: nothing is merged."
+   },
+   "table_row": "P",
+   "table_col": "Fun",
+   "categorical_reading": "Proxy-tuning is task arithmetic transported from weight space to logit space. The tuning vector \\(s_{\\mathcal M^+}-s_{\\mathcal M^-}\\) of a small model is added to a large model's logits, a product of experts \\(p_{\\mathcal M}p_{\\mathcal M^+}/p_{\\mathcal M^-}\\). Because it acts on realisations, it needs no weight correspondence between the two scales. Trans-LoRA works through \\(\\Phi_f\\) for the same reason.",
+   "arrows": [
+    {
+     "target": "eft",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Per-token EFT up-scaling normalises to the same softmax: isomorphic objects (concurrent work)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived P (realisation-level) / Fun / neutral (M+=M- returns M exactly) / n/a (no parameters of its own, explained) / GLxGL (function-level reading) / Minf / n/a; agree. A3 h=id to EFT verified: pi_ref^N pi^M/pi_ref^M normalised per token equals softmax(s_N+s_M-s_Mref), since log-softmax differs from logits by per-token constants. No changes. Consolidation (2026-10-01): gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "eft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "P",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": null,
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Composes frozen checkpoints at sampling time, per token: \\(\\pi^N_{\\rm ref}\\,\\pi^M/\\pi^M_{\\rm ref}\\). A realisation-level P, as for Proxy-tuning.",
+    "shape": "No weight-space image.",
+    "base_point": "An untuned small model (\\(\\pi^M=\\pi^M_{\\rm ref}\\)) returns the large base exactly. The implicit reward \\(r=\\log(\\pi^M/\\pi^M_{\\rm ref})\\) is a parallel logit box with neutral value 0.",
+    "gauge": "n/a: no trainable parameters (all models frozen).",
+    "covariance": "Reads only realisations; it needs a shared vocabulary basis.",
+    "merge": "Sampling needs the large base and both small models at every step.",
+    "rebasing": "n/a."
+   },
+   "table_row": "P",
+   "table_col": "Fun",
+   "categorical_reading": "EFT reads fine-tuning as a KL-regularised RL update, so a fine-tuned model is its base times \\(\\exp(r)\\). It transports the implicit reward \\(r\\) from scale \\(M\\) to scale \\(N\\) in log-probability space. The per-token rule is Proxy-tuning's. EFT's derivation explains why the transport is meaningful: \\(r\\) is a base-independent, additive object in log space, as LoRA updates are in weight space.",
+   "arrows": [
+    {
+     "target": "proxy-tuning",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same per-token logit-arithmetic rule."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived; same coordinates as proxy-tuning, agree. A3 h=id to proxy-tuning verified (same per-token rule). No changes. Consolidation (2026-10-01): gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "wise-ft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "P",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Post hoc on two trained points: \\((\\theta_0,\\theta_1)\\mapsto\\theta_0+\\alpha(\\theta_1-\\theta_0)\\).",
+    "shape": "Affine in \\(\\alpha\\), \\(d=1\\). The paper restricts \\(\\alpha\\in[0,1]\\), so the image is a segment whose germ at \\(\\theta_0\\) is a half-line. With \\(\\alpha\\in\\mathbb R\\) it is task arithmetic's line.",
+    "base_point": "\\(\\alpha=0\\) returns the zero-shot model, and \\(d\\rho=\\tau\\ne0\\): regular (a boundary point when \\(\\alpha\\ge0\\)).",
+    "gauge": "Injective for \\(\\tau\\ne0\\).",
+    "covariance": "Interpolation commutes with every linear change of basis.",
+    "merge": "One model of the original architecture. HF's rescale_adapter_scale implements it for LoRA.",
+    "rebasing": "A fixed line: idempotent."
+   },
+   "table_row": "P",
+   "table_col": "Lin",
+   "categorical_reading": "WiSE-FT is task arithmetic with one task vector and \\(\\lambda\\in[0,1]\\): the segment from the zero-shot point to the fine-tuned point. When only the head is tuned, the segment is also an output ensemble, because \\(f\\) is linear in the head. Otherwise its success rests on linear mode connectivity, a property of \\(\\Phi_f\\) along the segment rather than of the object.",
+   "arrows": [
+    {
+     "target": "task-arithmetic",
+     "rule": "A3",
+     "h": "h(\\alpha)=(\\lambda=\\alpha)",
+     "note": "\\(N=1\\), \\(\\tau=\\theta_1-\\theta_0\\), with \\(\\lambda\\) restricted to \\([0,1]\\)."
+    },
+    {
+     "target": "concept-sliders",
+     "rule": "A3",
+     "h": "h(\\alpha)=(\\alpha B_1,\\ A_1)",
+     "note": "When \\(\\theta_1-\\theta_0=B_1A_1\\) is a LoRA update (HF rescale_adapter_scale): the slider line through it, pointed at \\((0,A_1)\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "model-soups",
+     "test": "O1",
+     "reason": "A soup averages fine-tuned endpoints with weights summing to 1 and never returns \\(\\theta_0\\). WiSE-FT's segment contains \\(\\theta_0\\) and every \\(\\theta_0+\\alpha\\tau\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived P / Lin d=1 / regular (boundary point for alpha>=0) / none / GLxGL / M1 / idempotent; agree (consistent with task-arithmetic). A3 to task arithmetic (N=1) and to concept-sliders when tau=B_1A_1 (re-pointed at (0,A_1)) verified. O1 to model soups (affine weights summing to 1 never return theta_0) valid. No changes."
+  },
+  {
+   "id": "linear-probing",
+   "entry_type": "baseline",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The trainable coordinates are exactly the task head; the backbone is frozen.",
+    "shape": "\\(\\{\\theta_{B_0}\\}\\times\\mathbb R^{d\\times K}\\): linear, \\(d=dK\\,(+K)\\).",
+    "base_point": "The head is new (random or zero), so \\(\\theta_0\\) includes its initial value. Within the slice the point is regular.",
+    "covariance": "A dense head on frozen features: \\(GL\\times GL\\).",
+    "merge": "Nothing to merge beyond the head that every method needs.",
+    "rebasing": "Fixed block: idempotent."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "Linear probing is the smallest non-trivial selective object: the head block alone. It is a linear sub-object of every method that also trains the head (A2, by freezing everything else). It is convex in \\(V\\), and the backbone factor stays at its base value, so the features are an absolute invariant.",
+   "arrows": [
+    {
+     "target": "bitfit",
+     "rule": "A2",
+     "h": "h(V)=(\\Delta b=0,\\ V)",
+     "note": "BitFit with its usual trainable head, the biases frozen at their base value."
+    },
+    {
+     "target": "surgical-fine-tuning",
+     "rule": "A2",
+     "h": "h(V)=V\\ \\ \\text{(block = last layer)}",
+     "note": "Surgical FT with the 'Last Layer' block."
+    },
+    {
+     "target": "lp-ft",
+     "rule": "A5",
+     "h": "V\\mapsto(V,\\ q_0^{(2)})",
+     "note": "The one-stage scheme embeds as stage 1 of LP-FT, padded with stage 2's base value."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin / regular / none / GLxGL / M1 / idempotent; agree; baseline entry type sensible. A2 to BitFit (with its usual head) and to surgical FT (last-layer block), and A5 into LP-FT stage 1 (stage-2 base value is (V,B_0)), verified. No changes."
+  },
+  {
+   "id": "lp-ft",
+   "entry_type": "recipe",
+   "core": true,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "A two-stage rebasing scheme: linear probing at \\(\\theta_0\\), then Full FT re-pointed at \\((v_{\\rm lp},B_0)\\).",
+    "shape": "Stage 1 is the head subspace and stage 2 all of \\(\\Theta\\): a moving Lin shape.",
+    "base_point": "Each stage starts at its own base point; the second starts at the LP optimum rather than at a random head.",
+    "gauge": "Coordinate blocks: injective.",
+    "covariance": "Both stages are basis-free blocks.",
+    "merge": "Stage 2 writes the full weight directly.",
+    "rebasing": "A schedule of two stages; the reach is \\(\\Theta\\) after stage 2."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "categorical_reading": "LP-FT does not change the object: its second stage is Full FT, the terminal object, with image \\(\\Theta\\). What changes is the base point on the head factor, \\((v_0,B_0)\\to(v_{\\rm lp},B_0)\\). The theory's head-alignment error \\(\\varphi^2\\) is a function of that base point, so the gain is a purely dynamical (Exposé III) effect that the image invariants cannot see.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "wise-ft",
+     "test": "O2",
+     "reason": "LP-FT's second stage is Full FT, so its reach is all of \\(\\Theta\\) (\\(d=\\dim\\Theta\\)); WiSE-FT is a segment (\\(d=1\\)). In addition the base points differ: LP-FT's FT stage is pointed at \\((v_{\\rm lp},B_0)\\), WiSE-FT's family at the zero-shot point."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B (two-stage rebasing scheme) / Lin (moving) / regular / none / GLxGL / na / schedule; agree; recipe entry type sensible. Change: WiSE-FT obstruction relabelled O3 -> O2 (d = dim Theta vs 1 is the decisive test; the base-point mismatch is kept as a remark)."
+  },
+  {
+   "id": "ffa-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "LoRA with \\(A=A_0\\) frozen random Gaussian and shared by all clients: \\(\\mathrm{FA}(A_0)\\) of Prop I.8.",
+    "shape": "\\(W_0+\\mathbb R^{m}\\otimes\\mathrm{row}A_0\\): linear, \\(d=mr\\).",
+    "covariance": "Random frozen \\(A_0\\): covariance in law (GL × frame).",
+    "rebasing": "Fixed \\(A_0\\): idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "FFA-LoRA is the one-sided method \\(\\mathrm{FA}(A_0)\\), i.e. LoRA-FA v1, chosen for its degree. \\(\\rho\\) is linear in \\(B\\), so FedAvg commutes with \\(\\rho\\), \\((\\sum p_kB_k)A_0=\\sum p_kB_kA_0\\), and DP noise enters linearly. This is Prop V.4(b): exactness needs a shared factor, not just a fixed gauge.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(B)=(B,\\ A_0)",
+     "note": "Freeze \\(A\\) at its base value: LoRA pointed at \\((0,A_0)\\)."
+    },
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same parametrisation as LoRA-FA v1. LoRA-FA v2 changes only the cometric (a projected \\(B\\)-gradient)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "mica",
+     "test": "O1",
+     "reason": "\\(\\{BA_0\\}\\) has a fixed row space and MiCA's \\(\\{U_{\\min}Y\\}\\) a fixed column space; neither contains the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: FFA-LoRA = LoRA-FA v1 = FA(A_0): R / Lin d=mr / regular / none / frame / M1 / idempotent; agree with lora-fa. A2 to LoRA (pointed at (0,A_0)) and A3 h=id to LoRA-FA verified. O1 to MiCA (fixed row space vs fixed column space) valid. No changes."
+  },
+  {
+   "id": "flora-federated",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Each round, clients train fresh LoRAs (ranks \\(r_k\\), \\(B=0\\)), the server stacks the factors, and every client merges \\(W_0\\leftarrow W_0+BA\\). This is a merge-and-restart scheme: ReLoRA across clients.",
+    "shape": "Per round the aggregate is \\(\\sum_kp_kB_kA_k\\in\\mathcal M_{\\le\\sum r_k}\\): a cone at the current base.",
+    "base_point": "Each round restarts at the apex (\\(B_k=0\\)).",
+    "gauge": "\\(\\prod_kGL_{r_k}\\) per round. Stacking acts on products, so the aggregation is gauge-invariant (Prop V.4(a)).",
+    "rebasing": "A rebasing scheme: \\(R_K=W_0+\\mathcal M_{\\le\\min(K\\sum_k r_k,m,n)}\\) (Thm V.3, Cor 1)."
+   },
+   "table_row": "B",
+   "table_col": "Cone",
+   "categorical_reading": "FLoRA is a federated ReLoRA. Each round is the \\(\\oplus\\) of the clients' LoRAs, \\(\\mathrm{LoRA}_{r_1}\\oplus\\cdots\\oplus\\mathrm{LoRA}_{r_K}\\cong\\mathrm{LoRA}_{\\sum r_k}\\) by concatenation (Obs I.7), merged into the base before the next round. Stacking aggregates products, so it is exact and gauge-invariant, and heterogeneous ranks cost nothing. Its server step alone, with the client modules frozen, is the point \\(\\alpha=p\\) of CAT's coefficient family; that is a point of LoRA soups, not an arrow from FLoRA's object, whose factors are trainable.",
+   "arrows": [
+    {
+     "target": "relora",
+     "rule": "A3",
+     "h": "h\\big((B_k,A_k)_k\\big)=\\big([p_1B_1\\cdots p_KB_K],\\ [A_1;\\dots;A_K]\\big)\\ \\ \\text{per round}",
+     "note": "Stagewise into ReLoRA of rank \\(\\sum_kr_k\\), pointed at the stacked \\(A_0\\)'s; the pointing is standard iff their rows are independent."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "hetlora",
+     "test": "O2",
+     "reason": "HetLoRA's zero-padded factor average has rank \\(\\le r_{\\max}\\); FLoRA's stacked aggregate reaches rank \\(\\sum_kr_k\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B (federated ReLoRA) / Cone / apex per round / GL (prod GL_{r_k}) / GLxGL / M1 (as for ReLoRA) / schedule; agree. numpy: [p_1B_1..p_KB_K][A_1;..;A_K] = sum p_kB_kA_k to 4e-16 with rank sum r_k = 6, while HetLoRA's zero-padded average has rank 3 = r_max. A3 to ReLoRA (stagewise) and O2 to HetLoRA verified. Change: removed the A3 arrow to lora-soups. Its h(*)=(alpha=p) is not defined on FLoRA's Q (trainable client factors; rho_soups o h cannot equal sum p_k B_k A_k for all factors), and it was unpointed. Kept as a remark in categorical_reading."
+  },
+  {
+   "id": "hetlora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The global object is one \\(\\mathrm{LoRA}_{r_{\\max}}\\) pair \\((\\bar B,\\bar A)\\), kept across rounds; clients train its leading-\\(r_k\\) truncations. The federation is a training procedure on this object.",
+    "base_point": "Assumes LoRA's \\(B=0\\); the paper does not state the global init.",
+    "gauge": "\\(\\rho\\) has \\(GL_{r_{\\max}}\\) fibres. Truncation to leading columns, however, is defined only up to the block-diagonal (Levi) subgroup of the flag \\(\\mathbb R^{r_{(1)}}\\subset\\cdots\\subset\\mathbb R^{r_{\\max}}\\) of client ranks. Averaging factors separately is bilinear (Prop V.4(b)), so the procedure is not a function of the adapters.",
+    "rebasing": "As LoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "HetLoRA trains one \\(\\mathrm{LoRA}_{r_{\\max}}\\) through a filtration of truncations, as DyLoRA does, except that the truncation levels are the clients' ranks rather than sampled ones. Its aggregation \\((\\sum p_kB_k)(\\sum p_kA_k)\\) acts on factors, so it carries LoRA's bilinearity error even in a fixed gauge. FLoRA (stacking) and FFA-LoRA (frozen \\(A\\)) are the two exact repairs of Prop V.4(b).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The global pair is a \\(\\mathrm{LoRA}_{r_{\\max}}\\) point."
+    },
+    {
+     "target": "dylora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same nested object, the truncation filtration of \\(\\mathrm{LoRA}_{r_{\\max}}\\), with levels set by client capacity instead of sampled."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ffa-lora",
+     "test": "O2",
+     "reason": "\\(d(\\mathrm{LoRA}_{r})=r(m+n-r)>mr=d(\\mathrm{FFA})\\): HetLoRA's trainable \\(A\\) leaves the fixed row space."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / apex (assumed B=0) / GL (rho has GL_{r_max} fibres; truncation respects only the Levi subgroup of the rank flag) / GLxGL / M1 / span; agree. A3 h=id to LoRA and to DyLoRA (same truncation filtration; DyLoRA's torus is a property of its training, not of rho) verified. O2 to FFA-LoRA valid. No changes."
+  },
+  {
+   "id": "tinytl",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "In the default protocol the lite residual branches are part of the pretrained architecture. TinyTL therefore trains a coordinate block (all biases, the lite-residual weights and the head) of that network. With randomly initialised lite residuals (TinyTL-RandomL+B) it would be an extension without an exact neutral point.",
+    "shape": "A coordinate subspace: biases \\(\\cup\\) lite-residual group convolutions \\(\\cup\\) head.",
+    "covariance": "The trainable block itself is basis-free (each selected box fully trainable within its architectural class; the group convolutions are the network's own structure). But the frozen boxes sit on the 8-bit quantisation grid, which commutes only with monomial changes of basis: Mon x Mon (grid), as for QLoRA.",
+    "merge": "Biases fold into their full-precision bias slots and nothing is added to a quantised box, so the grid is not left: M1 (not Mq). Nothing new at inference relative to the pretrained lite-residual network. Relative to a plain MobileNet, the lite branches would be non-linear extras (M∞).",
+    "rebasing": "Fixed block: idempotent.",
+    "base_point": "The paper applies 8-bit weight quantisation to the frozen weights during transfer (Sec. 4, Training Details; the catalog's 'W frozen (8-bit)'). So \\(\\rho(q_0)=\\kappa\\theta_0\\), with defect \\(e=\\kappa\\theta_0-\\theta_0\\) (small; the paper reports a negligible accuracy drop), as for QLoRA. Within the slice at \\(\\kappa\\theta_0\\) the trainable block (biases, pretrained lite residuals, head) is regular."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "TinyTL picks its coordinate block by the backprop cone rather than by parameter count. Biases need no stored activation (Obs IV.4), and the lite residual branches see downsampled, narrow activations. As an object it is BitFit \\(\\oplus\\) a selective block of small pretrained branches \\(\\oplus\\) the head.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "bitfit",
+     "test": "O2",
+     "reason": "The lite-residual weights add dimensions outside the bias space: \\(d(\\mathrm{TinyTL})>d(\\mathrm{BitFit})\\)."
+    },
+    {
+     "target": "ladder-side-tuning",
+     "test": "O3",
+     "reason": "Both target activation memory, but LST's side network is an unpointed extension: its initial realisation is not the frozen network's. TinyTL is a coordinate block of the pretrained network pointed at \\(\\kappa\\theta_0\\) (the 8-bit base), so the base points differ and no pointed arrow exists."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; kind R (lite residuals pretrained, L+B default), Lin, none, M1, idempotent agree. Checked the paper: 'We apply 8bits weight quantization on the frozen weights' (Sec. 4), ReLU and GN in the pretrained model. Changes: base_point regular -> defect (rho(q_0) = kappa theta_0, as for QLoRA); covariance GLxGL -> MonxMon (frozen boxes on the 8-bit grid; trainable block itself GL-covariant); merge note explains M1 rather than Mq; LST obstruction reason updated to the kappa theta_0 pointing. O2 to BitFit valid."
+  },
+  {
+   "id": "autoprompt",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Discrete trigger tokens placed by a template around the input. The template itself changes the input, so no choice of triggers reproduces \\(f\\).",
+    "shape": "\\(Q=\\mathcal V^\\ell\\) is finite, so \\(d(M)=0\\): a finite subset of the vocabulary lattice \\(\\{E_w\\}^\\ell\\) on the input wire. Function-level relative to \\(\\Theta\\).",
+    "base_point": "Triggers start at [MASK], and the template already moves the output.",
+    "gauge": "\\(Q\\) is discrete: no continuous fibre.",
+    "covariance": "The candidate set is the rows of the embedding matrix, which move with every linear change of the embedding basis. On the vocabulary side only token permutations act.",
+    "merge": "Trigger tokens lengthen every input.",
+    "rebasing": "No weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "AutoPrompt is prompt tuning restricted to the vocabulary lattice: a 0-dimensional object whose points map into prompt tuning's \\(Q\\) by \\(w\\mapsto E_w\\). Its HotFlip search ranks swaps by the first-order term \\(E_w^\\top\\nabla\\). It uses the cotangent of the continuous relaxation to move on a discrete set.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h(w_1,\\dots,w_\\ell)=(E_{w_1},\\dots,E_{w_\\ell})",
+     "note": "A smooth map from the finite set \\(\\mathcal V^\\ell\\) into prompt tuning at the template's trigger slots, pointed at \\(h([\\mathrm{MASK}]^\\ell)\\): a monomorphism of the unpointed slice."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "black-box-tuning",
+     "test": "O1",
+     "reason": "BBT reaches the random affine subspace \\(p_0+\\mathrm{col}A\\) of dimension \\(k\\ll\\ell d\\). Apart from \\(p_0\\) itself (when \\(p_0\\) is drawn from the vocabulary), it generically contains no tuple of vocabulary rows, which are exactly AutoPrompt's points."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 / Fun (finite Q, d=0) / unpointed (template moves the output) / none / GLxGL (function-level reading) / Minf / n/a; agree. A3 w -> (E_w) into prompt tuning at the template slots (unpointed slice) and O1 to black-box tuning (a random k-dim affine subspace generically misses the finite vocabulary lattice) valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  }
+ ]
+}

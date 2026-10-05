@@ -1,0 +1,31 @@
+{
+ "hash": "cf1f27434ca170b0",
+ "seconds": 19.32,
+ "pauses": [
+  [
+   0.0,
+   0.333
+  ],
+  [
+   4.106,
+   4.608
+  ],
+  [
+   4.933,
+   5.195
+  ],
+  [
+   13.311,
+   13.638
+  ],
+  [
+   14.581,
+   15.209
+  ],
+  [
+   18.975,
+   19.32
+  ]
+ ],
+ "text": "A parameter-efficient method trains only a few numbers. So think of it as a map, rho, from a small space of trainable parameters into weight space, with one rule: the starting parameters land exactly on theta-zero."
+}

@@ -1,0 +1,413 @@
+{
+ "family": "addendum2026-3",
+ "family_title": "2026 sweep batch 3",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "lragent",
+   "name": "LRAgent",
+   "full_name": "LRAgent: KV cache sharing for multi-LoRA agents (BaseShared / BaseLRShared with Flash-LoRA-Attention)",
+   "paper_title": "LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents",
+   "authors": "Jeon et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.01053",
+   "url": "https://arxiv.org/abs/2602.01053",
+   "code_url": "https://github.com/hjeon2k/LRAgent",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_v^{(i)}=W_0+B_iA_i,\\ \\ A_i\\in\\mathbb{R}^{r\\times d_{in}},\\ B_i\\in\\mathbb{R}^{d_{out}\\times r}\\ (i=1,\\dots,N),\\ \\ A_i=A\\ \\text{for all }i\\ \\text{(shared-}A\\text{; used in the main experiments and required by BaseLRShared)};\\ \\ \\text{value cache for context token }t:\\ v^{base}_t=W_0x_t\\ \\text{(computed once by the agent that first processes }t\\text{ and reused by every agent; the key cache is shared the same way)};\\ \\ \\text{LR cache: }c_t=Ax_t\\in\\mathbb{R}^{r}\\ \\text{(one shared cache, BaseLRShared) or }c^{(i)}_t=A_ix^{(i)}_t\\ \\text{(per agent, recomputed from agent }i\\text{'s own hidden states over context it has not yet processed, BaseShared)};\\ \\ o^{(i)}=\\sum_t p_t\\big(v^{base}_t+B_ic_t\\big)=\\sum_t p_t\\,v^{base}_t+B_i\\Big(\\sum_t p_t\\,c_t\\Big)\\ \\text{(Flash-LoRA-Attention evaluates the right-hand form)};\\ \\ W_0\\ \\text{frozen};\\ A,\\{B_i\\}\\ \\text{trained as LoRA on }W_q,W_v\\ (r=8)",
+   "trainable_params": "r\\,d_{in}+N\\,r\\,d_{out}\\ \\text{per adapted matrix for }N\\text{ agents with shared }A\\ \\ (N\\,r(d_{in}+d_{out})\\text{ for independent multi-LoRA})",
+   "locus": "LoRA (\\(r=8\\)) on the query and value projections of every attention layer, one up-projection per agent role (plan, action, reflect) on a shared down-projection; cache sharing acts on the value cache, and the key cache is shared outright",
+   "modification_kind": "composition-or-routing",
+   "structure": "Serving-time decomposition of each agent's value cache into a shared full-width part \\(W_0x_t\\) and an \\(r\\)-dimensional part \\(Ax_t\\) that is expanded by the agent's own \\(B_i\\). With a shared \\(A\\) the agents differ only in the output map \\(B_i\\) (HydraLoRA's asymmetric layout with a fixed one-hot assignment of heads to agent roles), so the \\(r\\)-dimensional cache is common to all agents as well. Associativity \\(P(V_{base}+V_{lr}B_i^{\\top})=PV_{base}+(PV_{lr})B_i^{\\top}\\) moves the expansion after the attention weighting, so the expansion cost per decoding step is \\(\\Theta(Lr+r\\,d_{out})\\) instead of \\(\\Theta(L\\,r\\,d_{out})\\) for context length \\(L\\). In BaseShared each agent still rebuilds its own LR cache over context it has not processed (the paper's 'LR prefill'), so compute stays \\(O(NL^2d_{model})\\) and only memory falls to about \\(1/N\\); BaseLRShared also skips that prefill. Reusing a base cache that another agent computed is an approximation, because \\(x_t\\) depends on that agent's adapters.",
+   "mergeable": "conditional",
+   "mergeable_reason": "For one agent alone, \\(W_0+B_iA\\) folds into a plain matrix, but the cache-sharing scheme needs the unmerged form: it stores \\(W_0x_t\\) and \\(Ax_t\\) separately so that every agent can reuse them.",
+   "identity_at_init": "The paper does not state the LoRA initialization (training follows AutoAct). With the usual \\(B_i=0\\), every agent starts at \\(W_0\\); all agents then coincide, so the shared caches are exact at that point. Once the \\(B_i\\) differ, cache sharing is approximate: agents reuse base caches (and, in BaseLRShared, LR caches) built from other agents' hidden states.",
+   "key_idea": "On a shared context, agents' base value caches \\(W_0x_t\\) are nearly identical (average cosine similarity 0.95 to 0.97 across agent pairs) while their adapter outputs are nearly uncorrelated (0.02 to 0.05). LRAgent therefore shares the base cache, stores the adapter part in its native rank-\\(r\\) form \\(Ax_t\\), shares that too once all agents use one \\(A\\), and applies \\(B_i\\) only after attention has summed over tokens.",
+   "results_note": "On multi-hop HotpotQA and ScienceQA agents built on LLaMA-3.1-8B-Instruct and Ministral-8B-Instruct, BaseLRShared with Flash-LoRA-Attention reaches up to 2.46x the throughput and up to 4.44x lower time-to-first-token than non-shared caching (measured on an emulated trace of 2k to 66k tokens), with an average accuracy drop of at most 1.5 points (at most 0.7 points for BaseShared).",
+   "relations": [
+    {
+     "target": "hydralora",
+     "type": "builds-on",
+     "note": "Adopts HydraLoRA's shared-\\(A\\), per-head-\\(B\\) layout (cited as Tian et al. 2024, with MTL-LoRA), replacing the token-wise router by a fixed agent-to-head assignment. Sharing \\(A\\) is what lets the low-rank cache \\(Ax\\) be shared across agents (BaseLRShared)."
+    },
+    {
+     "target": "s-lora",
+     "type": "competes-with",
+     "note": "Both cut the cost of serving many LoRAs on one backbone by keeping the shared base term \\(W_0x\\) separate from the per-adapter low-rank terms: S-LoRA for batching and adapter memory, LRAgent for the KV cache of agents that share a context. The paper does not cite S-LoRA (its multi-LoRA serving reference is Xia et al. 2024, LoRA-Inlaid), so no lineage is claimed."
+    },
+    {
+     "target": "punica",
+     "type": "competes-with",
+     "note": "Both cut the cost of running many LoRAs on one backbone: Punica batches the low-rank matmuls across adapters, while LRAgent removes redundant prefill and KV memory across adapters that share a context. The paper does not cite Punica."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.01053",
+    "https://arxiv.org/html/2602.01053 (v2, Sections 2-4, Appendix C)",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json (event 61572, Poster, Accept (regular))",
+    "https://icml.cc/virtual/2026/poster/61572",
+    "https://openreview.net/forum?id=ooRukY3zjQ",
+    "https://github.com/hjeon2k/LRAgent",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author Hyesung Jeon (with Hyeongju Ha, Jae-Joon Kim); v1 1 Feb 2026, v2 31 May 2026; journal-ref 'ICML 2026 Poster'. Venue confirmed in the icml.cc 2026 event JSON (id 61572, Poster Session 1, OpenReview ooRukY3zjQ). Formula, cache schemes, complexity and numbers re-read in the v2 HTML: Eq. 1-3, Sections 3.1-3.3, Algorithm 1, Tables 1-5, Appendix C.2 and C.4 (rank 8 on q and v, LoRA scale 16, dropout 0.05). Shared-A is trained as duplicated A weights with a sequence-wise role assignment (Appendix C.2). The paper cites HydraLoRA and MTL-LoRA for shared A and LoRA-Inlaid (Xia et al. 2024) for multi-LoRA serving; it cites neither S-LoRA nor Punica. Code repository exists (created 2026-02-01). Not in Hugging Face PEFT (tuners list on main, v0.21.2). Parameter count re-derived: one shared A of size \\(r\\,d_{in}\\) plus \\(N\\) up-projections of size \\(r\\,d_{out}\\).",
+   "corrections": [
+    "formula_latex: BaseShared's per-agent LR cache is recomputed from that agent's own hidden states over unseen context ('LR prefill'); only the base cache, and in BaseLRShared the LR cache too, come from the first agent's hidden states. The old formula attributed every cache to the first agent.",
+    "identity_at_init: removed the claim that the cache scheme is exact at no weights; with all B_i = 0 the agents coincide and sharing is exact.",
+    "structure: added that BaseShared still pays the LR prefill (compute O(N L^2 d_model)), so its savings are in memory only.",
+    "relations: s-lora changed from builds-on to competes-with, because the paper does not cite S-LoRA; the Punica note now says it is not cited either.",
+    "results_note: throughput and TTFT figures are on an emulated 2k-66k-token trace (Section 4.1).",
+    "Math in locus and relation notes wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "geora",
+   "name": "GeoRA",
+   "full_name": "Geometry-Aware Low-Rank Adaptation for RLVR",
+   "paper_title": "GeoRA: Geometry-Aware Low-Rank Adaptation for RLVR",
+   "authors": "Zhang et al.",
+   "year": 2026,
+   "venue": "ACL 2026",
+   "arxiv": "2601.09361",
+   "url": "https://arxiv.org/abs/2601.09361",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_{res}\\,x+s\\,BA\\,x,\\ \\ s=\\alpha/r;\\ \\ W_{Geo}=W_0\\odot(M_{Spec}\\lor M_{Euc}),\\ \\ (M_{Euc})_{ij}=\\mathbb{I}\\big(|(W_0)_{ij}|\\le\\tau_\\rho(|W_0|)\\big),\\ \\ (M_{Spec})_{ij}=\\mathbb{I}\\big(|(\\hat W_r)_{ij}|\\le\\tau_\\rho(|\\hat W_r|)\\big),\\ \\hat W_r=\\mathrm{SVD}_r(W_0),\\ \\tau_\\rho=\\rho\\text{-quantile};\\ \\ W_{Geo}=U\\Sigma V^{\\top},\\ B_0=U_{:,1:r}\\Sigma_{1:r,1:r}^{1/2},\\ A_0=\\Sigma_{1:r,1:r}^{1/2}V_{:,1:r}^{\\top};\\ \\ W_{res}=W_0-s\\,B_0A_0\\ \\text{(frozen)};\\ B\\in\\mathbb{R}^{d_{out}\\times r},A\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{trained from }(B_0,A_0)\\ \\text{with an RLVR objective (GRPO)}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all linear layers ('all-linear'), \\(r=16\\), \\(\\alpha=32\\), \\(\\rho=0.2\\) in the experiments",
+   "modification_kind": "additive-weight",
+   "structure": "PiSSA's residual-anchored rank-\\(r\\) reparametrization (base point moved to a frozen \\(W_{res}\\), \\(\\Delta W\\) factors through \\(r\\) dimensions), with the starting factors taken from the top-\\(r\\) SVD of a sparse masked copy \\(W_{Geo}\\) of \\(W_0\\) instead of \\(W_0\\) itself. The mask keeps the entries that are small either in \\(W_0\\) or in its rank-\\(r\\) principal reconstruction \\(\\hat W_r\\). With \\(\\rho=0.2\\) each mask keeps 20% of entries and they overlap on 4.55% (Qwen3-8B), so \\(W_{Geo}\\) keeps about 35% of the entries. The construction is data-free: no RL gradient or update enters the initialization.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(W_{res}+s\\,BA\\) is a plain matrix. As a delta on the original weights the update is \\(s(BA-B_0A_0)\\), as for PiSSA.",
+   "identity_at_init": "Exact: \\(W_{res}x+s\\,B_0A_0x=W_0x\\) by construction of \\(W_{res}\\).",
+   "key_idea": "RLVR updates avoid the principal and large-magnitude weights. GeoRA builds a data-free proxy for that region by masking \\(W_0\\) to its low-magnitude entries, in weight space and in the rank-\\(r\\) principal reconstruction, and starts a dense rank-\\(r\\) adapter on the top-\\(r\\) SVD of the masked matrix, with the remainder frozen as an anchor. RLVR then trains in this region at the hardware cost of dense LoRA, not sparse fine-tuning.",
+   "results_note": "With GRPO on DeepMath-103K and \\(r=16\\), Qwen3-8B-Base trained with GeoRA scores 23.75 on AIME24, against 19.58 for LoRA, 22.50 for PiSSA, 20.42 for MiLoRA and 23.33 for full fine-tuning.",
+   "relations": [
+    {
+     "target": "pissa",
+     "type": "builds-on",
+     "note": "Same frozen-residual parametrization \\(W=W_{res}+sBA\\) with an SVD start; the SVD is of the masked \\(W_{Geo}\\), not of \\(W_0\\). Under RLVR at an aggressive learning rate (\\(5\\times10^{-5}\\), Qwen3-4B), PiSSA's reward collapses late in training while GeoRA's does not."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "MiLoRA starts on \\(W_0\\)'s minor singular directions. GeoRA takes the top directions of a low-magnitude masked copy of \\(W_0\\), and its ablation finds tail-\\(r\\) initialization worst."
+    },
+    {
+     "target": "lift",
+     "type": "dual-to",
+     "note": "LIFT tunes the largest-magnitude entries of the rank-\\(r\\) truncation \\(\\mathrm{SVD}_r(W_0)\\) ('principal weights'). GeoRA's spectral mask keeps the smallest \\(\\rho\\)-fraction of the same truncation, unions it with \\(W_0\\)'s smallest entries, and compresses the result into a dense rank-\\(r\\) adapter. GeoRA cites LIFT."
+    },
+    {
+     "target": "path-not-taken-rlvr",
+     "type": "builds-on",
+     "note": "Motivated by the finding that RLVR updates stay off the principal directions, in low-magnitude, low-curvature regions; GeoRA's masks are a weight-only proxy for that region."
+    },
+    {
+     "target": "rl-finetunes-small-subnetworks",
+     "type": "builds-on",
+     "note": "RL fine-tuning touches a small subnetwork. GeoRA replaces sparse fine-tuning of such a subnetwork, which modern hardware runs poorly, with a dense low-rank adapter."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2601.09361",
+    "https://arxiv.org/html/2601.09361 (v4, Sections 3-5, Appendices A-D)",
+    "https://aclanthology.org/2026.acl-long.1110/",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2601.09361?fields=title,year,venue,citationCount,externalIds",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author Jiaying Zhang (7 authors); v1 14 Jan 2026, v4 31 Jul 2026; comment 'Accepted at ACL 2026 Main'. Venue confirmed on the ACL Anthology: 2026.acl-long.1110, Proceedings of the 64th Annual Meeting of the ACL (Volume 1: Long Papers), pp. 24207-24221, DOI 10.18653/v1/2026.acl-long.1110, with an Outstanding Paper award listed on the Anthology page. Semantic Scholar agrees (DBLP conf/acl/ZhangSLXGHH26). Formula re-read in Eqs. 1-8 and Appendix B: \\(W_{res}=W-\\frac{\\alpha}{r}B_{Geo}A_{Geo}\\), masks at the bottom \\(\\rho\\)-quantile, union of the two masks. Algorithm 1 in Appendix A drops the \\(\\alpha/r\\) factor and swaps the names A and B; the entry follows the main text and Appendix B. Mask overlap (Table 5): 20% each, intersection 4.55%, so the union keeps about 35.45% of entries. Hyperparameters from Appendix C.1 (\\(r=16\\), \\(\\alpha=32\\), all-linear, \\(\\rho=0.2\\)). AIME24 numbers match Table 1. No code link in the paper. Not in Hugging Face PEFT.",
+   "corrections": [
+    "venue: 'ACL 2026 (Main)' normalized to 'ACL 2026' (main conference, long paper), confirmed on the ACL Anthology rather than only the arXiv comment and DBLP.",
+    "pissa relation note: the collapse is a late-training reward drop on Qwen3-4B at learning rate 5e-5 (Figure 5); the setting is now stated.",
+    "Math in locus, results_note and relation notes wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "matryoshka-lora",
+   "name": "MatryoshkaLoRA",
+   "full_name": "MatryoshkaLoRA (nested-rank LoRA trained through a fixed diagonal rank weighting)",
+   "paper_title": "MatryoshkaLoRA: Learning Accurate Hierarchical Low-Rank Representations for LLM Fine-Tuning",
+   "authors": "Modoranu et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2605.07850",
+   "url": "https://arxiv.org/abs/2605.07850",
+   "code_url": "https://github.com/IST-DASLab/MatryoshkaLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{train: }h=\\big(W_0+B\\,\\mathrm{diag}(p)\\,A\\big)x,\\ \\ B\\in\\mathbb{R}^{d_{out}\\times R},\\ A\\in\\mathbb{R}^{R\\times d_{in}},\\ \\ p=\\sum_{r\\in S}s_r\\,\\mathbf{1}_{[1,r]}\\ (\\mathbf{1}_{[1,r]}\\in\\{0,1\\}^R\\text{ has ones in its first }r\\text{ entries}),\\ \\text{i.e. }p_j=\\sum_{r\\in S,\\ r\\ge j}s_r,\\ \\ \\text{so }B\\,\\mathrm{diag}(p)\\,A=\\sum_{r\\in S}s_r\\,B_{:,1:r}A_{1:r,:};\\ \\ S=\\{1,2,4,\\dots,R\\},\\ s_r\\in\\{1,\\,1/r,\\,1/\\sqrt{r}\\};\\ \\ \\text{deploy at any }k\\in S:\\ h=\\big(W_0+s_k\\,B_{:,1:k}A_{1:k,:}\\big)x;\\ \\ W_0,\\ p\\ \\text{frozen (one }p\\text{ for all layers)};\\ A,B\\ \\text{trained}\\ (A\\ \\text{Kaiming},\\ B=0)",
+   "trainable_params": "R(d_{in}+d_{out})",
+   "locus": "same placement as LoRA; the released run scripts wrap all seven linear projections of every Llama block (query, key, value, output, gate, up and down) of Llama-3.2-1B-Instruct (\\(R=32\\)) and Llama-3.1-8B-Instruct (\\(R=256\\))",
+   "modification_kind": "additive-weight",
+   "structure": "A rank-\\(R\\) LoRA with a frozen, non-increasing diagonal \\(\\mathrm{diag}(p)\\) inserted between the factors, so the training update is the sum of all nested prefix adapters \\(\\sum_{r\\in S}s_rB_{:,1:r}A_{1:r,:}\\). The diagonal multiplies the gradient of the \\(j\\)-th column of \\(B\\) and row of \\(A\\) by \\(p_j\\), so leading rank-1 components get the most signal. The train-time adapter, weighted by \\(p\\), is never deployed: inference drops \\(p\\) and uses a single prefix \\(s_kB_{:,1:k}A_{1:k,:}\\). The paper (Appendix B) justifies this as a first-order surrogate of the multi-rank objective that DyLoRA samples one rank at a time: for convex weights \\(\\lambda_r\\), \\(\\sum_r\\lambda_r\\ell(W_0+\\Delta_r)=\\ell\\big(W_0+\\sum_r\\lambda_r\\Delta_r\\big)+O\\big(\\sum_r\\lambda_r\\|\\Delta_r\\|_F^2\\big)\\) with \\(\\Delta_r=s_rB_{:,1:r}A_{1:r,:}\\), which gives \\(p=\\sum_r\\lambda_rs_r\\mathbf{1}_{[1,r]}\\). The main-text \\(p\\) takes every \\(\\lambda_r=1\\), which is \\(|S|\\) times the uniform-weight surrogate.",
+   "mergeable": "yes",
+   "mergeable_reason": "After choosing the deployment rank \\(k\\), \\(s_kB_{:,1:k}A_{1:k,:}\\) is a plain rank-\\(k\\) matrix that folds into \\(W_0\\).",
+   "identity_at_init": "Yes: the released code initializes \\(B=0\\) (with \\(A\\) Kaiming-uniform), so \\(B\\,\\mathrm{diag}(p)\\,A=0\\) and every prefix adapter is zero.",
+   "key_idea": "Train every nested rank at once in a single forward pass: a fixed diagonal \\(p_j=\\sum_{r\\in S,\\,r\\ge j}s_r\\) between \\(B\\) and \\(A\\) turns the sum of all prefix adapters into one rank-\\(R\\) product. Every prefix then receives gradient at every step, unlike DyLoRA, whose sampled rank \\(b\\) gives components beyond \\(b\\) no gradient at that step. LoRA is \\(p=s_R\\mathbf{1}\\), and DyLoRA is a per-step random truncation \\(p=s_b\\mathbf{1}_{[1,b]}\\).",
+   "results_note": "Fine-tuning Llama-3.2-1B-Instruct on GSM8K (8-shot) with maximum rank \\(R=32\\), MatryoshkaLoRA reaches an area under the rank-accuracy curve (AURAC) of 38.4%, against 34.5% for LoRA and 34.9% for DyLoRA, and its sub-rank \\(r=1\\) (35.8%) already beats every sub-rank of either baseline. The pre-trained model scores 34.7%, so LoRA and DyLoRA barely move it in this setting.",
+   "relations": [
+    {
+     "target": "dylora",
+     "type": "generalizes",
+     "note": "In the paper's framework DyLoRA is the per-step random choice \\(p=s_b\\mathbf{1}_{[1,b]}\\). MatryoshkaLoRA replaces the sampled rank with the deterministic \\(p=\\sum_r s_r\\mathbf{1}_{[1,r]}\\), a first-order surrogate of the same multi-rank objective, so every prefix gets gradient at every step."
+    },
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "\\(p=s_R\\mathbf{1}_R\\) recovers standard rank-\\(R\\) LoRA."
+    },
+    {
+     "target": "sora",
+     "type": "competes-with",
+     "note": "Same \\(B\\,\\mathrm{diag}(g)\\,A\\) shape. SoRA learns a sparse gate \\(g\\) to prune ranks; MatryoshkaLoRA freezes a non-increasing \\(g=p\\) to order the rank-1 components so that every prefix is usable. The paper does not cite SoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.07850",
+    "https://arxiv.org/html/2605.07850 (v1, Sections 2-3, Appendices A-B)",
+    "https://github.com/IST-DASLab/MatryoshkaLoRA",
+    "https://raw.githubusercontent.com/IST-DASLab/MatryoshkaLoRA/main/adapters/matryoshka.py",
+    "https://raw.githubusercontent.com/IST-DASLab/MatryoshkaLoRA/main/adapters/lora.py",
+    "https://raw.githubusercontent.com/IST-DASLab/MatryoshkaLoRA/main/scripts/bash_run.sh",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author Ionut-Vlad Modoranu (with Mher Safaryan, Dan Alistarh); single version, 8 May 2026; no journal-ref or venue comment, and no acceptance found on the ICML 2026 or ICLR 2026 lists or by web search, so the venue stays 'arXiv'. Formula re-read in Eqs. 1-7, Algorithm 1, Section 2.3.3 (LoRA and DyLoRA as choices of P) and Appendix B. The paper writes \\(Y=x(W_0+(A*P)B)\\) with \\(A\\in\\mathbb{R}^{m\\times R}\\); the entry transposes to \\(h=Wx\\). Released code: lora_A (the down-projection) Kaiming-uniform, lora_B zero; the 'diag' path computes x @ (A * P) @ B with one global P; the run scripts adapt all seven projections and use 1/sqrt(r) scaling. Table 1 (R = 32 row): LoRA AURAC 34.5, DyLoRA 34.9, MatryoshkaLoRA 38.4, rank-1 accuracy 35.8. Not in Hugging Face PEFT.",
+   "corrections": [
+    "structure: the surrogate statement now matches Appendix B (convex weights lambda_r, sum_r lambda_r l(W0 + Delta_r) = l(W0 + sum_r lambda_r Delta_r) + O(sum_r lambda_r ||Delta_r||_F^2)), and notes that the main-text P uses lambda_r = 1. The old version stated an unweighted identity the paper does not write.",
+    "results_note: 'about 35%' replaced by the Table 1 values (LoRA 34.5, DyLoRA 34.9); added the pre-trained 34.7% baseline.",
+    "locus: target modules taken from the released run scripts (all seven Llama projections), with R per model.",
+    "Math in locus, results_note and relation notes wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "loco-orthogonal",
+   "name": "LoCO",
+   "full_name": "Low-rank Compositional Orthogonal Fine-tuning",
+   "paper_title": "LoCO: Low-rank Compositional Rotation Fine-tuning",
+   "authors": "Nguyen et al.",
+   "year": 2026,
+   "venue": "IJCAI 2026",
+   "arxiv": "2605.15916",
+   "url": "https://arxiv.org/abs/2605.15916",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0\\tilde R\\,x,\\ \\ \\tilde R=I_{d_{in}}+2\\sum_{i=1}^{n}X_i\\big(I_{2r}-Y_i^{\\top}X_i\\big)^{-1}Y_i^{\\top},\\ \\ X_i=[U_i\\mid -V_i],\\ Y_i=[V_i\\mid U_i],\\ U_i,V_i\\in\\mathbb{R}^{d_{in}\\times r};\\ \\ \\text{each summand is }R_i-I\\text{ for the Cayley rotation }R_i=(I-\\mathcal{A}_i)^{-1}(I+\\mathcal{A}_i),\\ \\mathcal{A}_i=U_iV_i^{\\top}-V_iU_i^{\\top}\\in\\mathfrak{so}(d_{in})\\ \\text{(Woodbury form)},\\ \\text{and }\\tilde R\\text{ is the first-order (parallel) approximation of }R_1R_2\\cdots R_n;\\ \\ \\text{inference temperature }t:\\ \\mathcal{A}_i\\mapsto t\\,\\mathcal{A}_i\\ (t=1\\text{ in training});\\ \\ W_0\\ \\text{frozen};\\ \\{U_i,V_i\\}_{i=1}^{n}\\ \\text{trained}",
+   "trainable_params": "2\\,n\\,r\\,d_{in}",
+   "locus": "input side of the adapted linear layers: all linear modules of DeBERTa-V3-base (GLUE), \\(W_q\\) and \\(W_v\\) of LLaMA-2-7B (math), the FLUX.1 diffusion transformer (OminiControl setup) and ViT-B/16 (VTAB-1k)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Right action on \\(W_0\\) of rotations generated by low-rank skew-symmetric matrices. One component is a Cayley rotation that maps the learned subspace \\(\\mathrm{span}(U_i,V_i)\\) (dimension at most \\(2r\\)) into itself and fixes its orthogonal complement pointwise, computed through a \\(2r\\times 2r\\) inverse in \\(O(d_{in}r^2+r^3)\\). Several components are combined by summing their deviations from \\(I\\) rather than multiplying them. Equivalently, \\(\\tilde R\\) is the Cayley formula for \\(\\sum_i\\mathcal{A}_i\\) with the off-diagonal blocks \\(Y_i^{\\top}X_j\\) (\\(i\\ne j\\)) of the \\(2nr\\times 2nr\\) core dropped. \\(\\tilde R\\) is exactly orthogonal only for \\(n=1\\); in general \\(\\|I-\\tilde R^{\\top}\\tilde R\\|_F\\le n(n-1)\\gamma^2\\) when \\(\\|R_i-I\\|_F\\le\\gamma\\). The induced additive update \\(W_0(\\tilde R-I)\\) has rank at most \\(2nr\\). The LLaMA-2-7B math result uses \\(n=1\\), so it exercises the exact Cayley rotation, not the parallel approximation.",
+   "mergeable": "yes",
+   "mergeable_reason": "For a fixed temperature, \\(W_0\\tilde R\\) is a dense \\(d_{out}\\times d_{in}\\) matrix and replaces \\(W_0\\) at no inference cost.",
+   "identity_at_init": "Approximate. The paper only says parameters start near zero, so \\(\\tilde R=I+O(\\|U_i\\|\\|V_i\\|)\\); \\(\\tilde R=I\\) holds exactly if, for example, every \\(V_i=0\\). At inference \\(t=0\\) recovers \\(W_0\\) exactly.",
+   "key_idea": "The tangent space \\(\\mathfrak{so}(d)\\) of the rotation group admits a low-rank parametrization \\(UV^{\\top}-VU^{\\top}\\). Woodbury then makes its Cayley rotation cost \\(O(dr^2)\\) instead of \\(O(d^3)\\), and a first-order sum of several such rotations gives a richer, nearly orthogonal transform that can be computed in parallel. Scaling the generator by a temperature \\(t\\) at test time interpolates the adaptation strength.",
+   "results_note": "Fine-tuning \\(W_q\\) and \\(W_v\\) of LLaMA-2-7B on MetaMathQA-40K with 0.12% trainable parameters and a single component (\\(n=1\\), \\(r=16\\)), LoCO reaches 50.19 on GSM8K and 8.40 on MATH, against 49.35 and 8.39 for OFT, 50.04 and 7.45 for HRA (Table 2; the paper's text quotes 49.65 for HRA) and 45.58 and 6.85 for BOFT.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "builds-on",
+     "note": "Same Cayley-parametrized right multiplication \\(W_0R\\). The skew generator is low-rank (\\(UV^{\\top}-VU^{\\top}\\)) rather than block-diagonal, and its inverse is computed through Woodbury."
+    },
+    {
+     "target": "hra",
+     "type": "competes-with",
+     "note": "Both are input-side orthogonal transforms equal to \\(I\\) plus a low-rank term (rank at most \\(r\\) for HRA, at most \\(2nr\\) for LoCO). HRA composes \\(r\\) reflections sequentially; LoCO sums \\(n\\) Cayley rotations in parallel."
+    },
+    {
+     "target": "boft",
+     "type": "competes-with",
+     "note": "Both compose several orthogonal factors into a dense rotation: BOFT multiplies butterfly factors exactly and in sequence, while LoCO sums low-rank Cayley factors to first order."
+    },
+    {
+     "target": "goft",
+     "type": "competes-with",
+     "note": "A LoCO component with \\(r=1\\), \\(U=a\\,e_i\\) and \\(V=e_j\\) is the Givens rotation by angle \\(2\\arctan a\\) in plane \\((i,j)\\). LoCO learns the planes and combines them additively rather than as an exact product."
+    },
+    {
+     "target": "loft-orthogonal",
+     "type": "competes-with",
+     "note": "LOFT fixes an \\(r\\)-dimensional input support and trains \\(T\\in SO(r)\\) on it. A single LoCO component instead rotates a learned subspace \\(\\mathrm{span}(U,V)\\) of dimension at most \\(2r\\)."
+    },
+    {
+     "target": "oftv2",
+     "type": "competes-with",
+     "note": "Both are input-centric and never form the \\(d\\times d\\) rotation. OFTv2 keeps a block-diagonal generator with a Neumann-series inverse; LoCO uses a low-rank generator with an exact Woodbury inverse."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.15916",
+    "https://arxiv.org/html/2605.15916 (v1, Section 3, Section 4.1.2, Appendix A.2)",
+    "https://www.ijcai.org/proceedings/2026/",
+    "https://2026.ijcai.org/accepted-papers/",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author An Nguyen (with Jaesik Choi, Anh Tong); single version, 15 May 2026; comment 'IJCAI 2026'. Venue confirmed on the IJCAI 2026 proceedings index and the accepted-papers page (listed as 'LoCo: Low-Rank Compositional Rotation Fine-Tuning', poster on 19 Aug). Formula re-read in Eqs. 3-6: Cayley rotation in Woodbury form \\(R=I+2X(I-Y^{\\top}X)^{-1}Y^{\\top}\\), first-order sum over components, temperature \\(\\mathcal{A}t\\) at inference (Section 4.2). The orthogonality bound \\(n(n-1)\\gamma^2\\) is Theorem 1 (Appendix A.2). The block-dropping reading of \\(\\tilde R\\) and the subspace-invariance claim were re-derived. Parameter count checks against the reported 0.12%: \\(2\\cdot16\\cdot4096\\) per matrix, two matrices, 32 layers, about 8.4M of 6.7B. The paper says its FLUX adapter was built inside the PEFT library, but no code is released and LoCO is not a tuner in Hugging Face PEFT.",
+   "corrections": [
+    "results_note: HRA's GSM8K score is 50.04 in Table 2 (the 49.65 in the old note comes from the paper's prose, which disagrees with its own table); MATH scores added; the run uses n = 1, r = 16.",
+    "structure: added that the headline LLM result uses one component, so the parallel approximation is not exercised there.",
+    "goft relation: a Givens rotation of arbitrary angle needs U = a e_i, V = e_j (angle 2 arctan a), not unit coordinate vectors.",
+    "venue: confirmed on the IJCAI 2026 proceedings and accepted-papers pages, not only the arXiv comment and Semantic Scholar.",
+    "Math in locus, results_note and relation notes wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "compress-then-merge",
+   "name": "Compress-then-Merge (CtM)",
+   "full_name": "Compress-then-Merge: merging several LoRAs into one low-rank LoRA inside learned shared subspaces",
+   "paper_title": "Compress then Merge: From Multiple LoRAs into One Low-Rank Adapter",
+   "authors": "He et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2606.03723",
+   "url": "https://arxiv.org/abs/2606.03723",
+   "code_url": "https://github.com/ZhengbaoHe/compress-then-merge",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W^{(t)}=B^{(t)}A^{(t)}\\ (t=1,\\dots,T);\\ \\ \\Delta W^{(t)}_{tgt}=\\lambda^{(t)}\\frac{\\Delta W^{(t)}}{\\|\\Delta W^{(t)}\\|_F},\\ \\ \\lambda^{(t)}=\\beta\\|\\Delta W^{(t)}\\|_F+(1-\\beta)\\frac{1}{T}\\sum_{s=1}^{T}\\|\\Delta W^{(s)}\\|_F;\\ \\ (U,V)=\\arg\\min_{U^{\\top}U=V^{\\top}V=I_r,\\ \\{C^{(t)}\\}}\\sum_{t}\\big\\|\\Delta W^{(t)}_{tgt}-UC^{(t)}V^{\\top}\\big\\|_F^2\\ \\ \\text{(Tucker-2 by HOSVD+HOOI, solved in Core Space: }U=U_BU_{core},\\ V=V_AV_{core});\\ \\ O^{(t)}=U^{\\top}\\Delta W^{(t)}V\\in\\mathbb{R}^{r\\times r},\\ O_{merged}=\\mathcal{M}\\big(\\{O^{(t)}\\}\\big),\\ \\ \\Delta W_{LoRA}=U\\,O_{merged}\\,V^{\\top},\\ U\\in\\mathbb{R}^{d_{out}\\times r},\\ V\\in\\mathbb{R}^{d_{in}\\times r};\\ \\ \\text{nothing is trained and no data enters the merge (}\\beta\\text{ and the rule's hyperparameters are chosen on a validation holdout)}",
+   "trainable_params": "0\\ \\text{(training-free); the output is one rank-}r\\text{ LoRA, }r(d_{in}+d_{out})\\text{ per adapted matrix (e.g. }B=U\\,O_{merged},\\ A=V^{\\top})",
+   "locus": "layer-wise, every LoRA-adapted matrix (\\(W_q\\), \\(W_k\\), \\(W_v\\), \\(W_o\\) in the experiments: eight rank-16 CLIP ViT-B/32 LoRAs and six LLaMA3-8B NLI LoRAs, the public KnOTS checkpoints)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Merging inside a shared two-sided rank-\\(r\\) subspace: all tasks are represented in the same frame \\(U\\,\\mathbb{R}^{r\\times r}V^{\\top}\\), chosen by a Tucker-2 decomposition of the norm-rebalanced task tensor with an identity task-mode factor. The base rule \\(\\mathcal{M}\\) (TIES, DARE-TIES, Iso-C, ...) acts on the \\(r\\times r\\) coordinates, so \\(\\mathrm{rank}(\\Delta W_{LoRA})\\le r\\) by construction. For a linear rule \\(\\mathcal{M}=\\sum_tc_t(\\cdot)\\), the result is \\(UU^{\\top}\\big(\\sum_tc_t\\Delta W^{(t)}\\big)VV^{\\top}\\), a two-sided orthogonal projection of the task-arithmetic sum onto subspaces fitted to the whole collection. Merge-then-compress instead takes the top-\\(r\\) singular subspace of the merged sum, which large-norm adapters dominate. Core Space's lossless bases \\(U_B, V_A\\) of the concatenated factors reduce the subspace search to \\((Tr_{in})\\times(Tr_{in})\\) matrices without changing the optimum.",
+   "mergeable": "yes",
+   "mergeable_reason": "The output is a single rank-\\(r\\) update \\(U\\,O_{merged}V^{\\top}\\) that can stay a LoRA or fold into \\(W_0\\).",
+   "identity_at_init": "Not applicable: CtM is a post-hoc, data-free merge of already trained LoRAs and has no training phase.",
+   "key_idea": "Impose the rank-\\(r\\) bottleneck before merging, not after. CtM learns shared left and right \\(r\\)-dimensional subspaces from the (norm-rebalanced) LoRAs, projects each LoRA to \\(r\\times r\\) coordinates, and merges there. The result is a rank-\\(r\\) LoRA by construction, and the rank budget is not spent mostly on large-norm adapters or intruder directions, as truncating the merged sum would.",
+   "results_note": "Merging eight rank-16 CLIP ViT-B/32 LoRAs into one LoRA, CtM with DARE-TIES reaches 70.68 average normalized accuracy, against 65.91 for the best merge-then-compress baseline (DARE-TIES in Core Space) and 66.34 for the best low-rank-aware baseline (Iso-CTS); CtM with Iso-C (66.27) does not beat Iso-CTS. On six LLaMA3-8B NLI LoRAs, CtM with DARE-TIES reaches 95.63.",
+   "relations": [
+    {
+     "target": "core-space-merging",
+     "type": "builds-on",
+     "note": "Uses Core Space's lossless projection onto the bases of the concatenated factors to solve its Tucker problem in a \\((Tr_{in})\\times(Tr_{in})\\) space. Unlike Core Space, CtM's projection is lossy by design (rank \\(r\\)), so no post-hoc truncation is needed."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "KnOTS aligns LoRAs in a lossless joint-SVD basis, so a rank-\\(r\\) output still needs truncated SVD; CtM's shared basis has rank \\(r\\) from the start."
+    },
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "TIES is one of the base rules \\(\\mathcal{M}\\) applied to the \\(r\\times r\\) coordinates; CtM with TIES or DARE-TIES gives the best single-LoRA results."
+    },
+    {
+     "target": "dare",
+     "type": "combines",
+     "note": "DARE-TIES applied in CtM's \\(r\\times r\\) coordinate space is the best configuration on both CLIP ViT-B/32 (70.68) and LLaMA3-8B NLI (95.63)."
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "combines",
+     "note": "Task Arithmetic is one of the extra base rules in Appendix D.4. With \\(\\mathcal{M}\\) a weighted sum, CtM returns \\(UU^{\\top}\\big(\\sum_tc_t\\Delta W^{(t)}\\big)VV^{\\top}\\), the task-arithmetic merge projected onto the learned shared subspaces."
+    },
+    {
+     "target": "lora-lego",
+     "type": "competes-with",
+     "note": "Another data-free method that outputs a single rank-\\(r\\) LoRA (by clustering rank-1 units); it is a baseline that CtM outperforms (62.36 on CLIP ViT-B/32)."
+    },
+    {
+     "target": "tsv-merge",
+     "type": "combines",
+     "note": "TSV is one of the extra base rules in Appendix D.4. Inside CtM's \\(r\\times r\\) coordinates its per-task budget shrinks to about \\(r/T\\) directions (two for \\(r=16\\), \\(T=8\\)), and CtM gives almost no gain over merge-then-compress for TSV."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2606.03723",
+    "https://arxiv.org/html/2606.03723 (v1, Sections 3-5, Appendices A, B, D.4)",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json (event 61546, Poster, Accept (regular))",
+    "https://icml.cc/virtual/2026/poster/61546",
+    "https://openreview.net/forum?id=p32nWlgwYC",
+    "https://github.com/ZhengbaoHe/compress-then-merge",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author Zhengbao He (6 authors); single version, 2 Jun 2026; comment 'Accepted to ICML 2026'. Venue confirmed in the icml.cc 2026 event JSON (id 61546, Poster Session 4, OpenReview p32nWlgwYC). Formula re-read in Eqs. 2-12 (norm rebalancing with \\(\\beta\\), Tucker-2 with identity task factor, HOSVD+HOOI, Core Space bases from thin SVDs of the concatenated factors, Theorems 4.1-4.3). The linear-rule identity \\(UU^{\\top}(\\sum_tc_t\\Delta W^{(t)})VV^{\\top}\\) was re-derived from Eqs. 5-7. Results checked against Tables 1, 2 and 7; Task Arithmetic, TSV and PCB-Merging are used as base rules in Appendix D.4. Code repository exists (created 2026-05-09). Not in Hugging Face PEFT.",
+   "corrections": [
+    "formula_latex: 'no data is used' qualified: no data enters the merge, but beta and the rule hyperparameters are tuned on a validation holdout (Section 5.1).",
+    "results_note: named the best MtC baseline (DARE-TIES in Core Space), added that CtM with Iso-C (66.27) does not beat Iso-CTS (66.34), and added the NLI result 95.63.",
+    "relations: added tsv-merge (combines), since TSV is a base rule in Appendix D.4; task-arithmetic note now cites that appendix.",
+    "full_name: reworded so it carries no bare math.",
+    "Math in locus and relation notes wrapped in \\( \\)."
+   ]
+  },
+  {
+   "id": "srr",
+   "name": "SRR (Structured Residual Reconstruction)",
+   "full_name": "Structured Residual Reconstruction (Preserve-Then-Quantize)",
+   "paper_title": "Preserve-Then-Quantize: Balancing Rank Budgets for Quantization Error Reconstruction in LLMs",
+   "authors": "Cho et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.02001",
+   "url": "https://arxiv.org/abs/2602.02001",
+   "code_url": "https://github.com/cyoonjun/srr",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0\\approx\\hat W=Q+B^{(1)}A^{(1)}+B^{(2)}A^{(2)};\\ \\ B^{(1)}A^{(1)}=\\mathrm{SVD}_{k^\\star}\\big(W_0S^{\\top}\\big)S^{-\\top},\\ \\ Q=\\mathcal{Q}\\big(W_0-B^{(1)}A^{(1)}\\big),\\ \\ E=W_0-B^{(1)}A^{(1)}-Q,\\ \\ B^{(2)}A^{(2)}=\\mathrm{SVD}_{r-k^\\star}\\big(ES^{\\top}\\big)S^{-\\top};\\ \\ k^\\star=\\arg\\min_{0\\le k\\le r}\\rho_k\\big(W_0S^{\\top}\\big)\\,\\rho_{r-k}\\big(\\tilde ES^{\\top}\\big),\\ \\ \\rho_p(M)=1-\\frac{\\sum_{j\\le p}\\sigma_j(M)^2}{\\|M\\|_F^2},\\ \\tilde E_{ij}\\sim\\mathcal{U}[-1,1];\\ \\ S\\in\\mathbb{R}^{d_{in}\\times d_{in}}\\ \\text{activation-aware scaling (e.g. QERA-exact)};\\ \\ \\text{QPEFT: }h=\\big(Q+B^{(1)}A^{(1)}+B^{(2)}A^{(2)}\\big)x,\\ Q\\ \\text{frozen},\\ B^{(1)},A^{(1)},B^{(2)},A^{(2)}\\ \\text{trained, with the gradients of }(B^{(1)},A^{(1)})\\ \\text{scaled by }\\gamma\\in(0,1)\\ (\\gamma=0.1)",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\ (k^\\star\\text{ preserved plus }r-k^\\star\\text{ reconstruction ranks})",
+   "locus": "every quantized linear layer; QPEFT runs on RoBERTa-base (GLUE, MXINT 4/3/2-bit with ranks 8/8/64) and on LLaMA-2-7B and LLaMA-3.1-8B (SlimPajama with \\(r=8\\), GSM8K with \\(r=64\\)); \\(\\gamma=0.1\\) by default",
+   "modification_kind": "additive-weight",
+   "structure": "A low-rank-plus-quantized split of \\(W_0\\) in which a rank budget \\(r\\) is divided, per matrix, between preserving the top-\\(k^\\star\\) singular subspace of the activation-scaled weight in high precision and reconstructing the scaled quantization error of the remainder with the other \\(r-k^\\star\\) ranks. \\(k=0\\) is ordinary quantization-error reconstruction (QERA, LQER, ZeroQuant-V2); \\(k=r\\) preserves structure only, as in LQ-LoRA and SVDQuant. \\(k^\\star\\) minimizes a closed-form proxy of the scaled reconstruction error, built from the spectrum of \\(W_0S^{\\top}\\) and a single uniform-noise probe. For QPEFT the two low-rank blocks become one rank-\\(r\\) adapter on a frozen \\(Q\\), and the high-energy preserved block is damped by gradient scaling.",
+   "mergeable": "conditional",
+   "mergeable_reason": "As with LoftQ and QLoRA, \\(Q+BA\\) is a plain matrix only in high precision. Keeping the model in the low-bit format requires either leaving the adapter unmerged or re-quantizing \\(Q+BA\\).",
+   "identity_at_init": "Approximate: \\(Q+B^{(1)}A^{(1)}+B^{(2)}A^{(2)}\\approx W_0\\), with scaled error \\(\\|(W_0-\\hat W)S^{\\top}\\|_F\\) left by the rank-\\(r\\) budget. The QPEFT start is \\(\\hat W\\), not the quantized \\(Q\\) alone.",
+   "key_idea": "Quantizing the dominant directions of an anisotropic weight creates large, high-rank error that a rank-\\(r\\) correction cannot undo. SRR therefore keeps the leading \\(k^\\star\\) scaled singular directions out of the quantizer and spends only the remaining \\(r-k^\\star\\) ranks on error reconstruction. \\(k^\\star\\) is chosen per matrix from \\(\\rho_k(W_0S^{\\top})\\rho_{r-k}(\\tilde ES^{\\top})\\), and the resulting \\(Q+BA\\) is a QPEFT starting point whose preserved block trains with damped gradients.",
+   "results_note": "In 2-bit MXINT QPEFT of RoBERTa-base on GLUE, SRR raises the average score by 5.9 points over QERA and by more than 10 points over LoftQ and LQ-LoRA (gains of 1.5 and 4.7 points over QERA at 4 and 3 bits).",
+   "relations": [
+    {
+     "target": "loftq",
+     "type": "competes-with",
+     "note": "Both start QPEFT from \\(Q+BA\\) close to \\(W_0\\). One LoftQ iteration is SRR's \\(k=0\\) end with \\(S=I\\) (quantize, then fit the residual); further LoftQ iterations alternate quantizing \\(W_0-BA\\) and refitting \\(BA\\), with no explicit rank split. SRR splits the rank once per matrix and beats five-iteration LoftQ by more than 10 GLUE points at 2 bits."
+    },
+    {
+     "target": "lq-lora",
+     "type": "competes-with",
+     "note": "LQ-LoRA's low-rank-plus-quantized decomposition is the paper's preservation-only end (\\(k=r\\)), iterated. SRR picks \\(k\\) per matrix and adds an error-reconstruction block; the comparison uses the same QERA-exact scaling for both."
+    },
+    {
+     "target": "pissa",
+     "type": "generalizes",
+     "note": "With \\(S=I\\), \\(k^\\star=r\\) and no gradient damping, SRR's QPEFT start is QPiSSA: the principal rank-\\(r\\) part forms the adapter and the residual is quantized."
+    },
+    {
+     "target": "qlora",
+     "type": "builds-on",
+     "note": "Same QPEFT setting: a frozen low-bit backbone plus a trainable low-rank adapter. SRR changes how the adapter is initialized and how its update is scaled."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.02001",
+    "https://arxiv.org/html/2602.02001 (v2, Sections 2-5, Appendix A.3)",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json (event 65260, Poster, Accept (regular))",
+    "https://icml.cc/virtual/2026/poster/65260",
+    "https://openreview.net/forum?id=FHJdLypBf3",
+    "https://ai-isl.github.io/srr",
+    "https://github.com/cyoonjun/srr",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Checked 2026-10-02. arXiv abs page: title matches; first author Yoonjun Cho (5 authors); v1 2 Feb 2026, v2 13 May 2026; comment 'Accepted at ICML 2026'. Venue confirmed in the icml.cc 2026 event JSON (id 65260, Poster Session 7, OpenReview FHJdLypBf3). Formula re-read in Eqs. 1-7 and Algorithm 1; the paper uses \\(y=xW\\) with \\(S\\) on the left of \\(W\\), so the transpose to \\(h=W_0x\\) puts \\(S^{\\top}\\) on the right, as the entry has. \\(k^\\star\\) uses one uniform-noise probe per layer. QPEFT settings (\\(\\gamma=0.1\\), ranks 8/8/64 on GLUE, 8 on SlimPajama, 64 on GSM8K, QERA-exact scaling for all activation-aware methods, five iterations for LoftQ and LQ-LoRA) are from Section 5.2 and Appendix A.3. GLUE averages (Table 3): 2-bit SRR 78.43, QERA 72.51, LoftQ 67.82, LQ-LoRA 67.76; 4-bit 84.62 vs 83.15; 3-bit 81.62 vs 76.96. Code repository exists (created 2026-05-13). Not in Hugging Face PEFT.",
+   "corrections": [
+    "loftq relation: only one LoftQ iteration equals SRR's k = 0 end; later iterations quantize W_0 - BA and refit, so 'all rank on error reconstruction' overstated the correspondence.",
+    "locus: added the default gamma = 0.1.",
+    "Math in locus and relation notes wrapped in \\( \\)."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "Batch 3 of the 2026 sweep: six methods, all checked to exist (arXiv abs and HTML pages read 2026-10-02), none in existing_index.json, none in Hugging Face PEFT (tuners list and lora/config.py checked against main at v0.21.2). Venues: LRAgent, CtM and SRR are ICML 2026 posters in the icml.cc 2026 event JSON. GeoRA is ACL 2026 main (ACL Anthology 2026.acl-long.1110, Outstanding Paper). LoCO is in the IJCAI 2026 proceedings. MatryoshkaLoRA has no venue yet. All formulas are rewritten in the catalogue convention h = Wx with W_0 in R^{d_out x d_in}. LRAgent, MatryoshkaLoRA and SRR use y = xW in their papers, so factors are transposed; SRR's scaling S becomes S^T on the right of W_0. Corrections to the screening notes: (1) LoCO builds rotations with the Cayley transform in Woodbury form, not with exp of a low-rank skew matrix; exp appears only in the background section, and the temperature scales the Cayley generator. Its 'parallel approximation' is the first-order sum I + sum_i (R_i - I), exactly orthogonal only for n = 1. (2) GeoRA's 'RL update subspace' is a data-free proxy: the SVD is of W_0 masked to its low-magnitude entries (in W_0 and in the rank-r truncation of W_0). No RL gradient or update is used for initialization. (3) MatryoshkaLoRA recovers DyLoRA only as a per-step randomly sampled P. The method itself trains with a fixed P and deploys prefix adapters without P, so the train-time adapter is never served. (4) LRAgent cites neither S-LoRA nor Punica. Its shared-A design comes from HydraLoRA and MTL-LoRA, and its multi-LoRA serving reference is Xia et al. 2024 (LoRA-Inlaid), so both serving systems are recorded as competes-with. RLPO (the screening note's contrast for GeoRA) is not in existing_index.json, so no relation to it was written. Code: no public repository was found for GeoRA or LoCO.",
+ "verification_summary": "Adversarial verification on 2026-10-02 of 6 methods (no papers in this batch); nothing dropped, all 6 marked verified. Existence and metadata: all six arXiv abs pages fetched (the export API was rate-limited); titles, first authors and first-version dates match, and every first version is from 2026 (14 Jan to 2 Jun). Venues from primary sources: ICML 2026 posters for LRAgent (61572), CtM (61546) and SRR (65260) in the icml.cc event JSON; GeoRA on the ACL Anthology (2026.acl-long.1110, Outstanding Paper), venue string normalized to 'ACL 2026'; LoCO in the IJCAI 2026 proceedings index and accepted-papers page; MatryoshkaLoRA stays arXiv (not on the ICML or ICLR 2026 lists, no comment or journal-ref). Formulas re-read in each paper's method section and, where released, in code (MatryoshkaLoRA adapters and run scripts). Fixes, 14 in total: LRAgent formula (BaseShared rebuilds a per-agent LR cache from the agent's own hidden states), LRAgent identity_at_init (sharing is exact while all B_i = 0), LRAgent structure (BaseShared saves memory, not prefill compute), LRAgent s-lora relation (builds-on to competes-with; not cited); GeoRA venue string; MatryoshkaLoRA surrogate statement (Appendix B uses convex weights), results (LoRA 34.5, DyLoRA 34.9, base 34.7) and locus (all seven projections per the scripts); LoCO results (HRA is 50.04 in Table 2, 49.65 only in the prose; run uses n = 1) and GOFT note (U = a e_i for a general angle); CtM data-use qualification, results context (Iso-C 66.27 < Iso-CTS 66.34) and a new tsv-merge 'combines' relation from Appendix D.4; SRR loftq note (only one LoftQ iteration equals k = 0). trainable_params re-derived for all six (LoCO's 2nrd_in reproduces the paper's 0.12%). mergeable, identity_at_init and modification_kind agree with the catalogue's treatment of the closest existing methods (s-lora/punica, pissa, dylora, oft/hra, core-space-merging/knots, loftq). hf_peft = false for all six: none appears among the tuners on huggingface/peft main (v0.21.2, 2026-10-01) or as a LoRA init option. All 28 relation targets exist in existing_index.json, and the six ids are new there and across the raw and verified files. Math in every prose field (locus, results_note, structure, mergeable_reason, identity_at_init, key_idea, relation notes) is wrapped in \\( \\)."
+}

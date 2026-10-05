@@ -1,0 +1,173 @@
+<section class="expose" id="rosetta" data-toc="IX" data-toc-title="Rosetta stone">
+  <header class="expose-head"><span class="label">Exposé IX</span><h2>Rosetta stone</h2><p class="summary">A dictionary from fine-tuning phrases to the objects of the relative theory, with the result behind each pairing that needs one.</p></header>
+  <blockquote class="epigraph"><p>A half-seen analogy between two theories is the most fertile thing a mathematician can hold. One day the hunch turns into certainty, and the twin theories show the source they share.</p><footer>after Weil’s Rosetta-stone letter of 1940</footer></blockquote>
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>LoRA+ is \(\alpha\) in disguise. Under Adam with \(\varepsilon=0\), no weight decay or clipping and one schedule, LoRA+ with ratio \(\lambda\) trains exactly like LoRA with \(\alpha\) multiplied by \(\lambda\), given the same data order and dropout masks (Schulman et al., 2025).</li>
+    <li>Under Adam without weight decay or full-gradient clipping, GaLore is one-sided LoRA, restarted every period with its optimizer state kept (Torroba-Hennigen et al., 2025). QLoRA is LoRA attached at the quantised weight, off \(\theta_0\) by a generically full-rank error.</li>
+    <li>Read from the mathematical side (<a href="#fig-rosetta">Figure 19</a>), some constructions are known methods. In the SVD frames of \(W_0\), when \(\operatorname{rank}W_0\ge r\), the product of the two one-sided LoRAs is LoRA-XS, and for injective \(W_0\) and even \(r\le n-2\) LoRA’s image meets the rotation orbit of \(W_0\) in the image of HRA (without Gram–Schmidt, the HF default).</li>
+  </ul></div>
+  <div class="prose">
+
+    <p>A fine-tuning paper says that LoRA+ gives \(B\) a larger learning rate than \(A\). The relative theory says that, under the hypotheses of <a href="#thm-III-10">Theorem III.10</a>, LoRA+ lies on the torus orbit of plain LoRA with a larger \(\alpha\). Passing between such sentences lets each side borrow the other’s theorems, and <a href="#fig-rosetta">Figure 19</a> is a dictionary for the passage.</p>
+
+    <figure class="figure wide" id="fig-rosetta">
+      <div data-figure="rosetta" aria-label="Rosetta stone. A searchable two-column dictionary from parameter-efficient fine-tuning phrases to their categorical and geometric counterparts, with a citation map showing which exposés each entry draws on and links to the results that prove each entry."></div>
+      <figcaption><span class="fig-n">Figure 19</span>Rosetta stone. Every entry of <code>theory/rosetta.json</code>, each a PEFT phrase, its categorical or geometric counterpart, and a gloss citing the results behind it, whose hypotheses live in the linked statements. Search both columns by method, concept, symbol or result number, filter by exposé, or swap the columns. In the citation map, columns are entries and rows are exposés, and a dot’s area grows with the number of results an entry cites from that exposé; click a column to jump to its entry. Hover a result number for its name and referee status. All counts are computed from the dictionary.</figcaption>
+    </figure>
+
+    <h3 id="rosetta-read">How to read an entry</h3>
+
+    <p>An entry claims that a phrase names a definite object, on which claims about the phrase can be checked. There are three strengths.</p>
+    <aside class="note"><span class="label">Credit</span>The language of parametrised maps and lenses on our right-hand side comes from <a href="https://arxiv.org/abs/1711.10455">Fong, Spivak and Tuyéras, 2017</a> and <a href="https://arxiv.org/abs/2103.01931">Cruttwell et al., 2021</a>. Inside PEFT, <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a> wrote an earlier dictionary of this kind, reading adapters, prefix tuning and LoRA as modifications of one hidden state.</aside>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Strength</th><th>What the entry asserts</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Definition</td><td>The phrase gets a precise, computable meaning.</td><td>“Effective number of parameters” is \(d(M)\), the generic rank of \(d\rho\) (<a href="#thm-I-5">Def I.5</a>).</td></tr>
+        <tr><td>Theorem</td><td>The phrase hides a claim, proved under stated hypotheses.</td><td>“No initialisation buys rank above \(2r\)” means that on one \(m\times n\) box the exact pointings of LoRA\(_r\) together reach \(\theta_0+\mathcal M_{\le\min(2r,m,n)}\) (<a href="#thm-II-1">Thm II.1</a>).</td></tr>
+        <tr><td>Analogy</td><td>A borrowed word names a pattern and adds nothing to the theorem behind it.</td><td>“Noether charge”, “gauge”, “Erlangen”, “moduli space”.</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The box fixes each borrowed word’s sense; Exposé XI says more (<a href="#analogy-vs-theorem">Analogy vs theorem</a>).</p>
+
+    <div class="env analogy" id="rosetta-analogy"><span class="env-head">Analogy <span class="env-name">(the borrowed words)</span>.</span>
+      <div class="env-body">
+        <ul>
+          <li><em>Noether</em>: conserved charges from symmetries, proved for continuous-time flows with constant rates (<a href="#thm-III-5">Thm III.5</a>); Adam and momentum break them.</li>
+          <li><em>Gauge</em>: the symmetry group of a parametrisation, with no connection.</li>
+          <li><em>Erlangen</em>: a theorem for group-type methods (<a href="#thm-II-5">Thm II.5</a>), and a name for the shape of cones such as LoRA’s image.</li>
+          <li><em>Moduli space</em>: LoRA initialisations in three full-rank strata, classified only as a set (<a href="#thm-II-2">Thm II.2</a>).</li>
+          <li><em>Lens duality</em>: exact only at degree one, for optimizers that read neither the parameters nor the full gradient (<a href="#thm-IV-2">Prop IV.2</a>).</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Most of the right-hand column concerns images, which measure expressivity rather than learnability; entries with dynamical claims state their optimizer.</p>
+
+    <h3 id="rosetta-six">Six entries, one from each exposé</h3>
+
+    <h4 id="rosetta-simulation">I. “Method \(N\) can do whatever \(M\) can”</h4>
+
+    <div class="env example" id="rosetta-entry-3"><span class="env-head">Entries 3 and 4 <span class="env-name">(Exposé I)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> “method \(N\) can do whatever \(M\) can”; the frozen model and full fine-tuning.<br><span class="label">Category theory · geometry</span> a morphism \(h:M\to N\) of the pointed slice, a pointed smooth map with \(\rho_N\circ h=\rho_M\); the initial and terminal objects.</span></div>
+
+    <p>The weak reading asks that \(N\) reach every weight \(M\) reaches; the useful one asks that \(N\) also follow \(M\)’s parameter paths, through a map \(h\) with \(\rho_N\circ h=\rho_M\). Methods at \(\theta_0\) with such arrows form the pointed slice \(\mathsf{Meth}(\Theta,\theta_0)\) (<a href="#thm-I-2">Def I.2</a>). The frozen model is initial, full fine-tuning is terminal, and the arrow from \(M\) to full fine-tuning is \(\rho_M\) itself (<a href="#thm-I-4">Obs I.4(a)</a>). Image inclusion gives only a map of sets over \(\Theta\), which need not be smooth (<a href="#thm-I-4">Obs I.4(c)</a>).</p>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>The only pointed map from the one-point space into \(Q\) is \(*\mapsto q_0\), and it lies over \(\Theta\) because \(\rho(q_0)=\theta_0\). So the frozen model is initial. An arrow \(h\) from \(M\) into \((\Theta,\theta_0,\mathrm{id})\) must satisfy \(\mathrm{id}\circ h=\rho_M\), so it exists and is unique. For the gap between sets and smooth maps, take \(\rho_M(t)=t\) and \(\rho_N(u)=u^3\) on \(\mathbb R\), both pointed at \(0\). The images agree, and the only map with \(\rho_N\circ h=\rho_M\) is the cube root, which is not differentiable at \(0\).</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Every weight-space method pointed at \(\theta_0\) lies between the frozen model and full fine-tuning, and in exact arithmetic on a full-precision base its merge is that canonical arrow. Merging questions remain for extensions such as adapters, prefixes and ReFT (reading VI), for quantised bases (<a href="#thm-V-2">Prop V.2</a>) and for combinations of adapters (<a href="#thm-V-4">Prop V.4</a>).</p>
+    <details class="aside"><summary>More: a first-order test, and defaults that start elsewhere</summary>
+      <p>The first-order image \(S_1\) detects part of this gap. In the cube-root example \(S_1(M)=\mathbb R\) is not inside \(S_1(N)=0\), so no smooth simulation exists (<a href="#thm-I-6">Obs I.6</a>). Several initialisations start away from \(\theta_0\) (HF’s default FourierFT spectrum and VB-LoRA bank, <code>init_lora_weights=False</code>, LoRA-XS’s small random \(R\), quantised bases) and carry a pointing defect (Exposé V).</p>
+    </details>
+
+    <h4 id="rosetta-dimension">II. “The effective number of parameters”</h4>
+
+    <div class="env example" id="rosetta-entry-6"><span class="env-head">Entries 6 and 11 <span class="env-name">(Exposé II)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> expressivity, the effective number of parameters; redundant parameters.<br><span class="label">Category theory · geometry</span> the image germ of \(\rho\) at \(\theta_0\) and its dimension \(d(M)\); the gauge group (automorphisms of \(Q\) over \(\Theta\)) and the generic fibre.</span></div>
+
+    <p>A parameter count measures \(Q\), while expressivity lives in the image. The difference is spent on the fibres of \(\rho\), along which the gauge group moves. LoRA spends \(r^2\) parameters there, since \((Bg^{-1},gA)\) and \((B,A)\) give the same weights for every \(g\in GL_r\).</p>
+
+    <p>With \(\lvert M\rvert=\dim Q\) and \(d(M)=\dim\operatorname{Im}M\) (<a href="#thm-I-5">Def I.5</a>), \(d(M)\le\lvert M\rvert-\dim(\text{generic gauge orbit})\), with equality when the gauge is locally transitive on generic fibres (<a href="#thm-II-12">Prop II.12(a)</a>). For LoRA\(_r\) on an \(m\times n\) box with \(r\le\min(m,n)\), \(d=r(m+n-r)\). Compare LoHa\(_{r,r}\) with LoRA\(_{2r}\) at their shared budget \(2r(m+n)\), with \(2r\le\min(m,n)\). If \(2r^2\lt m+n-1\), LoHa reaches at least \((m+n-1)-2r^2\) fewer dimensions; if moreover \(r^2\le\min(m,n)\), it trades them for rank up to \(r^2\) when \(r\ge3\), and lies strictly inside LoRA\(_{2r}\) when \(r\le2\) (<a href="#thm-II-12">Prop II.12(c)</a>). If \(2r^2\ge m+n-1\), as for \(r=32\) on layers 320 to 640 wide, LoHa matches or beats LoRA\(_{2r}\) in rank, and in dimension by its numerically checked dimension formula. Rank, in turn, is bounded by a minimum cut of the method’s tensor network (<a href="#thm-II-10">Thm II.10</a>).</p>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>The generic fibre contains the generic gauge orbit, and \(d=\lvert M\rvert-\dim(\text{generic fibre})\). For LoRA, the full-rank factorisations of a rank-\(r\) matrix form a single \(GL_r\)-orbit on which \(GL_r\) acts freely, so the generic fibre has dimension \(r^2\). For LoHa\(_{r_1,r_2}\), the product \(B_1A_1\odot B_2A_2\) is preserved by \(GL_{r_1}\times GL_{r_2}\) and by the diagonal torus \((B_1,A_1,B_2,A_2)\mapsto(D_1B_1,A_1D_2,D_1^{-1}B_2,A_2D_2^{-1})\), since \((D_1XD_2)\odot(D_1^{-1}YD_2^{-1})=X\odot Y\). At generic parameters the joint stabiliser is one-dimensional. Indeed \(D_1B_1g_1^{-1}=B_1\) makes every row of \(B_1\) a left eigenvector of \(g_1\), and \(m\ge r_1+1\) rows in general position force \(g_1=cI\) and \(D_1=cI\); the other three equations then give \(D_2=g_2=c^{-1}I\). So the orbits have dimension \(r_1^2+r_2^2+m+n-1\). At \(r_1=r_2=r\) this bounds \(d(\mathrm{LoHa}_{r,r})\) by \(2r(m+n)-2r^2-(m+n-1)\), and subtracting it from \(d(\mathrm{LoRA}_{2r})=2r(m+n)-4r^2\) gives the gap. The rank bound \(r^2\) comes from \(\operatorname{rank}(X\odot Y)\le\operatorname{rank}X\cdot\operatorname{rank}Y\), and it is attained when \(r^2\le\min(m,n)\). For \(r\le2\), LoHa\(_{r,r}\) maps into LoRA\(_{r^2}\), whose image lies in that of LoRA\(_{2r}\); when the gap is positive, the containment is strict.</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Report \(d(M)\) beside \(\lvert M\rvert\) in every comparison (<a href="#pred-10">Prediction X.10</a>).</p>
+    <aside class="note"><span class="label">Credit</span>LoHa is the Hadamard-product parametrisation of FedPara (<a href="https://arxiv.org/abs/2108.06098">Hyeon-Woo et al., 2021</a>). Its dimension bound is proved, and equality is checked numerically (Exposé XI).</aside>
+
+    <h4 id="rosetta-torus">III. “The LoRA+ ratio, \(\alpha\), the init scale, rsLoRA”</h4>
+
+    <div class="env example" id="rosetta-entry-23"><span class="env-head">Entry 23 <span class="env-name">(Exposé III)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> the LoRA+ ratio, \(\alpha\), the initial scale, rsLoRA.<br><span class="label">Category theory · geometry</span> coordinates on the orbit space of a hyperparameter torus.</span></div>
+
+    <p>Multiplying \(B\) by \(c\gt0\) and dividing the scale \(s\) by \(c\) leaves the weights unchanged, and Adam with \(\varepsilon=0\) ignores a positive rescaling of a block’s gradient history. Rescaling the block’s learning rate too then reproduces the run step for step, and the per-block factors form a torus acting on the hyperparameters.</p>
+
+    <p><a href="#thm-III-10">Theorem III.10</a> makes this exact for any multihomogeneous method, assuming no parameter-dependent regulariser, no global clipping, the same data order and dropout masks, and exact arithmetic. For LoRA (<a href="#thm-III-11">Corollary III.11(b)</a>), under Adam with \(\varepsilon=0\), no weight decay or clipping and one schedule for both groups, LoRA+ with ratio \(\lambda\) at scale \(s\) produces exactly the trajectory of plain LoRA at scale \(\lambda s\), with the same \(\eta_A\) and \(A_0\). For \(\varepsilon\gt0\) this needs \(\varepsilon_B'=\lambda\varepsilon\), and with AdamW a decay \(\lambda\cdot\mathrm{wd}\) on \(B\). Under SGD the scale is \(\sqrt\lambda\,s\).</p>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>Take \(c_B=1/\lambda\) and \(c_A=1\), so that \(B'=c_BB\) and \(s'=s/c_B=\lambda s\). LoRA+ has \(\eta_B=\lambda\eta_A\), and the rescaled run is asked to use \(\eta_B'=c_B\eta_B=\eta_A\), which is plain LoRA. The start \(B_0=0\) stays \(0\). At corresponding points \(\nabla_{B'}=c_B^{-1}\nabla_B\). With \(\varepsilon=0\), Adam’s step does not change when a block’s whole gradient history is multiplied by a positive constant, so the step in \(B'\) is \(\eta_B'/\eta_B\) times the step in \(B\), and \(\Delta B'=c_B\Delta B\) holds exactly when \(\eta_B'=c_B\eta_B\). The weights agree at step \(0\), and induction over steps carries the agreement along the whole run. With \(\varepsilon\gt0\) the same computation asks for \(\varepsilon_B'=\varepsilon/c_B\), and decoupled decay for \(\mathrm{wd}_B'=\mathrm{wd}/c_B\). Under SGD the gradient factor \(c_B^{-1}\) and the required \(c_B\) combine into \(\eta_B'=c_B^2\eta_B\), which gives \(c_B=\lambda^{-1/2}\) and scale \(\sqrt\lambda\,s\).</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Only the torus orbit of \((s,\eta_A,\eta_B,\sigma_A)\) matters. Under Adam it is fixed by \(s\eta_A\eta_B\) and \(\sigma_A/\eta_A\) (<a href="#thm-III-11">Cor III.11(a)</a>), so at a fixed rank LoRA+, rsLoRA and \(\alpha\)-tuning are one family. A gain of LoRA+ over LoRA with \(\alpha\) multiplied by \(\lambda\) needs something that breaks the torus, such as global-norm clipping (a Hugging Face Trainer default), an \(\varepsilon\) or decay shared across groups, or different schedules (<a href="#pred-1">Prediction X.1</a>). <a href="#fig-orbit">Figure 7</a> runs both trainings.</p>
+    <aside class="note"><span class="label">Credit</span>The LoRA and Adam case, with its \(\varepsilon\gt0\) extension and the two effective hyperparameters, is due to <a href="https://thinkingmachines.ai/blog/lora/">Schulman et al., 2025</a>, for the method of <a href="https://arxiv.org/abs/2402.12354">Hayou et al., 2024</a>. The torus for any multihomogeneous method and the \(c^2\) law for SGD are added here.</aside>
+    <details class="aside"><summary>More: the same fibres under gradient flow</summary>
+      <p>Entry 22 reads the same fibres under gradient flow. With block-scalar rates the gauge yields the conserved charge \(\Phi=B^\top B/\eta_B-AA^\top/\eta_A\) (<a href="#thm-III-5">Thm III.5</a>), after <a href="https://arxiv.org/abs/1806.00900">Du, Hu and Lee, 2018</a>, <a href="https://arxiv.org/abs/1802.06509">Arora et al., 2018</a>, <a href="https://arxiv.org/abs/2210.17216">Zhao et al., 2023</a> and <a href="https://arxiv.org/abs/2307.00144">Marcotte, Gribonval and Peyré, 2023</a>. Balanced points \(B^\top B=AA^\top\) form the Kempf–Ness slice (<a href="#thm-III-7">Prop III.7</a>; Kempf and Ness, 1979; Richardson and Slodowy, 1990).</p>
+    </details>
+
+    <h4 id="rosetta-galore">IV. “GaLore versus LoRA”</h4>
+
+    <div class="env example" id="rosetta-entry-25"><span class="env-head">Entry 25 <span class="env-name">(Exposé IV)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> GaLore versus LoRA.<br><span class="label">Category theory · geometry</span> cotangent-side and tangent-side lens 2-cells, which coincide for linear charts (the degree-one collapse).</span></div>
+
+    <p>Backpropagation makes each map a lens, running forward from parameters to outputs and backward from output gradients to parameter gradients. LoRA restricts the forward side. GaLore compresses the gradient before the optimizer and expands its output after.</p>
+
+    <p>Let \(\rho_k(C)=W_k+\mathcal LC\) with \(\mathcal L\) linear and \(C_0=0\). Let the optimizer’s state and output depend only on the gradients fed to it, with one implementation on both sides (SGD, heavy-ball or Nesterov momentum, Adam without weight decay, Adafactor without parameter scaling). Then training \(C\) and merging at the end of a period gives the same \(W\)-trajectory as the backward method with compression \(\mathcal L^*\) and anchor \(\mathcal L\), started at \(W_k\) from the same optimizer state (<a href="#thm-IV-2">Prop IV.2</a>). Decoupled weight decay, LAMB and LARS trust ratios, parameter-scaled Adafactor and full-gradient clipping break the identity.</p>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>By induction on the step, the weights of the second procedure equal \(W_k+\mathcal LC_t\), where \(C_t\) is the state of the first. Both procedures feed the optimizer the same sequence \(\mathcal L^*\nabla L(W_t)\) from the same state, so they receive the same outputs \(U_t\). One sets \(W\leftarrow W-\eta\,\mathcal LU_t\), and the other sets \(C\leftarrow C-\eta\,U_t\), which moves \(W_k+\mathcal LC\) by the same amount. The excluded ingredients see different tensors in the two procedures. Decoupled decay acts on \(C\) in one and on \(W\) in the other, parameter-scaled steps read the size of \(C\) in one and of \(W\) in the other, and full-gradient clipping uses \(\lVert G\rVert\) in one and \(\lVert\mathcal L^*G\rVert\) in the other.</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Under these hypotheses, GaLore with a projector \(P_k\) fixed on each period is one-sided LoRA \(W_k+P_kC\), merged and restarted every period with \(C\)’s optimizer state carried over unchanged. It adds two things to one-sided LoRA, a frame from the gradient’s SVD and that carry-over, which reads moments written for \(P_{k-1}\) as if written for \(P_k\). LDAdam transports them instead.</p>
+    <aside class="note"><span class="label">Credit</span>The identity for GaLore (<a href="https://arxiv.org/abs/2403.03507">Zhao et al., 2024</a>) is due to <a href="https://arxiv.org/abs/2502.13811">Torroba-Hennigen, Lang, Guo and Kim, 2025</a>, and its SGD case with a frozen random factor to <a href="https://arxiv.org/abs/2402.03293">Hao, Cao and Mou, 2024</a>.</aside>
+    <details class="aside"><summary>More: the rest of the cotangent family</summary>
+      <p>Under the same hypotheses the identity (<a href="#thm-IV-2">Prop IV.2</a>, <a href="#thm-IV-3">Prop IV.3</a>) covers LoRA-FA and GaLore with random projectors, MeZO up to its finite-difference estimate, GaLore with gradient SVDs, and BitFit and LISA (without weight decay) with coordinate blocks. Flora as published, APOLLO and Fira update outside their projected subspace and are not covered.</p>
+    </details>
+
+    <h4 id="rosetta-qlora">V. “QLoRA and LoftQ”</h4>
+
+    <div class="env example" id="rosetta-entry-28"><span class="env-head">Entry 28 <span class="env-name">(Exposé V)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> QLoRA, LoftQ.<br><span class="label">Category theory · geometry</span> base change along a map that does not preserve the function; a pointing defect; an approximate section.</span></div>
+
+    <p>A quantiser \(\kappa\) moves the pretrained point to \(\kappa\theta_0\) and changes the function. Additive methods commute with translation, \(M(\theta+v)=\tau_v\circ M(\theta)\), so QLoRA is LoRA attached at \(\kappa\theta_0\), with pointing defect \(e=\kappa\theta_0-\theta_0\) (<a href="#thm-V-1">Def V.1</a>), and \(\theta_0\) lies outside its image unless \(\operatorname{rank}e\le r\) (<a href="#thm-V-2">Prop V.2(a)</a>). Splitting initialisations come in three orders with three different defects (<a href="#thm-V-2">Prop V.2(b)</a>). Write \(W\) for the full-precision weight, \(\delta_0\) for the initial adapter, \(W_{\rm res}=W-\delta_0\) and \(s=\alpha/r\).</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Order</th><th>Used by</th><th>Pointing defect</th></tr></thead>
+      <tbody>
+        <tr><td>split, then quantise the residual</td><td>QPiSSA; HF’s PiSSA and CorDA workflow</td><td>\(\kappa(W_{\rm res})-W_{\rm res}\)</td></tr>
+        <tr><td>quantise, then fit the error</td><td>LoftQ with one iteration (HF default <code>loftq_iter=1</code>)</td><td>\(e-s\,\mathrm{SVD}_r(e)\), as HF does not divide the fit by \(s\); at \(s=1\), \(e\) minus its best rank-\(r\) approximation</td></tr>
+        <tr><td>quantise, split, re-quantise</td><td>HF <code>olora_init</code> on bitsandbytes weights</td><td>\(e+\kappa(r')-r'\), with \(r'=\kappa W-\delta_0\)</td></tr>
+      </tbody>
+    </table></div>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>Translation is the definition of additivity. The image of LoRA\(_r\) pointed at \(\kappa\theta_0\) is \(\kappa\theta_0+\mathcal M_{\le r}\), which contains \(\theta_0\) iff \(-e\in\mathcal M_{\le r}\), that is, iff \(\operatorname{rank}e\le r\). For the table, compute \(\rho(q_0)-W\) in each pipeline. Splitting first gives \(\kappa(W_{\rm res})+\delta_0-W=\kappa(W_{\rm res})-W_{\rm res}\). Fitting the error stores the factors of \(-\mathrm{SVD}_r(e)\), which the forward pass multiplies by \(s\), so \(\delta_0=-s\,\mathrm{SVD}_r(e)\) and the defect is \(\kappa W-s\,\mathrm{SVD}_r(e)-W=e-s\,\mathrm{SVD}_r(e)\). Re-quantising the split residual gives \(\kappa(r')+\delta_0-W=e+\kappa(r')-r'\).</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Measured from its own start, QLoRA obeys the rank bound of any LoRA (<a href="#thm-II-1">Thm II.1(c)</a>); measured from \(\theta_0\), its update also contains the generically full-rank defect. Since \(e-\mathrm{SVD}_r(e)\) is orthogonal to \(\mathrm{SVD}_r(e)\), one-step LoftQ in HF beats QLoRA in Frobenius norm only for \(0\lt s\lt2\). Further LoftQ iterations need not decrease their objective, and at \(s=1\) the output is an approximate section, pointed up to its attained residual (<a href="#thm-V-2">Prop V.2(c)</a>).</p>
+    <aside class="note"><span class="label">Credit</span><a href="https://arxiv.org/abs/2305.14314">QLoRA, Dettmers et al., 2023</a>; <a href="https://arxiv.org/abs/2310.08659">LoftQ, Li et al., 2023</a>; <a href="https://arxiv.org/abs/2404.02948">PiSSA and QPiSSA, Meng et al., 2024</a>.</aside>
+
+    <h4 id="rosetta-merge">VI. “Merging an adapter into the weights”</h4>
+
+    <div class="env example" id="rosetta-entry-5"><span class="env-head">Entry 5 <span class="env-name">(Exposé VI)</span>.</span><br><span class="env-body"><span class="label">PEFT</span> merging an adapter into the weights; zero inference latency.<br><span class="label">Category theory · geometry</span> for weight-space methods, the canonical arrow to the terminal object; for extensions, a lift along the realisation \(\Phi_f\), certified box by box by rewriting.</span></div>
+
+    <p>Reading I settled merging for weight-space methods on a full-precision base. Adapters, prefixes and (IA)\(^3\) scalings insert new boxes and live on an extension of \(f\), so merging one is a lifting problem along the realisation \(\theta\mapsto f(\theta,-)\).</p>
+
+    <p>A method \(\rho\) on an extension \(\tilde f\) is mergeable if some \(\mu:Q\to\Theta\) has \(\Phi_{\tilde f}\circ\rho=\Phi_f\circ\mu\) (<a href="#thm-VI-1">Def VI.1</a>). <a href="#thm-VI-3">Theorem VI.3</a> gives sufficient conditions box by box, through seven rewrite rules with side conditions such as position-uniform edits, unshared absorbing weights and bias slots for shifts. For instance, HF applies the feed-forward vector \(\ell\) of (IA)\(^3\) to the input of \(W_{\rm down}\), where it always fuses. It fuses into \(W_{\rm up}\) instead under SwiGLU or GeGLU for every \(\ell\), and under ReLU when \(\ell\ge0\). Under GELU, an entry \(\ell_i\) on a nonzero row of \(W_{\rm up}\) fuses there only if it is \(0\) or \(1\).</p>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>The scaling of the input of \(W_{\rm down}\) is absorbed as \(W_{\rm down}\mathrm{diag}(\ell)\) by fusion (R1), whatever the activation. In a gated block the hidden activation is \(\mathrm{silu}(W_gx)\odot W_ux\), and the spider slide (R4), \(\mathrm{diag}(\ell)(a\odot b)=a\odot(\mathrm{diag}(\ell)b)\), moves the scaling onto the linear branch, so \(W_u\mapsto\mathrm{diag}(\ell)W_u\) for every \(\ell\). Under ReLU the positive-diagonal slide (R3), \(\mathrm{diag}(\ell)\sigma^{\times d}=\sigma^{\times d}\mathrm{diag}(\ell)\) for \(\ell\ge0\), does the same; this slide holds exactly for positively homogeneous \(\sigma\). GELU is not positively homogeneous. Absorbing \(\ell_i\ne0\) into a nonzero row \(w\) of \(W_{\rm up}\) would need a row \(w'\) with \(\ell_i\,\mathrm{GELU}(w\cdot x)=\mathrm{GELU}(w'\cdot x)\) for all \(x\). The left side is constant along directions orthogonal to \(w\), and the right side is not unless \(w'\) is parallel to \(w\), so \(w'=cw\), and then \(\ell_i\,\mathrm{GELU}(t)=\mathrm{GELU}(ct)\) for all \(t\). Since \(\mathrm{GELU}(t)=t/2+t^2/\sqrt{2\pi}+O(t^4)\), the coefficients of \(t\) and \(t^2\) give \(c=\ell_i\) and \(\ell_i=\ell_i^2\). With biases the same argument gives \(\ell_i\,\mathrm{GELU}(u)=\mathrm{GELU}(cu+\beta)\), and \(u=0\) forces \(\beta=0\), because GELU vanishes only at \(0\). An entry \(\ell_i=0\) is absorbed by zeroing its row, since \(\mathrm{GELU}(0)=0\).</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">“Zero inference latency” is certified by local rewriting, a sufficient test that also names the absorbing weight; the \(W_{\rm up}\) route is idle in practice, as \(W_{\rm down}\) always works. Nonlinear adapters, input-routed mixtures and prefixes do not merge box-locally. At its layer a prefix is a gated parallel adapter (<a href="#thm-VI-5">Thm VI.5(b)</a>), not box-locally mergeable for generic frozen weights and prefixes (<a href="#thm-VI-5">Thm VI.5(f)</a>); whole-network merging of prefixes is open.</p>
+    <aside class="note"><span class="label">Credit</span>The (IA)\(^3\) merge is noted by <a href="https://arxiv.org/abs/2205.05638">Liu et al., 2022</a>, and the gated-adapter reading of prefix tuning is due to <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>. Scale migration through SwiGLU, ReLU and norm layers, with the GELU obstruction, already appears in <a href="https://arxiv.org/abs/2211.10438">SmoothQuant (Xiao et al., 2023)</a> and <a href="https://arxiv.org/abs/2306.00978">AWQ (Lin et al., 2024)</a>. The activation symmetries behind slides R2 and R3 (<a href="#thm-VI-2">Lemma VI.2</a>) are classical (Sussmann, 1992; Chen, Lu and Hecht-Nielsen, 1993; Godfrey et al., 2022).</aside>
+
+    <h3 id="rosetta-reverse">Reading from the right</h3>
+
+    <p>Some mathematical constructions are methods already in use.</p>
+
+    <ul>
+      <li>The product \(\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)\) of the two one-sided LoRAs is the sandwich \(R\mapsto W_0+B_0RA_0\). In the SVD frames of \(W_0\), with \(\sigma_r\gt0\), it is LoRA-XS pointed at \(R=0\) (<a href="#thm-I-8">Prop I.8(a)</a>; <a href="https://arxiv.org/abs/2405.17604">Bałazy et al., 2024</a>).</li>
+      <li>For injective \(W_0\) and even \(r\) with \(2\le r\le n-2\), LoRA’s image meets the rotation orbit \(W_0\cdot SO(n)\) exactly in the image of HRA without Gram–Schmidt, the HF default (<a href="#thm-II-7">Thm II.7</a>; <a href="https://arxiv.org/abs/2405.17484">Yuan et al., 2024</a>). This is a meet of sets, and HRA is not the categorical product.</li>
+      <li>Transport along a fixed \(T\in GL(\Theta)\) is an automorphism of the slice. It carries coordinate masks to FourierFT (with no conjugate frequency pair sampled), WaveFT (when its padded inverse wavelet transform is invertible) and C3A, each started at zero, and to LoRA-XS and SVFT in the SVD frame of \(W_0\), which depends on \(\theta_0\). The inverse of the rearrangement of <a href="https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17">Van Loan and Pitsianis, 1993</a> carries LoRA\(_k\) to unconstrained sums of \(k\) Kronecker products (<a href="#thm-II-13">Prop II.13</a>).</li>
+      <li>The monoidal sum \(\oplus\) adds updates, so its image is a Minkowski sum. RoSA, GraLoRA and the stages of ReLoRA, unrolled in time, are words in \(\oplus\) (<a href="#thm-I-7">Obs I.7</a>).</li>
+    </ul>
+
+    <p class="explains">Products and meets can be tried on other pairs too. Meets of images always exist as sets of weights, while products can fail to exist (<a href="#thm-I-4">Obs I.4(b)</a>). Which meets admit a polynomial chart, as LoRA-XS and HRA’s image do, is an <a href="#honesty-open">open problem</a>.</p>
+
+  </div>
+</section>

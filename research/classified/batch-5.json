@@ -1,0 +1,1235 @@
+{
+ "batch": 5,
+ "methods": [
+  {
+   "id": "cartridges",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Learned key/value slots prepended at every layer: the same unpointed extension as prefix tuning, in the direct (HF prefix_projection=False) parameterisation.",
+    "base_point": "Unpointed relative to f(θ0,-); the recommended init is the prefill KV cache of the first p corpus tokens, so it is pointed only relative to in-context reading of that corpus (cf. CPT). HF get_peft_model alone gives N(0,1).",
+    "gauge": "Direct KV parameters; attention reads the prefix as a multiset (Thm VI.5(a)), so only the discrete slot permutations per head and layer survive. No continuous fibre.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prefix tuning re-pointed: a deep key/value prefix \\(Z\\) on the sequence wire of every attention layer, an unpointed extension whose base point is the corpus prefill cache and whose attention-sink slot is frozen, which makes it an A2 sub-object of the direct prefix. Self-study distillation changes the loss, not the object \\((Q,q_0,\\rho)\\).",
+   "arrows": [
+    {
+     "target": "prefix-tuning",
+     "rule": "A2",
+     "h": "h(Z)=\\big([z^{(l)}_{\\mathrm{sink}};Z_k^{(l)}],\\,[z^{(l)}_{v,\\mathrm{sink}};Z_v^{(l)}]\\big)_{l\\le L}",
+     "note": "Freezing the sink slot at its base value; prefix tuning pointed at the corpus KV cache. Pure A2 in the direct parameterisation; with Li–Liang's MLP compose with the section \\(W_2\\mapsto W_2^0+H_0^{+}(\\cdot)\\) of Obs III.2 (hidden ≥ p). Arrow of the unpointed slice over the realisation."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "On length-one contexts every weight setting of a standard head (LoRA included) is affine in x, a generically prefixed head with \\(W_o\\ne0\\), \\(W_q\\ne0\\) is not (Thm VI.5(f)); established head-locally, whole-network containment is open."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: E0/Fun/unpointed (Thm VI.5(f)), no continuous fibre for a direct KV prefix under a joint softmax, function-level GLxGL, M-inf, n/a. A2 arrow to prefix tuning checked (sink slot frozen at its base value, target pointed at the corpus cache); O1 to LoRA is head-local. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "cpt",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "Prompt over the demonstration positions with a projected ε-ball constraint; the ball is open at q0, so the germ is that of prompt tuning and the ball only bounds the reach.",
+    "base_point": "As in the table: unpointed relative to the bare query, but pointed at the in-context-learning state (q0 = the real demonstration embeddings).",
+    "gauge": "Prompt embeddings enter at fixed positions; generic Jacobian rank ℓd, no continuous symmetry.",
+    "covariance": "The per-token Euclidean ε-ball ||E-E0||_2 ≤ ε is O(d)-equivariant on the embedding wire (CO only if ε is rescaled), not GL; read at function level (table: '–').",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning restricted (A2) to the context tokens of real demonstrations, with label tokens frozen and every token confined to an \\(\\varepsilon\\)-ball around its embedding; the base point is the in-context-learning state, not the frozen zero-shot function. The constraint is global: at \\(q_0\\) the germ is open in prompt space.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A2",
+     "h": "h(E_{\\mathrm{ctx}})=\\big(E_{\\mathrm{ctx}},\\,E^{0}_{\\mathrm{label}}\\big)\\quad(\\|E_{\\mathrm{ctx}}-E^0_{\\mathrm{ctx}}\\|\\le\\varepsilon)",
+     "note": "Label-token coordinates frozen at their embeddings and the domain restricted to the ε-ball; prompt tuning over the whole demonstration context, pointed at the demonstration embeddings."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived: E0, unpointed (pointed only at the ICL state), Jacobian rank ld so no gauge, Euclidean ball gives O(d) (OxO key, as the Astra/Tip-Adapter precedent). A2 arrow (labels frozen, domain restricted to the ball) is a pointed monomorphism. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "multitask-prompt-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "With P* also trained on the target (paper's ℓd+ℓ+d budget; HF trains embedding.weight), P*⊙uv^T ranges over all of R^{ℓ×d}: the prompt image is that of prompt tuning, d = ℓd.",
+    "base_point": "Unpointed; pointed at the distilled shared prompt P* and source-task rank-one factors.",
+    "gauge": "Disagrees with the table's R^×: with P* trainable the generic fibre is the torus (P*,u,v)↦(P*⊙ab^T, u⊘a, v⊘b), a∈(R^×)^ℓ, b∈(R^×)^d, of dimension ℓ+d (it contains the scalar slide). R^× is correct only with P* frozen. HF's num_ranks=r>1 gives GL_r × this torus (LoHa-type).",
+    "covariance": "Image-level: the image is the full prompt space, so basis-free at function level; the Hadamard parameterisation privileges coordinates only in the dynamics, not in the image.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "With the shared prompt also trained, \\(\\rho(P^*,u,v)=P^*\\odot uv^\\top\\) is a Hadamard reparametrisation of prompt tuning: its image is all of \\(\\mathbb R^{\\ell\\times d}\\) and its gauge is the torus \\((\\mathbb R^\\times)^\\ell\\times(\\mathbb R^\\times)^d\\). It is expressively equal to prompt tuning and differs only in the cometric and in the pointing at the distilled \\(P^*\\).",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h(P^*,u,v)=P^*\\odot uv^\\top",
+     "note": "Prompt tuning pointed at \\(P^*_0\\odot u_0v_0^\\top\\); h is the quotient by the torus gauge."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived. [Num (l,d)=(4,6): Jacobian of (P*,u,v) -> P* (.) uv^T has fibre 10 = l+d, the torus; with P* frozen, fibre 1 = the table R^x.] Torus key confirmed; A3 arrow (quotient) checked. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "p-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "Virtual tokens h = f_ψ(P) at template positions (HF prepends them); once the encoder's last layer has width ≥ ℓ the prompt image is all of R^{ℓ×d}, as for prompt tuning (table: 'v1 adds an LSTM/MLP 2-cell').",
+    "gauge": "Training parameters (P, ψ) with |ψ| ≫ ℓd: the generic fibre of (P,ψ)↦f_ψ(P) has dimension ℓd+|ψ|-ℓd = |ψ| and is not an orbit of a linear group (ReLU/LSTM symmetries are a small part). After training only ℓd embeddings are stored.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning precomposed with a 2-cell \\(\\sigma=f_\\psi\\) (LSTM or MLP encoder): the prompt image is unchanged and \\(\\sigma\\) only replaces the flat metric on prompt space by the point-dependent \\(D\\sigma\\,\\Lambda\\,D\\sigma^\\top\\) (Obs III.2). The encoder is a training device; the stored object is a soft prompt.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h(P,\\psi)=f_\\psi(P)",
+     "note": "All-front template (HF PromptEncoder); prompt tuning pointed at \\(f_{\\psi_0}(P_0)\\). With interleaved anchors the same h lands in prompt tuning at the template positions."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived: fibre |psi| of (P,psi) -> f_psi(P), far beyond the GL_d slide on the encoder input wire, so nonlinear. A3 arrow checked; the reverse section in prompt tuning's entry verified [Num: |f(h(P))-P| = 4e-15 with hidden 6 >= l 3]. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "prefix-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "Function-level: each layer becomes a gated parallel adapter (1-λ_q)Attn_q(C)+λ_q Attn_q(P) (Thm VI.5(b)), with rigid content ratios at that layer.",
+    "base_point": "As in the table. Soft tokens always take softmax mass, and on a head with \\(W_oW_v\\ne0\\) no prompt leaves the output unchanged, so no prompt reproduces f(θ0,-) (Thm VI.5(f)). HF init_weights='zero' still rescales attention by 1-λ(x).",
+    "gauge": "Li–Liang train P = MLP_θ(P'), a non-linear fibre of dimension ℓk+|MLP|-2Lℓd (image unchanged when hidden ≥ ℓ-1, Obs III.2). The stored prefix (and HF's default prefix_projection=False) has only the discrete slot permutations of Thm VI.5(a).",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "An unpointed extension on the key/value wire of every attention layer: by Thm VI.5(b) each layer becomes the gated parallel adapter \\((1-\\lambda_q)\\mathrm{Attn}_q(C)+\\lambda_q\\mathrm{Attn}_q(P)\\), so it has no neutral point and is not box-mergeable. Li–Liang's MLP is a training 2-cell that leaves the prefix image unchanged (Obs III.2).",
+   "arrows": [
+    {
+     "target": "p-tuning-v2",
+     "rule": "A3",
+     "h": "h(P',\\theta)=\\big(\\mathrm{MLP}_\\theta(P'),\\,W^{0}_{\\mathrm{cls}}\\big)",
+     "note": "Obs III.2: the MLP is the 2-cell \\(\\sigma\\); P-tuning v2 taken with its head frozen at the LM head/verbalizer (A2) and pointed at \\(\\mathrm{MLP}_{\\theta_0}(P'_0)\\)."
+    },
+    {
+     "target": "initial-state-tuning",
+     "rule": "A3",
+     "h": "h\\big(x^{(l)}_{-\\ell..-1}\\big)=\\Big(\\textstyle\\sum_{i=1}^{\\ell}\\bar A_l^{\\,i-1}\\bar B_l\\,x^{(l)}_{-i}\\Big)_{l}",
+     "note": "On S4 (LTI) SSM layers only (Galim et al., Prop 1): a per-layer prefix acts solely through the state it leaves; same causality argument as Thm VI.5(e). Initial-state tuning pointed at h(q0)."
+    },
+    {
+     "target": "mam-adapter",
+     "rule": "A5",
+     "h": "h(P',\\theta)=\\big(P',\\,\\theta,\\,W_{\\mathrm{up}}=0,\\,W^{0}_{\\mathrm{down}}\\big)",
+     "note": "MAM = prefix ⊕ scaled parallel adapter, with its prefix trained through the same Li–Liang MLP (He et al.), so h is the identity on (P',θ) and puts the adapter summand at its neutral point W_up=0. MAM pointed at (P'_0,θ_0,0,W^0_down)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Head-level (Thm VI.5(f)): on length-one contexts every LoRA setting is affine in x, a generically prefixed head with \\(W_o\\ne0\\), \\(W_q\\ne0\\) is not; whole-network non-mergeability is open (Exposé XI)."
+    },
+    {
+     "target": "llama-adapter",
+     "test": "O3",
+     "reason": "LLaMA-Adapter is pointed (g=0 reproduces f(θ0,-)), prefix tuning is unpointed, so no pointed h exists in either direction; at a layer the prefix rescales content by 1-λ_q while LLaMA-Adapter leaves content weights unchanged (Thm VI.5(c,d))."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived all coordinates (nonlinear MLP fibre, as Obs III.2). Changes: (1) arrow to initial-state tuning: h re-indexed to sum_{i=1}^{l} A^{i-1} B x_{-i} over the prefix tokens x_{-l..-1} (the old sum ran over x_0..x_{-l+1}) [Num: S4 prefix vs initial state agree to 3e-17]; (2) arrow to MAM: h is now the identity on (P',θ), since MAM's Q contains the MLP-parametrised prefix (batch-4 reading), not the stored prefix. A3 arrow to P-tuning v2 and both obstructions confirmed. Unresolved: batch-4 files MAM's MLP-trained prefix as gauge GL, while this batch files the same MLP fibre as nonlinear (fibre dimension lk+|MLP|-2Lld exceeds every exhibited linear gauge). Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): base-point note now cites the proved clause of Thm VI.5(f) (no prefix is neutral on a head with W_o W_v != 0) instead of \"positive softmax mass always moves the output\"; the merge note carries the hypotheses W_o != 0, W_q != 0 and a generic prefix."
+  },
+  {
+   "id": "prompt-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "base_point": "As in the table. Soft tokens always take softmax mass, and on a head with \\(W_oW_v\\ne0\\) no prompt leaves the output unchanged, so no prompt reproduces f(θ0,-) (Thm VI.5(f)).",
+    "gauge": "Table '–'. The prompt sits at fixed positions; the generic Jacobian of P↦f(θ0,[P;·]) has rank ℓd, so the fibre is trivial.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "The basic unpointed extension: soft tokens on the input sequence wire, \\(\\tilde f(\\theta_0,P,x)=f(\\theta_0,[P;x])\\), with no \\(P\\) reproducing \\(f(\\theta_0,-)\\). In causal decoders it maps into deep prompt tuning by \\(p\\mapsto(K_j(p),V_j(p))_j\\), an arrow of the unpointed slice over the realisation, not of \\(\\mathsf{Meth}\\) (Thm VI.5(e)).",
+   "arrows": [
+    {
+     "target": "p-tuning-v2",
+     "rule": "A3",
+     "h": "h(p)=\\big((K_j(p),V_j(p))_{j\\le L},\\,W^0_{\\mathrm{cls}}\\big)",
+     "note": "Thm VI.5(e): causal decoder, prompt first, matched position offsets (or relative positions); P-tuning v2's head frozen at the verbalizer. Fails in bidirectional encoders of depth ≥ 2."
+    },
+    {
+     "target": "p-tuning",
+     "rule": "A3",
+     "h": "h(P)=\\big(P'_0,\\;\\psi_0\\ \\text{with}\\ W_2\\mapsto W_2^0+H_0^{+}(P-P_0)\\big)",
+     "note": "Section of the encoder through its last linear layer (H_0 = penultimate features at q0, full row rank when hidden ≥ ℓ, cf. Obs III.2); a shift of the shared output bias would not do, since the encoder acts row-wise."
+    },
+    {
+     "target": "multitask-prompt-tuning",
+     "rule": "A3",
+     "h": "h(P)=\\big(P\\oslash u_0v_0^\\top,\\,u_0,\\,v_0\\big)",
+     "note": "Section of the Hadamard torus bundle, valid when u_0,v_0 have no zero entries; MPT pointed at h(P_0)."
+    },
+    {
+     "target": "attempt",
+     "rule": "A3",
+     "h": "h(P)=\\Big(P_{\\mathrm{tgt}}=\\tfrac{(t+1)P-\\sum_{j\\le t}P_j}{t+2},\\ \\gamma=0,\\ \\beta=0,\\ W^0_{\\mathrm{down}},\\ W^0_{\\mathrm{up}}\\Big)",
+     "note": "Router LayerNorm gain and bias set to 0, so H_out=0 and the mixture weights are uniform, a_j=1/(t+1); then P_inst=((t+2)P_tgt+Σ_{j≤t}P_j)/(t+1)=P for every input. ATTEMPT pointed at h(P_0) (zero router gain), an arrow of the unpointed slice; with the O1 obstruction in ATTEMPT's entry the inclusion is strict."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "llama-adapter",
+     "test": "O3",
+     "reason": "LLaMA-Adapter is pointed at g=0, while on a head with \\(W_oW_v\\ne0\\) every soft prompt moves the output (Thm VI.5(f)), so no pointed arrow exists either way; the two are comparable only in the unpointed slice."
+    },
+    {
+     "target": "cpt",
+     "test": "O1",
+     "reason": "CPT's reach is confined to an ε-ball around the demonstrations with label tokens frozen; unconstrained prompts leave that set."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (matches VIII.B). Arrows to P-tuning v2 (Thm VI.5(e)), P-tuning (last-layer section) and MPT (torus section) checked. Change: added A3 arrow prompt tuning -> ATTEMPT via the zero-gain router [Num: max |P_inst(X)-P| = 4e-16 over random inputs]. Obstructions confirmed. Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): base-point note now cites the proved clause of Thm VI.5(f) (no prefix is neutral on a head with W_o W_v != 0) instead of \"positive softmax mass always moves the output\"; the merge note carries the hypotheses W_o != 0, W_q != 0 and a generic prefix."
+  },
+  {
+   "id": "p-tuning-v2",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Deep key/value prompts (same parameter shape as prefix tuning) plus a new linear head; the head is an additive Lin factor on a new box and does not change the kind.",
+    "base_point": "As in the table (row 'Prefix / P-tuning v2'). Soft tokens always take softmax mass, and on a head with \\(W_oW_v\\ne0\\) no prompt leaves the output unchanged, so no prompt reproduces f(θ0,-) (Thm VI.5(f)).",
+    "gauge": "Direct parameterisation (reparametrisation optional, off by default): the prefix has only discrete slot permutations. The softmax head is injective up to its kernel translations W_cls -> W_cls + 1c^T (and b -> b + c'1 with a bias), which leave every class posterior unchanged: d (+1) dimensions, recorded under \"none\" as for linear methods (Prop II.12).",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable. The head itself is a linear box.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Deep prompt tuning: the unpointed key/value extension of prefix tuning in the direct parameterisation, summed with a new linear head. Prompt tuning maps into it in causal decoders (Thm VI.5(e)); whether that inclusion is strict is open.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Head-level (Thm VI.5(f)): a generic prefixed head with \\(W_o\\ne0\\), \\(W_q\\ne0\\) is non-affine on length-one contexts while every weight setting is affine; whole-network containment open."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates unchanged. Change: gauge note corrected; the linear softmax head is not injective but has a d(+1)-dimensional kernel translation (common shift of the class rows), filed under none as for linear methods. Obstruction confirmed. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): base-point note now cites the proved clause of Thm VI.5(f) (no prefix is neutral on a head with W_o W_v != 0) instead of \"positive softmax mass always moves the output\"; the merge note carries the hypotheses W_o != 0, W_q != 0 and a generic prefix."
+  },
+  {
+   "id": "warp",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Sum of an unpointed input-prompt extension of a masked LM and a Lin edit of the |C| verbalizer rows of the output head.",
+    "base_point": "Prompts initialised from [MASK]/vocab embeddings still draw attention mass (bidirectional encoder), so unpointed; the verbalizer half starts at the MLM-head rows.",
+    "gauge": "Prompt coordinates enter injectively. The verbalizer is read through a softmax over the |C| classes, so a common shift Θ^V -> Θ^V + 1c^T changes every logit by c·f and leaves the posterior unchanged: a d-dimensional kernel translation, recorded under \"none\" as for linear methods (Prop II.12); no other continuous fibre.",
+    "covariance": "Function-level: prompts and the new class rows are full vector spaces on the embedding wire (table has no entry).",
+    "merge": "Prompt half M∞ (it lengthens the input); the verbalizer half is a head edit that would fuse (M1).",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Adversarial reprogramming as a sum of two pieces: an unpointed input-prompt extension of a masked LM and a Lin edit of the class rows of the output head (Trainable Tokens on the head). The prompt summand makes the whole object unpointed and M\\(\\infty\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "trainable-tokens",
+     "test": "O3",
+     "reason": "Its verbalizer half is Trainable Tokens on head rows, but the prompt half makes WARP unpointed, so no pointed arrow in either direction; A5 holds only in the unpointed slice."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; coordinates unchanged. Change: gauge note corrected. The class softmax gives a d-dimensional kernel translation of the verbalizer rows [Num (|C|,d)=(4,5): fibre 5 = d]; the old note said there was no continuous fibre. O3 obstruction confirmed (pointed vs unpointed). Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "ppt",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Recipe: prompt tuning with a pre-trained initial prompt; coordinates of prompt tuning.",
+    "base_point": "Unpointed; q0 = P* from self-supervised prompt pre-training (the contribution is this pointing).",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning re-pointed: \\((Q,\\rho)\\) is that of prompt tuning and only the base point \\(q_0=P^\\star\\) changes, obtained by pre-training the prompt on self-supervised tasks in downstream formats. In the framework a change of pointing is a genuine change of object (cf. Type I versus Type II LoRA).",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_{\\mathbb R^{\\ell\\times d}}",
+     "note": "Isomorphism onto prompt tuning pointed at \\(P^\\star\\)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Recipe re-pointing prompt tuning; identity iso arrow (A3) is pointed by construction. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "spot",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Recipe: prompt tuning initialised from a retrieved source-task prompt; coordinates of prompt tuning.",
+    "base_point": "Unpointed; q0 = P_{s*}, the source prompt chosen by cosine similarity of early-checkpoint prompts.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis. The retrieval metric (cosine of mean prompt tokens) is CO(d)-invariant.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning re-pointed at a source-task prompt \\(P_{s^\\star}\\). The retrieval step compares candidate base points by a cosine, a \\(CO(d)\\)-invariant comparison of points of one unpointed slice.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_{\\mathbb R^{\\ell\\times d}}",
+     "note": "Isomorphism onto prompt tuning pointed at \\(P_{s^\\star}\\)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Recipe re-pointing prompt tuning; identity iso arrow (A3) is pointed by construction; CO(d)-invariant retrieval affects only the pointing. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "attempt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": "MonxMon",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X: the router maps each input to a point a(X) of the simplex and the prompt P_tgt+Σ_j a_j(X)P_j is a T-point of prompt tuning over inputs.",
+    "base_point": "Instance prompts always draw attention mass; no parameter value reproduces f(θ0,-).",
+    "gauge": "The d-dimensional router output H_out=LN(W_up^T SiLU(W_down^T X̂)) is read only through the t+1 dot products P̂_j^T H_out, with t+1 ≪ d. So β matters only through P̂β, and (W_up, γ) only through the t×r matrix C P̂ diag(γ) Π W_up^T and the Gram W_up Π W_up^T (Π the centring of LN, C the centring of the logits). Generic router fibre: (d−t)(r+1)+d−r(r+1)/2+1. Exhibited Lie part: the LN scale W_up -> cW_up, the translations W_up -> W_up+u1^T, and β-translations in {w: P̂w ∈ R1}; the rest is point-dependent (P̂_{t+1}=maxpool(P_tgt) is trainable). Not an orbit of a linear group, so nonlinear. When t+1 > d only the scalar slide and translations remain. SiLU allows only permutations (Lemma VI.2).",
+    "covariance": "Max-pooling over tokens is coordinatewise, so only (positive) monomial changes of the embedding basis commute with the router.",
+    "merge": "Input-dependent prompt that lengthens the sequence (routed families are M∞ unless the gate is constant).",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A family over inputs \\(F_X\\): the router gives a point \\(a(X)\\) of a simplex and the prompt \\(P_{\\rm tgt}+\\sum_ja_j(X)P_j\\) is a convex mixture of a frozen prompt library plus a trainable offset, fed to prompt tuning. Input dependence takes it outside every fixed-prompt image, and max-pooling makes the router coordinatewise.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "prompt-tuning",
+     "test": "O1",
+     "reason": "Its prompt varies with X through the router, so generically its realisation is not f(θ0,[P;-]) for any single P."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Change: gauge scalar -> nonlinear. The router's d-dim LayerNorm output is read only through t+1 ≪ d dot products with the pooled prompts, so most of (W_up, γ, β) is gauge. [Num: router fibre 13, 23, 24 at (d,r,t)=(6,3,3),(8,3,3),(8,2,2), matching (d−t)(r+1)+d−r(r+1)/2+1; only 4 = 1+r when t+1=9 > d=6.] Kind F_X, unpointed, Mon x Mon (positive monomials: max-pool, with the LN affine absorbing diagonals), M-inf confirmed; O1 to prompt tuning confirmed (the reverse arrow prompt tuning -> ATTEMPT via the zero-gain router was added in prompt tuning's entry). Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "dept",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Sum of an unpointed short prompt and an additive position-indexed offset AB on the frozen s×d input-embedding matrix; the prompt summand fixes the kind.",
+    "shape": "Function-level overall; the offset summand alone is LoRA_r on an s×d position-indexed slot (a cone with apex at B=0). It is a weight only where the model has learned absolute position embeddings; T5 has none.",
+    "base_point": "Unpointed (short prompt); the offset summand sits at the apex B=0.",
+    "gauge": "GL_r on the offset factors, (A,B)↦(Ag,g^{-1}B); the prompt adds nothing.",
+    "covariance": "Function-level: prompt basis-free; the offset image M_{≤r}(s×d) is GL×GL-covariant.",
+    "merge": "Prompt half M∞; the offset folds (M1) only into learned absolute position embeddings, which T5-style models lack.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing. The offset summand alone would rebase to its span."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "A sum of an unpointed short prompt and a LoRA\\(_r\\) offset \\(AB\\) on an \\(s\\times d\\) position-indexed slot added to the input embeddings (a learned absolute position table where one exists), the latter pointed at the apex \\(B=0\\). The prompt summand makes the sum unpointed, so no pointed arrow relates DePT to LoRA.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Its offset half is LoRA_r on a position-indexed s×d slot (a weight only for models with learned absolute position embeddings, not T5), pointed at the apex, but its prompt half is unpointed, so 'DePT = prompt + LoRA' holds only in the unpointed slice, not as a pointed arrow."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: GL_r on the offset factors, prompt unpointed, M-inf confirmed. Change: the offset is LoRA on a position-indexed s×d slot, not on the token-embedding table (shape note, categorical reading and O3 reason reworded). Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "residual-prompt-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "Only Φ(P) is stored; P↦P+g(P) with bounded g (LayerNorm output) is onto, so the prompt image is all of R^{ℓ×d}.",
+    "gauge": "Training parameters (P,W_down,W_up,LN): generic fibre of dimension 2dm+2d, far larger than its exhibited Lie part (ReLU positive torus on the bottleneck, LN scale and shift on W_up).",
+    "covariance": "Image-level: full prompt space, basis-free at function level; the ReLU/LN basis affects only the dynamics.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning precomposed with a residual 2-cell \\(\\Phi(P)=\\mathrm{LN}(\\mathrm{ReLU}(PW_{\\rm down})W_{\\rm up})+P\\). It has the same inference object and prompt image, a non-linear fibre of dimension \\(2dm+2d\\), and a changed cometric \\(D\\Phi\\,\\Lambda\\,D\\Phi^\\top\\) (Obs III.2).",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h(P,W_{\\rm down},W_{\\rm up},\\mathrm{LN})=\\mathrm{LN}\\big(\\mathrm{ReLU}(PW_{\\rm down})W_{\\rm up}\\big)+P",
+     "note": "The reparametrisation itself; prompt tuning pointed at \\(\\Phi_0(P_0)\\)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived. [Num (l,d,m)=(3,5,4): fibre 50 = 2dm+2d.] Nonlinear gauge and the A3 arrow confirmed; the image is all of prompt space (P free). Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "late-prompt-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X: a bottleneck hypernetwork maps the hidden states below layer l* to a point of single-layer prompt space (cf. X-LoRA's hidden-state gating).",
+    "base_point": "Inserted tokens always draw attention mass; no parameter value removes them.",
+    "gauge": "ReLU generator: positive diagonal slide (W_1,b_1,W_2)↦(DW_1,Db_1,W_2D^{-1}) on the m hidden units (Lemma VI.2(b)); average pooling commutes with D.",
+    "covariance": "Function-level: the generator reads h through a dense W_1 and outputs a full prompt; pooling acts on positions, not on the embedding basis.",
+    "merge": "Input-dependent tokens added to the upper half of the network.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A family over inputs: a bottleneck hypernetwork reads the layer-\\(l^\\ast\\) hidden states and outputs a point of single-layer prompt space, inserted at \\(l^\\ast\\). It is unpointed and input-dependent, so it is neither mergeable nor in the image of a static prompt.",
+   "arrows": [],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived. [Num: pooling generator fibre 3 = m, the positive hidden-unit torus;] F_X, unpointed, GLxGL, M-inf confirmed. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "idpg",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X: a T-point of prompt tuning over inputs, x↦b_2+W_2σ(W_1M(x)+b_1); its W_1=0 slice is prompt tuning.",
+    "base_point": "Generated prompt tokens always draw attention mass.",
+    "gauge": "PHM layers Σ_i A_i⊗B_i are R^{-1}_* of LoRA_n (Prop II.13), so GL_n acts on the PHM index, as in the table's Compacter row.",
+    "covariance": "PHM imposes a Kronecker reshape Π_⊗ of the generator weights (Compacter precedent).",
+    "merge": "Input-dependent prompt plus an extra frozen forward pass for M(x).",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A \\(T\\)-point of prompt tuning over inputs, \\(x\\mapsto b_2+W_2\\sigma(W_1M(x)+b_1)\\), with PHM (Kronecker-sum) weights; its \\(W_1=0\\) slice is prompt tuning. PHM imposes \\(\\Pi_\\otimes\\) and a \\(GL_n\\) gauge on the PHM index, as for Compacter.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "prompt-tuning",
+     "test": "O1",
+     "reason": "The prompt depends on M(x), so generically the realisation is not f(θ0,[P;-]) for any fixed P."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: the generator is evaluated on all inputs, so its weights are identified up to the PHM GL_n (R^{-1}_* LoRA_n) and hidden-unit symmetries; Pi_⊗ from the Kronecker reshape. O1 confirmed. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "xprompt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "A structured coordinate mask on prompt space (tokens, then equal pieces of each token).",
+    "base_point": "Unpointed; pointed at the rewound post-prompt-tuning values of the surviving units.",
+    "covariance": "Piece masks split each embedding into contiguous coordinate blocks, a block partition the network does not have (Lemma VI.2 test), so Π.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing. With the mask fixed."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "A structured mask on prompt space: the winning sub-prompt is an A2 sub-object of prompt tuning, with pruned tokens and pieces frozen at \\(0\\), pointed at the rewound trained prompt. Piece masks impose a block partition of the embedding coordinates.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A2",
+     "h": "h(P_S)=\\big(P_S,\\,0_{S^c}\\big)",
+     "note": "Pruned tokens/pieces frozen at 0 (XPrompt's γ·P keeps them as zero vectors); prompt tuning pointed at the rewound masked prompt. If pruned tokens are instead dropped from the sequence, the same A2 arrow lands in prompt tuning of the kept length, with only the pruned pieces frozen at 0."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived; Pi (contiguous piece partition of the embedding coordinates) confirmed. Change: arrow note covers dropped-token implementations. Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "black-box-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "shape": "Function-level; in prompt space the reach is the affine subspace p_0+col(A) of dimension k.",
+    "base_point": "z=0 gives the prompt p_0 (random vocab embeddings or an MNLI prompt), which moves the output.",
+    "gauge": "A ∈ R^{ℓd×k} with k ≪ ℓd is injective almost surely.",
+    "covariance": "Fixed random Gaussian projection A: covariance only in law.",
+    "merge": "Soft tokens / KV slots lengthen the sequence; for \\(W_o\\ne0\\), \\(W_q\\ne0\\) a generically prefixed head is non-affine on length-one contexts (Thm VI.5(f)), so not box-mergeable.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning restricted to a random affine subspace \\(p_0+\\mathrm{col}\\,A\\), the prompt-space analogue of intrinsic-dimension and frozen-frame methods; covariance holds only in law. CMA-ES is a derivative-free update on \\(Q=\\mathbb R^k\\) and does not change the object.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h(z)=Az+p_0",
+     "note": "Prompt tuning pointed at p_0; a monomorphism (A injective)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "mezo",
+     "test": "O3",
+     "reason": "Both are zeroth-order, but MeZO moves weights from θ0 (regular base point in Meth) while BBT moves a prompt of an unpointed extension; base points and slices differ."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: A injective a.s., frame covariance (Gaussian A, in law), unpointed at p_0. A3 arrow pointed at p_0 checked; O3 to MeZO (pointed vs unpointed) confirmed. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): merge note carries the hypotheses of Thm VI.5(f) (W_o != 0, W_q != 0, generic prefix)."
+  },
+  {
+   "id": "vpt",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Prompt tokens in a ViT plus a trainable linear head; VPT-Deep (the main variant) replaces the prompt tokens at every layer.",
+    "base_point": "Xavier-initialised tokens draw attention mass; no neutral value.",
+    "gauge": "VPT-Deep: a layer's prompt acts only through LN(P_{i-1})W_k, LN(P_{i-1})W_v, so each token has a positive scaling c_j (a torus over tokens) plus kernel-type shifts along 1. VPT-Shallow: none.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Prompts add tokens at every layer (deep) or at the input (shallow).",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "VPT-Shallow is prompt tuning on a ViT; VPT-Deep is a deep prefix tied through the frozen maps \\(P\\mapsto(\\mathrm{LN}(P)W_k,\\mathrm{LN}(P)W_v)\\), plus a new linear head. The LN tie adds a per-token scaling gauge, and Thm VI.5(e) (shallow into deep) does not apply because ViTs are bidirectional.",
+   "arrows": [
+    {
+     "target": "p-tuning-v2",
+     "rule": "A3",
+     "h": "h(P,\\mathrm{Head})=\\Big(\\big(\\mathrm{LN}(P_{i-1})W_k^{(i)}+\\mathbf 1b_k^{(i)\\top},\\,\\mathrm{LN}(P_{i-1})W_v^{(i)}+\\mathbf 1b_v^{(i)\\top}\\big)_{i\\le L},\\,\\mathrm{Head}\\Big)",
+     "note": "VPT-Deep: prompt outputs are discarded each layer, so image tokens see them only as extra keys/values; deep prompts with a linear head, pointed at h(q0)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived. [Num (d,l)=(6,3): one deep layer P -> (LN(P)W_k, LN(P)W_v) has fibre 6 = 2l, the per-token scale and shift along 1; the scale is exact only up to LN's epsilon.] Change: arrow h to P-tuning v2 now includes the frozen qkv biases b_k, b_v of the ViT. Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "visual-prompting",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1->",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "A new translation box x↦x+v_φ on the pixel wire, with neutral point v=0: a pointed extension.",
+    "shape": "Affine in v on a fixed border/patch support; on a ViT the linear patch embedding sends it to a linear subspace of the positional-embedding table.",
+    "base_point": "The official code initialises v ~ N(0,1) (torch.randn), so ρ(q0) ≠ θ0: a pointing defect; v=0 is neutral.",
+    "gauge": "Injective in pixel space; after a ViT patch embedding E (e.g. 3·32·32 → 768) the function sees only Ev, adding translations by ker E as for linear methods (Prop II.12).",
+    "covariance": "The support is a hand-specified spatial region (border frame or patch), fixed by image geometry and not derived from θ0 or drawn at random. On a ViT, permuting the pixels inside every patch together with the patch-embedding columns preserves the function but moves the partially covered frame rows, and on a CNN the frame breaks the convolution's translation structure: imposed structure, Π (Lemma VI.2 test), not a Mon×Mon mask chosen per entry.",
+    "merge": "ViT, fixed location: E(x+v)=Ex+Ev slides by R1 onto the positional embeddings (an additive slot). Random-location patches and CNNs (no per-position bias slot) are M∞.",
+    "rebasing": "Translations compose additively on a fixed support: idempotent."
+   },
+   "table_row": "E",
+   "table_col": "Lin",
+   "categorical_reading": "A pointed extension by a translation box \\(x\\mapsto x+v\\) on the pixel wire, neutral at \\(v=0\\) but initialised randomly, hence a pointing defect. On a ViT with a fixed prompt location the linear patch embedding slides it onto the positional-embedding table (R1), so there it is a Lin method.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "vpt",
+     "test": "O1",
+     "reason": "f(θ0) = ρ(v=0) lies in the image of visual prompting, while no VPT parameter reproduces f(θ0) (extra tokens always draw attention mass), so Im VP ⊄ Im VPT; and the pixel shift acts as an additive input change, not as new keys/values. 'Dual' lineages, not related by an arrow."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Changes: (1) covariance Mon×Mon -> Pi: a fixed geometric frame breaks the function-preserving pixel permutations inside each patch (and CNN translation structure), so it fails the Mon×Mon descent test; (2) obstruction to VPT relabelled O3 -> O1: the neutral point v=0 puts f(θ0) in Im VP and VPT is unpointed, an image obstruction. Kind E, Lin, defect (torch.randn init), ker-E translations under none, M1-> onto the positional embeddings at fixed locations, idempotent: confirmed."
+  },
+  {
+   "id": "coop",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1->",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Prompt tuning on CLIP's text tower, one context shared across the K class sequences (class-specific: K independent contexts).",
+    "base_point": "Unpointed relative to the text encoder; with 'a photo of a' initialisation it starts at zero-shot CLIP, i.e. pointed relative to the template (as CPT is at the ICL context). Random init is the default.",
+    "gauge": "Unified context: injective generically; no continuous symmetry.",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Closed set of class names: the realisation factors through the K×d head W(V)=[g([V;c_i])]_i, which is cached as a linear classifier (no inference cost); a new class name needs the text encoder again (M∞ there).",
+    "rebasing": "The closed-set merge caches the head W(V), on which no further context can act (a new context re-runs the text encoder). Re-prompting with V frozen concatenates contexts, so R_K is CoOp at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Prompt tuning on CLIP's text tower with a context shared across class sequences. In closed-set use the realisation factors through the \\(K\\times d\\) head \\(W(V)=[g([V;c_i])]_i\\), so CoOp is a non-linear reparametrisation of the zero-shot head that fuses into it, pointed at zero-shot CLIP under 'a photo of a' initialisation.",
+   "arrows": [
+    {
+     "target": "prompt-tuning",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_{\\mathbb R^{\\ell\\times d}}",
+     "note": "Same parameterisation on the CLIP text tower (context in front of the class tokens), shared across the K class sequences."
+    },
+    {
+     "target": "cocoop",
+     "rule": "A2",
+     "h": "h(V)=\\big(V,\\ \\theta\\ \\text{with}\\ W_2=0,\\ b_2=0\\big)",
+     "note": "Meta-net output layer frozen at 0, so h_θ(f(x))=0; CoCoOp pointed at that zero-output meta-net."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "maple",
+     "test": "O1",
+     "reason": "CoOp leaves the image features f(x) untouched; MaPLe always inserts vision prompts, which (being unpointed tokens) generically change f(x) for every parameter value, so 'J=1 MaPLe = CoOp' is architectural, not an arrow."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. M1-> kept for the closed-set reading: the realisation factors through the cached K×d head, a function-level lift (Def VI.1) rather than an R1–R7 rewrite. Arrows (iso to prompt tuning on the text tower; A2 into CoCoOp with zero meta-net output) and the O1 obstruction to MaPLe checked. Change: rebasing note no longer says the merge is M-inf, which contradicted the M1-> coordinate. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "cocoop",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X: x↦V+h_θ(f(x))1^T is a T-point of CoOp over image features.",
+    "base_point": "As CoOp; it reduces to CoOp when h_θ outputs 0.",
+    "gauge": "Linear-ReLU-Linear meta-net: positive torus on the hidden units (Lemma VI.2(b)); plus a kernel-type translation (v_m↦v_m+c for all m, b_2↦b_2-c).",
+    "covariance": "Function-level reading of Def II.14 (the table leaves '–'): the prompt set is a full vector space on its wire, carried to itself by every linear function-preserving gauge of the residual stream (Obs II.15 analogue); no imposed basis.",
+    "merge": "Class embeddings depend on the image, so the text encoder runs K times per image; nothing caches.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A family over images: \\(x\\mapsto V+h_\\theta(f(x))\\mathbf 1^\\top\\) is a \\(T\\)-point of CoOp with \\(T\\) the image features. The classifier rows then depend on \\(x\\), so no fixed head, hence no CoOp point, realises it.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "coop",
+     "test": "O1",
+     "reason": "Closed-set CoOp realises x↦softmax(cos(W,f(x))/τ) with W constant; CoCoOp's rows W(x) vary with x, generically outside every fixed-head classifier."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived. [Num: meta-net fibre 6 = m+d at (m,d)=(2,4): the positive ReLU torus plus the common translation (v_m+c, b_2-c).] F_X, unpointed, M-inf and the O1 obstruction to CoOp confirmed. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "maple",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Deep prompts on both CLIP towers up to depth J, the vision prompts being linear images F_k(P_k) of the language prompts.",
+    "gauge": "Deep replacement makes each layer's language prompt act only through LN_t(P) and its vision prompt only through LN_v(F_k(P)), and the coupling F_k(P)=PW_k+b_k is evaluated only at the ℓ prompt rows. Generic fibre per coupled layer: (d_l+1−ℓ)d_v kernel translations of (W_k,b_k), plus per-token scale and shift on each side (4ℓ), the language-side ones compensated by P-dependent changes of (W_k,b_k). The coupling breaks the per-token torus as a linear action; only the common scale (P,W)->(cP,W/c), W->W+w1^T, b->b+β1 and a common shift remain linear. The fibre is not an orbit of a linear group: nonlinear.",
+    "covariance": "Function-level: language prompts are a full space and the coupling is a free linear map, so basis-free.",
+    "merge": "Vision prompts add tokens to every image forward pass (only the text side could be cached).",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "A coupled pair of deep prompt extensions on both CLIP towers, the vision prompts being the push-forward \\(F_k(P_k)\\) of the language prompts along trainable linear maps, so one parameter moves both towers. Deep replacement makes each layer's prompts act only through LayerNorm, and the coupling is read only at the \\(\\ell\\) prompt rows, so the gauge fibre is large and non-linear.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "coop",
+     "test": "O1",
+     "reason": "MaPLe changes the image features through its vision prompts; CoOp only changes the class embeddings over frozen features, so MaPLe's realisations are generically outside CoOp's."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Change: gauge torus -> nonlinear. The coupling F_k is evaluated only at the ℓ prompt rows, so (W_k,b_k) carries (d_l+1−ℓ)d_v P-dependent kernel translations, and a per-token scaling of P is a gauge only with P-dependent compensation in W_k. [Num (d_l,d_v,ℓ)=(5,6,2): fibre 32 = (d_l+1−ℓ)d_v+4ℓ, against a linear part of dimension d_l+3 = 8; scaling one token alone changes the output by 0.21.] Other coordinates and the O1 obstruction to CoOp confirmed; categorical reading updated. Also rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "l2p",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "OxO",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X by hard retrieval: a frozen-model query picks N of M pooled prompts (key-value memory), which are concatenated.",
+    "base_point": "Selected prompts always draw attention mass.",
+    "gauge": "Selection and its surrogate loss use cosine matching, so each key can be rescaled, k_j↦c_jk_j (c_j>0): a torus R_{>0}^M.",
+    "covariance": "Cosine key matching on the frozen [CLS] query wire is CO(d)-invariant, not GL; prompts themselves are basis-free.",
+    "merge": "Per-input selection plus an extra frozen forward pass for the query.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (concatenation on the token sequence; for key/value prefixes, the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A family over inputs by hard retrieval: a key–query cosine match picks \\(N\\) of \\(M\\) prompts, so the prompt is a piecewise-constant function of \\(x\\). Its realisations jump at selection boundaries, which no continuous family (static prompts, softmax routers) can reproduce.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "attempt",
+     "test": "O1",
+     "reason": "Hard top-N selection makes L2P's realisations generically discontinuous in x at selection boundaries; every ATTEMPT realisation is continuous in x (softmax router), so Im L2P ⊄ Im ATTEMPT."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: cosine selection is invariant only under positive key scalings (torus R_{>0}^M), CO(d) on the query wire (OxO key). O1 to ATTEMPT (discontinuous vs continuous realisations) confirmed. Change: rebasing note reworded: token prompts stack by concatenation; the multiset monoid of Thm VI.5(a) is for key/value prefixes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "dualprompt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "torus",
+    "covariance": "OxO",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "F_X: a static shared prefix (G-prompt) at shallow layers plus a task prefix (E-prompt) retrieved per input by key matching.",
+    "base_point": "Prefix slots always draw attention mass.",
+    "gauge": "Cosine task-key matching: each task key rescales freely (torus R_{>0}^T); prefixes contribute only discrete slot permutations.",
+    "covariance": "Cosine matching on the frozen query wire: CO(d)-invariant.",
+    "merge": "Extra prefix key/value slots and input-dependent selection.",
+    "rebasing": "Merge-and-restart needs a merge (M∞). Re-prompting with the trained prompt frozen stacks prompts (the multiset monoid of Thm VI.5(a)), so R_K is the same method at length Kℓ rather than a fixed shape; no weight-space rebasing."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "A static shallow prefix (G-prompt) summed with a hard-retrieved task prefix (E-prompt) at middle layers: an \\(F_X\\) family with piecewise-constant selection on the key/value wire. Like L2P it realises discontinuous functions of the input.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "prefix-tuning",
+     "test": "O1",
+     "reason": "Any static prefix gives a realisation continuous in x; DualPrompt's E-prompt switches with x, so its realisations are generically discontinuous at selection boundaries."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: task-key torus, prefix slot permutations, CO(d) cosine matching, F_X, M-inf. O1 to prefix tuning confirmed. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "initial-state-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Lin",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The SSM's initial state, fixed at 0 in f, becomes a parameter h' with neutral value 0: a pointed extension.",
+    "shape": "On its slot the output moves affinely: ŷ_t = y_t + C_t(Π_{i≤t}Ā_i)h' (linear in h').",
+    "base_point": "Neutral at h'=0, which recovers the base model exactly; an init elsewhere would carry a defect.",
+    "gauge": "h'↦(C_tΠĀ_i h')_t is injective for an observable pair (generic).",
+    "covariance": "The slot is all of R^H per channel, carried to itself by every state-space similarity (C T^{-1}, TĀT^{-1}, TB̄).",
+    "merge": "Zero inference cost (scan kernels accept an initial state), but the decaying, position-dependent term is absorbed by no weight of f (Thm VI.3(a)).",
+    "rebasing": "Additive slot: merging h' into the initial state and restarting stays in the same slot."
+   },
+   "table_row": "E",
+   "table_col": "Lin",
+   "categorical_reading": "A pointed extension: the SSM's initial state, fixed at \\(0\\) in \\(f\\), becomes a parameter \\(h'\\) with neutral point \\(0\\), and the output moves affinely, \\(\\hat y_t=y_t+C_t(\\prod_{i\\le t}\\bar A_i)h'\\). On S4 every prefix acts through this slot (Galim et al., Prop 1), and the zero prefix is neutral there: prefix tuning's unpointedness is a softmax phenomenon.",
+   "arrows": [
+    {
+     "target": "prefix-tuning",
+     "rule": "A3",
+     "h": "h(h')=\\big(\\mathcal C_{\\ell,l}^{+}\\,h'_l\\big)_l,\\quad \\mathcal C_{\\ell,l}=[\\bar B_l,\\bar A_l\\bar B_l,\\dots,\\bar A_l^{\\ell-1}\\bar B_l]",
+     "note": "S4 layers, per-layer virtual tokens of length ℓ ≥ H, controllable pair (Galim et al., converse of Prop 1); h(0)=0, and the zero prefix is neutral on S4."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "state-offset-tuning",
+     "test": "O1",
+     "reason": "Its effect C_t(ΠĀ_i)h' decays along the sequence for stable Ā, whereas state-offset's C_th' is uniform in t; the images differ unless Ā=I."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: E with neutral h'=0, affine slot, injective for an observable pair, idempotent within its slot, M-inf (position-dependent decaying term). A3 arrow to prefix tuning on S4 checked [Num: controllability section reproduces the initial state to 6e-14; the zero prefix is neutral]. O1 to state-offset tuning confirmed. No changes."
+  },
+  {
+   "id": "state-offset-tuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E",
+    "shape": "Lin",
+    "base_point": "neutral",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "A new additive path before Mamba's output gate, neutral at 0: a pointed extension.",
+    "shape": "h-variant: C_th'=(W_Cx_t)^T h', i.e. the linear path x_t↦H'W_Cx_t with frozen frame W_C (LoRA-FA-type) on a new box; y-variant: a new bias.",
+    "base_point": "Neutral with zero init (h'=0 or y'=0); the code's Kaiming-uniform option gives a defect.",
+    "gauge": "H'↦H'W_C is injective when W_C has full row rank H.",
+    "covariance": "{H'W_C} transforms with W_C under basis changes (a frame from θ0, not random), and the y-variant is a full bias space.",
+    "merge": "The offset enters before the multiplicative gate y⊙SiLU(z) and is not diagonal, so neither the D skip nor any bias absorbs it: a stream with no linear box to absorb it.",
+    "rebasing": "Lin with a frozen frame W_C: idempotent."
+   },
+   "table_row": "E",
+   "table_col": "Lin",
+   "categorical_reading": "A pointed extension adding a constant state offset at every step. The h-variant is a LoRA-FA-type path \\(x_t\\mapsto H'W_Cx_t\\) with frozen frame \\(W_C\\) on a new parallel box, and the y-variant is a new bias; both are neutral at \\(0\\), but they sit before Mamba's multiplicative gate, so no existing box absorbs them.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "initial-state-tuning",
+     "test": "O1",
+     "reason": "A uniform offset C_th' is not of the decaying form C_t(ΠĀ_i)h'' for any h'' (stable Ā), so Im state-offset ⊄ Im initial-state."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: h-variant is the LoRA-FA-type path H'W_C on a new box (frame from θ0, so GLxGL), y-variant a new bias, both neutral at 0; the offset sits before the multiplicative gate, so M-inf. O1 to initial-state tuning confirmed. No changes."
+  },
+  {
+   "id": "beft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Edits the existing value-projection bias; in bias-free LLMs HF adds a new zero bias, which is a pointed extension of that box.",
+    "covariance": "As BitFit in the table: the bias set is a full vector space, b↦gb.",
+    "merge": "Fuses into b_v when the layer has a bias slot (HF raises on bias-free layers). By row-stochasticity, aV+1Δb_v^T, it also equals an o_proj bias shift W_OΔb_v."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "A one-bias coordinate subspace of BitFit, hence an A2 sub-object of it, translating the value projection; since attention rows sum to one it equals a constant shift of the attention output. It is Lin, regular and idempotent.",
+   "arrows": [
+    {
+     "target": "bitfit",
+     "rule": "A2",
+     "h": "h(\\Delta b_v)=\\big(\\Delta b_v,\\,0_{\\text{other biases}}\\big)",
+     "note": "Freezing every other bias at its pretrained value."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "(IA)^3 scales l_v⊙(W_vx+b_v) and contains no translation independent of x (unless rows of W_v vanish), so a bias shift lies outside its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: Lin, regular, GLxGL (bias set), M1 into b_v when a bias slot exists; the row-stochastic o_proj equivalence holds. A2 arrow to BitFit and O1 to (IA)^3 confirmed. No changes."
+  },
+  {
+   "id": "super-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Super (HF r=None default): W_0+M⊙U with a fixed saliency mask, a coordinate subspace. Supra (r>0) adds a LoRA summand: a cone at the apex with GL_r gauge that rebases to its span.",
+    "covariance": "A coordinate mask in the standard frame; the magnitude score is invariant under signed permutations and Wanda's |W_ij|·||X_j|| also under input-side diagonal scalings, still monomial.",
+    "rebasing": "Fixed mask: idempotent (a mask recomputed from the merged weight would gain)."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "A fixed coordinate mask \\(W_0+M\\odot U\\) chosen once from saliency: a Lin method in the standard frame, the same object as SHiRA-WM for TopK magnitude and PaFi's mask for BottomK. Supra adds a LoRA summand (A5), which turns the germ into a cone at the apex.",
+   "arrows": [
+    {
+     "target": "shira",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "PEFT magnitude mode with select_top=True is SHiRA with its weight-magnitude (WM) mask, top-|W_0|; isomorphism."
+    },
+    {
+     "target": "pafi",
+     "rule": "A5",
+     "h": "h(U)=\\big(U,\\,\\gamma_0,\\,\\beta_0\\big)",
+     "note": "BottomK magnitude mask = PaFi's support; PaFi also trains norm parameters, which sit at their base values."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A generic update on a fixed (1-s)mn-entry support has rank up to min(m,n), above LoRA_r's maximum rank r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived for the HF default (Super, magnitude, TopK): Lin, regular, Mon×Mon (signed permutations; Wanda adds input diagonals), idempotent. Iso to SHiRA-WM and A5 arrow to PaFi (BottomK variant, norm parameters at their base values) checked; O2 to LoRA confirmed. No changes."
+  },
+  {
+   "id": "trainable-tokens",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "E_0+S_TX with S_T the V×|T| row selector: a fixed row mask on the embedding (and tied head).",
+    "covariance": "Disagrees with the table's Mon×Mon (shared row 'SHiRA / FISH / Trainable Tokens'): a row mask leaves every embedding coordinate free, so the image is GL-covariant on the embedding side, E↦EQ, and only token-preserving (monomial) maps are allowed on the vocabulary side. It therefore descends through SliceGPT residual rotations (Obs II.15), unlike entrywise masks."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "LoRA-FB with frozen \\(B=S_T\\), the row selector of the chosen tokens: a Lin row mask on the embedding, regular and idempotent. It lies in the \\(\\mathrm T_B\\) stratum of LoRA, not in the default \\(\\mathrm T_A\\) one.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(X)=(S_T,\\,X),\\quad X=V_T-E_{0,T}",
+     "note": "Freezing B at the selector: LoRA_{|T|} on the embedding pointed at (S_T,0), the T_B stratum (cf. MiCA → LoRA pointed at (B_0,0))."
+    },
+    {
+     "target": "shira",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "SHiRA with the support T × [d] (whole rows); the mask methods form one family indexed by support."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Against LoRA's default pointing (B_0=0, A_0 random; T_A stratum): S_1={BA_0} has fixed row space row A_0, which does not contain row-supported updates with arbitrary rows; the arrow above exists only into the T_B stratum."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: row mask, GL on the embedding side and Mon on the vocabulary side (the one-sided key), regular, idempotent. A2 arrow into LoRA pointed at (S_T,0) (T_B stratum) and iso to SHiRA checked. [Num (V,d,|T|,r)=(9,6,2,3): S1(TT) is not contained in S1 of T_A LoRA (dim of the sum 33 > 27), which confirms O3.] No changes."
+  },
+  {
+   "id": "badam",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Forward map id_Θ; the update is block coordinate descent: K Adam steps on one block, then switch with the optimizer state discarded.",
+    "shape": "Per stage, the coordinate subspace of the active block (a moving Lin shape).",
+    "covariance": "Every stage frees whole boxes (Full FT on the sampled layers, plus embedding and head for LISA), so each stage image is \\(GL\\times GL\\)-covariant box by box, as for BitFit, surgical FT and HiFT. The layer partition groups boxes; it does not reshape or pair the coordinates of any box and breaks no neuron permutation or residual rotation (Lemma VI.2 test), so the \\(\\Pi\\) (blocks) label of VIII.B and axes.json is not forced by the decision procedure. Framework IV places LISA beside BitFit (coordinate blocks), which VIII.B files under \\(GL\\times GL\\).",
+    "merge": "Writes the original weights in place; nothing to merge.",
+    "rebasing": "A rebasing scheme of moving linear shapes; the reach is the sum of the blocks visited, Θ after one block-epoch (Thm V.3 Cor 6)."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "categorical_reading": "A rebasing scheme of linear block methods: each stage is the coordinate subspace of one block, merged in place after \\(K\\) Adam steps with the optimizer state reset. Its reach is the sum of the blocks visited, which is \\(\\Theta\\) after one block-epoch.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Per stage it makes full-rank updates of every matrix in the active block; LoRA_r's maximum rank is r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: B with id forward map, moving Lin coordinate blocks, Π (layer blocks, LISA precedent), na, schedule. O2 to LoRA confirmed. No changes. Consolidation (2026-10-01): covariance 'Pi' -> 'GLxGL' (box-wise decision procedure; harmonised with HiFT and surgical FT; departs from VIII.B/axes.json 'Π (blocks)')."
+  },
+  {
+   "id": "lisa",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "As in the table: a backward schedule over periodically resampled layers (embedding and head always on).",
+    "shape": "Per period, the coordinate subspace of embedding + head + γ sampled layers.",
+    "covariance": "Every stage frees whole boxes (Full FT on the sampled layers, plus embedding and head for LISA), so each stage image is \\(GL\\times GL\\)-covariant box by box, as for BitFit, surgical FT and HiFT. The layer partition groups boxes; it does not reshape or pair the coordinates of any box and breaks no neuron permutation or residual rotation (Lemma VI.2 test), so the \\(\\Pi\\) (blocks) label of VIII.B and axes.json is not forced by the decision procedure. Framework IV places LISA beside BitFit (coordinate blocks), which VIII.B files under \\(GL\\times GL\\).",
+    "rebasing": "The table column reads →Θ, axes.json files LISA under 'schedule'; it is a rebasing scheme whose reach is Θ (Thm V.3 Cor 6)."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "categorical_reading": "A backward schedule: each period trains the coordinate subspace of embedding, head and \\(\\gamma\\) sampled layers and merges in place, a rebasing scheme of moving Lin shapes that reaches \\(\\Theta\\) (Thm V.3 Cor 6). Because the embedding is always on, its backprop cone is the whole network (Obs IV.4).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "Per period LISA makes full-rank updates of its sampled layers, while GaLore's per-period update of each matrix has rank ≤ r."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (matches VIII.B and axes.json schedule). O2 to GaLore holds stage-wise (full-rank sampled layers vs rank <= r per period). No changes. Consolidation (2026-10-01): covariance 'Pi' -> 'GLxGL' (box-wise decision procedure; harmonised with HiFT and surgical FT; departs from VIII.B/axes.json 'Π (blocks)')."
+  },
+  {
+   "id": "bitfit",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "covariance": "As in the table: the bias set is a full vector space, b↦gb under W↦gWh^{-1}.",
+    "merge": "As in the table: it edits the model's own bias parameters, so the merged model is the original architecture."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "The canonical selective method: a fixed coordinate mask on the bias block, \\(\\rho(\\Delta b)=(W_0,b_0+\\Delta b)\\). It is Lin, regular and idempotent, and transforms with every change of basis because the bias set is a full vector space.",
+   "arrows": [
+    {
+     "target": "ssf",
+     "rule": "A2",
+     "h": "h(\\Delta b)=\\big(\\gamma=\\mathbf 1,\\ \\beta=\\Delta b\\big)",
+     "note": "With SSF inserted after every biased linear op and LayerNorm: freezing the scales at 1 leaves shifts that are exactly bias edits; SSF pointed at its exact identity (1,0) (official init is ≈)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "(IA)^3 only rescales outputs (biases included), so an x-independent shift of a bias lies outside its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived (matches VIII.B). A2 arrow to SSF (scales frozen at 1, SSF pointed at its exact identity) and O1 to (IA)^3 confirmed. No changes."
+  }
+ ]
+}

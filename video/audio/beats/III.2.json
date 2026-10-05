@@ -1,0 +1,43 @@
+{
+ "hash": "e9b2826b7586a99a",
+ "seconds": 34.84,
+ "pauses": [
+  [
+   4.951,
+   5.75
+  ],
+  [
+   9.237,
+   9.633
+  ],
+  [
+   11.825,
+   12.168
+  ],
+  [
+   15.264,
+   15.524
+  ],
+  [
+   17.828,
+   18.149
+  ],
+  [
+   22.936,
+   23.303
+  ],
+  [
+   25.2,
+   25.81
+  ],
+  [
+   31.582,
+   32.154
+  ],
+  [
+   34.527,
+   34.84
+  ]
+ ],
+ "text": "Training moves through the fibres too, and the symmetry leaves a fingerprint. Under gradient flow, one quantity never changes: the balance between the two factors, B-transpose-B minus A-A-transpose, each divided by its own learning rate. It's a conserved charge, known for factorised networks since 2018, in the spirit of Noether's theorem. <short pause> With plain SGD steps, it drifts, but only at second order in the step size. Under Adam, it isn't conserved at all."
+}

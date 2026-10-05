@@ -1,0 +1,1438 @@
+{
+ "batch": 8,
+ "methods": [
+  {
+   "id": "hydralora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over inputs \\(T=X\\): \\(h=W_0x+\\sum_i\\omega_i(x)B_iAx\\) with \\(\\omega(x)=\\mathrm{softmax}(W_g^\\top x)\\) per token (router on \\(x\\), as in the official code).",
+    "shape": "Input-dependent mixture, so there is no single weight-space image; it is compared through the realisation, as LoRAMoE. Per token the weight \\(W_0+(\\sum_i\\omega_iB_i)A\\) is a point of LoRA\\(_r\\), not LoRA\\(_{Nr}\\), because \\(A\\) is shared.",
+    "base_point": "The official code zero-initialises every \\(B_i\\), so every input sees \\(f\\): neutral. At that point only the heads move to first order; \\(A\\) and the router get no task-loss gradient (zero-gate lemma, Lemma II.4).",
+    "gauge": "One \\(GL_r\\) on the shared rank wire, \\((A,B_i)\\mapsto(gA,B_ig^{-1})\\) for all heads at once (not \\(\\prod_iGL_r\\), since \\(A\\) is shared), plus the softmax translation \\(W_g\\mapsto W_g+c\\mathbf 1^\\top\\).",
+    "covariance": "n/a: a function-level family (– in Table VIII.B, as recorded for LoRAMoE and Lily).",
+    "merge": "The head mixture is recomputed per token; M1 only for a constant router (Thm VI.3, routed mixtures).",
+    "rebasing": "n/a: not mergeable, so merge-and-restart is undefined."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "HydraLoRA is an \\(X\\)-point of LoRA\\(_r\\) with a fixed input factor: per token its weight \\(W_0+(\\sum_i\\omega_i(x)B_i)A\\) lies in the one-sided slice \\(\\{YA\\}\\), so the router moves only the output factor. It is the tied-\\(A\\) sub-family of LoRAMoE, and tying collapses LoRAMoE's \\(\\prod_iGL_r\\) gauge to a single \\(GL_r\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_x(A,B_1,\\dots,B_N,W_g)=\\big(\\textstyle\\sum_i\\omega_i(x)B_i,\\ A\\big)",
+     "note": "Fibrewise over tokens, into LoRA\\(_r\\) pointed at \\((0,A_0)\\). The arrow is pointed, since every \\(B_i\\) starts at \\(0\\)."
+    },
+    {
+     "target": "loramoe",
+     "rule": "A3",
+     "h": "h(A,(B_i)_i,W_g)=\\big((\\tfrac r\\alpha B_i)_i,\\ (A,\\dots,A),\\ W_g\\big)",
+     "note": "The tied embedding \\(A_i=A\\): HydraLoRA is the shared-\\(A\\) sub-family of LoRAMoE (LoRAMoE pointed at \\(h(q_0)\\), whose \\(A_i\\) coincide)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "moelora",
+     "test": "O1",
+     "reason": "HydraLoRA's update changes token by token within one task, while MOELoRA's is constant for a task id, so per-token routing is not realised by any task-indexed weight."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / neutral (all B_i zero in the official code) / GL (one GL_r on the shared rank wire plus the softmax translation) / n/a / Minf / n/a. numpy (m,n,r,N) = (6,5,2,3), 40 tokens: generic fibre 9 = r^2 + n as stated, and at B = 0 the A- and router-Jacobian blocks vanish exactly (zero gate). Arrows: fibrewise into LoRA_r at (0, A_0) and the tied-A embedding into LoRAMoE (r/alpha rescaling, same W_g^T x router) verified; O1 to MOELoRA valid. No changes. Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "phatgoose",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "nonlinear",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over tokens and modules, assembled post hoc: each contributor trains only a gate vector \\(v_z\\) for its frozen LoRA, and at inference the standardised \\(\\bar v_z\\) become the rows of a top-\\(k\\) router over the pooled library.",
+    "shape": "Token-dependent top-\\(k\\) mixture of frozen experts: function-level.",
+    "base_point": "At inference the top-\\(k\\) softmax weights sum to \\(1\\) over nonzero frozen experts, so no gate setting reproduces \\(f\\): unpointed. During gate training \\(v_z=0\\) already gives \\(W+\\tfrac12B_zA_z\\), a defect.",
+    "gauge": "Standardisation (zero mean and unit variance over the \\(d_{in}\\) coordinates) makes the router see \\(v_z\\) only through \\(\\bar v_z\\), and the logits enter top-\\(k\\) and the softmax only through differences across experts. The generic fibre therefore contains (i) per expert \\(\\{av_z+b\\mathbf 1:a>0\\}\\), a positive scale and a shift along \\(\\mathbf 1\\), and (ii) a common translation \\(\\bar v_z\\mapsto\\bar v_z+w\\) of all gate vectors, allowed whenever every \\(\\bar v_z+w\\) is still standardised (\\(w\\perp\\mathbf 1\\), \\(\\lVert\\bar v_z+w\\rVert^2=d_{in}\\)). That set of \\(w\\) is a quadric of dimension \\(d_{in}-1-N\\) (for \\(N<d_{in}-1\\), the realistic regime), not a group orbit, so the fibre, of dimension \\(2N+\\max(0,d_{in}-1-N)\\) per module, is non-linear (Jacobian rank and an exact finite translation, checked numerically). The frozen experts carry no trained gauge.",
+    "covariance": "n/a: function-level.",
+    "merge": "Different tokens and modules are routed to different experts.",
+    "rebasing": "n/a: not mergeable."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "PHATGOOSE glues \\(N\\) one-expert families \\(u\\mapsto Wu+\\sigma(v_z^\\top u)B_zA_zu\\), each trained by its own contributor, into one \\(X\\)-family over the pooled library by stacking their gate vectors into a router. Per token it is a point of LoRA\\(_{Nr}\\) with all but \\(k\\) blocks switched off, and the top-\\(k\\) selection makes its realised functions jump at ranking ties.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_x(v)=\\big([w_{x,1}(v)B_1\\ \\cdots\\ w_{x,N}(v)B_N],\\ [A_1;\\dots;A_N]\\big),\\ \\ w_{x,z}=0\\ \\text{off the top-}k",
+     "note": "Fibrewise over tokens (per module), into LoRA\\(_{Nr}\\) pointed at \\(h(q_0)\\) (unpointed slice); \\(h_x\\) is smooth away from routing ties."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "arrow",
+     "test": "O1",
+     "reason": "Arrow's paper composition \\((\\sum_ip_iB_i)(\\sum_ip_iA_i)\\) has cross terms \\(p_ip_jB_iA_j\\). A top-2 PHATGOOSE update \\(w_1B_1A_1+w_2B_2A_2\\) with both weights positive would need \\(p_1p_2=0\\), so for a generic library it lies outside Arrow's per-token image."
+    },
+    {
+     "target": "x-lora",
+     "test": "O1",
+     "reason": "Top-\\(k\\) routing makes PHATGOOSE's functions discontinuous in the input at ranking ties. X-LoRA's default dense softmax scalings vary continuously with the hidden states, so for generic experts PHATGOOSE's functions are not in that X-LoRA image (X-LoRA's optional top-\\(k\\) mode is not covered by this argument)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / unpointed / n/a / Minf / n/a. Change: gauge torus -> nonlinear. Besides the per-expert positive scale and shift along 1 (2N), the router is invariant under a common translation vbar_z -> vbar_z + w that keeps every vbar_z standardised; those w form a quadric of dim d_in-1-N, not a group orbit. numpy (frozen random experts, 50-200 tokens): generic fibre = 2N + max(0, d_in-1-N) at (d,N,k) = (6,4,2), (8,3,2), (5,6,2), (10,4,3), (5,4,2); an exact finite translation (|w| = 0.77) changes the realised family by 2e-15. Gauge note rewritten; the X-LoRA obstruction reason now says it uses X-LoRA's default dense scalings. Fibrewise arrow into LoRA_{Nr} (smooth off routing ties) and O1 to Arrow (cross terms p_1 p_2 B_iA_j) verified. Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "arrow",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": null,
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over tokens and layers with zero trainable parameters. The router rows \\(v_i\\) are read off the library (first right singular vector of \\(B_iA_i\\)), so the inputs are P-type, but the output is an \\(X\\)-family, not one point of \\(\\Theta\\).",
+    "shape": "Token-dependent mixture: function-level.",
+    "base_point": "The top-\\(k\\) softmax weights sum to \\(1\\) over trained nonzero LoRAs, and nothing returns \\(f\\): unpointed.",
+    "gauge": "n/a: there are no trainable parameters. The router is gauge-invariant: \\(v_i\\) depends only on \\(B_iA_i\\), and \\(\\lvert v_i^\\top h\\rvert\\) removes the SVD sign. The paper's factor-wise composition \\((\\sum p_iB_i)(\\sum p_iA_i)\\) is not a function of the adapters (Prop V.4(a)); HF PEFT's output mixing \\(\\sum_ip_is_iB_iA_ih\\) is.",
+    "covariance": "n/a: function-level.",
+    "merge": "Each token at each layer uses its own mixture.",
+    "rebasing": "n/a: not mergeable."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "Arrow is a data-free \\(X\\)-point of a LoRA library whose router is a gauge-invariant function of the adapters. In the paper its composition is LoraHub's product of sums evaluated per token, which is gauge-dependent and lands in LoRA\\(_r\\); HF PEFT's output mixing is the gauge-invariant CAT form and lands in LoRA\\(_{kr}\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_x(\\ast)=\\big(\\textstyle\\sum_ip_i(x)B_i,\\ \\sum_ip_i(x)A_i\\big)",
+     "note": "Paper composition, fibrewise over tokens and layers: a point of LoRA\\(_r\\) (rank \\(r\\), not \\(kr\\)), with LoRA pointed at \\(h(\\ast)\\) (unpointed slice)."
+    },
+    {
+     "target": "lora-soups",
+     "rule": "A3",
+     "h": "h_x(\\ast)=\\big(\\alpha_i=p_i(x)\\,s_i\\big)_i",
+     "note": "HF output mixing, per adapted module: a point of CAT's family (unpointed slice)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "phatgoose",
+     "test": "O1",
+     "reason": "For \\(k\\ge2\\) the paper's per-token weight contains cross terms \\(p_ip_jB_iA_j\\) (\\(i\\ne j\\)) outside \\(\\mathrm{span}\\{B_zA_z\\}\\), which contains every PHATGOOSE per-token update."
+    },
+    {
+     "target": "lorahub",
+     "test": "O1",
+     "reason": "Arrow's weights change per token and per layer, so its realised functions are generically not \\(\\Phi_f\\) of one weight. LoraHub's single global \\(w\\) gives one static weight."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / unpointed / n/a (no trainable parameters, as for model soups) / n/a / Minf / n/a. Router v_i depends only on B_iA_i and |v_i^T h| removes the SVD sign, as stated. Paper composition arrow into LoRA_r and HF output-mixing arrow into CAT verified. O1 to PHATGOOSE (cross terms p_i p_j B_iA_j for k >= 2) and to LoraHub valid generically. No changes. Consolidation (2026-10-01): gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "loraretriever",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": null,
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over input prompts: a contrastively trained retriever selects the top-\\(k\\) LoRAs \\(\\Phi_x\\) for each prompt. The LLM and the LoRAs are frozen.",
+    "shape": "Piecewise constant in the prompt: each request sees one of finitely many weights, so the method is compared through the realisation.",
+    "base_point": "Every request averages \\(k\\) trained nonzero LoRAs, and no choice returns \\(\\theta_0\\): unpointed.",
+    "gauge": "n/a: no trainable parameters on the LLM side. Mixture, \\(\\frac1k\\sum B_\\phi A_\\phi x\\), is a function of the adapters. Fusion averages the factors, \\((\\frac1k\\sum B_\\phi)(\\frac1k\\sum A_\\phi)\\), which is gauge-dependent (Prop V.4(a)). The retriever \\(E\\) is contrastively trained once, offline and independently of the LLM, and is treated as fixed design data rather than as \\(Q\\).",
+    "covariance": "n/a: function-level.",
+    "merge": "M∞ as a family, because the selection depends on the input. Per request the selected update is a static matrix, so it is M1 per request in both modes.",
+    "rebasing": "n/a."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "LoraRetriever is a hard-retrieval \\(X\\)-family over a LoRA library (L2P's construction, with LoRAs in place of prompts), so its weights are piecewise constant in the prompt. Per request, mixture is the point \\(\\alpha=\\mathbf 1_{\\Phi_x}/k\\) of CAT and fusion is the same point of LoraHub's product of sums, so the two modes differ exactly by LoraHub's cross terms.",
+   "arrows": [
+    {
+     "target": "lora-soups",
+     "rule": "A3",
+     "h": "h_x(\\ast)=\\big(\\alpha_\\phi=\\mathbf 1[\\phi\\in\\Phi_x]/k\\big)_\\phi",
+     "note": "Mixture mode, per request: a point of CAT's family (unpointed slice)."
+    },
+    {
+     "target": "lorahub",
+     "rule": "A3",
+     "h": "h_x(\\ast)=w=\\mathbf 1_{\\Phi_x}/k",
+     "note": "Fusion mode, per request: LoraHub's \\((\\sum w_iB_i)(\\sum w_jA_j)\\) at \\(w=\\mathbf 1_{\\Phi_x}/k\\) (unpointed slice)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "x-lora",
+     "test": "O1",
+     "reason": "Retrieval is piecewise constant in the prompt, so for generic libraries the realised functions jump at retrieval boundaries. X-LoRA's default dense softmax scalings vary continuously and never vanish, so that mode cannot reproduce them (X-LoRA's optional top-\\(k\\) mode is not covered by this argument)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / unpointed / n/a / Minf (per request M1) / n/a. Mixture arrow into CAT at alpha = 1_Phi/k and fusion arrow into LoraHub at w = 1_Phi/k checked against the catalog formula ((1/k sum B)(1/k sum A) = LoraHub at w = 1_Phi/k). Changes: gauge note now says the retriever is trained once offline and treated as fixed design; the X-LoRA obstruction is restricted to X-LoRA's default dense scalings (its optional top-k mode is also discontinuous). Consolidation (2026-10-01): gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "lora-flow",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "none",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over tokens and layers: \\(w^l=\\mathrm{softmax}(W^l_{\\rm gate}x_t^l+b^l)\\) weights the outputs of \\(k\\) frozen LoRAs.",
+    "shape": "Token-dependent mixture: function-level.",
+    "base_point": "Softmax weights sum to \\(1\\) over frozen nonzero LoRAs, so no gate reproduces \\(f\\): unpointed (as MoLE and X-LoRA).",
+    "gauge": "Only the gate is trained. Its fibre is the softmax translation \\((W,b)\\mapsto(W+\\mathbf 1c^\\top,b+c_0\\mathbf 1)\\), of dimension \\(d+1\\) per layer. That is an affine shift rather than a wire gauge, recorded as 'none' as for X-LoRA.",
+    "covariance": "n/a: function-level.",
+    "merge": "Fusion weights change at every generation step.",
+    "rebasing": "n/a."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "LoRA-Flow is an \\(X\\)-point of CAT: per token and layer its weight is \\(W_0+\\sum_iw_i^l(x)B_iA_i\\) with \\(w^l\\) in the open simplex, so it mixes products and is gauge-invariant, with none of LoraHub's cross terms. Its gate reads the current layer input, whereas X-LoRA's head reads a first-pass hidden state.",
+   "arrows": [
+    {
+     "target": "lora-soups",
+     "rule": "A3",
+     "h": "h_x(W_{\\rm gate},b)=\\big(\\alpha_i^{l}=w_i^{l}(x)\\big)_{i,l}",
+     "note": "Fibrewise over tokens, into CAT pointed at \\(h(q_0)\\) (unpointed slice)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lorahub",
+     "test": "O1",
+     "reason": "Even with a constant gate, LoRA-Flow's update \\(\\sum_iw_iB_iA_i\\) (\\(w\\) in the open simplex) would need LoraHub's cross terms to vanish, which for a generic library forces a single nonzero weight. With a token-dependent gate its functions are not \\(\\Phi_f\\) of any one weight."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / unpointed / none (the d+1-dim softmax translation per layer, recorded as for X-LoRA) / n/a / Minf / n/a. CAT arrow (alpha_i^l = w_i^l(x)) verified; O1 to LoraHub valid (matching sum w_i B_iA_i with all w_i > 0 forces the cross terms u_i u_j to vanish, i.e. one nonzero weight). No changes. Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "s-lora",
+   "entry_type": "software",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": null,
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Table VIII.B row F\\(_U\\): a family over tenants \\(U\\), \\(u\\mapsto(B_u,A_u)\\), served as \\(W_0X\\) batched once plus per-request low-rank terms (MBGMM/MBGMV kernels, unified paging).",
+    "shape": "Each fibre is a point of LoRA\\(_{r_u}\\) (heterogeneous ranks). Table VIII.B describes the row as 'relative computation over a shared base'; the column records the fibre's cone.",
+    "base_point": "n/a: a serving system has no trainable coordinates and no base point of its own (– in VIII.B). The base model is the fibre over a tenant with no adapter.",
+    "gauge": "Outputs depend on each tenant's factors only through \\(B_u(A_ux)\\), so \\(\\prod_uGL_{r_u}\\) acts on the stored adapters without changing anything served. The system never combines factors across tenants (– in VIII.B; filled in from the formula).",
+    "covariance": "Each fibre is LoRA's basis-free cone (– in VIII.B).",
+    "merge": "'Unmerged by design' (VIII.B): every fibre fuses (M1), but merging would forfeit the shared base batch, and no single weight serves all tenants.",
+    "rebasing": "n/a: nothing is trained."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "S-LoRA computes the family \\(\\rho\\circ a:U\\to\\Theta\\) relative to the shared base: it batches \\(W_0X\\) once and adds each fibre's \\(\\delta_u=B_uA_u\\), which works because LoRA is additive (\\(\\rho=\\theta_0+\\delta\\)). As a family it is CAT evaluated at the coordinate vertices \\(e_u\\), and it is gauge-safe because it only ever uses products.",
+   "arrows": [
+    {
+     "target": "punica",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_{\\prod_uQ_{\\mathrm{LoRA}_{r_u}}}",
+     "note": "The same family over tenants. The systems differ only in kernels and memory management, which \\(\\rho\\) does not see."
+    },
+    {
+     "target": "lora-soups",
+     "rule": "A3",
+     "h": "h_u(\\ast)=e_u",
+     "note": "Fibrewise over tenants: request \\(u\\) is CAT at the vertex \\(\\alpha=e_u\\) (unpointed slice)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "loramoe",
+     "test": "O1",
+     "reason": "The same prompt from two tenants is served with two different adapters, but an input-routed mixture sees only the tokens."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived as the F_U row of VIII.B: Cone read on each tenant fibre, base point n/a, prod GL_{r_u} (only products are used), GLxGL, M1 per fibre ('unmerged by design'), n/a. Iso to Punica and the vertex arrow into CAT (alpha = e_u) verified; O1 to LoRAMoE (tenant vs token indexing) valid. No changes. Consolidation (2026-10-01): base_point 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "punica",
+   "entry_type": "software",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": null,
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Table VIII.B row F\\(_U\\): a family over tenants, \\(u\\mapsto(B_u,A_u)\\). Requests are sorted into segments sharing an adapter, and SGMV shrink/expand computes \\(X_{[s_i:s_{i+1}]}A_i^\\top B_i^\\top\\).",
+    "shape": "Each fibre is a point of LoRA\\(_{r_u}\\) (heterogeneous ranks). Table VIII.B describes the row as 'relative computation over a shared base'; the column records the fibre's cone.",
+    "base_point": "n/a: a serving system has no trainable coordinates and no base point of its own (– in VIII.B). The base model is the fibre over a tenant with no adapter.",
+    "gauge": "Outputs depend on each tenant's factors only through \\(B_u(A_ux)\\), so \\(\\prod_uGL_{r_u}\\) acts on the stored adapters without changing anything served. The system never combines factors across tenants (– in VIII.B; filled in from the formula).",
+    "covariance": "Each fibre is LoRA's basis-free cone (– in VIII.B).",
+    "merge": "'Unmerged by design' (VIII.B): every fibre fuses (M1), but merging would forfeit the shared base batch, and no single weight serves all tenants.",
+    "rebasing": "n/a: nothing is trained."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "Punica is the same family \\(U\\to\\Theta\\) as S-LoRA: SGMV evaluates \\(\\delta_u=B_uA_u\\) on the fibre over each segment of a tenant-sorted batch, on top of one copy of \\(W_0\\). The construction uses only that LoRA is additive and that each fibre is a product, so it is gauge-safe.",
+   "arrows": [
+    {
+     "target": "s-lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_{\\prod_uQ_{\\mathrm{LoRA}_{r_u}}}",
+     "note": "The same family over tenants; only the kernels differ."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_u(\\ast)=(B_u,\\ A_u)",
+     "note": "Fibrewise over tenants, into LoRA\\(_{r_u}\\) pointed at \\(h(\\ast)\\) (unpointed slice)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "x-lora",
+     "test": "O1",
+     "reason": "Punica's family is indexed by tenants, so the same prompt from two tenants is served with two different adapters. X-LoRA's scalings are computed from the tokens alone, so in any mode it gives the same prompt the same scalings; with its default dense softmax they are also strictly positive on every adapter, so for linearly independent adapters it never serves exactly one of them."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Same object as S-LoRA; coordinates re-derived and agree (F_U row of VIII.B: Cone read on the fibre, base point n/a, prod GL_{r_u}, GLxGL, M1 per fibre, n/a). Arrows (id to S-LoRA; fibrewise into LoRA_{r_u}) verified. Change: the X-LoRA obstruction relied on strictly positive softmax scalings, which fails under X-LoRA's optional top-k; the reason now rests on tenant vs token indexing (as S-LoRA -/-> LoRAMoE) and keeps the positivity argument for the default dense mode. Consolidation (2026-10-01): base_point 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "hyperdreambooth",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "A family over identities \\(T\\) (one face image each): a hypernetwork \\(\\mathcal H\\) predicts LiDB weights \\(\\hat\\theta=(B_{tr},A_{tr})\\). A short rank-relaxed LoRA fine-tune then starts from \\(W_0+\\Delta W(\\hat\\theta)\\).",
+    "shape": "Each fibre of the prediction stage is the cone \\(W_0+P_{out}\\mathcal M_{\\le r}(b\\times a)P_{in}\\) inside frozen random frames, of dimension \\(r(a+b-r)=149\\) at \\(r=1\\).",
+    "base_point": "The fast fine-tune starts at the predicted weights, a pointing defect \\(e=P_{out}\\hat B\\hat AP_{in}\\) by design. LiDB itself starts the hypernetwork's iterative refinement at \\((0,0)\\), the origin pointing with \\(S_1=0\\).",
+    "gauge": "\\(GL_r\\) on the LiDB rank wire, \\((B_{tr}g^{-1},gA_{tr})\\), which is \\(\\mathbb R^\\times\\) at the paper's \\(r=1\\). The refine stage carries LoRA's \\(GL_{r'}\\).",
+    "covariance": "The frozen row-orthogonal \\(P_{out},P_{in}\\) are random, so covariance holds only in law.",
+    "merge": "Both stages are additive low-rank updates that fold into \\(W_0\\).",
+    "rebasing": "A two-stage scheme: a base change to the predicted point, then LoRA\\(_{r'}\\) at the new base. Its reach is the sum of the shapes visited, \\(W_0+P_{out}\\mathcal M_{\\le r}P_{in}+\\mathcal M_{\\le r'}\\)."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "HyperDreamBooth is a \\(T\\)-point of a NOLA-type sandwich (LoRA\\(_r\\) inside frozen random frames), used as a predicted base change, after which ordinary LoRA runs at the new base. The small LiDB frames are what make the map \\(T\\to Q\\) learnable from one image.",
+   "arrows": [
+    {
+     "target": "nola",
+     "rule": "A3",
+     "h": "h(B_{tr},A_{tr})=\\big(\\alpha=\\mathrm{vec}\\,A_{tr},\\ \\beta=\\mathrm{vec}\\,B_{tr}\\big),\\ \\text{NOLA bases }\\{p_ke_j^\\top\\},\\{e_jq_l^\\top\\}",
+     "note": "With \\(p_k\\) the columns of \\(P_{out}\\) and \\(q_l^\\top\\) the rows of \\(P_{in}\\), LiDB is NOLA with orthonormal random bases (at \\(r=1\\) the coefficients are exactly \\(A_{tr}\\) and \\(B_{tr}\\)). Pointed at the origin."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B_{tr},A_{tr})=\\big(P_{out}B_{tr},\\ A_{tr}P_{in}\\big)",
+     "note": "Per identity, into LoRA\\(_r\\) pointed at the origin \\((0,0)\\), where \\(S_1=0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O1",
+     "reason": "LiDB's row spaces sweep the \\(a\\)-dimensional \\(\\mathrm{row}\\,P_{in}\\) (any vector of it at \\(r=1\\)), while VeRA's updates \\(\\Lambda_bB\\Lambda_dA\\) keep their rows in the fixed \\(\\mathrm{row}\\,A\\). With independent frames \\(\\mathrm{row}\\,P_{in}\\not\\subseteq\\mathrm{row}\\,A\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone (prediction fibre W_0 + P_out M_<=r P_in, dim r(a+b-r) = 149 at r = 1) / defect (the fast fine-tune starts at the predicted weights) / GL (R^x at r = 1) / frame / M1 / schedule. NOLA arrow checked against the catalog's NOLA convention (beta on the output-side bank, alpha on the input-side bank): sum beta_{kj} p_k e_j^T = P_out B_tr and sum alpha_{jl} e_j q_l^T = A_tr P_in. LoRA arrow and O1 to VeRA (row P_in not inside row A when r_VeRA < d_in) verified. No changes."
+  },
+  {
+   "id": "text-to-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Table VIII.B row 'Text-to-LoRA / HyperFormer': a \\(T\\)-point of LoRA over task descriptions, \\((z,m,l)\\mapsto h_\\theta(\\mathrm{concat}[f(z),E[m],E[l]])=(B,A)\\).",
+    "shape": "Each task fibre is a point of LoRA's cone \\(W_0+\\mathcal M_{\\le r}\\) ('a \\(T\\)-point of LoRA', VIII.B).",
+    "base_point": "Bias-HyperInit sets the output-head weights and the \\(B\\)-bias to zero and the \\(A\\)-bias to a fixed \\(U(-1/d,1/d)\\) draw. So the untrained hypernetwork emits \\((0,A_0)\\) for every task, LoRA's \\(\\mathrm T_A\\) apex, with \\(S_1=\\{XA_0\\}\\) per task. VIII.B leaves this cell blank.",
+    "gauge": "A global \\(GL_r\\) on the rank wire of the generated adapters, absorbed by the L head's separate linear \\(A\\)- and \\(B\\)-outputs. The M and S heads share weights across \\(A\\), \\(B\\) (and ranks), so only part of \\(GL_r\\) lifts to their parameters; the key records the fibre gauge, as for HyperFormer. VIII.B: factor targets are gauge-sensitive, i.e. the reconstruction objective regresses onto factor representatives of the library LoRAs and is not \\(\\prod GL_r\\)-invariant. The SFT objective is.",
+    "covariance": "The generated factors are dense, so each fibre is basis-free (– in VIII.B).",
+    "merge": "M1 per task (VIII.B): the generated adapter is an ordinary LoRA.",
+    "rebasing": "n/a: a zero-shot family whose hypernetwork is trained for \\(\\theta_0\\) only, so merge-and-restart is undefined (– in VIII.B)."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "T2L is a \\(T\\)-point \\(a:T\\to Q_{\\rm LoRA}\\) over natural-language task descriptions, and Bias-HyperInit points the whole family at LoRA's standard apex, so fibrewise it is a pointed arrow into LoRA. Its reconstruction mode regresses onto factors, the gauge-sensitive target Table VIII.B warns about; SFT mode depends only on \\(BA\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_z(\\theta)=h_\\theta\\big(\\mathrm{concat}[f(z),E[m],E[l]]\\big)",
+     "note": "Fibrewise over tasks, into LoRA\\(_r\\) pointed at \\((0,A_0)\\). The arrow is pointed, because Bias-HyperInit gives \\(h_z(q_0)=(0,A_0)\\) for every \\(z\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "moelora",
+     "test": "O1",
+     "reason": "MOELoRA's task updates \\(\\sum_i\\omega_{\\tau i}B_iA_i\\) all have column space in \\(\\mathrm{col}[B_1\\cdots B_N]\\) and row space in \\(\\mathrm{row}[A_1;\\dots;A_N]\\), both \\(r\\)-dimensional. T2L's \\(B(z)\\) varies with the task, so two tasks can need more than \\(r\\) column directions."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone / apex / GL / GLxGL / M1 / n/a. Bias-HyperInit (zero head weights, zero B-bias, fixed U(-1/d,1/d) A-bias) emits (0, A_0) for every task, so the fibrewise arrow into LoRA_r at (0, A_0) is pointed and S_1 = {X A_0} per task (the A-head is first-order dead). O1 to MOELoRA (fixed r-dim column space vs task-dependent B(z)) valid. Change: gauge note no longer says GL_r is absorbed by every head; only the L head emits A and B separately, the M and S heads share weights. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "drag-and-drop-llms",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over datasets, each represented by a batch of unlabeled prompts: \\(c=\\mathrm{Enc}(p)\\mapsto G_\\phi(c)\\), the tokenized weights of every LoRA.",
+    "shape": "Each fibre is a point of LoRA's cone.",
+    "base_point": "No neutral initialisation: an untrained generator emits nonzero weights, so the family starts with a defect (as HyperFormer).",
+    "gauge": "The generated adapters enter only through \\(BA\\), so each fibre carries LoRA's \\(GL_r\\). DnD regresses (MSE) onto tokenized factors of collected checkpoints, a gauge-sensitive target (VIII.B), since checkpoints from different runs sit at unrelated \\(GL_r\\) representatives.",
+    "covariance": "Dense generated factors: basis-free fibres.",
+    "merge": "M1 per dataset: the output is an ordinary LoRA.",
+    "rebasing": "n/a: a one-shot family."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "DnD is a \\(T\\)-point of LoRA over prompt batches, learned by regression onto factor tokens. That target is not a function of the adapters, so the generator must also learn the gauge choices of its training checkpoints; a product-level target, or a joint gauge fixing (Prop V.4(b)), would remove that burden.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_c(\\phi)=\\mathrm{detok}\\big(G_\\phi(c)\\big)",
+     "note": "Fibrewise over prompt batches, into LoRA pointed at \\(h(q_0)\\) (defect)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone / defect / GL / GLxGL / M1 / n/a. The defect is inferred (no neutral initialisation is documented for the generator), as the note says. Arrow into LoRA at h(q_0) valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "doc-to-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over documents: a Perceiver hypernetwork reads the frozen LLM's per-layer activations \\(Z_{l-1}\\) of a document and emits \\((B_l,A_l)\\) for every MLP down-projection.",
+    "shape": "Each document fibre is a point of LoRA\\(_{rK}\\): the \\(K\\) chunk adapters are concatenated by rank (Obs I.7).",
+    "base_point": "No zero initialisation is recorded. The generated adapter is pointed only if \\(\\alpha_l=0\\) or the heads emit \\(B=0\\) at initialisation, so it is recorded as a defect.",
+    "gauge": "Each generated adapter is a point of LoRA\\(_{rK}\\), so its fibre gauge is \\(GL_{rK}\\) on the concatenated rank wire (\\(\\prod_kGL_r\\) preserves the chunk structure; each latent gives a row of \\(A_l\\) and a column of \\(B_l\\)), plus the scalar slide \\((\\alpha_l,B_l)\\mapsto(c\\alpha_l,B_l/c)\\). Only the part that the hypernetwork's output heads can absorb acts on its own parameters.",
+    "covariance": "Dense generated factors: basis-free fibres.",
+    "merge": "M1 per document: the generated adapter is an ordinary LoRA.",
+    "rebasing": "n/a: a one-shot family."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "D2L amortises context distillation: \\(c\\mapsto H_\\phi(c)\\) is a \\(T\\)-point of LoRA over documents, and long documents use the monoidal structure \\(\\mathrm{LoRA}_r^{\\oplus K}\\cong\\mathrm{LoRA}_{rK}\\) of Obs I.7. Its App. D variant emits a KV cache instead, landing the same family in the unpointed prefix extension rather than in the pointed slice.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_c(\\phi)=\\big(\\alpha_l[B^{(1)}_l\\ \\cdots\\ B^{(K)}_l],\\ [A^{(1)}_l;\\dots;A^{(K)}_l]\\big)",
+     "note": "Fibrewise over documents: an explicit factorisation through the hypernetwork's output, composed with the isomorphism \\(\\mathrm{LoRA}_r^{\\oplus K}\\cong\\mathrm{LoRA}_{rK}\\) of Obs I.7, pointed at \\(h(q_0)\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "text-to-lora",
+     "test": "O2",
+     "reason": "D2L's per-input rank \\(rK\\) grows with document length, while T2L's generated adapters have rank at most \\(r\\), so long inputs exceed T2L's maximum rank."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone (per document a point of LoRA_{rK}) / defect (no zero init recorded, as noted) / GL / GLxGL / M1 / n/a. Changes: (1) arrow rule A5 -> A3: the arrow is an explicit factorisation through the hypernetwork output, composed with the Obs I.7 isomorphism LoRA_r^{(+)K} = LoRA_{rK}; it is neither a summand inclusion nor stage padding; the identity rho_LoRA(h_c) = W_l + alpha_l sum_k B^(k) A^(k) checked. (2) Gauge note: the generated adapter carries GL_{rK} on the concatenated wire (prod_k GL_r preserves chunks), not just GL_r per chunk. O2 to T2L (max rank rK > r for K >= 2) valid. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "tina",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "LoRA's cone \\(W_0+\\mathcal M_{\\le r}\\).",
+    "base_point": "\\(B=0\\): RL starts at the distilled base policy, LoRA's apex.",
+    "gauge": "\\(GL_r\\).",
+    "covariance": "LoRA's basis-free cone.",
+    "merge": "Fuses: \\(BA\\) folds into \\(W_0\\).",
+    "rebasing": "\\(\\to\\Theta\\), as LoRA.",
+    "kind": "Plain LoRA \\(W_0+\\frac\\alpha rBA\\) (\\(r=32\\), \\(\\alpha=128\\)). Only the objective changes (GRPO with verifiable rewards), and the loss is not part of \\(\\rho\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Tina is LoRA's object with a policy-gradient loss: the RL objective changes which point of the cone \\(W_0+\\mathcal M_{\\le32}\\) is reached, not the cone. The 'rapid format adaptation' claim is about where GRPO lands inside that image, which the framework constrains only through the image and the cometric.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same object \\((Q,q_0,\\rho)\\); only the loss differs."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "tinylora",
+     "test": "O2",
+     "reason": "\\(d(\\text{Tina})=r(m+n-r)\\) per adapted matrix with \\(r=32\\), far above TinyLoRA's \\(u\\)-dimensional linear image, although both papers argue that RL needs few parameters."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Same object as LoRA (h = id; only the GRPO loss differs); r = 32, alpha = 128 match the catalog. O2 to TinyLoRA (r(m+n-r) vs u) valid. No changes."
+  },
+  {
+   "id": "qerl",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "QLoRA-type recipe: LoRA on a frozen NVFP4 base, trained by GRPO/DAPO, with scheduled noise on the RMSNorm gains during training.",
+    "shape": "The cone \\(\\kappa\\theta_0+\\mathcal M_{\\le r}\\), translated to the quantised base.",
+    "base_point": "Pointed at \\(\\kappa\\theta_0\\), with defect \\(e=\\kappa\\theta_0-\\theta_0\\) (Prop V.2(a)). \\(B=0\\) starts RL at the NVFP4 policy, not at the bf16 one.",
+    "gauge": "\\(GL_r\\).",
+    "covariance": "The NVFP4 grid with 16-element micro-block scales is coordinate structure. As for QLoRA it is recorded as Mon×Mon; the micro-blocks restrict the input side further, to block-preserving monomials.",
+    "merge": "An exact merge of \\(BA\\) leaves the NVFP4 grid; a type-preserving merge is lossy (Thm VI.3(d)).",
+    "rebasing": "\\(\\to\\) span over the quantised base, as QLoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "QeRL is QLoRA under another quantiser (NVFP4) and an RL loss. Its AQN noise on RMSNorm gains is, by norm absorption (R6), a random input-side diagonal scaling of the following projections, i.e. a random point of LN-tuning's linear image used for exploration and absent from \\(\\rho\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "qlora",
+     "test": "O1",
+     "reason": "Different quantisers give different translates of the same cone: \\(\\kappa_{\\rm NVFP4}\\theta_0+\\mathcal M_{\\le r}\\subseteq\\kappa_{\\rm NF4}\\theta_0+\\mathcal M_{\\le r}\\) forces \\(\\kappa_{\\rm NVFP4}\\theta_0=\\kappa_{\\rm NF4}\\theta_0\\). The two are related by a translation, a transport rather than an arrow."
+    },
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "\\(\\theta_0\\notin\\kappa\\theta_0+\\mathcal M_{\\le r}\\) unless \\(\\mathrm{rank}\\,e\\le r\\) (Prop V.2(a)), and the translate lies inside \\(\\theta_0+\\mathcal M_{\\le r}\\) only if \\(e=0\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived as QLoRA under NVFP4: Cone at kappa theta_0, defect e, GL, MonxMon, Mq, span; AQN is a training-time perturbation of the RMSNorm gains (R6), outside rho. Both O1 obstructions verified: for r < min(m,n), a + M_<=r is contained in b + M_<=r only if a = b. No changes."
+  },
+  {
+   "id": "plop",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "LoRA's cone on the selected module types; all other modules stay at \\(\\theta_0\\).",
+    "base_point": "\\(B=0\\): LoRA's apex.",
+    "gauge": "\\(GL_r\\).",
+    "covariance": "LoRA's basis-free cone.",
+    "merge": "Fuses: \\(BA\\) folds into \\(W_0\\).",
+    "rebasing": "\\(\\to\\Theta\\), as LoRA.",
+    "kind": "A placement rule: standard LoRA, inserted only in the module types with the lowest normalised feature norm. The score is computed from the frozen model before training, so the object is fixed."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "PLoP picks a sub-object of LoRA-on-all-modules by freezing whole module types at their base value (A2), using a statistic of the frozen model and the data. The NFN score decides only the support; everything else is LoRA.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(q_T)=\\big(q_T,\\ q_0|_{T^{c}}\\big)",
+     "note": "The adapters of unselected module types are frozen at \\((0,A_0)\\): a pointed monomorphism into LoRA on all modules."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "\\(S_1(\\text{PLoP})=\\{XA_0\\}\\) has dimension \\(mr\\) per adapted matrix, while AdaLoRA at \\(\\Lambda=0\\) has \\(\\dim S_1=r\\) (VIII.B). \\(S_1\\) is monotone along pointed arrows (Obs I.6), so there is no pointed arrow, although both allocate budget across modules."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Same object as LoRA on the selected module types. A2 arrow (unselected types frozen at (0, A_0)) is pointed; O3 to AdaLoRA (dim S_1 = mr > r, monotone by Obs I.6) valid. No changes."
+  },
+  {
+   "id": "lori",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Reparametrisation \\(W_0+(B\\odot M)A_0\\) with \\(A_0\\) frozen random and a fixed sparse mask \\(M\\) on \\(B\\).",
+    "shape": "Linear: \\(\\{XA_0:\\mathrm{supp}\\,X\\subseteq M\\}\\), of dimension \\(|M|\\) (on average \\((1-s)rd_{out}\\) per matrix for LoRI-S).",
+    "base_point": "\\(B=0\\) on a linear method: regular. The calibration run that sets \\(M\\) is discarded and \\(B\\) is reset to zero.",
+    "gauge": "None: \\(A_0\\) has full row rank, so \\(X\\mapsto XA_0\\) is injective.",
+    "covariance": "A random frame on the input side (covariant in law) and a coordinate mask on the output side: Mon×fr, recorded as 'frame' as for VeRA.",
+    "merge": "Fuses; multi-task merging is a weighted sum of static updates.",
+    "rebasing": "Frame and mask are fixed: idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "LoRI is a masked LoRA-FA, a coordinate sub-object of \\(\\mathrm{FA}(A_0)\\subseteq\\) LoRA. Multi-task merging is the \\(\\oplus\\) of such objects with independent random frames, and the cross-talk \\(\\Delta W_jA_i^\\top\\) is small because independent random \\(r\\)-frames are nearly orthogonal: a random-frame version of the shared-frozen-factor fix of Prop V.4(b).",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A2",
+     "h": "h(X)=\\iota_M X",
+     "note": "Freezing the masked-out entries of \\(B\\) at \\(0\\): a sub-object of \\(\\mathrm{FA}(A_0)\\) pointed at \\(B=0\\)."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(X)=(\\iota_M X,\\ A_0)",
+     "note": "The composite with \\(\\mathrm{FA}(A_0)\\hookrightarrow\\mathrm{LoRA}_{(0,A_0)}\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O2",
+     "reason": "\\(d(\\text{LoRI})=|M|\\), about \\(3.2\\,d_{out}\\) per matrix at \\(s=0.9\\), \\(r=32\\), exceeds VeRA's \\(d=d_{out}+r-1\\), although both rest on frozen random projections."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin (dim |M|) / regular / none / frame (Mon x fr, recorded as for VeRA) / M1 / idempotent. A2 arrows into LoRA-FA(A_0) and LoRA at (0, A_0) verified; O2 to VeRA valid (|M| ~ 3.2 d_out exceeds d_out + r_V - 1 for any r_V <= d_in ~ d_out). No changes."
+  },
+  {
+   "id": "singlora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Reparametrisation \\(W_0+\\frac\\alpha ru(t)AA^\\top\\) for square layers, \\(A_{[1:d_{out}]}A_{[1:d_{in}]}^\\top\\) for rectangular ones.",
+    "shape": "Square: the PSD determinantal cone \\(W_0+\\mathrm{PSD}_{\\le r}\\), of dimension \\(rd-r(r-1)/2\\), closed under positive scalings only. Rectangular: \\(\\{A_{[1:d_{out}]}A_{[1:d_{in}]}^\\top\\}\\) (for \\(d_{in}>d_{out}\\), \\(\\{[A_1A_1^\\top\\ \\ A_1A_2^\\top]\\}\\)), of dimension \\(r\\max(d_{in},d_{out})-r(r-1)/2\\).",
+    "base_point": "The ramp makes \\(\\rho_0\\) constant (\\(S_1=0\\)) and phases in the data-independent offset \\(\\frac\\alpha ru(t)A_0A_0^\\top\\). At \\(u=1\\) the object is pointed at Kaiming \\(A_0\\) with defect \\(\\frac\\alpha rA_0A_0^\\top\\). The exactly pointed choice \\(A=0\\) is the vertex, where \\(S_1=0\\) and every gradient vanishes.",
+    "gauge": "\\(O(r)\\), \\(A\\mapsto AQ\\), with fibre \\(r(r-1)/2\\) (exact also for rectangular layers): the compact form of LoRA's \\(GL_r\\), coded GL as for PoLAR. The \\(\\mathrm{Sym}_r\\) half and its balancedness charges are gone, which is the paper's 'no scale imbalance'.",
+    "covariance": "The update is symmetric under a pairing of input and output coordinates (the identity for square layers, truncation for rectangular ones). The image transforms only under congruence pairs \\((g,\\lambda g^{-\\top})\\), and independent neuron permutations on the two sides break it: imposed structure \\(\\Pi\\).",
+    "merge": "\\(AA^\\top\\) is a static matrix.",
+    "rebasing": "Thm V.3(a) for a cone closed only under positive scalings: \\(R_K=W_0+\\mathrm{PSD}_{\\le Kr}\\), converging to the convex cone \\(W_0+\\mathrm{PSD}\\), not to a span. 'span' is the nearest value."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "SingLoRA is the diagonal \\(B=A^\\top\\) of LoRA's parameter space, an A3 sub-object whose stabiliser in \\(GL_r\\) is \\(O(r)\\). Cutting the gauge to its compact half removes the charges behind factor imbalance, but for square layers it also cuts the image to PSD updates, \\(x^\\top\\Delta Wx\\ge0\\) for every \\(x\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(A)=\\big(\\tfrac\\alpha r\\,u\\,A_{[1:d_{out}]},\\ A_{[1:d_{in}]}^\\top\\big)",
+     "note": "Into LoRA\\(_r\\) pointed at \\(h(A_0)\\), which is not LoRA's \\(B_0=0\\) pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Once the ramp ends, \\(\\rho(q_0)-\\theta_0=\\frac\\alpha rA_0A_0^\\top\\ne0\\), so SingLoRA lies in none of LoRA's standard strata and there is no pointed arrow into LoRA at \\((0,A_0)\\); the arrow above lives in the unpointed slice."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / defect / GL (O(r), coded as for PoLAR) / Pi / M1 / span (nearest value). numpy: generic Jacobian rank r max(d_in,d_out) - r(r-1)/2 at (d_in,d_out,r) = (7,7,3), (9,5,2), (5,8,3) (18, 17, 21), fibre r(r-1)/2 also for rectangular layers, S_1 = 0 at A = 0. Change: the shape note gave r d_in - r(r-1)/2 for rectangular layers, which is wrong when d_out > d_in (21, not 12, at (5,8,3)); corrected to r max(d_in,d_out) - r(r-1)/2. Covariance (congruence pairs only, so Pi), rebasing (R_inf = W_0 + PSD), the unpointed-slice arrow into LoRA and the O3 obstruction verified."
+  },
+  {
+   "id": "shine",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over contexts: the LLM, with a meta-LoRA and memory tokens, encodes the context into an \\(L\\times M\\) memory grid, and the M2P transformer maps the grid to every LoRA factor jointly.",
+    "shape": "Each context fibre is a rank-8 LoRA point on every linear layer.",
+    "base_point": "There is no identity guarantee for the generated adapter: defect.",
+    "gauge": "\\(GL_8\\) on each generated rank wire, absorbed by M2P's linear output heads. The meta-LoRA carries its own \\(GL_{128}\\), inside the encoder pass only.",
+    "covariance": "Dense generated factors: basis-free fibres.",
+    "merge": "M1 per context, though normally kept as a swappable adapter.",
+    "rebasing": "n/a: a one-shot family."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "SHINE is a \\(T\\)-point of LoRA over contexts whose encoder is the base model itself, turned into a hypernetwork by a meta-LoRA that lives only in the encoder pass and never reaches the deployed weights. Generating all layers jointly makes \\(a:T\\to\\prod_lQ_l\\) a single map, not a product of per-layer maps.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_c(\\Delta_{\\rm meta},m,\\psi)=\\mathrm{M2P}_\\psi\\big(\\mathcal M(c)\\big)_l",
+     "note": "Fibrewise over contexts, per layer into LoRA\\(_8\\) pointed at \\(h(q_0)\\) (defect)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "doc-to-lora",
+     "test": "O1",
+     "reason": "SHINE writes rank-8 updates into every linear layer of each block, D2L only into the MLP down-projections. A SHINE context with a nonzero attention, gate or up update is outside D2L's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone / defect / GL / GLxGL / M1 / n/a. Arrow into LoRA_8 per layer at h(q_0) and O1 to D2L (SHINE also writes attention, gate and up projections) valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "generative-adapter",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over contexts: \\(\\Delta W_l=A_1\\,\\mathrm{norm}_r(A_2H^\\top HB_1)\\,B_2\\). The context enters only through \\(\\sum_mh_mh_m^\\top\\), accumulated over streamed chunks.",
+    "shape": "Each fibre is a point of the rank-128 cone inside the trained frames \\(\\mathrm{col}\\,A_1\\), \\(\\mathrm{row}\\,B_2\\).",
+    "base_point": "\\(\\mathrm{norm}_r\\) resets the \\(r\\) singular values to 1, so for a generic context the delta is never 0. The family is pointed only at \\(A_1=0\\) or \\(B_2=0\\), which the method does not use: defect.",
+    "gauge": "\\(\\mathrm{norm}_r\\) is the polar factor: equivariant under orthogonal maps and invariant under positive scalings. So \\((A_1O_1^\\top,O_1A_2,B_1O_2,O_2^\\top B_2)\\), \\((aA_2,bB_1)\\) with \\(a,b>0\\), and the outer slide \\((A_1,B_2)\\mapsto(cA_1,B_2/c)\\) leave \\(\\rho\\) unchanged: \\(CO(d_r)\\times CO(d_r)\\) times a scalar slide, with generic fibre \\(d_r(d_r-1)+3\\) (Jacobian rank, checked numerically). It is the compact form of the \\(GL_{d_r}\\) wire gauges, coded GL as for PoLAR.",
+    "covariance": "Trained dense \\(A_1,B_2\\): basis-free fibres.",
+    "merge": "M1 per context.",
+    "rebasing": "n/a: a one-shot family."
+   },
+   "table_row": "F_T",
+   "table_col": "Cone",
+   "categorical_reading": "GenerativeAdapter is a \\(T\\)-point of LoRA\\(_{128}\\) that factors through a linear-attention state: contexts act through the additive monoid of Gram matrices \\(\\sum h_mh_m^\\top\\), so streaming is a monoid homomorphism, and the polar normalisation then forgets the state's singular values. With the generator fixed, the family lies in the sandwich \\(\\{W_0+A_1XB_2\\}\\) of Prop I.8(a).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_c(A_1,A_2,B_1,B_2)=\\big(A_1U_r(c),\\ V_r(c)^\\top B_2\\big),\\ \\ U_r\\Sigma_rV_r^\\top=\\mathrm{SVD}_r(A_2H_c^\\top H_cB_1)",
+     "note": "Fibrewise over contexts, into LoRA\\(_{128}\\) pointed at \\(h(q_0)\\); smooth where \\(\\sigma_r>\\sigma_{r+1}\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "shine",
+     "test": "O2",
+     "reason": "GenerativeAdapter's per-context update on \\(W_o\\) has rank 128; SHINE's generated adapters have rank 8."
+    },
+    {
+     "target": "doc-to-lora",
+     "test": "O1",
+     "reason": "GenerativeAdapter writes only into the attention output projections and D2L only into the MLP down-projections, and GenerativeAdapter's normalised update is never zero, so for generic contexts their images do not meet."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Cone (rank-128 cone in the frames col A_1, row B_2) / defect (norm_r never returns 0 for a generic context) / GL / GLxGL / M1 / n/a. Change: the gauge note missed one symmetry. Besides the O(d_r) x O(d_r) rotations and the positive scalings of A_2 and B_1 absorbed by norm_r, the outer slide (A_1, B_2) -> (c A_1, B_2/c) also fixes rho. numpy (Jacobian of the family over 6-30 random contexts, five sizes, r <= d_r): fibre d_r(d_r-1)+3 (9 at d_r = 3, 15 at d_r = 4), not d_r(d_r-1)+2. Arrow into LoRA_128 (smooth where sigma_r > sigma_{r+1}), O2 to SHINE (128 > 8) and O1 to D2L verified. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "goat",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over tokens: top-\\(k\\) softmax routing over \\(E\\) rank-\\(r/E\\) LoRA experts, on the frozen residual \\(W_0-W_{\\rm res}\\).",
+    "shape": "Input-dependent mixture: function-level.",
+    "base_point": "The subtracted \\(W_{\\rm res}=\\frac sE\\sum_iB_0^iA_0^i\\) cancels the experts only for uniform weights \\(1/E\\), which top-\\(k\\) routing (\\(k<E\\)) never produces. The base point is an input-dependent defect \\(e(x)=\\sum_i(w^i(x)-\\frac1E)sB_0^iA_0^i\\). No parameter value reproduces \\(f\\) either: on an open set of inputs with a fixed top-\\(k\\) set, the routed update maps \\(x\\) into a space of dimension \\(\\le kr/E<r=\\operatorname{rank}W_{\\rm res}\\), so it cannot cancel \\(W_{\\rm res}x\\). As for QLoRA with \\(\\operatorname{rank}e>r\\), this is recorded as a defect rather than as unpointed.",
+    "gauge": "\\(\\prod_iGL_{r/E}\\) on the experts, plus the softmax translation of \\(W_z\\).",
+    "covariance": "n/a: function-level. The SVD-segment initialisation is a \\(CO\\times CO\\) frame of \\(W_0\\).",
+    "merge": "Expert weights depend on the input.",
+    "rebasing": "n/a: not mergeable."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "GOAT spreads a Type II (PiSSA-type) split of \\(W_0\\) over \\(E\\) experts, one SVD segment each, and subtracts their average; routing then breaks the split, so the base point becomes an input-dependent defect rather than the smooth point of a translated cone. Per token the weight is a point of LoRA\\(_{2r}\\) at \\(\\theta_0\\): the routed experts plus the frozen \\(-W_{\\rm res}\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_x(B,A,W_z)=\\big([s\\,w^1(x)B^1\\ \\cdots\\ s\\,w^E(x)B^E\\ \\ -\\tfrac sEB_0^1\\ \\cdots\\ -\\tfrac sEB_0^E],\\ [A^1;\\dots;A^E;A_0^1;\\dots;A_0^E]\\big)",
+     "note": "Fibrewise over tokens, into LoRA\\(_{2r}\\) at \\(\\theta_0\\), pointed at \\(h(q_0)\\) (unpointed slice); smooth away from routing ties."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "hydralora",
+     "test": "O1",
+     "reason": "GOAT's top-\\(k\\) routed functions jump at ranking ties, while HydraLoRA's dense softmax gives functions continuous in the input. So generic GOAT functions are outside HydraLoRA's image (its main baseline)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / defect / GL (prod GL_{r/E} + softmax translation) / n/a / Minf / n/a. Arrow into LoRA_{2r} at theta_0 (routed experts plus frozen -W_res; rho_LoRA(h_x) = W_0 - W_res + sum_i s w^i B^iA^i) verified; O1 to HydraLoRA (top-k jumps vs dense softmax) valid. Change: base_point note adds that no parameter value reproduces f (each token's update has rank <= k r/E < r = rank W_res for k < E), and that this is recorded as a defect, following QLoRA. Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "core-space-merging",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "P",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Post hoc: joint SVD frames of the stacked \\(A\\)'s and the concatenated \\(B\\)'s map every update to a \\(Tr\\times Tr\\) core, an existing merge rule acts there, and the result is mapped back.",
+    "shape": "Read on the inner rule's coefficients, as for KnOTS. With task arithmetic inside, \\(\\lambda\\mapsto W_0+U_B(\\sum_t\\lambda_tM^{(t)})V_A^\\top=W_0+\\sum_t\\lambda_tB^{(t)}A^{(t)}\\): a linear method.",
+    "base_point": "\\(\\lambda=0\\) returns \\(W_0\\).",
+    "gauge": "The coefficient line is injective. The input gauge \\(\\prod_tGL_r\\) does not cancel, though: it fixes the subspaces \\(\\mathrm{col}[B^{(1)}\\cdots B^{(T)}]\\) and \\(\\mathrm{row}[A^{(1)};\\dots]\\) but moves the singular bases inside them, rotating every core by a common \\((O_B,O_A)\\in O(Tr)^2\\). Linear inner rules are unaffected; coordinatewise ones (TIES, DARE) are gauge-dependent.",
+    "covariance": "SVD frames on both sides: \\(CO\\times CO\\), as KnOTS; \\(GL\\times GL\\) with task arithmetic inside.",
+    "merge": "The merged update is one static matrix.",
+    "rebasing": "Idempotent with the merged update frozen."
+   },
+   "table_row": "P",
+   "table_col": "Lin",
+   "categorical_reading": "Core Space is a joint frame fixing done on factors rather than on products: the projection \\(\\Delta W\\mapsto U_B^\\top\\Delta WV_A\\) is lossless on the span of all updates, so linear rules are exact. Its frames come from the stacked factors, so a coordinatewise rule in core coordinates is not a function of the adapters \\(B^{(t)}A^{(t)}\\) (Prop V.4(a)), whereas KnOTS takes its frame from the concatenated products.",
+   "arrows": [
+    {
+     "target": "task-arithmetic",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_\\lambda",
+     "note": "With task arithmetic as the inner rule, Core Space and task arithmetic have the same coefficient family (the projection is lossless)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "knots",
+     "test": "O1",
+     "reason": "With TIES inside, trimming and sign election act in different coordinates (core frames from stacked factors, KnOTS's frame from concatenated updates), so the two merged lines differ."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived P / Lin / regular / none / OxO / M1 / idempotent, as KnOTS. Gauge claim checked: prod GL_r fixes col[B^(1)...B^(T)] and row[A^(1);...], so U_B -> U_B O_B, V_A -> V_A O_A and every core moves by the same (O_B, O_A); linear inner rules are unaffected. Arrow to task arithmetic (lossless projection, U_B U_B^T B = B) and O1 to KnOTS (generic) valid. No changes."
+  },
+  {
+   "id": "k-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": null,
+    "base_point": "unpointed",
+    "gauge": null,
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Built post hoc from two trained LoRAs (P-type inputs), but its output is a family over denoising timesteps and layers, \\((t,l)\\mapsto\\Delta W^l(t)\\in\\{\\Delta W_c^l,\\Delta W_s^l\\}\\), not one point of \\(\\Theta\\).",
+    "shape": "n/a: there are no trainable or continuous coefficients. Each timestep selects one of finitely many weights, so there is no germ at \\(\\theta_0\\).",
+    "base_point": "Every layer always carries one of the two LoRAs, so no timestep returns \\(\\theta_0\\): unpointed.",
+    "gauge": "n/a: no trainable parameters. The selection score (Top-\\(K\\) \\(\\ell_1\\) mass of \\(\\Delta W\\)) is a function of the products, so it is gauge-invariant.",
+    "covariance": "Top-\\(K\\) magnitudes and \\(\\ell_1\\) masses are coordinatewise: natural under signed permutations and common homotheties, not under rotations (as TIES).",
+    "merge": "M1 per timestep. The selection depends only on \\((l,t)\\) and the two LoRAs, never on the latent, so the sampler can run on a precomputed schedule of merged weights, but no single static weight reproduces it.",
+    "rebasing": "n/a: nothing is trained."
+   },
+   "table_row": "F_T",
+   "table_col": "–",
+   "categorical_reading": "K-LoRA is a family over the denoising time \\(T\\) that takes values at the vertices of a layer-wise CAT simplex: content LoRA early, style LoRA late. It is ZipLoRA's object evaluated at 0/1 coefficients, chosen per timestep by a training-free magnitude rule instead of learned once.",
+   "arrows": [
+    {
+     "target": "lora-soups",
+     "rule": "A3",
+     "h": "h_t(\\ast)=\\big(\\alpha_c^{l},\\alpha_s^{l}\\big)=\\begin{cases}(1,0)&\\text{layer }l\\text{ selects content at }t\\\\ (0,1)&\\text{otherwise}\\end{cases}",
+     "note": "Fibrewise over timesteps: a vertex of CAT's layer-wise family (unpointed slice)."
+    },
+    {
+     "target": "ziplora",
+     "rule": "A3",
+     "h": "h_t(\\ast)=\\big(m_c^{l},m_s^{l}\\big)\\in\\{(\\mathbf 1,0),(0,\\mathbf 1)\\}",
+     "note": "Fibrewise over timesteps: ZipLoRA's column coefficients at 0/1 values (ZipLoRA pointed at \\(h(\\ast)\\))."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "task-arithmetic",
+     "test": "O1",
+     "reason": "At one timestep K-LoRA uses the content LoRA in some layers and the style LoRA in others. Task arithmetic's global coefficients cannot select per layer, so that weight is outside its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T over denoising time (selection depends only on (l, t) and the two LoRAs) / shape n/a (finitely many weights, as model soups) / unpointed / n/a / MonxMon (TIES-type magnitude rule) / M1 per timestep (as MOELoRA per task) / n/a. Vertex arrows into CAT and ZipLoRA (Delta W_c diag(1) at (1,0)) verified; O1 to task arithmetic valid. No changes. Consolidation (2026-10-01): shape 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); table_col 'n/a' -> '–'."
+  },
+  {
+   "id": "ominicontrol",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "An extension over the enlarged input \\(X\\times C\\): VAE-encoded condition tokens \\(C_I\\) join the DiT's token sequence, and a rank-4 LoRA acts only on those tokens. With \\(B=0\\) the frozen blocks already attend to \\(C_I\\), so the trainable parameters contain no neutral point.",
+    "shape": "Function-level: the condition enters on the sequence wire.",
+    "base_point": "On a head with \\(W_oW_v\\ne0\\), positive softmax mass on condition tokens moves the output (Thm VI.5(f)). The bias \\(\\log\\gamma\\) rescales that mass, i.e. the gate \\(\\lambda_q\\) of Thm VI.5(b), and \\(\\gamma\\to0\\) would be neutral. That limit lies outside the parameter domain, and \\(\\gamma\\) is not trained.",
+    "gauge": "LoRA's \\(GL_4\\) on each token-restricted adapter.",
+    "covariance": "The LoRA part is basis-free, as recorded for other E° entries.",
+    "merge": "A token-restricted LoRA plus extra tokens: position-gated edits are M∞ (Thm VI.3(a)).",
+    "rebasing": "n/a: an extension."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "OminiControl is an unpointed extension on the sequence wire whose new tokens are computed by the frozen model itself, plus a LoRA pulled back along a token-type gate (aLoRA's construction, with a type gate instead of a position gate). Its strength knob \\(\\gamma\\) rescales the condition's softmax mass, the gate \\(\\lambda_q\\) in the gated-parallel-adapter form of Thm VI.5(b).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "easycontrol",
+     "test": "O1",
+     "reason": "Under full bidirectional attention, OminiControl's condition-token states depend on the noisy latent; EasyControl's causal mutual mask makes them functions of the condition alone. Generic OminiControl functions are therefore outside EasyControl's image (generic, not proved at network level)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 / Fun / unpointed (with B = 0 the frozen blocks still attend to the condition tokens; gamma is not trained) / GL / GLxGL / Minf / n/a. log gamma rescales Z(C), i.e. the gate lambda_q of Thm VI.5(b). O1 to EasyControl valid generically. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json). Sync with the refereed paper (2026-10-03): statements resting on Thm VI.5(f) now carry its hypotheses (W_o W_v != 0 for neutrality; W_o != 0, W_q != 0 and generic prompts for non-affinity; two or more prompt tokens for LLaMA-Adapter)."
+  },
+  {
+   "id": "easycontrol",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "An extension over \\(X\\times C\\): condition tokens with a QKV LoRA on the condition branch only. Text and noise tokens use exactly \\(W_0\\), and a causal mutual-attention mask stops condition tokens from attending to text, noise or other conditions.",
+    "shape": "Function-level.",
+    "base_point": "With \\(B=0\\) the frozen model still attends to the condition tokens, so outputs change once a condition is added: unpointed.",
+    "gauge": "\\(GL_r\\) on each of the three condition-branch LoRAs.",
+    "covariance": "The LoRA parts are basis-free.",
+    "merge": "A token-restricted LoRA plus extra tokens: M∞.",
+    "rebasing": "n/a: an extension."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Under its causal mask each condition's states depend only on that condition, which is the hypothesis of Thm VI.5(e), so EasyControl is a condition-indexed deep prefix computed by the frozen DiT plus a branch LoRA; that is why its KV can be cached across denoising steps. Because conditions do not attend to each other, several conditions compose through the monoid homomorphism \\(\\Sigma_q(P_1\\uplus P_2\\uplus C)=\\Sigma_q(P_1)+\\Sigma_q(P_2)+\\Sigma_q(C)\\) of Thm VI.5(a).",
+   "arrows": [
+    {
+     "target": "prefix-tuning",
+     "rule": "A3",
+     "h": "h_c(B,A)=\\big(K_l(c;B,A),\\ V_l(c;B,A)\\big)_{l\\le L}",
+     "note": "Fibrewise over conditions: an arrow of the unpointed slice over the realisation, read at content positions, as in Thm VI.5(e). It needs the mask and the condition positions to be independent of the content."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ominicontrol",
+     "test": "O1",
+     "reason": "EasyControl blocks condition-to-content attention while keeping content-to-condition. OminiControl's bias \\(\\log\\gamma\\) acts symmetrically on both \\(X\\leftrightarrow C\\) blocks and its condition tokens see the latent, so generic EasyControl functions are outside its image (generic, not proved at network level)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived E0 / Fun / unpointed / GL / GLxGL / Minf / n/a. Prefix arrow (Thm VI.5(e) reading): under the causal mutual mask the condition states depend only on the condition (their K/V are cached across denoising steps), so they form a deep prefix; valid fibrewise in the unpointed slice. O1 to OminiControl valid generically. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "icedit",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "neutral",
+    "gauge": "GL",
+    "covariance": null,
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A family over tokens: a top-1 routed mixture of four rank-32 LoRA experts on the attention output projection, \\(\\oplus\\) standard LoRA on the other DiT modules. The diptych is fed through FLUX.1 Fill's existing inpainting interface, so it is not an architectural extension.",
+    "shape": "Input-dependent routing: function-level.",
+    "base_point": "With every \\(B_i=0\\) (presumed standard initialisation; the paper does not say) each token sees \\(W_0\\), and the standard LoRAs start at \\(B=0\\): neutral.",
+    "gauge": "\\(\\prod_iGL_{32}\\) on the experts and \\(GL_{32}\\) on each standard LoRA, plus the router's softmax translation. With \\(k=1\\) only the argmax of the router logits matters, so positive rescalings of the router (indeed any change that keeps every argmax region) also lie in the fibre.",
+    "covariance": "n/a: function-level.",
+    "merge": "Routing is input-dependent; the standard LoRA parts alone are M1.",
+    "rebasing": "n/a: not mergeable."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "ICEdit is a family over tokens \\(\\oplus\\) ordinary LoRA, applied to an inpainting model that reads an edit as completing a diptych. With \\(k=1\\) the router is a hard selector: the softmax over one surviving logit is identically 1, so under the catalog's formula the router gets no task-loss gradient and moves only through the discrete selection or an auxiliary loss.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h_x(B,A,g)=\\big(\\tfrac\\alpha r[G_1(x)B_1\\ \\cdots\\ G_4(x)B_4],\\ [A_1;\\dots;A_4]\\big)",
+     "note": "Fibrewise over tokens on \\(W_o\\), into LoRA\\(_{4r}\\) pointed at \\((0,[A_1^0;\\dots;A_4^0])\\), pointed if every \\(B_i=0\\); the standard LoRAs map by the identity."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "loramoe",
+     "test": "O1",
+     "reason": "Top-1 routing switches experts at ties, so ICEdit's functions are discontinuous in the input. LoRAMoE's dense softmax mixture is continuous, so generic ICEdit functions are outside its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived F_T / Fun / neutral (presumed B_i = 0, as noted) / GL / n/a / Minf / n/a; the diptych uses FLUX.1 Fill's existing interface, so no extension. Confirmed that with k = 1 the softmax over one surviving logit is identically 1, so the router only selects. Arrow into LoRA_{4r} (pointed at (0, stacked A) when every B_i = 0) and O1 to LoRAMoE (top-1 discontinuity) valid. Change: gauge note adds the router's positive rescalings (top-1 sees only the argmax). Consolidation (2026-10-01): covariance 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "sd-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Stage \\(t\\): \\(W_0+\\sum_{k<t}\\alpha_kD_k+\\alpha_t\\,B_tA_t/\\lVert B_tA_t\\rVert_F\\), with the unit directions \\(D_k\\) of earlier tasks frozen and all magnitudes trainable.",
+    "shape": "\\(W_0+\\mathrm{span}\\{D_k\\}_{k<t}+\\mathcal M_{\\le r}\\): \\(\\{\\alpha N(BA)\\}\\) is the whole rank-\\(r\\) cone, plus a frozen \\(\\oplus\\) of lines. A cone with a linear factor.",
+    "base_point": "The normalisation is undefined at \\(BA=0\\) and \\(\\alpha_t\\) starts at 1, so each task starts at a unit-norm offset: a pointing defect \\(e=N(B_t^0A_t^0)\\) by design. The exact pointing \\(\\alpha_t=0\\) exists, but there the new summand contributes only the line \\(\\mathbb R\\,N(B_t^0A_t^0)\\) to \\(S_1\\), a deeper apex than LoRA's.",
+    "gauge": "\\(GL_r\\) on \\((B_t,A_t)\\), plus the scale \\(B_t\\mapsto cB_t\\) (\\(c>0\\)) that the normalisation kills.",
+    "covariance": "LoRA's cone plus frozen learned directions: basis-free.",
+    "merge": "The sum of scaled directions is one static matrix.",
+    "rebasing": "A stage scheme over tasks: each task adds one direction and then freezes it into a CAT-type \\(\\oplus\\). After \\(T\\) tasks the reach is \\(W_0+\\mathrm{span}\\{D_k\\}+\\mathcal M_{\\le r}\\subseteq W_0+\\mathcal M_{\\le Tr}\\) (A5)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "At stage \\(t\\), SD-LoRA is CAT on the frozen directions of earlier tasks \\(\\oplus\\) a normalised LoRA for the new one. The normalisation \\(\\alpha N(BA)\\) leaves LoRA's image unchanged but removes the \\(B=0\\) pointing: the stage's base point is reached only at \\(\\alpha_t=0\\), where the new summand's first-order image is the single line \\(\\mathbb R\\,N(B_tA_t)\\), and the paper starts at \\(\\alpha_t=1\\) instead, a defect. \\(\\alpha\\) carries the scale that \\(B\\) loses.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\big([\\alpha_1\\hat B_1\\ \\cdots\\ \\alpha_{t-1}\\hat B_{t-1}\\ \\ \\alpha_tB_t/\\lVert B_tA_t\\rVert_F],\\ [\\hat A_1;\\dots;\\hat A_{t-1};A_t]\\big),\\ \\ D_k=\\hat B_k\\hat A_k",
+     "note": "Stage \\(t\\) into LoRA\\(_{tr}\\), pointed at \\(h(q_0)\\) (defect); smooth where \\(B_tA_t\\ne0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "o-lora",
+     "test": "O2",
+     "reason": "An SD-LoRA stage also re-weights every earlier direction, so \\(d=r(m+n-r)+(t-1)\\), while an O-LoRA stage is a single LoRA\\(_r\\) with earlier components frozen, \\(d=r(m+n-r)\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone (W_0 + span{D_k} + M_<=r) / defect / GL / GLxGL / M1 / schedule. numpy (m,n,r,t) = (7,6,2,3): generic rank r(m+n-r)+t-1 = 24, fibre r^2+1 = 5 (GL_r plus the scale of B_t killed by N), and at alpha_t = 0 the new summand adds a single direction to S_1. Change: the categorical reading said the method 'can never be pointed at theta_0'; it can, at alpha_t = 0, but only as a one-dimensional-S_1 apex, and the paper's alpha_t = 1 start is the defect. Reading and base_point note updated. Arrow into LoRA_{tr} (smooth where B_tA_t != 0) and O2 to O-LoRA (extra t-1 magnitudes, t >= 2) verified."
+  },
+  {
+   "id": "sparse-memory-finetuning",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "The forward map is the identity on the memory-layer model. Each step projects the gradient onto the rows \\(\\mathcal T_t\\) of the value table chosen by a TF-IDF score of slot access (compression = anchor = that coordinate projection): a backward lens.",
+    "shape": "Per step, the moving coordinate subspace \\(\\{V+X:\\mathrm{rows}(X)\\subseteq\\mathcal T_t\\}\\).",
+    "base_point": "Each step is a linear method at its own base: regular.",
+    "gauge": "None.",
+    "covariance": "The rows are memory slots, permuted together with their keys, and the value dimension is updated densely. That is a coordinate mask on the slot (input) side and nothing on the value side: GL×Mon, recorded under the one-sided value Mon×GL.",
+    "merge": "The method writes the value table in place.",
+    "rebasing": "A rebasing scheme with period 1 whose mask moves with the batch; its reach is the set of slots ever selected."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "categorical_reading": "Sparse memory finetuning sits in the 'coordinate blocks, resampled every step' cell of the cotangent table (Exposé IV): by the degree-one collapse each step is a fixed-mask linear method re-based at \\(\\theta_t\\), with the mask chosen by access counts relative to background usage. Its control of forgetting comes from the smallness and specificity of the moving support, not from a constraint on the image.",
+   "arrows": [
+    {
+     "target": "fish-mask",
+     "rule": "A3",
+     "h": "h=\\mathrm{id},\\ \\ M=\\mathrm{rows}(\\mathcal T_t)",
+     "note": "Within one step at base \\(\\theta_t\\), the method is the fixed-mask linear method with mask \\(\\mathrm{rows}(\\mathcal T_t)\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "One step updates \\(t\\) rows of a \\(d_v=1024\\) table, an update of rank up to \\(\\min(t,d_v)\\) (500 on TriviaQA), above a rank-\\(r\\) LoRA on the same table."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B / Lin / regular / none / MonxGL (value table as W = V^T: GL on the value side, slot mask on the input side, recorded under the one-sided key as for S2FT) / na / schedule. Per-step arrow into the fixed-mask method (support rows(T_t), re-based at theta_t) and O2 to LoRA (rank min(t, d_v) per step > r) valid. No changes."
+  },
+  {
+   "id": "seal",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "LoRA's cone \\(W_0+\\mathcal M_{\\le r}\\).",
+    "base_point": "Each inner update starts from \\(B=0\\): LoRA's apex.",
+    "gauge": "\\(GL_r\\).",
+    "covariance": "LoRA's basis-free cone.",
+    "merge": "Fuses: \\(BA\\) folds into \\(W_0\\).",
+    "rebasing": "\\(\\to\\Theta\\), as LoRA.",
+    "kind": "A bi-level recipe: the model writes self-edits, each realised as a LoRA SFT update from \\(B=0\\), and an outer RL loop (ReST\\(^{EM}\\)) trains the self-edit policy. The weight-space object is plain LoRA."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "SEAL realises a context-to-weights family \\(C\\mapsto\\mathrm{SFT}_{\\rm LoRA}(\\theta,\\mathrm{SE}(C))\\) by optimisation rather than by a forward pass: each fibre is an ordinary LoRA point, and RL shapes the data that selects it. SHINE and GenerativeAdapter amortise the same map into a hypernetwork.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Each realised update is an ordinary LoRA; the self-edit loop changes the data and the loss, not \\(\\rho\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "shine",
+     "test": "O2",
+     "reason": "SEAL's inner updates have rank 64 (knowledge incorporation) or 128 (ARC) per matrix, while SHINE's generated adapters have rank 8."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Same object as LoRA (h = id); the ReST^EM outer loop changes data and loss, not rho. O2 to SHINE (rank 64/128 > 8 on shared modules) valid. No changes."
+  },
+  {
+   "id": "sparselora",
+   "entry_type": "recipe",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "LoRA's cone \\(W_0+\\mathcal M_{\\le r}\\).",
+    "base_point": "The deployed object starts at \\(B=0\\) at \\(\\theta_0\\), the apex. During training the sparsified branch acts as an input-dependent pointing defect \\(e(x)=-W_0|_{\\mathcal S(x)^c}\\), dropped at inference.",
+    "gauge": "\\(GL_r\\).",
+    "covariance": "LoRA's basis-free cone.",
+    "merge": "Fuses: \\(BA\\) folds into \\(W_0\\).",
+    "rebasing": "\\(\\to\\Theta\\), as LoRA.",
+    "kind": "Standard LoRA. During training the frozen branch is evaluated as \\(W_0|_{\\mathcal S(x)}x\\), with input-dependent channel sparsity predicted by a rank-\\(k\\) SVD sketch of \\(W_0\\). The sparsity approximates the forward pass and is invisible to \\(\\rho\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "SparseLoRA keeps LoRA's object and trains it on an input-dependent approximation of the network: an input-indexed base change of the forward pass, like QLoRA's \\(\\kappa\\) but data-dependent and discarded at inference. The gradients are those of the sparsified model, so it changes the dynamics, not the image.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "The same object; the sparsity lives in the training forward pass, not in \\(\\rho\\)."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Same object as LoRA (h = id); the training-only channel sparsity is a data-dependent approximation of the forward pass, outside rho, and is dropped at inference. No changes."
+  },
+  {
+   "id": "loreft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "E",
+    "shape": "Fun",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "VIII.B: an extension by an affine identity box on the residual stream at selected positions, \\(\\Phi(h)=h+R^\\top(Wh+b-Rh)\\) (Prop VI.4(c)).",
+    "shape": "Per hidden vector the inserted box ranges over \\((I,0)+\\mathcal M_{\\le r}(d\\times(d+1))\\), of dimension \\(r(2d+1-r)\\): LoRA\\(_r\\) on \\(\\mathrm{Aff}(I_d)\\) (VIII.B). Applied at selected positions only, the method is function-level.",
+    "base_point": "pyreft initialises \\(W,b\\) independently of \\(R\\), so the edit \\(R^\\top((W_0-R_0)h+b_0)\\) is nonzero at step 0: a defect (VIII.B). It is neutral iff \\(W=R\\) and \\(b=0\\).",
+    "gauge": "\\(O(r)\\), \\((R,W,b)\\mapsto(OR,OW,Ob)\\) (VIII.B): the compact form of LoRA's \\(GL_r\\), since \\(R\\) has orthonormal rows. Coded GL, as for PoLAR.",
+    "covariance": "VIII.B leaves '–'. Per hidden vector the image is basis-free on the residual stream, and the orthonormality of \\(R\\) is a partial gauge fixing that does not change it.",
+    "merge": "A position-selective edit on the residual stream: M∞ (Thm VI.3(a), Prop VI.4).",
+    "rebasing": "n/a: nothing can be merged."
+   },
+   "table_row": "E",
+   "table_col": "Fun",
+   "categorical_reading": "Per hidden vector LoReFT is weight-space LoRA on an affine identity box that the architecture did not have, with \\(B=R^\\top\\) on the Stiefel manifold, so it is simulated by, but not isomorphic to, LoRA\\(_r\\). Its neutral point \\((B_0,A_0)=(R_0^\\top,0)\\) lies in LoRA's \\(\\mathrm T_B\\) stratum, and position-selectivity is what blocks merging.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(R,W,b)=\\big(R^\\top,\\ [W-R\\mid b]\\big)",
+     "note": "Into LoRA\\(_r\\) on the inserted affine box \\([I_d\\mid0]\\) in homogeneous coordinates (Prop VI.4(c)), pointed at \\(h(q_0)\\), the pyreft defect."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "At its neutral point LoReFT maps to \\((R_0^\\top,0)\\), with \\(S_1=\\{R_0^\\top Y\\}\\): the \\(\\mathrm T_B\\) stratum. Standard LoRA is pointed in \\(\\mathrm T_A\\) (\\(S_1=\\{XA_0\\}\\)), so there is no pointed arrow into it."
+    },
+    {
+     "target": "red",
+     "test": "O1",
+     "reason": "RED's edit \\(h\\mapsto\\ell\\odot h+b\\) is diagonal and acts at every position. LoReFT's rank-\\(r\\) edit is non-diagonal and position-selective, so its functions lie outside RED's image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived; matches VIII.B and Prop VI.4(c). numpy at (d,r) = (6,2): image dim r(2d+1-r) = 22, fibre r(r-1)/2 (O(r)). Arrow h = (R^T, [W-R | b]) into LoRA_r on the affine identity box verified; O3 to LoRA (neutral point (R_0^T, 0) in the T_B stratum, S_1 = {R_0^T Y} not inside {X A_0}) and O1 to RED valid. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json)."
+  },
+  {
+   "id": "longlora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Reparametrisation: LoRA on \\(W_{q,k,v,o}\\) \\(\\oplus\\) the dense input embedding \\(\\oplus\\) all RMSNorm gains (the paper's 'LoRA+'). S\\(^2\\)-Attn and Position Interpolation change \\(f\\), not \\(\\rho\\).",
+    "shape": "The Minkowski sum of LoRA's cone with two linear blocks: a cone with a linear factor.",
+    "base_point": "\\(B=0\\) with the pretrained embedding and gains: the apex of the LoRA summand (the linear summands are regular).",
+    "gauge": "\\(GL_r\\) on each LoRA; the linear summands have none.",
+    "covariance": "LoRA and the dense embedding are basis-free. The norm gains are diagonal on the residual stream, so that side is only monomial (LN-tuning's Mon×GL).",
+    "merge": "LoRA fuses, and the trained embedding and gains replace the originals in place.",
+    "rebasing": "\\(\\to\\) span: the LoRA summand reaches its full blocks after \\(\\lceil d/r\\rceil\\) cycles, and the linear summands are idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LongLoRA is the \\(\\oplus\\)-word LoRA\\(_{qkvo}\\oplus\\) Embedding \\(\\oplus\\) LN-tuning, trained on a different realisation from the one it is deployed on: S\\(^2\\)-Attn and Position Interpolation change \\(f\\), while \\(\\mathsf{Meth}(\\Theta,\\theta_0)\\) depends only on \\((\\Theta,\\theta_0)\\). Its finding that LoRA alone fails at any rank is an O1 statement: the embedding and gain directions lie outside every LoRA\\(_{qkvo}\\) image, and LoRA and LN-tuning both map into it by A5.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "LoRA on \\(W_{q,k,v,o}\\) keeps the embedding and the norm gains at \\(\\theta_0\\), while LongLoRA moves them, so its image is not in any LoRA\\(_{qkvo}\\) image."
+    },
+    {
+     "target": "lora-plus",
+     "test": "O1",
+     "reason": "The paper's 'LoRA+' (LoRA \\(\\oplus\\) embedding \\(\\oplus\\) norms) is unrelated to Hayou et al.'s LoRA+, which has LoRA's image (only the \\(B/A\\) learning-rate ratio differs). The embedding and gain summands lie outside that image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Cone / apex / GL / MonxGL (norm gains: LN-tuning's one-sided key) / M1 (LoRA fuses; embedding and gains are edited in place) / span. O1 obstructions to LoRA_qkvo and to Hayou et al.'s LoRA+ (LoRA's image) valid. No changes."
+  },
+  {
+   "id": "o-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Per task, LoRA at the merged base \\(W_0+\\sum_{i<t}B_iA_i\\), with a soft orthogonality penalty against earlier tasks. The penalty is a loss, not part of \\(\\rho\\).",
+    "shape": "LoRA's cone at each stage.",
+    "base_point": "\\(B_t=0\\): each task starts at the apex of its stage.",
+    "gauge": "\\(\\rho\\) has \\(GL_r\\), and the penalty breaks it: the paper's \\(\\lVert B_i^\\top B_t\\rVert_F^2\\) is only \\(O(r)\\)-invariant in \\(B_t\\), and the code's entrywise \\(\\sum\\lvert A_iA_t^\\top\\rvert\\) only signed-permutation-invariant. Their zero sets (exact orthogonality of column or row spaces) are \\(GL_r\\)-invariant.",
+    "covariance": "The soft penalty leaves LoRA's basis-free image. Its hard limit \\(\\mathrm{col}\\,B_t\\perp\\mathrm{col}\\,B_{<t}\\) would use the output inner product (CO×GL; the code's version is GL×CO).",
+    "merge": "Each task's \\(BA\\) is static and merges.",
+    "rebasing": "Across tasks it is ReLoRA's merge-and-restart scheme with one stage per task (Def V.1(c)); after \\(T\\) tasks the reach is \\(W_0+\\mathcal M_{\\le Tr}\\). Kind stays R, since the stages change the loss rather than the compression."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "O-LoRA is \\(\\mathrm{LoRA}_r^{\\oplus T}\\) unrolled over tasks, i.e. ReLoRA with one stage per task, plus a penalty that pushes each new stage away from the earlier ones. The paper penalises column spaces of the up-projections and the official code row spaces of the down-projections, so the two versions enforce orthogonality on opposite sides of the update.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A5",
+     "h": "h=\\big([B_1\\ \\cdots\\ B_T],\\ [A_1;\\dots;A_T]\\big)",
+     "note": "\\(\\mathrm{LoRA}_r^{\\oplus T}\\cong\\mathrm{LoRA}_{Tr}\\) (Obs I.7), pointed iff the stacked \\(A\\)'s have full row rank."
+    },
+    {
+     "target": "relora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}\\ \\text{on each stage's }(B_t,A_t)",
+     "note": "The same merge-and-restart scheme with one stage per task; only the loss differs per stage."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "inflora",
+     "test": "O2",
+     "reason": "Each O-LoRA stage is a full LoRA\\(_r\\), with \\(d=r(m+n-r)\\), while an InfLoRA stage is LoRA-FA\\((A_t)\\) with \\(d=rm\\), so O-LoRA stages do not factor through InfLoRA's."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: per-task LoRA at the merged base (kind R, consistent with SD-LoRA and InfLoRA; the stages are tasks), Cone, apex, GL (broken only by the penalty), GLxGL, M1, schedule. A5 arrow (LoRA_r^{(+)T} = LoRA_{Tr}, standard iff the stacked A_0 have full row rank) and the per-stage identity with ReLoRA verified; O2 to InfLoRA (r(m+n-r) > rm) valid. No changes."
+  },
+  {
+   "id": "inflora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxCO",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Per task, \\(W_{t-1}+B_tA_t\\) with a designed frozen \\(A_t\\) and a trained \\(B_t\\); the branch is merged after each task.",
+    "shape": "Linear: \\(\\{XA_t\\}\\), of dimension \\(rd_{out}\\), with \\(\\mathrm{row}\\,A_t\\) inside the new task's input span and orthogonal to the old tasks' input subspace \\(M_t\\).",
+    "base_point": "\\(B_t=0\\) on a linear method: regular.",
+    "gauge": "None: \\(A_t\\) has orthonormal rows.",
+    "covariance": "\\(A_t\\) comes from an SVD of activations projected with the standard inner product, so the input side is only \\(CO(n)\\) (a data frame), while the output side is free: GL×CO.",
+    "merge": "Each branch is merged after its task.",
+    "rebasing": "A rebasing scheme with one stage per task and a moving designed frame; its reach is \\(W_0+\\{X:\\mathrm{row}\\,X\\subseteq\\sum_t\\mathrm{row}\\,A_t\\}\\). Each stage alone is idempotent."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "InfLoRA is LoRA-FA with a data-designed frame, re-based once per task; in the cotangent table it shares GaLore's cell ('data frame, re-based periodically'), with the frame taken from projected activations rather than gradients. By the degree-one collapse a stage is full fine-tuning projected onto \\(\\mathrm{row}\\,A_t\\), and \\(\\mathrm{row}\\,A_t\\perp M_t\\) gives \\(\\Delta W\\,M_t=0\\): old-task inputs are annihilated by construction.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}",
+     "note": "Per task it is LoRA-FA\\((A_0)\\) with \\(A_0=A_t\\)."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(B)=(B,\\ A_t)",
+     "note": "Freezing \\(A\\) at \\(A_t\\): \\(\\mathrm{FA}(A_t)\\hookrightarrow\\mathrm{LoRA}_{(0,A_t)}\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "sd-lora",
+     "test": "O3",
+     "reason": "Each InfLoRA stage is pointed at \\(\\theta_{t-1}\\) (\\(B_t=0\\)), while SD-LoRA's normalisation forces a unit-norm offset at the start of every task, so no pointed arrow maps one stage into the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R / Lin (dim r d_out) / regular / none / GLxCO (input frame from an SVD of projected activations: CO(n), data) / M1 / schedule. Iso to LoRA-FA(A_t) and A2 into LoRA at (0, A_t) verified; O3 to SD-LoRA (its alpha_t = 1 start is a defect) valid. No changes."
+  }
+ ]
+}

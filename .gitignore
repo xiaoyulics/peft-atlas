@@ -1,0 +1,42 @@
+# website tests: keep the two documented tools, not their output or one-off probes
+site/test/*
+!site/test/figtest.sh
+!site/test/qa-site.mjs
+dist/
+.DS_Store
+
+# local tooling, caches and notes
+.claude/
+__pycache__/
+*.pyc
+media/
+CODEX_HANDOFF.md
+backups/
+
+# paper: LaTeX intermediates, test builds and generated packages (the PDF itself is kept)
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz
+paper/main.pdf
+paper/fibres-of-fine-tuning*
+paper/*.tar.gz
+paper/arxiv/
+paper/arxiv-test/
+paper/_*/
+paper/pages/
+paper/_abstract_arxiv.txt
+
+# film: environment, renders and synthesised audio (rebuild with video/tools; the film is published separately)
+video/.venv/
+video/build/
+video/out/
+video/audio/**/*.wav
+video/audio/*.m4a
+video/samples/*.mp4
+

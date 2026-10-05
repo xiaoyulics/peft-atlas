@@ -1,0 +1,64 @@
+\pdfoutput=1
+\documentclass[11pt]{article}
+\usepackage{fibres}% contents, float placement and the reference-list heading are set in fibres.sty
+
+\title{A Categorical Atlas of\texorpdfstring{\\}{ } Parameter-Efficient Fine-Tuning}
+\subtitle{Cones, Orbits, and Gauges\textsuperscript{\,\textdagger}}
+\author{\fbauthors{%
+  \fbauthor{Xiaoyu Li}{University of New South Wales}{xiaoyu.li2@unsw.edu.au} &
+  \fbauthor{Zhizhou Sha}{University of Texas at Austin}{zhizhousha@utexas.edu}\\[0.35em]
+  \fbauthor{Chiwun Yang}{City University of Hong Kong}{christiannyang37@gmail.com} &
+  \fbauthor{Dai Shi}{University of Cambridge}{ds2213@cam.ac.uk}}%
+  \fbwith{with Claude Opus 5.5 (Anthropic), in the spirit of Grothendieck's rising sea}}
+\date{Technical report\textsuperscript{\,\textdaggerdbl} \enspace·\enspace October 2026 \enspace·\enspace Version 1}
+\companion{Interactive companion: \url{[URL]}}
+\hypersetup{pdftitle={A Categorical Atlas of Parameter-Efficient Fine-Tuning: Cones, Orbits, and Gauges},pdfauthor={Xiaoyu Li, Zhizhou Sha, Chiwun Yang, Dai Shi}}
+
+\begin{document}
+\input{tables/counts}
+\maketitle
+{\renewcommand{\thefootnote}{\textdagger}\footnotetext{The title pays homage to \citet{bronstein2021geometric}, \emph{Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges}, whose programme of reading architectures through their symmetries this atlas extends to fine-tuning.}}
+{\renewcommand{\thefootnote}{\textdaggerdbl}\footnotetext{This is a technical report rather than a journal or conference submission. We share it, with its proofs, catalogue and interactive companion, as an open resource for everyone working on parameter-efficient fine-tuning, and we welcome corrections and suggestions for future versions.}}
+\input{sections/abstract}
+
+\clearpage
+{\small\tableofcontents}
+\clearpage
+
+\startatzero
+\input{sections/00-thesis}
+\input{sections/01-slice}
+\input{sections/02a-strata}
+\input{sections/02b-erlangen}
+\input{sections/02c-cut}
+\input{sections/03a-fibres}
+\input{sections/03b-dynamics}
+\input{sections/04-lens}
+\input{sections/05-base}
+\input{sections/06-merge}
+\input{sections/07-examples}
+\input{sections/08-atlas}
+\input{sections/09-rosetta}
+\input{sections/10-predictions}
+\input{sections/11-analogy}
+\input{sections/12-related}
+\input{sections/13-conclusion}
+
+\input{sections/ack}
+
+\bibliographystyle{fibresnat}
+\bibliography{bib/refs}
+
+\clearpage
+\fbappendix
+\input{sections/appendix-roadmap}
+\input{sections/A1-background}
+\input{sections/A2-background}
+\input{sections/B-auxiliary}
+\input{sections/C1-proofs}
+\input{sections/C2-proofs}
+\input{sections/C3-proofs}
+\input{sections/D-catalogue}
+\input{sections/E-reproducibility}
+\input{sections/F-making-of}
+\end{document}

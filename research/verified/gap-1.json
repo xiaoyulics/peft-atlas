@@ -1,0 +1,563 @@
+{
+ "family": "gap-1",
+ "family_title": "Gap fill batch 1: continual prompt composition, adapter transport across base models, localized representation offsets, mixer LoRA, PEFT design-space search, and Bayesian LoRA",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "coda-prompt",
+   "name": "CODA-Prompt",
+   "full_name": "COntinual Decomposed Attention-based Prompting (CODA-P)",
+   "paper_title": "CODA-Prompt: COntinual Decomposed Attention-based Prompting for Rehearsal-Free Continual Learning",
+   "authors": "Smith et al.",
+   "year": 2022,
+   "venue": "CVPR 2023",
+   "arxiv": "2211.13218",
+   "url": "https://openaccess.thecvf.com/content/CVPR2023/html/Smith_CODA-Prompt_COntinual_Decomposed_Attention-Based_Prompting_for_Rehearsal-Free_Continual_Learning_CVPR_2023_paper.html",
+   "code_url": "https://github.com/GT-RIPL/CODA-Prompt",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "p(x)=\\sum_{m=1}^{M}\\alpha_m(x)\\,P_m,\\quad \\alpha_m(x)=\\gamma\\big(q(x)\\odot A_m,\\;K_m\\big),\\quad q(x)=\\theta(x)_{[\\mathrm{CLS}]}\\ \\text{(frozen ViT pass)},\\ \\gamma=\\cos;\\quad p=[p_K;p_V],\\ p_K,p_V\\in\\mathbb{R}^{\\frac{\\ell}{2}\\times d}:\\ \\mathrm{MSA}\\big(h_Q,[p_K;h_K],[p_V;h_V]\\big)\\ \\text{at each prompted layer};\\quad \\min_{P^{n},K^{n},A^{n},\\phi_n}\\ \\mathcal{L}\\big(f_\\phi(f_{\\theta,P,K,A}(x)),y\\big)+\\lambda\\big(\\|PP^{\\top}-I\\|_2+\\|KK^{\\top}-I\\|_2+\\|AA^{\\top}-I\\|_2\\big);\\ \\ \\theta\\ \\text{frozen},\\ \\text{components of earlier tasks frozen}",
+   "trainable_params": "n_p\\,M\\,(\\ell d+2d)+\\text{head}\\quad(n_p=\\text{prompted layers, 5 in the paper};\\ M/N\\ \\text{new components trained per task})",
+   "locus": "keys/values (prefix form) of MSA layers 1-5 of a frozen ViT-B/16; the query comes from a separate frozen forward pass ([CLS] output)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Input-conditioned linear combination of a growing dictionary of prefix components, p(x) = sum_m alpha_m(x) P_m. The weights are unnormalized cosine similarities between a feature-gated query q(x) ⊙ A_m and a key K_m. Each task adds M/N components, and the components, keys and attention vectors of earlier tasks are frozen, so the trainable space is an increasing chain of component sets with soft orthogonality penalties.",
+   "mergeable": "no",
+   "mergeable_reason": "The prompt depends on the input through the query pass, and its prefix slots lengthen the key/value sequence, so nothing folds into W_0.",
+   "identity_at_init": "No identity: prefix slots change attention from the first step. P, K and A are orthogonally initialized.",
+   "key_idea": "L2P and DualPrompt select prompts from a pool by hard key-query matching. CODA-Prompt replaces that with an attention-weighted sum of prompt components, so the selection mechanism is trained end to end with the task loss. Capacity grows by adding components rather than lengthening prompts, and freezing past components plus orthogonality limits forgetting.",
+   "results_note": "Rehearsal-free class-incremental ImageNet-R with ViT-B/16: 75.45% average final accuracy on 10 tasks vs 71.32% for DualPrompt (up to +4.5% across the 5/10/20-task splits). It is also ahead on CIFAR-100, DomainNet and a dual-shift ImageNet-R benchmark.",
+   "relations": [
+    {
+     "target": "l2p",
+     "type": "builds-on",
+     "note": "Replaces hard top-N retrieval from a prompt pool, whose keys are trained by a separate matching loss, with a continuous, end-to-end-trained weighted sum of components."
+    },
+    {
+     "target": "dualprompt",
+     "type": "builds-on",
+     "note": "Keeps DualPrompt's prefix attachment at layers 1-5 of ViT-B/16 and changes only how the prompt is formed; outperforms it by up to 4.5% A_N on ImageNet-R."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "The prompt is split into p_K, p_V and prepended to the keys and values (prefix-tuning attachment)."
+    },
+    {
+     "target": "attempt",
+     "type": "competes-with",
+     "note": "Both build instance-conditioned prompts as attention-weighted mixtures of prompt components. ATTEMPT mixes pre-trained source prompts for multi-task NLP; CODA mixes continually grown components for continual vision learning."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2211.13218",
+    "https://arxiv.org/html/2211.13218",
+    "https://openaccess.thecvf.com/content/CVPR2023/html/Smith_CODA-Prompt_COntinual_Decomposed_Attention-Based_Prompting_for_Rehearsal-Free_Continual_Learning_CVPR_2023_paper.html",
+    "https://github.com/GT-RIPL/CODA-Prompt"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2211.13218 (Smith, 2022-11) matches; CVPR 2023 confirmed on CVF open access. Formula checked against Eqs. 2-7 (p = sum alpha_m P_m, alpha = cos(q(x) ⊙ A_m, K_m), prefix split p_K/p_V of length L_p/2, ortho penalty ||BB^T - I||). Param count re-derived: 5 layers x 100 components x (8*768 + 2*768) = 3.84M, matching the paper's 4.6% of ViT-B. ImageNet-R 10-task 75.45 vs 71.32 (DualPrompt) and max gain +4.50 (20-task) confirmed in Table 1. Not in HF PEFT (main @85be3f3)."
+  },
+  {
+   "id": "trans-lora",
+   "name": "Trans-LoRA",
+   "full_name": "Trans-LoRA (nearly data-free transfer of PEFT modules across base models by distillation on filtered synthetic data)",
+   "paper_title": "Trans-LoRA: towards data-free Transferable Parameter Efficient Finetuning",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2405.17258",
+   "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/708fdc7911f11585ee7161518e509ae6-Abstract-Conference.html",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\phi^\\ast=\\arg\\max_\\phi\\ \\mathbb{E}_{x\\sim\\mathcal{D}}\\log p_{\\phi}(\\text{yes}\\mid t(x))+\\mathbb{E}_{x\\sim\\mathcal{M}_s}\\log p_{\\phi}(\\text{no}\\mid t(x));\\quad \\mathcal{D}_{syn}=\\{x\\sim\\mathcal{M}_{gen}(\\cdot\\mid\\bar{\\mathcal{D}}):\\ p_{\\phi^\\ast}(\\text{yes}\\mid t(x))>p_{\\phi^\\ast}(\\text{no}\\mid t(x))\\},\\ |\\bar{\\mathcal{D}}|=5,\\ |\\mathcal{D}_{syn}|=|\\mathcal{D}|;\\quad \\theta_t=\\arg\\min_{\\theta}\\sum_{x\\in\\mathcal{D}_{syn}}H\\big((\\mathcal{M}_t+\\theta)(x),\\,(\\mathcal{M}_s+\\theta_s)(x)\\big);\\ \\ \\mathcal{M}_s,\\mathcal{M}_t,\\theta_s\\ \\text{frozen};\\ \\theta_t\\ \\text{trained (e.g. } W_t=W_{t,0}+B_tA_t)",
+   "trainable_params": "r\\,(d^{t}_{in}+d^{t}_{out})\\ \\text{per adapted target matrix (whatever the target PEFT needs)}\\ +\\ \\text{a one-off LoRA discriminator on }\\mathcal{M}_s",
+   "locus": "the target model's adapter locations (default LoRA on W_q, W_v). The transfer acts on the model's input-output behavior, not on weights.",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Function-level transport of an adapter along a change of base model. The source pair (M_s, theta_s) acts as a teacher, and the target adapter is fitted by knowledge distillation on synthetic inputs that a discriminator has filtered to imitate the distribution of the original training inputs. No weight correspondence between source and target is needed, so they may differ in family, size and even PEFT type (LoRA, DoRA, prompt tuning).",
+   "mergeable": "conditional",
+   "mergeable_reason": "The output is an ordinary adapter of the chosen target type: a transferred LoRA or DoRA merges into the target weights, a transferred soft prompt does not.",
+   "identity_at_init": "The target adapter starts from the standard initialization of its type (for LoRA, B = 0, so M_t + theta_t = M_t at the start). Algorithm 1 only says 'Initialize theta_t'.",
+   "key_idea": "When a base model is retired, its LoRAs can be retrained on the new base without the client's data. An LLM seeded with 5 examples synthesizes task inputs. A discriminator, trained once alongside the source LoRA, keeps only samples that look like the real training inputs. The target LoRA is then distilled from the source model plus LoRA on those samples.",
+   "results_note": "Across 86 BBH, MMLU, MBPP and GSM8K tasks with Llama-2 and Gemma (within and across families), the transferred LoRA matches or beats both the source LoRA and the unadapted target. For example, BBH Gemma-2b to Gemma-7b: 43.61 vs 31.84 (source LoRA) and 37.75 (target base). It also transfers LoRA<->DoRA and prompt tuning, and survives two consecutive transfers.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "The default transported object is a LoRA, retrained on the target as a LoRA."
+    },
+    {
+     "target": "lora-x",
+     "type": "competes-with",
+     "note": "Same base-model-change problem. Trans-LoRA transports behavior by distillation, which needs synthetic data and training; LoRA-X transports weights by subspace projection, with no data and no training."
+    },
+    {
+     "target": "dora",
+     "type": "combines",
+     "note": "The same pipeline transfers DoRA adapters and converts between LoRA and DoRA (Table 6)."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "combines",
+     "note": "Also transfers soft prompts, showing that the transport lives in function space and is independent of the adapter's parametrization."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.17258",
+    "https://arxiv.org/html/2405.17258",
+    "https://proceedings.neurips.cc/paper_files/paper/2024/hash/708fdc7911f11585ee7161518e509ae6-Abstract-Conference.html",
+    "https://github.com/raywang4/TransLoRA"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2405.17258 (Wang, 2024-05) and NeurIPS 2024 proceedings page confirmed. Eq. 1 (discriminator), the D_syn rejection rule, |D-bar| = 5, |D_syn| = |D|, M_gen = M_t, and Algorithm 1's cross-entropy distillation all match. Default LoRA on q,v confirmed (Sec. 4.1). BBH Gemma-2b->Gemma-7b 43.61/31.84/37.75 (Table 1), LoRA/DoRA/PT transfer (Table 6) and two-step 45.04 (Table 7) confirmed. github.com/raywang4/TransLoRA still contains only a placeholder README, so code_url stays empty. Not in HF PEFT."
+  },
+  {
+   "id": "lora-x",
+   "name": "LoRA-X",
+   "full_name": "Cross-Model Low-Rank Adaptation",
+   "paper_title": "LoRA-X: Bridging Foundation Models with Training-Free Cross-Model Adaptation",
+   "authors": "Farhadzadeh et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2501.16559",
+   "url": "https://proceedings.iclr.cc/paper_files/paper/2025/hash/1add3bbdbc20c403a383482a665eb5a4-Abstract-Conference.html",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0=U\\Sigma V^{\\top}\\ \\text{(SVD, cached)},\\quad W=W_0+\\tilde U_r\\,\\Delta\\Sigma\\,\\tilde V_r^{\\top},\\ \\ \\tilde U_r\\in\\mathbb{R}^{d_{out}\\times r},\\ \\tilde V_r\\in\\mathbb{R}^{d_{in}\\times r}\\ \\text{(top-}r\\text{ singular vectors, frozen)},\\ \\ \\Delta\\Sigma=\\operatorname{diag}(\\delta\\sigma_1,\\dots,\\delta\\sigma_r)\\ \\text{(or a full } r\\times r\\text{ core) trained},\\ \\sigma_i+\\delta\\sigma_i\\ge 0;\\quad \\text{transfer (no training): }\\Delta W_{t\\leftarrow s}=U_tU_t^{\\top}\\,\\Delta W_s\\,V_tV_t^{\\top}=U_t\\big(U_t^{\\top}\\tilde U_s\\,\\Delta\\Sigma_s\\,\\tilde V_s^{\\top}V_t\\big)V_t^{\\top}",
+   "trainable_params": "r\\ \\ (\\text{diagonal }\\Delta\\Sigma)\\quad\\text{or}\\quad r^{2}\\ \\ (\\text{full core})",
+   "locus": "attention projections (to_q, to_k, to_v, to_out) of diffusion UNets: SDXL family (UNet only) and SD-v1.5 family (UNet and text-encoder attention); TinyLlama in an appendix. Transfer skips 'filter blocks' with low source-target subspace similarity and re-matches some blocks to a more similar source block.",
+   "modification_kind": "additive-weight",
+   "structure": "The update lives in span(U_r) ⊗ span(V_r) of W_0, i.e. a spectral core between frozen top-r SVD bases. Cross-model transfer is a two-sided orthogonal projection onto the target weight's column and row spaces (Eq. 3). Layers are matched by subspace similarity (Eq. 4); for mismatched sizes a least-squares map replaces the source bases (Sec. 4.2.2). Across architectures, an optimal-transport cost over the layer-similarity matrix (the Adapter Transferability Cost) scores how hard a transfer is; it is a metric, not the transfer map itself. Caveat (derived): the released pseudocode uses a thin SVD, so for square full-rank layers the projection is the identity and transfer copies Delta W_s unchanged.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both the trained and the transferred adapter are plain additive matrices that fold into the source or target W_0.",
+   "identity_at_init": "Not stated in the paper. The natural choice Delta Sigma = 0 (inferred) gives Delta W = 0.",
+   "key_idea": "An adapter becomes portable if it may not create new feature directions. LoRA-X trains only a rescaling or mixing of the base weight's top singular directions, then moves it to a new base model (an updated, distilled or fine-tuned version) by projecting onto that model's singular subspaces, with no data and no training.",
+   "results_note": "Training-free transfer of LoRA-X style adapters, from SD-v1.5 to SD Eff-v1.0/RV-v3.0 and from SDXL to SSD-1B/RVXL-v3.0, gives HPSv2, LPIPS-diversity and DINOv2 scores close to adapters trained directly on the target, whereas projected plain LoRA degrades markedly. A TinyLlama 3T to 2.5T text experiment shows the same.",
+   "relations": [
+    {
+     "target": "svdiff",
+     "type": "special-case-of",
+     "note": "The diagonal variant (the one used in all experiments, r = 320) is SVDiff restricted to the top-r singular values: W = U diag(s) V^T with s_i = sigma_i + delta sigma_i >= 0 for i <= r and s_i = sigma_i otherwise. The paper calls SVDiff 'a similar adapter structure' and differs by truncation, by touching only attention layers, and by targeting transferability."
+    },
+    {
+     "target": "lora-xs",
+     "type": "equivalent-to",
+     "note": "With a full r x r core, Delta W = U_r Delta Sigma V_r^T has the same reachable set as LoRA-XS (U_r R Sigma_r V_r^T, where R Sigma_r ranges over all r x r matrices). Derived here, not stated in either paper."
+    },
+    {
+     "target": "svft",
+     "type": "special-case-of",
+     "note": "The diagonal variant is SVFT with the fixed sparsity pattern Omega = {(i,i): i <= r} in W_0's singular basis. Derived here."
+    },
+    {
+     "target": "trans-lora",
+     "type": "competes-with",
+     "note": "Weight-space, training-free transport vs. function-space transport by distillation on synthetic data."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Projecting a plain LoRA onto the target subspaces transfers much worse (Table 2), which motivates the subspace constraint."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2501.16559",
+    "https://arxiv.org/html/2501.16559",
+    "https://proceedings.iclr.cc/paper_files/paper/2025/hash/1add3bbdbc20c403a383482a665eb5a4-Abstract-Conference.html",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2501.16559"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "locus: added the SD-v1.5 text-encoder attention layers (App. B.2) and the filter-block / block re-matching detail (App. B.1.1, App. F).",
+    "structure: the Adapter Transferability Cost is an optimal-transport transferability metric (Sec. 4.2.4), not an assignment used to perform the transfer; reworded and added the thin-SVD caveat.",
+    "relation svdiff: builds-on -> special-case-of; the diagonal LoRA-X update is exactly SVDiff with delta_i = 0 for i > r (same non-negativity constraint), which the paper describes as a similar structure rather than a base it builds on."
+   ],
+   "verification_notes": "arXiv 2501.16559 (Farhadzadeh, 2025-01) and ICLR 2025 proceedings confirmed. Formula matches Eqs. 1-3 (diagonal Delta Sigma with sigma_i + delta sigma_i >= 0; full core allowed in the text). r = 320 parameters per module (App. B) is consistent with trainable_params. Table 2 (projected LoRA -27.8% HPSv2 at r = 32) and Table 13 (TinyLlama) confirmed. Identity at init not stated. No official code. Not in HF PEFT."
+  },
+  {
+   "id": "lofit",
+   "name": "LoFiT",
+   "full_name": "Localized Fine-Tuning on LLM Representations",
+   "paper_title": "LoFiT: Localized Fine-tuning on LLM Representations",
+   "authors": "Yin et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.01563",
+   "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/122ea6470232ee5e79a2649243348005-Abstract-Conference.html",
+   "code_url": "https://github.com/fc2869/lo-fit",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{Step 1 (localize): } z^{(l,i)}\\leftarrow(1+A_l^{i})\\odot z^{(l,i)},\\ \\ \\min_{A}\\ \\mathcal{L}_{CE}+\\lambda\\textstyle\\sum_{l,i}\\|A_l^{i}\\|_1,\\ \\ T=\\operatorname{top\\text{-}K}_{(l,i)}\\|A_l^{i}\\|;\\quad \\text{Step 2 (tune): } z^{(l,i)}\\leftarrow z^{(l,i)}+v_l^{i}\\ \\ \\text{for }(l,i)\\in T,\\ \\ \\mathrm{MultiHead}(h)=\\operatorname{concat}\\big(z^{(l,1)},\\dots,z^{(l,H)}\\big)W^{O};\\ \\ \\text{all } W_0\\ \\text{frozen},\\ v_l^{i}\\in\\mathbb{R}^{d_{head}}\\ \\text{trained}",
+   "trainable_params": "K\\,d_{head}\\ \\ (\\text{final; }K=48,96,160\\ \\text{for Gemma-7B, Llama 2-7B, Llama 2-13B}\\Rightarrow 48\\cdot256=96\\cdot128\\approx12\\text{K},\\ 160\\cdot128\\approx20\\text{K});\\ \\text{the discarded selection step trains }L\\,H\\,d_{head}\\ \\text{scalings }(=L\\,d\\ \\text{when }H\\,d_{head}=d,\\ \\text{e.g. Llama 2})",
+   "locus": "outputs of a learned sparse set of attention heads (3-10% of all heads), before the output projection W^O",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Input-independent translation of selected head-output coordinates, z -> z + v, on a support T chosen by an L1-regularized multiplicative probe. Because z enters W^O linearly, the edit equals a bias Delta b_O = sum_{i in T_l} W^O_(i) v_l^i on the attention output projection (derived here). It is therefore sparse, localized bias tuning in representation space, spanning at most K d_head directions.",
+   "mergeable": "conditional",
+   "mergeable_reason": "The offset is constant and passes through the linear W^O, so it folds into an output-projection bias. Llama and Gemma o_proj layers have no bias, so one bias vector per edited layer must be added (derived from the paper's equations).",
+   "identity_at_init": "Approximate only: v ~ N(0, sigma_v) and, in the selection step, A ~ N(0, sigma_A), with sigma_A = sigma_v = 0.001 in all experiments (App. D), so the model starts near the base model but not exactly at it.",
+   "key_idea": "LoFiT borrows localization from interpretability. It first learns per-head scaling factors with an L1 penalty to find which attention heads matter for the task, then fine-tunes only additive offset vectors on those heads. Task-specific localization beats random head sets and head sets chosen for other tasks.",
+   "results_note": "With 10% of heads (about 12K-20K parameters) on Gemma-7B and Llama 2-7B/13B, LoFiT beats ReFT on average and is comparable to LoRA (about 200x more parameters) and RED (about 20x more) on TruthfulQA, MQuAKE and CLUTRR. It is slightly below them on SIQA, ARC-c, BoolQ and SVAMP, and it outperforms ITI.",
+   "relations": [
+    {
+     "target": "loreft",
+     "type": "competes-with",
+     "note": "Both learn interventions on hidden representations. LoReFT edits a low-rank subspace of the residual stream at chosen layers without localization; LoFiT adds offsets at learned heads."
+    },
+    {
+     "target": "red",
+     "type": "competes-with",
+     "note": "RED learns a scaling plus a bias on every layer's representations, roughly LoFiT's Step 1 and Step 2 combined but without localization; LoFiT uses about 20x fewer parameters."
+    },
+    {
+     "target": "bitfit",
+     "type": "builds-on",
+     "note": "Step 2 is bias tuning, as in BitFit, restricted to the head outputs of a learned sparse set of heads."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Comparable accuracy with about 200x fewer parameters in the paper's low-data settings."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.01563",
+    "https://arxiv.org/html/2406.01563",
+    "https://proceedings.neurips.cc/paper_files/paper/2024/hash/122ea6470232ee5e79a2649243348005-Abstract-Conference.html",
+    "https://github.com/fc2869/lo-fit"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "trainable_params: L H d_head equals L d only when H d_head = d (true for Llama 2, false for Gemma-7B, where 16 x 256 = 4096 != 3072); added the paper's per-model K values (Sec. 6) and the resulting 12K/12K/20K counts.",
+    "identity_at_init: added the initialization scale sigma_A = sigma_v = 0.001 used in all experiments."
+   ],
+   "verification_notes": "arXiv 2406.01563 (Yin, 2024-06) and NeurIPS 2024 proceedings confirmed. Step 1 ((1 + A) ⊙ z with L1 penalty, top-K by ||A||) and Step 2 (z <- z + v) match Sec. 3. Table 3 numbers (12K/12K/20K params; LoRA 200x, RED 20x more) confirmed. The o_proj-bias folding is derived (z enters W^O linearly). Not in HF PEFT."
+  },
+  {
+   "id": "moslora",
+   "name": "MoSLoRA",
+   "full_name": "Mixture-of-Subspaces LoRA",
+   "paper_title": "Mixture-of-Subspaces in Low-Rank Adaptation",
+   "authors": "Wu et al.",
+   "year": 2024,
+   "venue": "EMNLP 2024",
+   "arxiv": "2406.11909",
+   "url": "https://aclanthology.org/2024.emnlp-main.450/",
+   "code_url": "https://github.com/wutaiqiang/MoSLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+s\\,B\\,M\\,A,\\quad s=\\alpha/r\\ \\text{(LoRA scaling, used in the official code; Eq. 7 omits it)},\\quad B\\in\\mathbb{R}^{d_{out}\\times r},\\ M\\in\\mathbb{R}^{r\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\quad \\Delta W=s\\textstyle\\sum_{i,j=1}^{r}m_{ij}\\,b_i\\,a_j^{\\top};\\ \\ W_0\\ \\text{frozen};\\ A,M,B\\ \\text{trained}\\quad\\big(M=I_r:\\ \\text{LoRA};\\ M=\\left[\\begin{smallmatrix}I&I\\\\ I&I\\end{smallmatrix}\\right]:\\ \\text{two-subspace mixing}\\big)",
+   "trainable_params": "r\\,(d_{in}+d_{out})+r^{2}",
+   "locus": "any linear layer; q, k, v, up and down projections in the LLaMA-3 8B commonsense experiments (Table 7); q, k, v, o, up, down and gate for LLaVA visual instruction tuning (Table 8); also used for SDXL subject-driven generation",
+   "modification_kind": "additive-weight",
+   "structure": "Three-factor low-rank update B M A, in which a learnable r x r mixer weights all r^2 rank-one 'subspaces' b_i a_j^T. The reachable set is still {rank <= r}, the same as LoRA's, so the mixer changes the parametrization and the optimization, not the expressivity. The gauge symmetry grows from GL(r) to GL(r) x GL(r): (B, M, A) ~ (BG, G^{-1}MH, H^{-1}A) (derived here).",
+   "mergeable": "yes",
+   "mergeable_reason": "BMA is a single d_out x d_in matrix that folds into W_0.",
+   "identity_at_init": "B = 0 (A Kaiming-uniform; mixer Kaiming-uniform or orthogonal), so Delta W = 0. A zero-initialized mixer gives all three factors zero gradient and training stalls (paper, Appendix C).",
+   "key_idea": "Splitting LoRA into rank-one subspaces and mixing them improves results. MoSLoRA generalizes the fixed identity between A and B (LoRA), or the fixed butterfly (two-subspace mixing), to a learnable r x r mixer, at negligible extra parameters and compute.",
+   "results_note": "On LLaMA-3 8B commonsense reasoning (8 tasks) it averages 85.6, vs 82.8 for LoRA, 85.0 for DoRA and 84.2 for FLoRA, at about the same parameter count and LoRA-level training time. It also improves LLaVA visual instruction tuning and DreamBooth-style subject-driven generation.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "M = I_r recovers LoRA."
+    },
+    {
+     "target": "flora-tucker",
+     "type": "special-case-of",
+     "note": "On 2-D weights FLoRA uses the same three-factor form A G B^T, with a possibly rectangular core. The two methods differ in initialization: FLoRA zero-inits the core, MoSLoRA zero-inits B and Kaiming/orthogonal-inits M (84.2 vs 85.6 in MoSLoRA's Table 4)."
+    },
+    {
+     "target": "lora-xs",
+     "type": "generalizes",
+     "note": "LoRA-XS is B M A with B and A frozen at the truncated SVD of W_0 and only the mixer trained."
+    },
+    {
+     "target": "lora-sb",
+     "type": "generalizes",
+     "note": "LoRA-SB is B M A with B and A frozen at the SVD of an estimated first full fine-tuning step and only the mixer trained."
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "AdaLoRA uses a diagonal, pruned middle factor (P Lambda Q); MoSLoRA's core is dense and unpruned."
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "Higher commonsense average at lower training time and memory (Table 4)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2406.11909",
+    "https://arxiv.org/html/2406.11909",
+    "https://aclanthology.org/2024.emnlp-main.450/",
+    "https://github.com/wutaiqiang/MoSLoRA"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: added the LoRA scaling s = alpha/r; the paper's Eq. 7 omits it, but App. B sets alpha (32 for r = 16) and the official code multiplies BMA by lora_alpha / r.",
+    "locus: the commonsense experiments adapt q, k, v, up, down only (Table 7), not 'all attention and FFN projections'; o and gate are added only in the visual-instruction-tuning runs (Table 8)."
+   ],
+   "verification_notes": "arXiv 2406.11909 (Wu, 2024-06; comment 'EMNLP 2024 Main, Oral') and ACL Anthology 2024.emnlp-main.450 confirmed. Eqs. 5-7 (xAWB, identity and butterfly mixers), init (A Kaiming-uniform, B zero, mixer Kaiming/orthogonal; zero mixer does not converge, App. C) and Table 4 (85.6 vs 82.8/85.0/84.2; 28.4M vs 28.3M params) confirmed. Reachable-set and GL(r)xGL(r) gauge statements are derived and correct. Not in HF PEFT."
+  },
+  {
+   "id": "noah",
+   "name": "NOAH",
+   "full_name": "Neural prOmpt seArcH",
+   "paper_title": "Neural Prompt Search",
+   "authors": "Zhang et al.",
+   "year": 2022,
+   "venue": "IEEE TPAMI 2025",
+   "arxiv": "2206.04673",
+   "url": "https://doi.org/10.1109/TPAMI.2024.3435939",
+   "code_url": "https://github.com/ZhangYuanhan-AI/NOAH",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{block } l:\\ \\ x\\leftarrow[\\mathrm{CLS},P_l,E]\\ (P_l\\in\\mathbb{R}^{\\ell_l\\times d},\\ l<D_V);\\ \\ Q=W_qx+s\\,B^{l}_{q}A^{l}_{q}x,\\ K=W_kx+s\\,B^{l}_{k}A^{l}_{k}x\\ \\ (\\text{rank } r^{L}_l,\\ l<D_L);\\ \\ h\\leftarrow h+W^{l}_{up}\\,\\phi\\big(W^{l}_{down}h\\big)\\ \\ (\\text{width } r^{A}_l,\\ l<D_A);\\quad a=\\big(D_V,D_L,D_A,\\{\\ell_l,r^{L}_l,r^{A}_l\\}\\big),\\ \\ \\ell_l,r_l\\in\\{5,10,50,100\\}\\ \\text{or}\\ \\{1,5,10\\},\\ D\\in\\{3,6,9,12\\};\\ \\text{one-shot supernet (AutoFormer weight entanglement), then evolutionary search under a parameter cap};\\ \\text{backbone frozen}",
+   "trainable_params": "\\textstyle\\sum_{l<D_V}\\ell_l\\,d+\\sum_{l<D_L}4d\\,r^{L}_l+\\sum_{l<D_A}2d\\,r^{A}_l\\ (+\\text{biases, head});\\ \\text{capped at }0.64\\text{M on ViT-B/16 (found subnets average }0.43\\text{M)}",
+   "locus": "every ViT-B/16 block up to each module's searched depth: VPT-Deep tokens at the block input, LoRA on W_q and W_k as written in Eq. 3 (the official code instead attaches one rank-r LoRA to the fused qkv projection, d -> 3d, with no scaling; it has the same 4dr parameter count), and a bottleneck adapter applied residually to the MLP output",
+   "modification_kind": "hybrid",
+   "structure": "Per-dataset architecture search over a product design space. Each point combines three PEFT modules, each truncated in depth and in width. With weight entanglement, every candidate is a coordinate restriction (a prefix slice) of one supernet's maximal-width modules. The found subnet is a sum of an additive part (LoRA), a serial insertion (adapter) and an input augmentation (VPT).",
+   "mergeable": "conditional",
+   "mergeable_reason": "Only the LoRA part folds into W_q and W_k; the adapter and prompt parts remain at inference unless the search gives them zero depth.",
+   "identity_at_init": "No identity at init. LoRA starts at zero (LoRA_b = 0, LoRA_a Kaiming-uniform in the official code), but the adapter's down- and up-projections are both Xavier-uniform initialized (model/module/adapter_super.py), so its output is not near zero, and VPT tokens (also Xavier-uniform) change attention from the first step. The paper does not discuss this.",
+   "key_idea": "NOAH treats Adapter, LoRA and VPT as interchangeable 'prompt modules' and lets neural architecture search decide, per downstream dataset, which modules to use, at what depth and with what width, instead of hand-designing a PEFT recipe.",
+   "results_note": "On VTAB-1k with ViT-B/16 (ImageNet-22K) it averages 75.5% with 0.43M parameters, vs 74.5 for LoRA, 73.9 for Adapter, 72.0 for VPT and 68.9 for full fine-tuning. It is also stronger in few-shot learning and ImageNet domain generalization.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "LoRA (on W_q, W_k) is one of the three searched modules."
+    },
+    {
+     "target": "vpt",
+     "type": "combines",
+     "note": "VPT-Deep tokens are one of the three searched modules; depth and token count are searched."
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "combines",
+     "note": "A bottleneck adapter after the MLP is one of the three searched modules."
+    },
+    {
+     "target": "glora",
+     "type": "competes-with",
+     "note": "GLoRA also trains a one-shot supernet and runs an evolutionary search per layer, but over a merge-friendly unified affine space."
+    },
+    {
+     "target": "autopeft",
+     "type": "competes-with",
+     "note": "Both search a combined PEFT design space. NOAH uses a weight-shared supernet with evolutionary search on vision; AutoPEFT uses multi-objective Bayesian optimization on NLP."
+    },
+    {
+     "target": "unipelt",
+     "type": "competes-with",
+     "note": "UniPELT combines modules with learned input-dependent gates instead of searching over them."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2206.04673",
+    "https://arxiv.org/html/2206.04673",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2206.04673",
+    "https://github.com/ZhangYuanhan-AI/NOAH",
+    "https://doi.org/10.1109/TPAMI.2024.3435939",
+    "https://github.com/ZhangYuanhan-AI/NOAH/blob/main/model/module/adapter_super.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "url: arXiv abs -> TPAMI DOI (10.1109/TPAMI.2024.3435939, vol. 47, no. 7, pp. 5268-5280, July 2025, confirmed via Crossref) so the url matches the venue.",
+    "locus: noted that the official code (model/module/qkv_super_prompt.py) puts a single LoRA on the fused qkv weight rather than separate q/k LoRAs; parameter count 4dr is unchanged.",
+    "identity_at_init: 'near-zero adapters' is wrong for NOAH; the official AdapterSuper initializes both linear layers with Xavier-uniform, so the adapter output is non-zero at init.",
+    "results_note: pre-training set is ImageNet-22K as stated in the paper (Sec. 3, Implementation Details), not 'ImageNet-21K'."
+   ],
+   "verification_notes": "arXiv 2206.04673 (Zhang, 2022-06) confirmed; venue IEEE TPAMI 47(7):5268-5280 (2025) confirmed via Crossref DOI 10.1109/TPAMI.2024.3435939. Eqs. 2-4, search space ({5,10,50,100} or {1,5,10} widths, depths {3,6,9,12}), AutoFormer weight entanglement, 0.64M cap and the 0.43M / 75.5 VTAB result confirmed. Repo redirects from Davidzhangyuanhan/NOAH to ZhangYuanhan-AI/NOAH. Not in HF PEFT."
+  },
+  {
+   "id": "autopeft",
+   "name": "AutoPEFT",
+   "full_name": "AutoPEFT (automatic, multi-objective configuration search for PEFT)",
+   "paper_title": "AutoPEFT: Automatic Configuration Search for Parameter-Efficient Fine-Tuning",
+   "authors": "Zhou et al.",
+   "year": 2023,
+   "venue": "TACL 2024",
+   "arxiv": "2301.12132",
+   "url": "https://aclanthology.org/2024.tacl-1.29/",
+   "code_url": "https://github.com/cambridgeltl/autopeft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{layer } l\\ (m_l=1):\\ \\ h\\leftarrow F(x)+W^{up}_{SA}\\,\\mathrm{ReLU}\\big(W^{down}_{SA}F(x)\\big)+W^{up}_{PA}\\,\\mathrm{ReLU}\\big(W^{down}_{PA}x\\big),\\ \\ K'=[P_k;K],\\ V'=[P_v;V],\\ P_k,P_v\\in\\mathbb{R}^{L_{PT}\\times d};\\quad a=\\big(m\\in\\{0,1\\}^{L},\\,D_{SA},\\,D_{PA},\\,L_{PT}\\big)\\in\\mathcal{A};\\quad \\max_{a\\in\\mathcal{A}}\\big(f(a,W^\\ast(a)),\\,-g(a)\\big)\\ \\ \\text{s.t.}\\ W^\\ast(a)=\\arg\\min_W\\mathcal{L}_{train}(a,W)\\ \\ \\text{(SAAS-GP surrogate, NEHVI acquisition, low-fidelity inner loop)};\\ \\text{PLM frozen}",
+   "trainable_params": "\\textstyle\\sum_{l}m_l\\,\\big(2d\\,D_{SA}+2d\\,D_{PA}+2L_{PT}\\,d\\big)\\ (+\\text{biases})",
+   "locus": "in each selected Transformer layer: a serial adapter after the FFN, a parallel adapter around the FFN, and prefixes on the attention keys/values",
+   "modification_kind": "hybrid",
+   "structure": "Bi-level, bi-objective search (performance vs parameter count) over a discrete product space: a layer mask times three module sizes on a log scale, where 0 means the module is absent. The answer is a Pareto front of configurations, not a single PEFT. Each configuration is a sum of serial and parallel bottleneck insertions plus key/value prefixes.",
+   "mergeable": "no",
+   "mergeable_reason": "ReLU bottleneck adapters and prefix slots cannot be folded into the frozen weights.",
+   "identity_at_init": "Not addressed. Modules use AdapterHub defaults (near-zero adapter outputs), while prefixes change attention from the first step.",
+   "key_idea": "Instead of hand-picking a PEFT recipe, AutoPEFT searches jointly over which layers get modules and how large the serial adapter, parallel adapter and prefix are. It uses multi-objective Bayesian optimization with cheap low-fidelity evaluations, and the discovered configurations transfer across tasks and models.",
+   "results_note": "On GLUE with BERT-base, a configuration searched on RTE (0.76% parameters) averages 83.17 vs 83.15 for full fine-tuning, beating serial and parallel adapters, prefix-tuning, LoRA, UniPELT, MAM and AdaMix; per-task search reaches 83.49. Gains are similar on SuperGLUE, RoBERTa-large and T5, where it is compared with S3PET.",
+   "relations": [
+    {
+     "target": "pfeiffer-adapter",
+     "type": "combines",
+     "note": "The serial adapter (SA) after the FFN is one of the three building blocks."
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "combines",
+     "note": "The parallel adapter (PA) around the FFN is a building block; the paper treats LoRA as a scaled variant of PA and leaves it out."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "combines",
+     "note": "The prefix module (PT) on attention keys and values is a building block."
+    },
+    {
+     "target": "mam-adapter",
+     "type": "competes-with",
+     "note": "MAM is a Table 1 baseline (80.25 GLUE avg at 6.97% params vs 83.17 at 0.76%). Its module types (parallel FFN adapter plus key/value prefix) are a subset of AutoPEFT's, but MAM itself is not a point of the search space: its sizes (prefix length 30, adapter width 512) and fixed scaling s = 4 are not in AutoPEFT's per-module grid {0,1,3,6,12,24,48,96,192,384,768} (11 values, inferred from 5,451,776 = 2^12 x 11^3 on BERT-base and the reported 12/96/1 values)."
+    },
+    {
+     "target": "unipelt",
+     "type": "competes-with",
+     "note": "UniPELT also combines adapter, prefix and LoRA, but through learned gates rather than a search."
+    },
+    {
+     "target": "noah",
+     "type": "competes-with",
+     "note": "Both search a combined PEFT design space; NOAH uses a weight-shared supernet with evolutionary search on ViTs."
+    },
+    {
+     "target": "adamix",
+     "type": "competes-with",
+     "note": "A baseline mixture of homogeneous adapters; AutoPEFT beats it at similar parameter cost."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2301.12132",
+    "https://arxiv.org/html/2301.12132",
+    "https://aclanthology.org/2024.tacl-1.29/",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2301.12132",
+    "https://github.com/cambridgeltl/autopeft"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "relation mam-adapter: generalizes -> competes-with; MAM's prefix length 30, adapter width 512 and scaling s = 4 lie outside AutoPEFT's discrete size grid, so AutoPEFT's space does not contain MAM."
+   ],
+   "verification_notes": "arXiv 2301.12132 (Zhou, 2023-01; comment 'Accepted to TACL') and ACL Anthology 2024.tacl-1.29 confirmed. Eqs. 1-4 (SA, PA, SAPA composition, prefix P_k,P_v, bi-level bi-objective max), SAAS-GP + NEHVI and the 2^|l| x |D_SA| x |D_PA| x |L_PT| count confirmed. Param formula re-derived on the RTE config (layers 3,4,8,9,10; 12/96/1; d = 768): 837K = 0.76% of BERT-base, matching Table 2. Table 1 (83.17 vs 83.15 FFT; per-task 83.49) confirmed. Serial = Pfeiffer adapter (App.). Not in HF PEFT."
+  },
+  {
+   "id": "laplace-lora",
+   "name": "Laplace-LoRA",
+   "full_name": "Laplace-LoRA (Bayesian low-rank adaptation via a post-hoc Laplace approximation over LoRA parameters)",
+   "paper_title": "Bayesian Low-rank Adaptation for Large Language Models",
+   "authors": "Yang et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2308.13111",
+   "url": "https://proceedings.iclr.cc/paper_files/paper/2024/hash/07c256a163a7559186ec1c71e95b9ec9-Abstract-Conference.html",
+   "code_url": "https://github.com/adamxyang/laplace-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=W_0+BA,\\ \\ \\theta=\\{A,B\\}\\ \\text{fit by standard LoRA}\\to\\theta_{MAP};\\quad p(\\theta\\mid\\mathcal{D})\\approx\\mathcal{N}(\\theta_{MAP},\\Sigma),\\ \\ \\Sigma^{-1}=\\textstyle\\sum_{n}\\mathbb{E}\\big[(a\\,a^{\\top})\\otimes(g\\,g^{\\top})\\big]+\\lambda I\\ \\ \\text{(K-FAC per factor, large Kronecker factor stored at rank } n_{kfac});\\quad f(x_\\ast)\\sim\\mathcal{N}\\big(f_{\\theta_{MAP}}(x_\\ast),\\,J_\\ast\\Sigma J_\\ast^{\\top}\\big),\\ \\ J_\\ast=\\nabla_\\theta f_\\theta(x_\\ast)\\big|_{\\theta_{MAP}};\\ \\ \\lambda\\ \\text{maximizes the Laplace marginal likelihood};\\ \\ W_0\\ \\text{frozen}",
+   "trainable_params": "r\\,(d_{in}+d_{out})\\ \\text{(MAP, as LoRA)}\\ +\\ \\text{post-hoc K-FAC statistics (not trained)}\\approx n_{kfac}(d_{in}+d_{out})+2r^{2}\\ \\text{per matrix}\\ +\\ \\text{one prior precision }\\lambda",
+   "locus": "LoRA factors on W_q, W_v and the output (LM-head) layer in the paper; the LLLA variant uses only the output-layer LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A Gaussian (Laplace) posterior over the LoRA factors, treated as two separate linear layers with Kronecker-factored precision (the d x d factor kept low-rank). Prediction integrates the linearized network over this posterior: a Bayesian model average over adapter parameters with the base weights fixed.",
+   "mergeable": "conditional",
+   "mergeable_reason": "The posterior mean BA merges into W_0, but the calibrated predictive needs the Jacobian with respect to the LoRA factors and the stored covariance at test time.",
+   "identity_at_init": "Standard LoRA initialization (B = 0) for the MAP fit. The Laplace step is post-hoc and leaves the mean unchanged.",
+   "key_idea": "Fine-tuned LLMs are overconfident on small datasets. After ordinary LoRA training, Laplace-LoRA fits a Laplace approximation over the LoRA parameters only, with low-rank K-FAC so memory stays LoRA-sized, and predicts with the linearized model. This calibrates the model without a validation set.",
+   "results_note": "On six commonsense reasoning tasks with LLaMA2-7B, full Laplace-LoRA keeps accuracy while greatly reducing ECE and NLL relative to MAP, MC dropout, checkpoint ensembles and LoRA ensembles. This holds under distribution shift too, at about 1-5% extra memory.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Uses an unchanged LoRA fit as the MAP point; the Bayesian layer is post-hoc."
+    },
+    {
+     "target": "monteclora",
+     "type": "competes-with",
+     "note": "Both put a distribution on LoRA parameters. MonteCLoRA learns a Gaussian-mixture posterior during training; Laplace-LoRA fits a Gaussian after training."
+    },
+    {
+     "target": "blob",
+     "type": "competes-with",
+     "note": "BLoB (NeurIPS 2024) learns a variational posterior over LoRA during training, as an alternative to post-hoc Laplace."
+    },
+    {
+     "target": "lora-dropout",
+     "type": "competes-with",
+     "note": "Both put a distribution over LoRA adapters and average predictions at test time: LoRA Dropout (Lin et al., 2024, later work) samples sparsified adapters, Laplace-LoRA uses a Gaussian posterior. Laplace-LoRA's own baseline is standard MC dropout on a LoRA fine-tune (rate 0.1, 10 samples), which it beats on ECE/NLL; that baseline is not the LoRA Dropout method itself."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2308.13111",
+    "https://arxiv.org/html/2308.13111",
+    "https://proceedings.iclr.cc/paper_files/paper/2024/hash/07c256a163a7559186ec1c71e95b9ec9-Abstract-Conference.html",
+    "https://github.com/adamxyang/laplace-lora"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "trainable_params: marked the K-FAC factors as post-hoc statistics rather than trained parameters and added the single prior precision lambda tuned by marginal likelihood.",
+    "relation lora-dropout: note no longer equates the paper's MC-dropout baseline (Gal & Ghahramani, 2016) with the catalog's LoRA Dropout method (arXiv 2404.09610, which postdates this paper)."
+   ],
+   "verification_notes": "arXiv 2308.13111 (Yang, 2023-08) and ICLR 2024 proceedings confirmed. Eqs. 1-15 (MAP, K-FAC Fisher, low-rank large factor of rank n_kfac, linearized predictive, marginal-likelihood lambda) match. LoRA on q, v and the output layer (Sec. 5), LLLA = output layer only, six commonsense datasets and 1-5% memory overhead (Sec. 5.3) confirmed. Not in HF PEFT."
+  }
+ ],
+ "papers": [
+  {
+   "id": "inference-time-intervention",
+   "title": "Inference-Time Intervention: Eliciting Truthful Answers from a Language Model",
+   "authors": "Li et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.03341",
+   "url": "https://arxiv.org/abs/2306.03341",
+   "claim": "Shifting activations along probe-derived 'truthful' directions in a small set of top-K attention heads, with no training, raises Alpaca's TruthfulQA truthfulness from 32.5% to 65.1%. There is a tunable trade-off between truthfulness and helpfulness.",
+   "relevance": "ITI is the training-free precursor of learned representation interventions: LoFiT casts ITI in its localize-then-offset framework and replaces both steps with learning, and ReFT's appendix shows how inference-time interventions fit its framework. Its edit, a constant offset on selected head outputs, is the zero-training corner of representation-level PEFT and is algebraically a bias on W^O. This makes 'steering' and 'fine-tuning' two ways of choosing the same kind of morphism.",
+   "sources": [
+    "https://arxiv.org/abs/2306.03341",
+    "https://arxiv.org/html/2406.01563",
+    "https://arxiv.org/abs/2404.03592"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "relevance: removed RED from the list of ITI descendants (RED, arXiv 2402.15179, does not cite or build on ITI); grounded the LoFiT and ReFT links in their papers."
+   ],
+   "verification_notes": "arXiv 2306.03341 (Li, 2023-06; comment 'NeurIPS 2023 spotlight') confirmed; Alpaca TruthfulQA 32.5% -> 65.1% confirmed in the abstract and table."
+  },
+  {
+   "id": "laplace-redux",
+   "title": "Laplace Redux -- Effortless Bayesian Deep Learning",
+   "authors": "Daxberger et al.",
+   "year": 2021,
+   "venue": "NeurIPS 2021",
+   "arxiv": "2106.14806",
+   "url": "https://arxiv.org/abs/2106.14806",
+   "claim": "The Laplace approximation, in cheap variants such as last-layer, K-FAC and linearized predictive, is competitive in performance with more popular Bayesian alternatives while costing much less. The paper releases the 'laplace' PyTorch library.",
+   "relevance": "It supplies the post-hoc machinery (K-FAC, linearized predictive, marginal-likelihood prior tuning) that Laplace-LoRA restricts to the adapter subspace. This turns a point adapter into a distribution over adapters: for the site, a lift of PEFT from points of a parameter space to a probability monad over it.",
+   "sources": [
+    "https://arxiv.org/abs/2106.14806",
+    "https://arxiv.org/html/2308.13111"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2106.14806 (Daxberger, 2021-06; comment 'NeurIPS 2021 camera-ready') confirmed; 'laplace' library (github.com/AlexImmer/Laplace) and competitiveness claims confirmed in the abstract and Sec. 5."
+  }
+ ],
+ "notes": "All 8 requested methods exist, are distinct from catalog entries, and were verified from the arXiv API (titles, authors, dates) and from each paper's method section (arXiv HTML full text). Venues come from the official proceedings pages (NeurIPS 2024: Trans-LoRA, LoFiT; ICLR 2024: Laplace-LoRA; ICLR 2025: LoRA-X), CVF open access (CVPR 2023: CODA-Prompt), the ACL Anthology (EMNLP 2024 main 2024.emnlp-main.450: MoSLoRA; TACL 2024 2024.tacl-1.29: AutoPEFT) and Semantic Scholar/DBLP (NOAH: IEEE TPAMI, DOI 10.1109/TPAMI.2024.3435939, DBLP key journals/pami/ZhangZL25; arXiv year 2022). None of the 8 is in Hugging Face PEFT (checked against a clone of huggingface/peft at commit 85be3f3, 2026-09-30). Code: Trans-LoRA has no released code; the first author's repo github.com/raywang4/TransLoRA says only 'To be released after approval', so code_url is empty. LoRA-X has no official code link (the paper gives PyTorch pseudocode in Appendix F). NOAH's repo moved from Davidzhangyuanhan/NOAH to ZhangYuanhan-AI/NOAH. Family placement: coda-prompt belongs in prompts, next to l2p and dualprompt (composition-or-routing, as they are). trans-lora and lora-x form a new 'transport / base change' sub-family in composition: Trans-LoRA is function-level (distillation, works across PEFT types), LoRA-X is weight-level (projection). lofit should join red (and the missing loreft) in a 'representation' family. moslora belongs in shape: B M A with a learnable r x r mixer is the trainable-everything member of the LoRA-XS / LoRA-SB / FLoRA core family. noah and autopeft belong in adapters (unified frameworks / design-space search). laplace-lora belongs in lora-core (Bayesian PEFT), next to monteclora. Derived statements (not in the source papers), flagged in the fields: (1) MoSLoRA has the same reachable set as LoRA (rank <= r) and a GL(r) x GL(r) gauge symmetry. On 2-D weights it has the same three-factor form as FLoRA (A G B^T) and differs mainly in which factor is zero-initialized. (2) The LoRA-X full-core variant has the same reachable set as LoRA-XS; the diagonal variant is SVFT with pattern Omega = {(i,i): i <= r}. (3) LoFiT offsets fold into an o_proj bias. (4) LoRA-X caveat: the paper's pseudocode uses a thin SVD (full_matrices=False), so U_t U_t^T = I when d_out <= d_in and V_t V_t^T = I when d_in <= d_out. For square full-rank layers the projection is the identity, and transfer reduces to copying Delta W_s expressed in the target basis; the projection acts only on the larger side of rectangular layers (e.g. cross-attention K/V) or after layer re-matching. As a consequence, LoRA-X transport T_{s->t}(Delta W) = P_t Delta W Q_t (P, Q the column- and row-space projectors) is idempotent, but it does not compose strictly: P_u P_t (.) Q_t Q_u differs from P_u (.) Q_u in general, so it is at best a lax functor between adapter spaces.Trans-LoRA reports two-step transfer (Llama-2-7b to Llama-2-13b to Gemma-7b) giving 45.04 on BBH, so its transport is also non-strict but empirically stable. Other uncertainties: AutoPEFT's per-layer equation adds the residual F(x) around the paper's Eq. 3 (which gives only the adapter terms); the sizes D_SA, D_PA, L_PT appear to be shared across selected layers (inferred from the configuration count 2^|l| x |D_SA| x |D_PA| x |L_PT|). NOAH applies LoRA to W_q and W_k as written in its Eq. 3. The LoRA-X identity-at-init is not stated. Catalog gaps noticed: 'loreft' (ReFT, Wu et al., NeurIPS 2024, arXiv 2404.03592) is used as a relation target in multiplicative.json and here, but no file defines it, so it should be added. The relation target 'blob' (BLoB, arXiv 2406.11675) is defined in gap-2.json. No method ids overlap with gap-2. Close relatives not added (outside this batch's exact scope): S3PET / S3Delta (Hu et al., arXiv 2206.07382, DARTS-style PEFT structure search, the baseline in AutoPEFT); X-Adapter (Ran et al., CVPR 2024, arXiv 2312.02238, plugin and LoRA upgrade across diffusion versions, the baseline in LoRA-X); and continual-PEFT relatives of CODA-Prompt (HiDe-Prompt, LAE, S-Prompts).",
+ "verification_summary": "Adversarial check on 2026-10-01 of all 8 methods and 2 papers; all exist and are verified, none dropped, 15 corrections. Metadata: one arXiv export-API batch call confirmed every title, first author and first-version year. Venues confirmed from arXiv comments plus proceedings pages (NeurIPS 2024: Trans-LoRA, LoFiT; ICLR 2024: Laplace-LoRA; ICLR 2025: LoRA-X; CVPR 2023 CVF page: CODA-Prompt; ACL Anthology: MoSLoRA EMNLP 2024, AutoPEFT TACL 2024; Crossref: NOAH IEEE TPAMI 47(7), 2025; NeurIPS 2021/2023 for the papers). Formulas and init were checked against the full text (pdftotext of each arXiv PDF) and, for NOAH and MoSLoRA, the official code. HF PEFT: none of the 8 is in huggingface/peft main (commit 85be3f3, 2026-09-30; tuners list and full-text grep). Substantive fixes: NOAH identity_at_init (adapters are Xavier-initialized in the official code, so not near-zero) and the code's fused-qkv LoRA; AutoPEFT -> MAM relation changed from generalizes to competes-with (MAM's sizes 30/512 and s = 4 are outside AutoPEFT's 11-value grid); LoRA-X -> SVDiff relation changed to special-case-of, and the ATC is described as a metric, not the transfer map; MoSLoRA locus (q,k,v,up,down in the commonsense runs) and the alpha/r scaling; LoFiT parameter formula (L H d_head != L d on Gemma); NOAH url set to the TPAMI DOI and ImageNet-22K wording; Laplace-LoRA lora-dropout note; ITI relevance (RED removed). Every relation target resolves to an id defined in the catalog (loreft in gap-0, blob in gap-2)."
+}

@@ -1,0 +1,2308 @@
+{
+ "family": "composition",
+ "family_title": "Composition, merging, routing, mixtures and adapter generation",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "model-soups",
+   "name": "Model Soups",
+   "full_name": "Model soups (uniform / greedy weight averaging of fine-tuned models)",
+   "paper_title": "Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time",
+   "authors": "Wortsman et al.",
+   "year": 2022,
+   "venue": "ICML 2022",
+   "arxiv": "2203.05482",
+   "url": "https://arxiv.org/abs/2203.05482",
+   "code_url": "https://github.com/mlfoundations/model-soups",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{\\mathrm{soup}}=\\tfrac{1}{|\\mathcal{S}|}\\sum_{i\\in\\mathcal{S}}W_i=W_0+\\tfrac{1}{|\\mathcal{S}|}\\sum_{i\\in\\mathcal{S}}\\Delta W_i,\\ \\ \\mathcal{S}\\subseteq\\{1,\\dots,N\\};\\ \\text{uniform soup: }\\mathcal{S}=\\{1,\\dots,N\\};\\ \\text{greedy soup: add models in order of validation accuracy, keep }i\\text{ only if held-out accuracy does not drop};\\ \\text{all }W_i\\text{ frozen, nothing trained}",
+   "trainable_params": "0\\ \\text{(post-hoc average of }N\\text{ fine-tuned models sharing one pre-trained initialization)}",
+   "locus": "all parameters of fully fine-tuned models that share a pre-trained initialization",
+   "modification_kind": "composition-or-routing",
+   "structure": "Equal-weight barycentre (convex combination) of N points in weight space that share the base point W_0; the greedy soup is the barycentre of a validation-selected subset.",
+   "mergeable": "yes",
+   "mergeable_reason": "The soup is a single weight vector of the original architecture, so inference costs exactly one model.",
+   "identity_at_init": "Not applicable (training-free); a soup of a single model returns that model.",
+   "key_idea": "Models fine-tuned from the same pre-trained weights with different hyper-parameters tend to lie in one low-error basin, so averaging their weights gives ensemble-like accuracy and robustness at single-model cost.",
+   "results_note": "A greedy soup of fine-tuned ViT-G/14 models reached 90.94% ImageNet top-1, above the best single model of the sweep (90.78%).",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "special-case-of",
+     "note": "uniform soup = W_0 + (1/N) sum_i tau_i, i.e. task arithmetic with lambda = 1/N"
+    },
+    {
+     "target": "fisher-merging",
+     "type": "special-case-of",
+     "note": "plain averaging is Fisher merging with identity precision (isotropic merging)"
+    },
+    {
+     "target": "adaptersoup",
+     "type": "generalizes",
+     "note": "AdapterSoup applies the soup recipe to adapter parameters only"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2203.05482",
+    "https://arxiv.org/html/2203.05482"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2203.05482 (Wortsman, 2022) matches; ICML 2022 per arXiv comment and Semantic Scholar. Uniform/greedy soup recipes (greedy: add models in decreasing validation accuracy, keep if held-out accuracy does not drop) and 90.94% vs 90.78% ImageNet top-1 confirmed in the PDF (Table 1).",
+   "corrections": []
+  },
+  {
+   "id": "fisher-merging",
+   "name": "Fisher Merging",
+   "full_name": "Fisher-weighted averaging",
+   "paper_title": "Merging Models with Fisher-Weighted Averaging",
+   "authors": "Matena and Raffel",
+   "year": 2021,
+   "venue": "NeurIPS 2022",
+   "arxiv": "2111.09832",
+   "url": "https://arxiv.org/abs/2111.09832",
+   "code_url": "https://github.com/mmatena/model_merging",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{\\star}_{[p]}=\\frac{\\sum_{i=1}^{N}\\lambda_i\\,F_{i,[p]}\\,W_{i,[p]}}{\\sum_{i=1}^{N}\\lambda_i\\,F_{i,[p]}}\\ \\ (\\text{per coordinate }p),\\quad F_i=\\mathbb{E}_{x}\\,\\mathbb{E}_{y\\sim p_{\\theta_i}(y\\mid x)}\\big[(\\nabla_{\\theta}\\log p_{\\theta_i}(y\\mid x))^{2}\\big],\\ \\lambda_i\\ge0,\\ \\textstyle\\sum_i\\lambda_i=1;\\ \\text{models frozen}",
+   "trainable_params": "0\\ \\text{(one diagonal Fisher estimate per model, same size as the model)}",
+   "locus": "all shared parameters of models fine-tuned from the same initialization (task heads excluded)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Per-coordinate precision-weighted mean: the maximizer of \\sum_i\\lambda_i\\log\\mathcal{N}(\\theta;\\theta_i,F_i^{-1}) under a diagonal Laplace approximation of each posterior; isotropic averaging is the case F_i=I.",
+   "mergeable": "yes",
+   "mergeable_reason": "The output is one set of weights for the original architecture.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "View merging as maximizing the joint likelihood of the models' posteriors; using each model's diagonal Fisher information as its posterior precision lets every coordinate be dominated by the model that is most certain about it.",
+   "results_note": "Fisher merging beats isotropic averaging for robust fine-tuning and model ensembling and is competitive with intermediate-task transfer and domain-adaptive pre-training at much lower cost.",
+   "relations": [
+    {
+     "target": "model-soups",
+     "type": "generalizes",
+     "note": "reduces to uniform averaging when every F_i = I"
+    },
+    {
+     "target": "regmean",
+     "type": "competes-with",
+     "note": "both are closed-form weighted means; RegMean weights by input Gram matrices instead of Fisher diagonals"
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "TIES reports gains over Fisher merging"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2111.09832",
+    "https://arxiv.org/html/2111.09832"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2111.09832 (Matena, 2021); NeurIPS 2022 confirmed in papers.nips.cc 2022 listing. Per-coordinate Fisher-weighted mean, lambda_i >= 0 with sum 1 (Sec. 2.2) and isotropic merging as the F=I case (Sec. 2.1) confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "regmean",
+   "name": "RegMean",
+   "full_name": "Regression Mean (dataless knowledge fusion)",
+   "paper_title": "Dataless Knowledge Fusion by Merging Weights of Language Models",
+   "authors": "Jin et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2212.09849",
+   "url": "https://arxiv.org/abs/2212.09849",
+   "code_url": "https://github.com/bloomberg/dataless-model-merging",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{\\star}=\\Big(\\sum_{i=1}^{N}W_i\\tilde G_i\\Big)\\Big(\\sum_{i=1}^{N}\\tilde G_i\\Big)^{-1}=\\arg\\min_{W}\\sum_i\\|X_iW^{\\top}-X_iW_i^{\\top}\\|_F^2\\ (\\text{with regularization}),\\ G_i=X_i^{\\top}X_i\\in\\mathbb{R}^{d_{in}\\times d_{in}},\\ \\tilde G_i=\\alpha G_i+(1-\\alpha)\\operatorname{diag}(G_i);\\ \\text{non-linear-layer weights simply averaged}",
+   "trainable_params": "0\\ \\text{(stores one }d_{in}\\times d_{in}\\text{ Gram matrix per linear layer per model)}",
+   "locus": "every linear layer (embeddings and biases averaged)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Layer-wise least-squares merge: the merged linear map is the Gram-weighted matrix mean of the individual maps; equals simple averaging when all G_i are equal, and the off-diagonal shrinkage \\alpha (\\approx0.9) acts as a pull toward the individual weights.",
+   "mergeable": "yes",
+   "mergeable_reason": "Produces one weight matrix per layer of the original architecture.",
+   "identity_at_init": "Not applicable (training-free, closed form).",
+   "key_idea": "Merge each linear layer so that on every model's own training inputs it reproduces that model's outputs as closely as possible; this regression has a closed form that needs only inner-product statistics of the inputs, not the data itself.",
+   "results_note": "Across GLUE-style merging settings RegMean significantly outperforms Fisher-weighted averaging and model ensembling baselines and can preserve or improve individual-model performance without training data.",
+   "relations": [
+    {
+     "target": "fisher-merging",
+     "type": "competes-with",
+     "note": "activation-Gram weighting vs Fisher weighting"
+    },
+    {
+     "target": "mix-of-show",
+     "type": "equivalent-to",
+     "note": "same layer-wise activation-matched least-squares merge operator (RegMean Eq. 1 with alpha = 1); Mix-of-Show solves it by gradient descent on activations sampled from each concept LoRA, RegMean in closed form with off-diagonal shrinkage alpha"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "competes-with",
+     "note": "standard baseline pair in merging benchmarks"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2212.09849",
+    "https://arxiv.org/html/2212.09849"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2212.09849 (Jin, 2022); ICLR 2023 per arXiv comment. Closed form W_M = (sum G~_i)^-1 sum G~_i W_i (paper uses h = xW, transposed here), G~ = alpha G + (1-alpha) diag(G), alpha = 0.9 (0.1 for T5), and simple averaging of embeddings and biases confirmed (Sec. 3, Alg. 1).",
+   "corrections": [
+    "relations: sharpened the 'equivalent-to mix-of-show' note. The two methods share the merge objective, but Mix-of-Show drops the alpha shrinkage and solves it with gradients on self-generated activations."
+   ]
+  },
+  {
+   "id": "task-arithmetic",
+   "name": "Task Arithmetic",
+   "full_name": "Task arithmetic with task vectors",
+   "paper_title": "Editing Models with Task Arithmetic",
+   "authors": "Ilharco et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2212.04089",
+   "url": "https://arxiv.org/abs/2212.04089",
+   "code_url": "https://github.com/mlfoundations/task_vectors",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(weights, combination_type='svd' | 'cat' | 'linear'): 'svd' sums the weighted dense deltas exactly and then truncates them to svd_rank by SVD, 'cat' is exact at rank sum r_i, and 'linear' mixes the A and B factors (an approximation with cross terms); low-level operator peft.utils.merge_utils.task_arithmetic",
+   "formula_latex": "\\tau_i=\\theta_i-\\theta_0\\ \\ (\\text{per matrix }\\Delta W_i=W_i-W_0);\\quad \\theta_{\\mathrm{new}}=\\theta_0+\\lambda\\,\\tau_{\\mathrm{new}},\\ \\ \\tau_{\\mathrm{new}}\\in\\Big\\{\\textstyle\\sum_i\\tau_i\\ (\\text{addition}),\\ -\\tau\\ (\\text{negation}),\\ \\tau_C+(\\tau_B-\\tau_A)\\ (\\text{analogy})\\Big\\};\\ \\lambda\\text{ tuned on held-out data; no training}",
+   "trainable_params": "0\\ \\text{(one scalar }\\lambda\\text{ chosen on validation data)}",
+   "locus": "all parameters shared between the pre-trained and fine-tuned models",
+   "modification_kind": "composition-or-routing",
+   "structure": "Vector-space operations (sum, negation, analogy) on displacement vectors from the common base point \\theta_0; the edited model is \\theta_0 plus a linear combination of task vectors.",
+   "mergeable": "yes",
+   "mergeable_reason": "The edited model is a single weight vector of the original architecture; only element-wise operations on weights are used.",
+   "identity_at_init": "Not applicable (training-free); \\lambda=0 recovers the pre-trained model and \\lambda=1 with one task vector recovers that fine-tuned model.",
+   "key_idea": "A fine-tuning run defines a direction in weight space; adding such task vectors builds multi-task models, negating one makes the model forget a task or behaviour, and analogies transfer skills to tasks with little data.",
+   "results_note": "Adding task vectors from 8 CLIP image-classification tasks gives one model at 91.2% normalized accuracy (98.9% for pairs), and negating a toxicity task vector reduces toxic generations with little loss of fluency.",
+   "relations": [
+    {
+     "target": "model-soups",
+     "type": "generalizes",
+     "note": "uniform soup is task arithmetic with lambda = 1/N"
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "TIES replaces the plain sum by trim/elect/disjoint-mean"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2212.04089",
+    "https://arxiv.org/html/2212.04089",
+    "https://github.com/huggingface/peft/blob/main/src/peft/utils/merge_utils.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/model.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2212.04089 (Ilharco, 2022); ICLR 2023 per arXiv comment. tau = theta_ft - theta_pre, theta_new = theta + lambda tau_new with lambda tuned on held-out validation data, negation and analogy tau_C + (tau_B - tau_A), 91.2% normalized accuracy for 8 tasks and 98.9% for pairs confirmed. HF add_weighted_adapter read on peft main (v0.21.1).",
+   "corrections": [
+    "hf_peft_config: explained which combination_type reproduces task arithmetic on Delta W. 'svd' and 'cat' are exact (svd up to rank truncation). 'linear' mixes factors and adds cross terms, as the PEFT docstring warns.",
+    "relations: removed 'generalizes pem-arithmetic'. PEM addition acts on the (A, B) factors and creates cross terms B_1A_2 + B_2A_1, and its negation acts on one factor only, so PEM is not a special case of task arithmetic on Delta W. The inverse link 'pem-arithmetic builds-on task-arithmetic' remains."
+   ]
+  },
+  {
+   "id": "ties-merging",
+   "name": "TIES-Merging",
+   "full_name": "TrIm, Elect Sign & Merge",
+   "paper_title": "TIES-Merging: Resolving Interference When Merging Models",
+   "authors": "Yadav et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.01708",
+   "url": "https://arxiv.org/abs/2306.01708",
+   "code_url": "https://github.com/prateeky2806/ties-merging",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(combination_type='ties' | 'ties_svd', density=k, majority_sign_method='total' | 'frequency'); 'ties' trims and elects signs on the lora_A and lora_B factors separately, 'ties_svd' on the dense Delta W followed by SVD truncation; also IA3 vectors via merge_utils.ties",
+   "formula_latex": "\\hat\\tau_i=\\operatorname{TopK}_{k\\%}(\\tau_i)\\ (\\text{trim});\\quad \\gamma^{p}=\\operatorname{sgn}\\Big(\\textstyle\\sum_{i}\\hat\\tau_i^{p}\\Big)\\ (\\text{elect});\\quad \\tau_m^{p}=\\frac{1}{|\\mathcal{A}^{p}|}\\sum_{i\\in\\mathcal{A}^{p}}\\hat\\tau_i^{p},\\ \\mathcal{A}^{p}=\\{i:\\operatorname{sgn}(\\hat\\tau_i^{p})=\\gamma^{p}\\}\\ (\\text{disjoint merge});\\quad \\theta_m=\\theta_0+\\lambda\\,\\tau_m",
+   "trainable_params": "0\\ \\text{(hyper-parameters }k\\approx20\\%,\\ \\lambda\\approx1)",
+   "locus": "task vectors of full fine-tuning or of PEFT parameters (e.g. (IA)^3 vectors, LoRA factors in HF PEFT)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Coordinate-wise non-linear aggregation: magnitude sparsification, sign election by total mass, and a mean over agreeing non-zero entries only; not a linear combination of task vectors.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged task vector is added to the base weights once, giving a standard model.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "Merging interference comes from redundant small updates and sign conflicts; trimming small entries, electing one sign per parameter and averaging only agreeing values recovers much of the accuracy lost by plain averaging.",
+   "results_note": "With validation-tuned hyper-parameters, TIES outperforms averaging, Fisher merging, RegMean and Task Arithmetic across T5, ViT and (IA)^3-PEFT merges, in-domain and out-of-domain. Without a validation set, the fixed recipe (k = 20%, lambda = 1) is weaker than Task Arithmetic for the T5-base (IA)^3 merge (69.7 vs 73.2).",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "operates on the same task vectors"
+    },
+    {
+     "target": "dare",
+     "type": "combines",
+     "note": "DARE-TIES: random drop-and-rescale followed by TIES sign election"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.01708",
+    "https://arxiv.org/html/2306.01708",
+    "https://github.com/huggingface/peft/blob/main/src/peft/utils/merge_utils.py",
+    "https://huggingface.co/docs/peft/developer_guides/model_merging"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2306.01708 (Yadav, 2023); NeurIPS 2023 per arXiv comment and papers.nips.cc. Trim top-k% by magnitude, sign election by total mass, disjoint mean over agreeing entries, theta = theta_init + lambda tau_m, and the no-validation recipe k = 20%, lambda = 1 confirmed (Alg. 1, Sec. 6). PEFT merge_utils.ties read on main.",
+   "corrections": [
+    "hf_peft_config: added majority_sign_method='frequency' and noted that 'ties' acts on the LoRA factors, while 'ties_svd' acts on the dense delta, which matches the paper's per-parameter TIES.",
+    "results_note: qualified the claim. TIES beats all baselines only with validation-tuned hyper-parameters. Its no-validation recipe loses to Task Arithmetic on the (IA)^3 T5-base row of Table 1.",
+    "relations: removed 'builds-on ia3'. (IA)^3 is only one of the evaluation settings (the PEFT models being merged), not a component TIES depends on."
+   ]
+  },
+  {
+   "id": "dare",
+   "name": "DARE",
+   "full_name": "Drop And REscale",
+   "paper_title": "Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch",
+   "authors": "Yu et al.",
+   "year": 2023,
+   "venue": "ICML 2024",
+   "arxiv": "2311.03099",
+   "url": "https://arxiv.org/abs/2311.03099",
+   "code_url": "https://github.com/yule-BUAA/MergeLM",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(combination_type='dare_linear' | 'dare_ties' | 'dare_linear_svd' | 'dare_ties_svd', density=1-p)",
+   "formula_latex": "m_i\\sim\\operatorname{Bernoulli}(p)\\ \\text{elementwise},\\quad \\hat\\tau_i=\\frac{(\\mathbf{1}-m_i)\\odot\\tau_i}{1-p};\\quad \\theta_m=\\theta_0+\\lambda\\textstyle\\sum_i\\hat\\tau_i\\ (\\text{DARE+TA})\\ \\text{or TIES on }\\{\\hat\\tau_i\\};\\ \\text{no training}",
+   "trainable_params": "0\\ \\text{(drop rate }p\\text{, up to }0.9\\text{--}0.99)",
+   "locus": "delta parameters (fine-tuned minus pre-trained) of homologous SFT models; LoRA factors in HF PEFT",
+   "modification_kind": "composition-or-routing",
+   "structure": "Random sparse coordinate mask with inverted-dropout rescaling 1/(1-p), which preserves the expectation of each delta and of its action on inputs; a pre-processing operator applied before any merge rule.",
+   "mergeable": "yes",
+   "mergeable_reason": "Sparsified deltas are added back to the base weights, giving one ordinary model.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "SFT deltas of language models are extremely redundant: randomly dropping 90-99% of them and rescaling the rest barely changes behaviour, and sparsified deltas of several homologous models interfere less when merged.",
+   "results_note": "DARE removes 90% or even 99% of delta parameters with little performance loss, and a DARE-merged 7B model ranked first among 7B models on the Open LLM Leaderboard at the time.",
+   "relations": [
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "commonly used as DARE-TIES"
+    },
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "DARE+Task Arithmetic is the basic merge"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.03099",
+    "https://arxiv.org/html/2311.03099",
+    "https://github.com/huggingface/peft/blob/main/src/peft/utils/merge_utils.py",
+    "https://huggingface.co/docs/peft/developer_guides/model_merging"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2311.03099 (Yu, 2023); ICML 2024 per arXiv comment and PMLR v235. Bernoulli(p) drop with 1/(1-p) rescaling, 90-99% drop rates and the top-ranked 7B merged model on the Open LLM Leaderboard confirmed. PEFT random_pruning keeps a fraction density = 1 - p and rescales by 1/density.",
+   "corrections": []
+  },
+  {
+   "id": "adamerging",
+   "name": "AdaMerging",
+   "full_name": "Adaptive Model Merging",
+   "paper_title": "AdaMerging: Adaptive Model Merging for Multi-Task Learning",
+   "authors": "Yang et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.02575",
+   "url": "https://arxiv.org/abs/2310.02575",
+   "code_url": "https://github.com/EnnengYang/AdaMerging",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta_m^{l}=\\theta_0^{l}+\\sum_{i=1}^{N}\\lambda_i^{l}\\,\\tau_i^{l}\\ \\ (\\text{layer-wise; task-wise uses one }\\lambda_i\\text{ per model});\\quad \\{\\lambda\\}=\\arg\\min_{\\lambda}\\sum_{x\\in\\mathcal{D}^{\\mathrm{unlab}}_{\\mathrm{test}}}H\\big(f_{\\theta_m(\\lambda)}(x)\\big),\\ H=\\text{prediction entropy};\\ \\text{task vectors frozen}",
+   "trainable_params": "N\\ \\text{per layer (layer-wise) or }N\\text{ in total (task-wise)}",
+   "locus": "task vectors of all layers (CLIP ViT image encoders in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Learned layer-wise linear combination of task vectors, fitted by test-time entropy minimization on unlabeled multi-task inputs.",
+   "mergeable": "yes",
+   "mergeable_reason": "After learning the coefficients the merged weights form one ordinary model.",
+   "identity_at_init": "Coefficients initialized to the task-arithmetic default \\lambda=0.3 (not an identity initialization).",
+   "key_idea": "Merging coefficients matter a lot; they can be learned per task and per layer without labels by minimizing the entropy of the merged model's predictions on unlabeled test inputs.",
+   "results_note": "Merging eight ViT task models, AdaMerging improves average accuracy by about 11% over Task Arithmetic and generalizes better to unseen tasks and distribution shift.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "generalizes",
+     "note": "learned per-layer coefficients instead of one global lambda"
+    },
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "also applied on top of TIES task vectors"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "both fit merging coefficients post hoc (AdaMerging by test-time entropy gradients, LoraHub by gradient-free few-shot search); conceptual pairing, neither paper benchmarks the other"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.02575",
+    "https://arxiv.org/html/2310.02575"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2310.02575 (Yang, 2023); ICLR 2024 per arXiv comment and proceedings.iclr.cc. Task-wise and layer-wise coefficients, entropy minimization on unlabeled test data, initialization lambda = 0.3 (App., 'initialize all coefficients to 0.3') and the ~11% gain over Task Arithmetic confirmed.",
+   "corrections": [
+    "relations: marked the lorahub link as conceptual. Neither paper compares against the other."
+   ]
+  },
+  {
+   "id": "tsv-merge",
+   "name": "TSV-Merge",
+   "full_name": "Task Singular Vectors Merge (TSV-M) and Compress (TSV-C)",
+   "paper_title": "Task Singular Vectors: Reducing Task Interference in Model Merging",
+   "authors": "Gargiulo et al.",
+   "year": 2024,
+   "venue": "CVPR 2025",
+   "arxiv": "2412.00081",
+   "url": "https://arxiv.org/abs/2412.00081",
+   "code_url": "https://github.com/AntoAndGar/task_singular_vectors",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta_i=U_i\\Sigma_iV_i^{\\top}\\ (\\text{keep top }1/N\\text{ components});\\ U=[U_1|\\cdots|U_N],\\ \\Sigma=\\operatorname{blockdiag}(\\Sigma_1,\\dots,\\Sigma_N),\\ V=[V_1|\\cdots|V_N];\\ U=P_UD_UQ_U^{\\top}\\Rightarrow U_\\perp=P_UQ_U^{\\top}\\ (\\text{same for }V);\\ W=W_0+\\alpha\\,U_\\perp\\Sigma V_\\perp^{\\top}",
+   "trainable_params": "0\\ \\text{(one scaling }\\alpha\\text{; the paper finds }\\alpha=1\\text{ best, so no tuning is needed)}",
+   "locus": "per-layer task matrices of all weight matrices (ViT CLIP encoders in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Per-layer low-rank truncation of each task matrix, then orthogonalization (whitening, equivalently orthogonal Procrustes) of the concatenated singular-vector bases to remove cross-task overlap measured by the Singular Task Interference \\|(U^{\\top}U-I)\\Sigma(V^{\\top}V-I)\\|_1.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged matrix is added once to the pre-trained weights.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "Layer task matrices are low-rank, so each can be kept as its top singular vectors; interference appears as overlap between different tasks' singular vectors and can be removed by orthogonalizing the stacked bases before summation.",
+   "results_note": "TSV-C compresses task matrices to 10% of their size while retaining 99% of accuracy, and TSV-M significantly outperforms prior merging methods on 8/14/20-task ViT benchmarks.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "replaces flat task vectors with per-layer SVD structure"
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "both merge in an SVD basis; KnOTS shares U Sigma across LoRAs, TSV orthogonalizes per-task bases"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2412.00081",
+    "https://arxiv.org/html/2412.00081"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2412.00081 (Gargiulo, 2024); CVPR 2025 per arXiv comment and IEEE DOI 10.1109/CVPR52734.2025.01742. Per-layer SVD truncation to a 1/T share per task, whitening X(X^T X)^{-1/2} = PQ^T (Procrustes, Prop. 1), the STI score (Eq. 6), and TSV-C's 10% size with 99% accuracy confirmed.",
+   "corrections": [
+    "trainable_params: added that alpha = 1 works best in the paper (Sec. 6.3, Fig. 7), so TSV-M needs no coefficient tuning."
+   ]
+  },
+  {
+   "id": "knots",
+   "name": "KnOTS",
+   "full_name": "Knowledge Orientation Through SVD",
+   "paper_title": "Model merging with SVD to tie the Knots",
+   "authors": "Stoica et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2410.19735",
+   "url": "https://arxiv.org/abs/2410.19735",
+   "code_url": "https://github.com/gstoica27/KnOTS",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\big[\\Delta W^{(1)}\\ \\cdots\\ \\Delta W^{(N)}\\big]=U\\Sigma\\,\\big[V^{(1)};\\dots;V^{(N)}\\big]^{\\top}\\ \\ (\\Delta W^{(i)}=B_iA_i);\\quad V^{(m)}=\\operatorname{Merge}\\big(V^{(1)},\\dots,V^{(N)}\\big)\\ (\\text{TA, TIES, DARE},\\dots);\\quad W=W_0+U\\Sigma\\,V^{(m)\\top}",
+   "trainable_params": "0\\ \\text{(data-free, gradient-free)}",
+   "locus": "LoRA-adapted attention projections (q, k, v, o) of ViT-B/32, ViT-L/16 and Llama3-8B LoRA models in the paper (rank 16)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Joint SVD of the column-concatenated LoRA updates: a shared orthonormal output basis U\\Sigma (rank \\le N r) and task-specific input-side factors V^{(i)}; any existing merge rule is applied in this aligned coordinate system.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged update U Sigma V^(m)T is a dense matrix added to W_0.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "LoRA updates of different tasks are much less aligned than full fine-tuning deltas; re-expressing them in a common SVD basis aligns them so that standard merging rules stop destroying each other's information.",
+   "results_note": "KnOTS improves LoRA merging by up to 4.3% across vision and language benchmarks, including a new joint-task benchmark for general models.",
+   "relations": [
+    {
+     "target": "ties-merging",
+     "type": "combines",
+     "note": "TIES/DARE/TA are applied to the aligned V factors"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "designed for merging LoRA-finetuned models"
+    },
+    {
+     "target": "tsv-merge",
+     "type": "competes-with",
+     "note": "SVD-based merging"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.19735",
+    "https://arxiv.org/html/2410.19735",
+    "https://iclr.cc/virtual/2025/poster/30908"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.19735 (Stoica, 2024); ICLR 2025 confirmed in proceedings.iclr.cc 2025. Column-wise concatenation, SVD = U Sigma [V^(1);...;V^(n)]^T, merge of the V's, and Delta W = U Sigma V^(merged)T added to W_0 (Eq. 1-2), plus 'up to 4.3%', confirmed. Code repo exists.",
+   "corrections": [
+    "locus: specified the q/k/v/o attention placement and rank 16 used in the experiments (Sec. 5.1)."
+   ]
+  },
+  {
+   "id": "pem-arithmetic",
+   "name": "PEM Arithmetic",
+   "full_name": "Composing parameter-efficient modules with arithmetic operations",
+   "paper_title": "Composing Parameter-Efficient Modules with Arithmetic Operations",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2306.14870",
+   "url": "https://arxiv.org/abs/2306.14870",
+   "code_url": "https://github.com/hkust-nlp/PEM_composition",
+   "hf_peft": true,
+   "hf_peft_config": "LoraModel.add_weighted_adapter(combination_type='linear'): PEFT scales each factor by sqrt(|w_i| * scaling_i) and puts the sign on lora_A only, so weights w_i = lambda_i^2 reproduce PEM addition and a negative weight reproduces PEM negation; IA3Model.add_weighted_adapter gives (IA)^3 addition, but the affine negation l -> 2 - l is not built in",
+   "formula_latex": "\\theta^{\\mathrm{add}}=\\lambda\\theta^{(1)}\\oplus(1-\\lambda)\\theta^{(2)}:=\\lambda\\theta^{(1)}+(1-\\lambda)\\theta^{(2)}\\ \\ (\\text{component-wise on }(A,B)\\text{ or on }l);\\quad \\ominus\\theta_{\\mathrm{LoRA}}=\\{A,-B\\}\\ \\Rightarrow\\ \\Delta h=BAx\\mapsto-\\Delta h;\\quad \\ominus l_{(IA)^3}=\\mathbf{2}-l;\\ \\text{e.g. domain transfer }\\theta^{(1)}\\ominus\\theta^{(2)}\\oplus\\theta^{(3)};\\ \\text{no training}",
+   "trainable_params": "0\\ \\text{(weight }\\lambda\\text{ tuned on validation)}",
+   "locus": "LoRA factors or (IA)^3 scaling vectors of modules trained from the same base model",
+   "modification_kind": "composition-or-routing",
+   "structure": "Addition is defined on module parameters (for LoRA (A_1+A_2),(B_1+B_2), which creates cross terms B_1A_2+B_2A_1), whereas negation is defined through the induced hidden-state change \\Delta h: negate only B for LoRA, l\\mapsto 2-l for (IA)^3, because negating both factors leaves BA unchanged.",
+   "mergeable": "yes",
+   "mergeable_reason": "The composed module is again a LoRA/(IA)^3 module, which can be folded into the base weights.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "PEFT modules trained from one base model can be composed by weight-space arithmetic; the subtle part is negation, which must flip the module's effect on hidden states rather than its raw parameters.",
+   "results_note": "Arithmetic compositions of LoRA/(IA)^3 modules (RoBERTa-base, T5-base) beat the individual modules for distribution generalization, multi-tasking, unlearning and domain transfer, and LoRA negation detoxifies Alpaca-LoRA.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "task arithmetic restricted to PEFT parameters with a corrected negation"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "same factor-wise linear composition; LoraHub searches the weights"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "composes LoRA modules"
+    },
+    {
+     "target": "ia3",
+     "type": "builds-on",
+     "note": "composes (IA)^3 modules with l -> 2 - l negation"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.14870",
+    "https://arxiv.org/html/2306.14870",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/model.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/ia3/model.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2306.14870 (Zhang, 2023); NeurIPS 2023 per arXiv comment and papers.nips.cc. Addition is component-wise on module parameters; negation is {A, -B} for LoRA (Eq. 6) and l_neg = 2 - l for (IA)^3 (Eq. 7). The PDF footnote gives the code at github.com/hkust-nlp/PEM_composition (the arXiv comment's SJTU-LIT URL also resolves).",
+   "corrections": [
+    "hf_peft_config: explained how PEFT's sqrt-weight convention maps onto PEM (weights lambda^2, sign on one factor). Added that IA3Model.add_weighted_adapter covers (IA)^3 addition only, not the 2 - l negation."
+   ]
+  },
+  {
+   "id": "adaptersoup",
+   "name": "AdapterSoup",
+   "full_name": "AdapterSoup: weight averaging of domain adapters",
+   "paper_title": "AdapterSoup: Weight Averaging to Improve Generalization of Pretrained Language Models",
+   "authors": "Chronopoulou et al.",
+   "year": 2023,
+   "venue": "Findings of EACL 2023",
+   "arxiv": "2302.07027",
+   "url": "https://aclanthology.org/2023.findings-eacl.153/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\theta_{\\mathrm{soup}}=\\tfrac{1}{l}\\sum_{i\\in\\mathcal{S}}\\theta_i,\\ |\\mathcal{S}|=l\\le k;\\quad y=f\\big(x;\\theta_m,\\theta_{\\mathrm{soup}}\\big);\\ \\mathcal{S}\\text{ chosen by sentence-BERT similarity or domain clustering on a little novel-domain text};\\ \\text{PLM }\\theta_m\\text{ and all adapters frozen}",
+   "trainable_params": "0\\ \\text{for the novel domain (}k\\text{ domain adapters are trained beforehand, each a bottleneck adapter of }\\approx2rd\\text{ per layer)}",
+   "locus": "Bapna and Firat (2019)-style bottleneck adapters (bottleneck size 64) in every Transformer layer of GPT-2",
+   "modification_kind": "composition-or-routing",
+   "structure": "Uniform average (a model soup) of a retrieved subset of adapter parameter vectors; one averaged adapter is executed at test time.",
+   "mergeable": "no",
+   "mergeable_reason": "The soup collapses the selected adapters into one adapter, so inference costs a single adapter. That adapter is a nonlinear bottleneck module and cannot fold into W_0. The same recipe applied to LoRAs (mentioned only as future work) would be foldable.",
+   "identity_at_init": "Not applicable (training-free combination of trained adapters).",
+   "key_idea": "For an unseen domain, rather than picking one related-domain adapter, average the weights of several selected domain adapters to obtain ensemble-like gains at the cost of a single adapter.",
+   "results_note": "On 10 held-out web domains with GPT-2, AdapterSoup with clustering-based selection gives the best average out-of-domain perplexity among single-adapter-cost methods.",
+   "relations": [
+    {
+     "target": "model-soups",
+     "type": "builds-on",
+     "note": "model soup restricted to adapter parameters"
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "averages serial bottleneck adapters of the Houlsby family (Bapna and Firat 2019 variant)"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "LoraHub learns signed weights instead of uniform averaging"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2302.07027",
+    "https://arxiv.org/pdf/2302.07027",
+    "https://aclanthology.org/2023.findings-eacl.153/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2302.07027 (Chronopoulou, 2023); Findings of EACL 2023 confirmed (ACL Anthology 2023.findings-eacl.153). Uniform weight average of l selected domain adapters (Eq. 1), selection by sentence-BERT similarity or clustering, clustering best on novel domains, GPT-2 backbone confirmed. No official code link found.",
+   "corrections": [
+    "locus: named the adapter architecture used (Bapna and Firat 2019, bottleneck 64; Sec. 4), not generic 'bottleneck adapters'.",
+    "mergeable: 'conditional' -> 'no'. The averaged modules in the paper are nonlinear bottleneck adapters, which cannot fold into W_0. The soup does give single-adapter inference cost.",
+    "mergeable_reason: rewritten to match the 'no' verdict.",
+    "relations: houlsby-adapter note now names the actual Bapna and Firat variant."
+   ]
+  },
+  {
+   "id": "lorahub",
+   "name": "LoraHub",
+   "full_name": "LoraHub: dynamic LoRA composition",
+   "paper_title": "LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition",
+   "authors": "Huang et al.",
+   "year": 2023,
+   "venue": "COLM 2024",
+   "arxiv": "2307.13269",
+   "url": "https://arxiv.org/abs/2307.13269",
+   "code_url": "https://github.com/sail-sg/lorahub",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W=\\Big(\\sum_{i=1}^{N}w_iB_i\\Big)\\Big(\\sum_{i=1}^{N}w_iA_i\\Big),\\ \\ w\\in\\mathbb{R}^{N}\\ (\\text{signed});\\quad w^{\\star}=\\arg\\min_{w}\\ \\mathcal{L}_{Q}(w)+\\alpha\\textstyle\\sum_i|w_i|\\ \\text{by gradient-free CMA-ES (Nevergrad Shiwa)};\\ W=W_0+\\Delta W;\\ \\text{base model and all }(A_i,B_i)\\text{ frozen}",
+   "trainable_params": "N\\ \\text{scalars in total (e.g. }N=20\\text{ randomly sampled LoRAs), shared by all layers}",
+   "locus": "all LoRA-adapted matrices of the base model (Flan-T5 in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Element-wise linear combination of the factor matrices (a product of sums, which introduces cross terms B_iA_j), with one global coefficient per module found by black-box optimization on a few examples.",
+   "mergeable": "yes",
+   "mergeable_reason": "The composed LoRA has fixed weights and can be merged into W_0 like any LoRA.",
+   "identity_at_init": "Not applicable (only composition weights are searched; modules are pre-trained).",
+   "key_idea": "Given a hub of task LoRAs, an unseen task can be handled by searching, without gradients, for a weighted combination of existing LoRAs that minimizes loss on a handful of examples.",
+   "results_note": "On Big-Bench Hard with Flan-T5-large and 20 candidate LoRAs, LoraHub approaches few-shot in-context learning while using far fewer tokens per example at inference.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "composes trained LoRA modules"
+    },
+    {
+     "target": "polytropon",
+     "type": "competes-with",
+     "note": "same factor-wise mixing, but frozen modules and gradient-free weights"
+    },
+    {
+     "target": "pem-arithmetic",
+     "type": "competes-with",
+     "note": "same linear composition operator"
+    },
+    {
+     "target": "lora-soups",
+     "type": "competes-with",
+     "note": "LoRA Soups' CAT avoids the cross terms by summing B_iA_i"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2307.13269",
+    "https://arxiv.org/html/2307.13269"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2307.13269 (Huang, 2023); the PDF header reads 'Published as a conference paper at COLM 2024'. m^ = (sum w_i A_i)(sum w_i B_i) with signed w (Eq. 1), L + alpha sum|w_i| objective, Shiwa/Nevergrad choosing CMA-ES, Flan-T5 on BBH confirmed. Not in HF PEFT: PEFT's 'linear' only reproduces LoraHub's composition for non-negative weights (passed as w_i^2), and it has no search.",
+   "corrections": []
+  },
+  {
+   "id": "lora-soups",
+   "name": "LoRA Soups (CAT)",
+   "full_name": "Learnable concatenation of LoRAs (CAT)",
+   "paper_title": "LoRA Soups: Merging LoRAs for Practical Skill Composition Tasks",
+   "authors": "Prabhakar et al.",
+   "year": 2024,
+   "venue": "COLING 2025 (Industry Track)",
+   "arxiv": "2410.13025",
+   "url": "https://arxiv.org/abs/2410.13025",
+   "code_url": "https://github.com/aksh555/LoRA-Soups",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W^{l}=\\sum_{i=1}^{N}\\alpha_i^{l}\\,B_iA_i=\\big[\\alpha_1^{l}B_1\\ \\cdots\\ \\alpha_N^{l}B_N\\big]\\begin{bmatrix}A_1\\\\ \\vdots\\\\ A_N\\end{bmatrix};\\ \\ \\alpha_i^{l}\\text{ trained per layer on a small data mixture};\\ W_0\\text{ and all }(A_i,B_i)\\text{ frozen}",
+   "trainable_params": "N\\ \\text{per layer}",
+   "locus": "all LoRA-adapted matrices (Llama-family models in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Rank-concatenation (direct sum along the rank axis) of LoRA factors with learned layer-wise scalars: a weighted sum of the LoRA updates without the cross terms of factor averaging; merged rank \\sum_i r_i. HF PEFT's add_weighted_adapter(combination_type='cat') builds the same concatenated adapter with fixed, user-given weights.",
+   "mergeable": "yes",
+   "mergeable_reason": "Coefficients are input-independent, so the concatenated LoRA is a fixed low-rank update that can be folded into W_0.",
+   "identity_at_init": "Not applicable; only the merging coefficients are trained after the skill LoRAs exist.",
+   "key_idea": "For skill composition (e.g. hard math word problems solved by writing code), concatenating independently trained skill LoRAs and learning only per-layer mixing weights beats both data mixing and parameter-averaging merges.",
+   "results_note": "On GSM-Hard, CAT beats existing model-merging and data-mixing baselines by 43% and 12% on average and shows super-linear gains over the individual skill LoRAs.",
+   "relations": [
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "sum of products instead of product of sums; learned per-layer weights"
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "compared as linear-merging baseline"
+    },
+    {
+     "target": "lora-lego",
+     "type": "competes-with",
+     "note": "both build a merged LoRA from rank units without factor averaging; LoRA-LEGO with k = sum r_i returns the static concatenation scaled by sqrt(r/k), whereas CAT learns per-layer weights, so CAT is not a special case"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.13025",
+    "https://arxiv.org/html/2410.13025",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/model.py",
+    "https://aclanthology.org/2025.coling-industry.55/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.13025 (Prabhakar, 2024); COLING 2025 Industry Track confirmed (ACL Anthology 2025.coling-industry.55). The CAT definition Delta W^l = alpha_1^l B_1A_1^T + alpha_2^l B_2A_2^T, with trainable alpha in [0,1] (Sec. 4), the contrast with linear merging (cross terms), and the 43%/12% GSM-Hard gains confirmed.",
+   "corrections": [
+    "relations: 'special-case-of lora-lego' -> 'competes-with'. LoRA-LEGO's k = sum r_i limit is a fixed-weight concatenation times sqrt(r/k). CAT's defining feature is learned per-layer alpha_i^l, which LoRA-LEGO cannot produce."
+   ]
+  },
+  {
+   "id": "lora-lego",
+   "name": "LoRA-LEGO",
+   "full_name": "LoRA-LEGO: rank-wise clustering of minimal semantic units",
+   "paper_title": "Merging LoRAs like Playing LEGO: Pushing the Modularity of LoRA to Extremes Through Rank-Wise Clustering",
+   "authors": "Zhao et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2409.16167",
+   "url": "https://openreview.net/forum?id=j6fsbpAllN",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "s_{ij}=[a_{ij},b_{ij}]\\ (a_{ij}\\text{: row }j\\text{ of }A_i,\\ b_{ij}\\text{: column }j\\text{ of }B_i);\\ \\Phi=\\textstyle\\bigcup_i\\{s_{i1},\\dots,s_{ir_i}\\};\\ \\{\\mu_c\\}_{c=1}^{k}=\\operatorname{KMeans}_k(\\Phi);\\ \\mu'_c=\\frac{\\overline{\\|s\\|}_{\\mathbb{C}_c}}{\\|\\mu_c\\|}\\mu_c;\\ A'=[a'_1;\\dots;a'_k],\\ B'=[b'_1\\cdots b'_k];\\ \\Delta W=\\tfrac{\\sqrt{r}}{\\sqrt{k}}\\,B'A'",
+   "trainable_params": "0\\ \\text{(merged rank }k,\\ 1\\le k\\le\\textstyle\\sum_i r_i)",
+   "locus": "all LoRA-adapted matrices",
+   "modification_kind": "composition-or-routing",
+   "structure": "Decomposes each LoRA into rank-1 'minimal semantic units' b_ja_j and uses two algebraic facts: permutation invariance BA=(BP^{\\top})(PA) and concatenation-summation equivalence [B_1\\ B_2][A_1;A_2]=B_1A_1+B_2A_2; units from all LoRAs are clustered and k centroids (norm- and variance-rescaled) form the merged LoRA.",
+   "mergeable": "yes",
+   "mergeable_reason": "The result is an ordinary rank-k LoRA.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "A LoRA is an unordered bag of rank-1 units, so merging should regroup similar units across LoRAs instead of averaging factor matrices position by position, which mixes misaligned units.",
+   "results_note": "Outperforms existing LoRA merging approaches on multi-task and mixed-task benchmarks.",
+   "relations": [
+    {
+     "target": "lora-soups",
+     "type": "competes-with",
+     "note": "at k = sum r_i every cluster is a singleton and LoRA-LEGO returns the plain concatenation scaled by sqrt(r/k); CAT instead learns per-layer weights, so neither generalizes the other"
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "both address misalignment of LoRA bases before merging"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "exploits the GL(r)/permutation gauge of the BA factorization"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.16167",
+    "https://arxiv.org/html/2409.16167"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2409.16167 (Zhao, 2024); ICLR 2025 confirmed in proceedings.iclr.cc 2025. MSUs, permutation invariance (Prop. 2.1), concatenation-summation equivalence (Prop. 2.2), K-means into k clusters, norm reweighting to the average cluster norm, and output scaling sqrt(r)/sqrt(k) (Thm. 3.1) confirmed. No official code found.",
+   "corrections": [
+    "relations: 'generalizes lora-soups' -> 'competes-with'. The k = sum r_i limit gives a uniformly rescaled concatenation, not CAT's learned layer-wise weights."
+   ]
+  },
+  {
+   "id": "ziplora",
+   "name": "ZipLoRA",
+   "full_name": "ZipLoRA: merging subject and style LoRAs",
+   "paper_title": "ZipLoRA: Any Subject in Any Style by Effectively Merging LoRAs",
+   "authors": "Shah et al.",
+   "year": 2023,
+   "venue": "ECCV 2024",
+   "arxiv": "2311.13600",
+   "url": "https://arxiv.org/abs/2311.13600",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_m=\\Delta W_c\\operatorname{diag}(m_c)+\\Delta W_s\\operatorname{diag}(m_s)\\ (\\text{one coefficient per column});\\ \\min_{m_c,m_s}\\ \\|(D\\oplus L_m)(x_c,p_c)-(D\\oplus L_c)(x_c,p_c)\\|_2+\\|(D\\oplus L_m)(x_s,p_s)-(D\\oplus L_s)(x_s,p_s)\\|_2+\\lambda\\sum_{l}|m_c^{(l)}\\cdot m_s^{(l)}|;\\ W_0,\\Delta W_c,\\Delta W_s\\text{ frozen}",
+   "trainable_params": "2\\times(\\#\\text{columns of }\\Delta W)\\ \\text{per adapted matrix (two merger vectors), optimized for}\\approx100\\text{ steps}",
+   "locus": "LoRA-adapted layers of the SDXL UNet",
+   "modification_kind": "composition-or-routing",
+   "structure": "Column-wise diagonal re-weighting of two frozen dense LoRA updates, with a penalty on the overlap |m_c\\cdot m_s| so that columns from the two LoRAs are not superimposed; relies on the sparsity of LoRA updates.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged update is a fixed dense matrix added to W_0.",
+   "identity_at_init": "Merger vectors initialized to all ones, i.e. training starts from the direct merge \\Delta W_c+\\Delta W_s.",
+   "key_idea": "Independently trained subject and style LoRAs interfere when their columns are aligned; learning per-column merger coefficients that keep the two LoRAs' columns apart while preserving each LoRA's own outputs yields a single subject-in-style LoRA.",
+   "results_note": "On SDXL, ZipLoRA improves subject and style fidelity over direct LoRA merging and other baselines while needing only about 100 optimization steps.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "generalizes",
+     "note": "direct merge w_c dW_c + w_s dW_s is the scalar special case"
+    },
+    {
+     "target": "mole",
+     "type": "competes-with",
+     "note": "both learn how to combine trained diffusion LoRAs"
+    },
+    {
+     "target": "orthogonal-adaptation",
+     "type": "competes-with",
+     "note": "post-hoc decorrelation vs orthogonality by construction"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.13600",
+    "https://arxiv.org/html/2311.13600",
+    "https://link.springer.com/chapter/10.1007/978-3-031-73232-4_24"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2311.13600 (Shah, 2023); ECCV 2024 confirmed (Springer LNCS DOI 10.1007/978-3-031-73232-4_24). Delta W_m = m_c (x) Delta W_c + m_s (x) Delta W_s, where the j-th column is scaled by m_j (Eq. 2). The loss in Eq. 3 (two reconstruction terms plus lambda sum|m_c . m_s|), merger vectors initialized to ones, ~100 gradient steps, and frozen base and LoRAs confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "mix-of-show",
+   "name": "Mix-of-Show",
+   "full_name": "Mix-of-Show: ED-LoRA with gradient fusion",
+   "paper_title": "Mix-of-Show: Decentralized Low-Rank Adaptation for Multi-Concept Customization of Diffusion Models",
+   "authors": "Gu et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.18292",
+   "url": "https://arxiv.org/abs/2305.18292",
+   "code_url": "https://github.com/TencentARC/Mix-of-Show",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W=\\arg\\min_{W}\\sum_{i=1}^{n}\\big\\|(W_0+\\Delta W_i)X_i-WX_i\\big\\|_F^2\\ \\ \\Big(\\text{closed form }W=\\big(\\textstyle\\sum_i(W_0+\\Delta W_i)X_iX_i^{\\top}\\big)\\big(\\textstyle\\sum_iX_iX_i^{\\top}\\big)^{-1}\\Big),\\ X_i:\\ \\text{layer inputs collected by sampling concept }i\\text{ with its own ED-LoRA (data-free)}",
+   "trainable_params": "d_{out}d_{in}\\ \\text{per fused layer during center-node fusion; each concept trains an ED-LoRA (}r(d_{in}+d_{out})\\text{ per matrix plus token embeddings)}",
+   "locus": "LoRA-adapted layers of the Stable Diffusion UNet and text encoder",
+   "modification_kind": "composition-or-routing",
+   "structure": "Activation-matched least-squares fusion of several concept LoRAs into one dense weight per layer, optimized with gradients; formally a data-free RegMean on self-generated activations.",
+   "mergeable": "yes",
+   "mergeable_reason": "Gradient fusion outputs one updated weight matrix per layer, so the multi-concept model has the original architecture.",
+   "identity_at_init": "Not applicable (post-hoc fusion of trained concept LoRAs).",
+   "key_idea": "Weight averaging of concept LoRAs destroys concept identity; fuse layer by layer so the merged weights reproduce each concept LoRA's input-output behaviour on activations decoded from that concept's own prompts.",
+   "results_note": "Fusing independently trained ED-LoRAs this way preserves concept identity much better than weight fusion and enables multi-concept generation together with regionally controllable sampling.",
+   "relations": [
+    {
+     "target": "regmean",
+     "type": "equivalent-to",
+     "note": "identical layer-wise least-squares merge operator (RegMean with alpha = 1); Mix-of-Show obtains X_i by sampling each concept LoRA (data-free) and optimizes with gradients"
+    },
+    {
+     "target": "orthogonal-adaptation",
+     "type": "competes-with",
+     "note": "orthogonal adaptation reaches similar identity preservation with near-instant summation"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "per-concept embedding-decomposed LoRA (ED-LoRA)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.18292",
+    "https://arxiv.org/html/2305.18292"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2305.18292 (Gu, 2023); NeurIPS 2023 confirmed in papers.nips.cc. Gradient-fusion objective W = argmin sum ||(W_0 + Delta W_i) X_i - W X_i||_F^2, with X_i decoded from each concept's own LoRA (Sec. 3.3.2), confirmed. The closed form shown is the normal-equation solution; the paper itself optimizes with fused gradients.",
+   "corrections": [
+    "relations: sharpened the regmean equivalence note (same operator; Mix-of-Show differs only in how X_i is obtained and in the solver)."
+   ]
+  },
+  {
+   "id": "orthogonal-adaptation",
+   "name": "Orthogonal Adaptation",
+   "full_name": "Orthogonal adaptation for modular customization",
+   "paper_title": "Orthogonal Adaptation for Modular Customization of Diffusion Models",
+   "authors": "Po et al.",
+   "year": 2023,
+   "venue": "CVPR 2024",
+   "arxiv": "2312.02432",
+   "url": "https://arxiv.org/abs/2312.02432",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_i=B_iA_i,\\ B_i\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained},\\ A_i\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{frozen: }r\\text{ rows drawn at random from a shared orthogonal basis }O\\in O(d_{in});\\quad \\text{merge (FedAvg-style): }W=W_0+\\sum_i\\lambda_i\\Delta W_i\\ (\\lambda=0.6);\\quad A_jA_i^{\\top}\\approx0\\Rightarrow\\Delta W_j\\,A_i^{\\top}A_i\\approx0\\ \\text{(concept }j\\text{ is blind to the subspace concept }i\\text{ reads)};\\ \\text{paper's notation: }\\Delta\\theta_i=A_iB_i^{\\top},\\ B_i\\text{ frozen}",
+   "trainable_params": "r\\,d_{out}\\ \\text{per adapted matrix (input-side factor frozen)}",
+   "locus": "customizable linear layers of a text-to-image diffusion model",
+   "modification_kind": "composition-or-routing",
+   "structure": "LoRA whose input-side factor is frozen and (approximately) mutually orthogonal across independently trained concepts, so each concept's update reads a nearly disjoint input subspace; merging is plain summation with little crosstalk.",
+   "mergeable": "yes",
+   "mergeable_reason": "Each concept update is a fixed low-rank matrix and the merge is a sum, foldable into W_0.",
+   "identity_at_init": "The frozen factor is a random orthonormal slice; the update is zero at init only if the trainable factor starts at zero (as in LoRA), which the paper does not stress.",
+   "key_idea": "Make LoRAs mergeable by construction: if each user's update reads its input through a random slice of a shared orthogonal basis, independently trained concept residuals barely interfere when added.",
+   "results_note": "Merged multi-concept Stable Diffusion models preserve identity better than FedAvg-style summation and match Mix-of-Show gradient fusion while merging almost instantly instead of ~15 minutes.",
+   "relations": [
+    {
+     "target": "mix-of-show",
+     "type": "competes-with",
+     "note": "orthogonality at training time vs least-squares fusion afterwards"
+    },
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with one factor frozen to an orthonormal slice"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.02432",
+    "https://arxiv.org/html/2312.02432",
+    "https://openaccess.thecvf.com/content/CVPR2024/html/Po_Orthogonal_Adaptation_for_Modular_Customization_of_Diffusion_Models_CVPR_2024_paper.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.02432 (Po, 2023); CVPR 2024 confirmed (IEEE DOI 10.1109/CVPR52733.2024.00761). Delta theta_i = A_i B_i^T with B_i fixed and only A_i optimized (Eq. 4), B_i as random columns of a shared orthogonal basis (Sec. 3.5), r = 20, lambda = 0.6, and parity with Mix-of-Show gradient fusion (~15 min) at near-instant merging confirmed. The init of the trained factor is not stated in the paper, and no official code was found.",
+   "corrections": [
+    "formula_latex: rewrote the crosstalk condition as A_j A_i^T ~ 0 => Delta W_j A_i^T A_i ~ 0. The old version had the implication pointing at the wrong subspace. Added the merge weight lambda = 0.6 used in the paper (Sec. 4).",
+    "relations: removed 'builds-on task-arithmetic'. The paper does not cite Ilharco et al. It frames its merge as FedAvg (Sec. 3.2), and the plain weighted sum is not a dependency."
+   ]
+  },
+  {
+   "id": "multi-lora-composition",
+   "name": "LoRA Switch / LoRA Composite",
+   "full_name": "Decoding-centric multi-LoRA composition",
+   "paper_title": "Multi-LoRA Composition for Image Generation",
+   "authors": "Zhong et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2402.16843",
+   "url": "https://arxiv.org/abs/2402.16843",
+   "code_url": "https://github.com/maszhongming/Multi-LoRA-Composition",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{Switch: }i(t)=\\big\\lfloor((t-1)\\bmod k\\tau)/\\tau\\big\\rfloor+1,\\ W_t=W_0+w_{i(t)}B_{i(t)}A_{i(t)};\\quad \\text{Composite: }\\tilde\\epsilon(z_t,c)=\\tfrac{1}{k}\\sum_{i=1}^{k}w_i\\big[\\epsilon_{\\theta_i'}(z_t)+s\\,(\\epsilon_{\\theta_i'}(z_t,c)-\\epsilon_{\\theta_i'}(z_t))\\big];\\ \\text{training-free, LoRA weights untouched}",
+   "trainable_params": "0",
+   "locus": "denoising trajectory of a text-to-image diffusion model",
+   "modification_kind": "composition-or-routing",
+   "structure": "Composition in time (round-robin activation of one LoRA every \\tau denoising steps) or in score space (averaging classifier-free-guided noise predictions of k LoRA-adapted models) instead of in weight space.",
+   "mergeable": "conditional",
+   "mergeable_reason": "LoRA Switch runs one merged LoRA at a time (original cost, weights swapped every tau steps). LoRA Composite runs 2k UNet evaluations per denoising step (conditional and unconditional for each of the k LoRA-adapted models), so it never reduces to one set of weights.",
+   "identity_at_init": "Not applicable (training-free).",
+   "key_idea": "Instead of merging LoRA weights, compose LoRAs during decoding, either alternating them across denoising steps or averaging their guided scores, which scales to many LoRAs without weight interference.",
+   "results_note": "On the ComposLoRA testbed (480 composition sets), both methods beat weight-space LoRA merging in GPT-4V and human evaluations, increasingly so as more LoRAs are composed.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "competes-with",
+     "note": "replaces weight-space merging"
+    },
+    {
+     "target": "ziplora",
+     "type": "competes-with",
+     "note": "handles more than two LoRAs without training"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "composes diffusion LoRAs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.16843",
+    "https://arxiv.org/pdf/2402.16843"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.16843 (Zhong, 2024); TMLR (11/2024) confirmed in the TMLR accepted-paper list and the PDF header. Switch index i = floor(((t-1) mod k tau)/tau) + 1 (Eq. 4), Composite averaging of CFG scores (Eq. 5, w_i = 1), the 480-set ComposLoRA testbed, and the ZipLoRA comparison (Sec. 5.2) confirmed.",
+   "corrections": [
+    "mergeable_reason: LoRA Composite needs 2k UNet evaluations per step (classifier-free guidance for each LoRA, Eq. 5), not k."
+   ]
+  },
+  {
+   "id": "adapterfusion",
+   "name": "AdapterFusion",
+   "full_name": "AdapterFusion: non-destructive task composition",
+   "paper_title": "AdapterFusion: Non-Destructive Task Composition for Transfer Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2020,
+   "venue": "EACL 2021",
+   "arxiv": "2005.00247",
+   "url": "https://aclanthology.org/2021.eacl-main.39/",
+   "code_url": "https://github.com/adapter-hub/adapters",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "s_{l,t}=\\operatorname{softmax}_n\\big(h_{l,t}^{\\top}Q_l\\cdot z_{l,t,n}^{\\top}K_l\\big),\\ \\ z'_{l,t,n}=z_{l,t,n}^{\\top}V_l,\\ \\ o_{l,t}=\\sum_{n=1}^{N}s_{l,t,n}\\,z'_{l,t,n};\\ z_{l,t,n}:\\text{ output of frozen task adapter }n;\\ Q_l,K_l,V_l\\text{ trained; PLM and adapters frozen}",
+   "trainable_params": "3d^{2}\\ \\text{per layer }(Q_l,K_l,V_l\\in\\mathbb{R}^{d\\times d})",
+   "locus": "after the adapters of every Transformer layer (feed-forward sub-layer output as query)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Attention over the outputs of N frozen bottleneck adapters: an input-dependent convex mixture of value-projected adapter outputs.",
+   "mergeable": "no",
+   "mergeable_reason": "Mixture weights depend on each token's hidden state and the adapters are non-linear bottleneck modules, so nothing folds into W_0.",
+   "identity_at_init": "V_l initialized to the identity plus noise of norm ~1e-6 (and l2-regularized), Q_l and K_l random; the adapters themselves are already trained.",
+   "key_idea": "Split multi-task transfer into knowledge extraction (independent task adapters) and knowledge composition (a learned attention over them for a target task), avoiding catastrophic forgetting and task interference.",
+   "results_note": "Evaluated on 16 NLU tasks, AdapterFusion effectively combines knowledge across layers and outperforms full fine-tuning and multi-task learning baselines.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "composes bottleneck adapters"
+    },
+    {
+     "target": "mole",
+     "type": "competes-with",
+     "note": "learned gating over outputs of frozen trained modules"
+    },
+    {
+     "target": "attempt",
+     "type": "competes-with",
+     "note": "the prompt-tuning analogue: attention over frozen source prompts"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2005.00247",
+    "https://arxiv.org/html/2005.00247",
+    "https://aclanthology.org/2021.eacl-main.39/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2005.00247 (Pfeiffer, 2020); EACL 2021 confirmed (ACL Anthology 2021.eacl-main.39, arXiv journal-ref). Attention with the FFN output as query and adapter outputs as keys and values, V initialized as identity plus 1e-6 noise and l2-regularized, Q and K random (Sec. 3, 4.1) confirmed. Bias terms of Q, K, V (if any) are not counted in 3d^2.",
+   "corrections": []
+  },
+  {
+   "id": "adamix",
+   "name": "AdaMix",
+   "full_name": "Mixture-of-Adaptations",
+   "paper_title": "AdaMix: Mixture-of-Adaptations for Parameter-efficient Model Tuning",
+   "authors": "Wang et al.",
+   "year": 2022,
+   "venue": "EMNLP 2022",
+   "arxiv": "2205.12410",
+   "url": "https://aclanthology.org/2022.emnlp-main.388/",
+   "code_url": "https://github.com/microsoft/AdaMix",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{train: }h\\leftarrow h+W^{up}_{k}\\,f\\big(W^{down}_{j}h\\big),\\ j,k\\sim\\operatorname{Unif}\\{1,\\dots,M\\}\\ (\\text{stochastic routing})\\ +\\ \\text{consistency loss between two stochastic passes};\\quad \\text{inference: }W'^{up}=\\tfrac{1}{M}\\sum_{j}W^{up}_{j},\\ W'^{down}=\\tfrac{1}{M}\\sum_{j}W^{down}_{j}",
+   "trainable_params": "(M+1)\\,rd\\ (+\\text{biases})\\ \\text{per adapter during training in the default setting (}M\\text{ down-projections, one shared up-projection, Sec. 3.4)};\\ 2Mrd\\ \\text{without sharing};\\ 2rd\\ \\text{after merging (default }M=4)",
+   "locus": "Houlsby-style adapters (or LoRA) in every Transformer layer",
+   "modification_kind": "composition-or-routing",
+   "structure": "Mixture of M adaptation modules with parameter-free random routing during training, collapsed by uniform weight averaging (a soup of experts) at inference.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Experts are averaged into one module with base-PEFT cost. For the headline Houlsby-adapter instantiation that module is a nonlinear bottleneck and does not fold into W_0. For the AdaMix-LoRA variant, also reported in the paper, it is a LoRA and folds into W_0.",
+   "identity_at_init": "Inherits the underlying PEFT module's initialization; no extra mechanism.",
+   "key_idea": "Train several adaptation modules per layer with random routing and consistency regularization to obtain multiple views of the task, then average them into a single module so that cost and parameter count equal the base PEFT method.",
+   "results_note": "Tuning 0.1-0.2% of PLM parameters, AdaMix outperforms prior PEFT methods and full fine-tuning on NLU (GLUE) and NLG tasks.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "mixture of bottleneck adapters"
+    },
+    {
+     "target": "model-soups",
+     "type": "builds-on",
+     "note": "inference-time weight averaging of experts"
+    },
+    {
+     "target": "smear",
+     "type": "competes-with",
+     "note": "SMEAR compares to AdaMix as a non-adaptive routing baseline"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.12410",
+    "https://arxiv.org/html/2205.12410"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2205.12410 (Wang, 2022; duplicate 2210.17451 was withdrawn); EMNLP 2022 confirmed (ACL Anthology 2022.emnlp-main.388). Stochastic routing, symmetric-KL consistency loss, averaging at inference, up-projection sharing and the LoRA variant (Sec. 3) confirmed. Its relation to SMEAR is supported: SMEAR benchmarks AdaMix as a baseline.",
+   "corrections": [
+    "trainable_params: 'M*2rd (fewer with sharing)' -> '(M+1)rd'. The paper's default shares the projection-up matrices (W^up_ij = W^up_i, Sec. 3.4). This matches the verified adapters.json entry.",
+    "mergeable_reason: tied 'conditional' to the two instantiations the paper actually reports (adapter: not foldable; LoRA: foldable). verified/adapters.json lists 'no' for the adapter form. Reconcile there if one value per id is required."
+   ]
+  },
+  {
+   "id": "polytropon",
+   "name": "Polytropon (Poly)",
+   "full_name": "Polytropon: latent-skill routing over parameter-efficient modules",
+   "paper_title": "Combining Parameter-efficient Modules for Task-level Generalisation",
+   "authors": "Ponti et al.",
+   "year": 2022,
+   "venue": "EACL 2023",
+   "arxiv": "2202.13914",
+   "url": "https://aclanthology.org/2023.eacl-main.49/",
+   "code_url": "https://github.com/McGill-NLP/polytropon",
+   "hf_peft": true,
+   "hf_peft_config": "PolyConfig(poly_type='poly', n_skills, n_tasks, n_splits=1)",
+   "formula_latex": "\\hat z_{\\tau,j}\\sim\\text{Gumbel-sigmoid}(Z_{\\tau,j}),\\ \\alpha_j=\\frac{\\hat z_{\\tau,j}}{\\sum_{j'}\\hat z_{\\tau,j'}};\\ A^{\\tau}=\\sum_{j=1}^{|\\mathcal{S}|}\\alpha_jA_j,\\ B^{\\tau}=\\sum_{j}\\alpha_jB_j;\\ h=W_0x+s\\,B^{\\tau}A^{\\tau}x;\\ \\text{trained: skill inventory }\\{A_j,B_j\\}\\text{ and task-skill logits }Z\\in\\mathbb{R}^{|\\mathcal{T}|\\times|\\mathcal{S}|}\\text{ per layer}",
+   "trainable_params": "|\\mathcal{S}|\\,r(d_{in}+d_{out})+|\\mathcal{T}||\\mathcal{S}|\\ \\text{per adapted matrix}",
+   "locus": "LoRA skills on attention projections (q, k, v, o) of T5; sparse LT-SFT skills also studied",
+   "modification_kind": "composition-or-routing",
+   "structure": "Task-conditioned normalized combination of a small inventory of LoRA skills; the task-skill allocation is a relaxed binary soft partition (optional Indian Buffet Process prior); factors are mixed separately (product of sums).",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a known task the mixed (A^tau, B^tau) is fixed and can be folded into W_0 (one merged copy per task). Mixed-task batches need per-task routing. HF PEFT's Poly layer implements no merge/unmerge.",
+   "identity_at_init": "HF PEFT: routing logits ~U(-1e-3, 1e-3) (near uniform) and LoRA up-projections zero-initialized, so the model starts unchanged.",
+   "key_idea": "Assume tasks share a small inventory of latent skills; jointly learn which skills each task uses and the skills themselves, so new tasks can be few-shot adapted by recombining skills. (arXiv title: 'Combining Modular Skills in Multitask Learning'.)",
+   "results_note": "Improves sample efficiency on 8 BabyAI levels and few-shot generalization on CrossFit (160 NLP tasks) over fully shared, task-specific and hypernetwork-generated baselines.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "skills are LoRA modules"
+    },
+    {
+     "target": "mhr",
+     "type": "special-case-of",
+     "note": "MHR with a single head (n_splits = 1)"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "same mixing form; Poly trains modules and routing jointly"
+    },
+    {
+     "target": "hyperformer",
+     "type": "competes-with",
+     "note": "compared against conditionally generated (hypernetwork) parameters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2202.13914",
+    "https://arxiv.org/html/2202.13914",
+    "https://aclanthology.org/2023.eacl-main.49/",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/poly/config.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/poly/layer.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/poly/router.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2202.13914 (Ponti, 2022; arXiv title 'Combining Modular Skills in Multitask Learning'); EACL 2023 confirmed under the title used here (ACL Anthology 2023.eacl-main.49). Gumbel-sigmoid task-skill allocation with normalization, IBP prior, LoRA on q/k/v/o of T5, 8 BabyAI levels and 160 CrossFit tasks confirmed. PEFT PolyRouter: RelaxedBernoulli(T = 1) when training, sigmoid at eval, logits ~ U(-1e-3, 1e-3), B zero-initialized, update scaled by 1/r.",
+   "corrections": [
+    "mergeable_reason: noted that PEFT's PolyLayer has no merge implementation (checked tuners/poly/layer.py on main)."
+   ]
+  },
+  {
+   "id": "mhr",
+   "name": "MHR",
+   "full_name": "Multi-Head adapter Routing",
+   "paper_title": "Multi-Head Adapter Routing for Cross-Task Generalization",
+   "authors": "Caccia et al.",
+   "year": 2022,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2211.03831",
+   "url": "https://arxiv.org/abs/2211.03831",
+   "code_url": "https://github.com/microsoft/mttl",
+   "hf_peft": true,
+   "hf_peft_config": "PolyConfig(poly_type='poly', n_splits=h>1)",
+   "formula_latex": "A^{\\tau}=\\operatorname{concat}_{k=1}^{h}\\Big(\\sum_{j}\\frac{\\hat{\\mathsf{Z}}_{\\tau,j,k}}{\\sum_{j'}\\hat{\\mathsf{Z}}_{\\tau,j',k}}\\,A_j[k]\\Big)\\ (\\text{same for }B^{\\tau}),\\ A_j[k]:\\ k\\text{-th of }h\\text{ disjoint blocks of the factor};\\ h_{out}=W_0x+s\\,B^{\\tau}A^{\\tau}x;\\ \\mathsf{Z}\\in\\mathbb{R}^{|\\mathcal{T}|\\times|\\mathcal{M}|\\times h}",
+   "trainable_params": "|\\mathcal{M}|\\,r(d_{in}+d_{out})+|\\mathcal{T}||\\mathcal{M}|h\\ \\text{per adapted matrix; MHR-}z\\text{ fine-tunes only }|\\mathcal{M}|h\\text{ routing logits per new task}",
+   "locus": "LoRA modules on attention projections (T5 / T0 backbones)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Block-wise task-conditioned mixing: a separate Polytropon routing for each of h disjoint blocks of the factor matrices (in HF PEFT, A is split along d_in and B along d_out), with the routed blocks concatenated.",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a known task the routed factors are fixed and the LoRA can be merged; routing must be resolved per task.",
+   "identity_at_init": "As Polytropon (near-uniform routing logits; zero-initialized up-projections in HF PEFT).",
+   "key_idea": "Finer-grained routing is more expressive: letting different blocks of each adapter come from different modules beats whole-module mixing at equal budget, and the benefit of routing lies mostly in multi-task pre-training.",
+   "results_note": "MHR outperforms Poly at comparable budget; routing-only MHR-z is competitive with extreme parameter efficiency, and MHR-mu (fine-tuning the averaged adapters) shows routing matters chiefly during multi-task pre-training.",
+   "relations": [
+    {
+     "target": "polytropon",
+     "type": "generalizes",
+     "note": "Poly is MHR with h = 1"
+    },
+    {
+     "target": "arrow",
+     "type": "competes-with",
+     "note": "same research line (MTTL); Arrow routes post hoc without training"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2211.03831",
+    "https://arxiv.org/html/2211.03831",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/poly/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2211.03831 (Caccia, 2022); NeurIPS 2023 confirmed (arXiv comment, papers.nips.cc). Per-block routing, MHR-z (routing-only adaptation) and MHR-mu confirmed. PolyConfig(n_splits > 1) selects MHR (PEFT docstring), and the parameter count |M| r (d_in + d_out) + |T||M|h matches PEFT's tensor shapes.",
+   "corrections": [
+    "structure: replaced 'piecewise-linear' (misleading: the map stays linear) with 'block-wise', and stated the split axes used in PEFT (poly_lora_A has shape [n_splits, n_skills, d_in/n_splits, r])."
+   ]
+  },
+  {
+   "id": "smear",
+   "name": "SMEAR",
+   "full_name": "Soft Merging of Experts with Adaptive Routing",
+   "paper_title": "Soft Merging of Experts with Adaptive Routing",
+   "authors": "Muqeeth et al.",
+   "year": 2023,
+   "venue": "TMLR 2024",
+   "arxiv": "2306.03745",
+   "url": "https://openreview.net/forum?id=7I199lc54z",
+   "code_url": "https://github.com/r-three/smear",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y=\\bar f\\Big(u;\\ \\sum_{i=1}^{N}R(v)_i\\,\\theta_i\\Big),\\ \\ R(v)=\\operatorname{softmax}(W_rv);\\ \\theta_i:\\text{ parameters of expert }i\\text{ (adapters)};\\ \\text{experts and router trained end-to-end, backbone frozen}",
+   "trainable_params": "N\\cdot(2rd+r+d)+dN\\ \\text{per routing block (}N\\text{ bottleneck-adapter experts plus a linear router), plus router/expert LayerNorms and the backbone LayerNorms}",
+   "locus": "expert routing blocks inserted after self-attention, feed-forward and cross-attention (T5) or after residual groups (ResNet)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Per-example soft parameter merging: the router's distribution averages expert parameters and the input passes through the single merged expert, keeping routing fully differentiable at the cost of one expert.",
+   "mergeable": "no",
+   "mergeable_reason": "The merged expert changes with every input, so it cannot be folded into fixed weights.",
+   "identity_at_init": "Experts are randomly initialized with different values to break symmetry; no identity guarantee.",
+   "key_idea": "Learned discrete routing underperforms because of poor gradient estimators; averaging expert parameters with the router's probabilities makes routing differentiable without extra compute.",
+   "results_note": "On T5-GLUE and ResNet-DomainNet, SMEAR outperforms metadata-based routing and routing learned with gradient estimators at similar inference cost.",
+   "relations": [
+    {
+     "target": "adamix",
+     "type": "competes-with",
+     "note": "learned vs random routing"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2306.03745",
+    "https://arxiv.org/html/2306.03745"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2306.03745 (Muqeeth, 2023); TMLR (May 2024) confirmed in the TMLR accepted-paper list. Router-weighted parameter averaging into a single expert, per-example routing on average-pooled hidden states, random expert init to break symmetry, and blocks after self-attention, FFN and cross-attention (60 blocks in T5.1.1-Base) confirmed.",
+   "corrections": [
+    "trainable_params: added biases and the LayerNorm parameters. The backbone is frozen except its layer-normalization parameters (Sec. 4, T5-GLUE).",
+    "relations: removed 'competes-with mov'. MoV adopts SMEAR's soft merging (MoV paper Eq. 'Soft Merging', citing Muqeeth et al. 2023), so the link is 'mov builds-on smear', which already exists. They are not competitors.",
+    "relations: removed 'competes-with phatgoose'. PHATGOOSE neither cites nor compares SMEAR, and the methods solve different problems (joint training vs post-hoc recycling)."
+   ]
+  },
+  {
+   "id": "mov",
+   "name": "MoV / MoLoRA",
+   "full_name": "Mixture of (IA)^3 Vectors / Mixture of LoRA experts",
+   "paper_title": "Pushing Mixture of Experts to the Limit: Extremely Parameter Efficient MoE for Instruction Tuning",
+   "authors": "Zadouri et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.05444",
+   "url": "https://arxiv.org/abs/2309.05444",
+   "code_url": "https://github.com/for-ai/parameter-efficient-moe",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{MoV: }E_{\\mathrm{mix}}(x)=\\sum_{i=1}^{N}s_i(x)\\,l_i,\\ s(x)=\\operatorname{softmax}(W_gx),\\ h\\leftarrow E_{\\mathrm{mix}}(x)\\odot h\\ \\text{at each (IA)}^3\\text{ site};\\quad \\text{MoLoRA: }\\Delta W(x)=\\sum_{i}s_i(x)\\,B_iA_i;\\ W_0\\text{ frozen, experts and router trained}",
+   "trainable_params": "\\text{MoV: }N\\,d_{site}+N\\,d_{model}\\ \\text{per (IA)}^3\\text{ site (}N\\text{ scaling vectors of the site's width plus a }d_{model}\\times N\\text{ router)};\\ \\text{MoLoRA: }N\\,r(d_{in}+d_{out})+N\\,d_{in}\\ \\text{per matrix}",
+   "locus": "(IA)^3 rescaling sites (keys, values, FFN intermediate) for MoV; linear layers for MoLoRA; T5 encoder-decoder",
+   "modification_kind": "composition-or-routing",
+   "structure": "Token-level soft merging of lightweight experts: a router-weighted average of diagonal (IA)^3 scaling vectors (multiplicative) or of LoRA experts, applied as one merged expert.",
+   "mergeable": "no",
+   "mergeable_reason": "The merged scaling vector / LoRA depends on each token through the router.",
+   "identity_at_init": "MoV expert vectors initialized to ones (identity scaling), so the network is unchanged at init.",
+   "key_idea": "Mixture-of-experts can be pushed to extreme parameter efficiency by making each expert an (IA)^3 vector or a LoRA and merging experts softly, which also generalizes to unseen tasks without task metadata.",
+   "results_note": "Instruction-tuning T5 on P3 with <1% of parameters updated, MoV matches full fine-tuning on unseen tasks at scale and improves over standard (IA)^3 by up to 14.57% (3B) and 8.39% (11B).",
+   "relations": [
+    {
+     "target": "ia3",
+     "type": "generalizes",
+     "note": "a mixture of (IA)^3 vectors; N = 1 recovers (IA)^3"
+    },
+    {
+     "target": "smear",
+     "type": "builds-on",
+     "note": "uses SMEAR-style soft merging"
+    },
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "token-routed LoRA experts"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.05444",
+    "https://arxiv.org/pdf/2309.05444"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2309.05444 (Zadouri, 2023); ICLR 2024 confirmed in proceedings.iclr.cc 2024. Router s = softmax(W_g^T x), soft merging E_mix = sum s_i E_i (citing SMEAR), expert vectors initialized with ones (reference code, Fig. 2), and the 14.57%/8.39% gains over (IA)^3 confirmed.",
+   "corrections": [
+    "trainable_params: '2Nd per site' -> 'N d_site + N d_model'. The vectors have the width of the rescaled activation (keys, values or FFN hidden, d_ff) and the router maps d_model to N. These differ at the FFN site."
+   ]
+  },
+  {
+   "id": "loramoe",
+   "name": "LoRAMoE",
+   "full_name": "LoRAMoE: MoE-style LoRA plugin with localized balancing",
+   "paper_title": "LoRAMoE: Alleviating World Knowledge Forgetting in Large Language Models via MoE-Style Plugin",
+   "authors": "Dou et al.",
+   "year": 2023,
+   "venue": "ACL 2024",
+   "arxiv": "2312.09979",
+   "url": "https://aclanthology.org/2024.acl-long.106/",
+   "code_url": "https://github.com/Ablustrund/LoRAMoE",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "o=W_0x+\\tfrac{\\alpha}{r}\\sum_{i=1}^{N}\\omega_i(x)\\,B_iA_ix,\\ \\ \\omega(x)=\\operatorname{softmax}(W_g^{\\top}x);\\quad \\mathcal{L}=\\mathcal{L}_{\\mathrm{task}}+\\beta\\,\\frac{\\sigma^2(I\\circ Q)}{\\mu(I\\circ Q)},\\ I_{n,m}=1\\pm\\delta\\ \\text{(localized balancing constraint)};\\ W_0\\text{ frozen}",
+   "trainable_params": "N\\,r(d_{in}+d_{out})+N\\,d_{in}\\ \\text{per adapted FFN matrix}",
+   "locus": "linear layers of the feed-forward block",
+   "modification_kind": "composition-or-routing",
+   "structure": "Dense softmax mixture of N LoRA experts per FFN linear layer, with a soft balancing loss that dedicates one expert group to world-knowledge tasks and another to other downstream tasks.",
+   "mergeable": "no",
+   "mergeable_reason": "Expert weights are computed per token by the router.",
+   "identity_at_init": "Not discussed in the paper. The official code (Ablustrund/LoRAMoE, peft/tuners/lora.py) initializes every B_i to zero (A_i and router Kaiming-uniform), so the plugin starts as the identity regardless of the router.",
+   "key_idea": "Large-scale SFT erodes world knowledge stored in the backbone; freezing it and adding router-mixed LoRA experts, part of which are pushed toward knowledge tasks, keeps that knowledge while still learning downstream tasks.",
+   "results_note": "Compared with vanilla SFT, LoRAMoE avoids the knowledge collapse and improves world-knowledge benchmarks by up to 63.9% (35.3% on average) while matching or beating SFT on other tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "experts are LoRAs"
+    },
+    {
+     "target": "mixlora",
+     "type": "competes-with",
+     "note": "dense vs top-2 sparse LoRA-MoE in the FFN"
+    },
+    {
+     "target": "moelora",
+     "type": "competes-with",
+     "note": "token-level vs task-level gating"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.09979",
+    "https://arxiv.org/html/2312.09979",
+    "https://aclanthology.org/2024.acl-long.106/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.09979 (Dou, 2023; arXiv title says 'Alleviate'); ACL 2024 confirmed (ACL Anthology 2024.acl-long.106, title 'Alleviating'). Router G(x) = softmax(x W_g) over LoRA experts replacing the FFN linear layers (Eq. 3), importance matrix Q, coefficients 1 +/- delta, L_lbc = sigma^2(I o Q)/mu(I o Q) (Eq. 6-8), and the 63.9%/35.3% knowledge gains confirmed.",
+   "corrections": [
+    "identity_at_init: replaced the inference from standard LoRA practice with the official code (zeros_ on every lora_B{i})."
+   ]
+  },
+  {
+   "id": "moelora",
+   "name": "MOELoRA",
+   "full_name": "Mixture-of-experts LoRA with task-motivated gate",
+   "paper_title": "When MOE Meets LLMs: Parameter Efficient Fine-tuning for Multi-task Medical Applications",
+   "authors": "Liu et al.",
+   "year": 2023,
+   "venue": "SIGIR 2024",
+   "arxiv": "2310.18339",
+   "url": "https://arxiv.org/abs/2310.18339",
+   "code_url": "https://github.com/Applied-Machine-Learning-Lab/MOELoRA-peft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_j=W_0x_j+\\tfrac{\\alpha}{r}\\sum_{i=1}^{N}\\omega_{ji}\\,B_iA_ix_j,\\ \\ B_i\\in\\mathbb{R}^{d_{out}\\times r/N},\\ A_i\\in\\mathbb{R}^{r/N\\times d_{in}};\\quad \\omega_j=\\operatorname{softmax}(W_Te_j)\\ \\ (\\text{one task-motivated gate shared by all layers},\\ e_j\\text{ task embedding})",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix (same as one rank-}r\\text{ LoRA) plus one global gate }(|\\mathcal{T}|d_T+Nd_T)",
+   "locus": "query, key, value and FFN linear layers",
+   "modification_kind": "composition-or-routing",
+   "structure": "A rank-r LoRA split into N rank-(r/N) experts mixed by task-specific weights, i.e. a task-dependent block-diagonal re-weighting of the rank axis; sparse top-K gate variant also studied.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Mixing weights depend only on the task id, so each task's update can be precomputed and merged into W_0.",
+   "identity_at_init": "Not discussed in the paper. The official code (MOELoRA-peft, src/MLoRA/peft/tuners/mmoelora.py) zero-initializes the expert up-projections, so the model is unchanged at init.",
+   "key_idea": "Different medical tasks need different parameter combinations; splitting LoRA into experts and letting a task-id-driven gate mix them yields task-specific updates at LoRA's parameter cost.",
+   "results_note": "On the PromptCBLUE multi-task Chinese medical benchmark with ChatGLM-6B, MOELoRA outperforms LoRA and other PEFT baselines.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "partitions the rank of a LoRA into experts"
+    },
+    {
+     "target": "polytropon",
+     "type": "competes-with",
+     "note": "both route by task identity"
+    },
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "task-level vs token-level gating"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.18339",
+    "https://arxiv.org/html/2310.18339"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2310.18339 (Liu, 2023); SIGIR 2024 confirmed (ACM DOI 10.1145/3626772.3657722). Rank-r/N experts with total cost r(d_in + d_out) (Sec. 3.2), a single task-motivated gate omega_j = softmax(W_T e_j) shared by all MOELoRA layers, the sparse top-K variant (Sec. 3.3), and ChatGLM-6B on PromptCBLUE confirmed.",
+   "corrections": [
+    "identity_at_init: confirmed from the official code instead of inferring it."
+   ]
+  },
+  {
+   "id": "mole",
+   "name": "MoLE",
+   "full_name": "Mixture of LoRA Experts",
+   "paper_title": "Mixture of LoRA Experts",
+   "authors": "Wu et al.",
+   "year": 2024,
+   "venue": "ICLR 2024",
+   "arxiv": "2404.13628",
+   "url": "https://arxiv.org/abs/2404.13628",
+   "code_url": "https://github.com/yushuiwx/Mixture-of-LoRA-Experts",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "E_{\\Omega}(x)=\\operatorname{Norm}\\big(E_{\\Delta\\theta_0}(x)\\oplus\\cdots\\oplus E_{\\Delta\\theta_{N-1}}(x)\\big),\\ \\varepsilon=\\operatorname{Flatten}(E_{\\Omega}(x))^{\\top}e,\\ G_i=\\frac{\\exp(\\varepsilon_i/\\tau)}{\\sum_j\\exp(\\varepsilon_j/\\tau)},\\ O(x)=F_{\\theta}(x)+\\sum_iG_i\\,E_{\\Delta\\theta_i}(x);\\ \\text{trained LoRAs frozen; per-layer gate }e\\text{ and temperature }\\tau\\text{ trained with }\\mathcal{L}_D+\\mathcal{L}_{\\mathrm{balance}}",
+   "trainable_params": "N^{2}Ld+1\\ \\text{per gated block as written in Eq. 10 (gate }e\\in\\mathbb{R}^{\\xi\\times N},\\ \\xi=N\\cdot L\\cdot d,\\ L=\\text{sequence length},\\ d=\\text{hidden size; plus a learnable temperature }\\tau);\\ \\text{all LoRAs and the backbone frozen}",
+   "locus": "each Transformer block (layer-wise gates over the outputs of trained LoRAs); matrix-wise gating also explored",
+   "modification_kind": "composition-or-routing",
+   "structure": "Hierarchical, layer-wise learned gating over the outputs of N frozen pre-trained LoRAs, with a gate-balancing loss -\\log\\prod_i q^{(i)} against collapse onto one LoRA.",
+   "mergeable": "no",
+   "mergeable_reason": "Gate values are computed from the experts' outputs for each input.",
+   "identity_at_init": "Not applicable: starts from trained LoRAs. Each expert output E_{Delta theta_i}(x) is a full Transformer-block output computed with LoRA i, and the gate initialization is not specified.",
+   "key_idea": "Linear arithmetic composition blurs the characteristics of individual LoRAs and reference-tuning is costly; treating each layer of each trained LoRA as an expert and learning layer-wise gates composes them while preserving their traits.",
+   "results_note": "In both multi-concept text-to-image generation and Flan-T5 NLP tasks, MoLE outperforms linear-arithmetic and other LoRA composition baselines.",
+   "relations": [
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "learned gating over frozen trained LoRAs"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "input-dependent layer-wise vs global static weights"
+    },
+    {
+     "target": "adapterfusion",
+     "type": "competes-with",
+     "note": "learned mixing of frozen modules' outputs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.13628",
+    "https://arxiv.org/html/2404.13628",
+    "https://openreview.net/forum?id=uWvKBCYh4S",
+    "https://github.com/yushuiwx/Mixture-of-LoRA-Experts"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2404.13628 (Wu, 2024); ICLR 2024 confirmed in proceedings.iclr.cc 2024 and the PDF header. Gate over concatenated, normalized block outputs, epsilon = Flatten(E_Omega)^T e, softmax with learnable tau, O(x) = F_theta(x) + sum G_i E_i(x) (Eq. 13), balancing loss -log prod q^(i) (Eq. 14), and gains over LoraHub and PEMs confirmed.",
+   "corrections": [
+    "code_url: the link printed in the paper (github.com/yushuiwx/MoLE) returns 404. The authors' official repository is yushuiwx/Mixture-of-LoRA-Experts (README: 'Official implementation ... accepted by ICLR 2024').",
+    "trainable_params: replaced the vague description with the paper's gate size (e in R^{xi x N}, xi = N L d, Eq. 9-10) plus tau.",
+    "confidence: medium -> high. The gate equations (Eq. 9-14) and the ICLR 2024 venue were checked against the paper and proceedings.",
+    "identity_at_init: clarified that the experts are whole block outputs with LoRA i (Eq. 7-8), not bare LoRA deltas."
+   ]
+  },
+  {
+   "id": "mixlora",
+   "name": "MixLoRA",
+   "full_name": "MixLoRA: LoRA-based sparse mixture of experts",
+   "paper_title": "MixLoRA: Enhancing Large Language Models Fine-Tuning with LoRA-based Mixture of Experts",
+   "authors": "Li et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2404.15159",
+   "url": "https://arxiv.org/abs/2404.15159",
+   "code_url": "https://github.com/TUDB-Labs/MixLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\operatorname{MixLoRA}(h)=\\sum_{k\\in\\operatorname{Top2}}R(h)_k\\,E_k(h),\\ \\ E_k(h)=Wh+B_kA_kh\\ (W\\text{: frozen FFN weights shared by all experts}),\\ R(h)=\\operatorname{KeepTop2}\\big(\\operatorname{softmax}(W_rh)\\big);\\ \\text{plus independent LoRAs on }q,k,v,o;\\ \\mathcal{L}=\\mathcal{L}_{CE}+a\\,N\\sum_i\\mathcal{F}_i\\mathcal{P}_i",
+   "trainable_params": "N\\,r(d_{in}+d_{out})\\ \\text{per FFN projection}+N\\,d\\ \\text{router}+r(d_{in}+d_{out})\\ \\text{per attention projection}",
+   "locus": "FFN block (sparse expert layer) plus attention projections (plain LoRA)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Sparse top-2 MoE upcycled from one dense FFN: all experts share the frozen FFN weights and differ only by their LoRA deltas; Switch-style load-balancing loss.",
+   "mergeable": "no",
+   "mergeable_reason": "Each token is routed to its own top-2 experts.",
+   "identity_at_init": "Not discussed in the paper. The official code (TUDB-Labs/MixLoRA, mixlora/lora_linear.py) zero-initializes lora_B, so every expert initially equals the frozen FFN and the block is unchanged.",
+   "key_idea": "Build a resource-efficient sparse MoE from a dense model by adding LoRA experts inside the frozen FFN with a top-k router, plus independent attention LoRAs, and optimize the shared computation for throughput.",
+   "results_note": "Reports about 9% higher accuracy than state-of-the-art PEFT methods in multi-task learning, and its framework cuts GPU memory by 40% and token latency by 30%.",
+   "relations": [
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "sparse top-2 vs dense LoRA experts"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "experts are LoRA deltas on a shared FFN"
+    },
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "LoRA-MoE fine-tuning for heterogeneous data"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.15159",
+    "https://arxiv.org/html/2404.15159"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2404.15159 (Li, 2024). No peer-reviewed venue found (Semantic Scholar lists arXiv only), so venue stays 'arXiv'. KeepTop-2(softmax(W_r x)) router (Eq. 7), experts sharing the frozen FFN, attention LoRAs, auxiliary load-balance loss, ~9% accuracy, and 40% memory / 30% latency savings confirmed.",
+   "corrections": [
+    "identity_at_init: confirmed from the official code instead of inferring it."
+   ]
+  },
+  {
+   "id": "x-lora",
+   "name": "X-LoRA",
+   "full_name": "X-LoRA: mixture of low-rank adapter experts",
+   "paper_title": "X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Molecular Design",
+   "authors": "Buehler and Buehler",
+   "year": 2024,
+   "venue": "APL Machine Learning 2024",
+   "arxiv": "2402.07148",
+   "url": "https://arxiv.org/abs/2402.07148",
+   "code_url": "https://github.com/EricLBuehler/xlora",
+   "hf_peft": true,
+   "hf_peft_config": "XLoraConfig(hidden_size, adapters, layerwise_scalings, top_k_lora, enable_softmax, softmax_temperature, xlora_depth, scaling_pass_value, ...)",
+   "formula_latex": "h=W_0x+\\sum_{i=1}^{n}\\tfrac{\\alpha_i}{r_i}\\,B_iA_i\\,(\\lambda_{i}\\,x),\\ \\ \\lambda=\\operatorname{softmax}\\big(\\operatorname{head}_{\\phi}(\\text{hidden states of a first scaling pass})\\big)\\in\\mathbb{R}^{s\\times L\\times n}\\ (\\text{per token, per layer; optional top-}k);\\ W_0\\text{ and all }(A_i,B_i)\\text{ frozen; only the scaling head }\\phi\\text{ trained}",
+   "trainable_params": "\\text{scaling head only: for }\\texttt{xlora\\_depth}=1,\\ (d+1)\\,n\\ \\text{(scalings broadcast to all layers, PEFT default) or }(d+1)\\,nL\\ \\text{(layer-wise)},\\ d=\\text{model hidden size};\\ \\text{deeper heads add MLP layers of width }\\texttt{xlora\\_size};\\ \\text{LoRA experts frozen unless }\\texttt{use\\_trainable\\_adapters}",
+   "locus": "every LoRA-adapted layer of the base LLM (token-, layer- and adapter-wise scalings)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Token- and layer-wise dense (optionally top-k) gating of frozen LoRA experts, predicted by a small head from the model's own hidden states using a dual forward pass.",
+   "mergeable": "no",
+   "mergeable_reason": "Scalings change per token and layer, and inference needs two forward passes.",
+   "identity_at_init": "Adapters are pre-trained; in HF PEFT the scaling pass uses scaling_pass_value (default 0), i.e. the base model, to compute the hidden states that drive the head.",
+   "key_idea": "Reuse a set of frozen domain LoRAs as experts and train only a light head that, after a first pass, decides how strongly each adapter acts at each token and layer, producing new deep combinations of the experts.",
+   "results_note": "The Zephyr-7B-based X-LoRA reaches R^2 = 0.85 for predicting protein unfolding force and energy from sequence. A Gemma-7B-based variant reaches R^2 = 0.87 on the same task and 0.96 on QM9 molecular properties, and the model answers domain questions better than its base model in qualitative comparisons.",
+   "relations": [
+    {
+     "target": "mole",
+     "type": "competes-with",
+     "note": "learned gating over frozen trained LoRAs"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "experts are LoRA adapters"
+    },
+    {
+     "target": "phatgoose",
+     "type": "competes-with",
+     "note": "token-level routing among pre-trained LoRAs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.07148",
+    "https://arxiv.org/html/2402.07148",
+    "https://huggingface.co/docs/peft/package_reference/xlora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/xlora/config.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/xlora/layer.py",
+    "https://doi.org/10.1063/5.0203126"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.07148 (Buehler, 2024); APL Machine Learning 2024 confirmed (DOI 10.1063/5.0203126). PEFT XLoraConfig, classifier and layer code read on main: dummy scaling pass with scaling_pass_value (default 0 = adapters off), softmax/top-k scalings, and input-side scaling.",
+   "corrections": [
+    "hf_peft_config: listed the XLoraConfig fields that control the method (from tuners/xlora/config.py on main).",
+    "trainable_params: gave the actual head size from tuners/xlora/classifier.py (Linear(hidden_size, n or n L)). The old 'independent of d_in, d_out' was misleading, since the head scales with the model hidden size.",
+    "formula_latex: wrote the LoRA scaling as alpha_i / r_i and made the softmax over adapters explicit (PEFT XLoraLayer multiplies the input by the scaling, then applies lora_B(lora_A(.)) * scaling).",
+    "results_note: attributed the R^2 values to the right models (0.85 Zephyr; 0.87 and 0.96 Gemma variant) and made the base-model comparison qualitative."
+   ]
+  },
+  {
+   "id": "hydralora",
+   "name": "HydraLoRA",
+   "full_name": "HydraLoRA: asymmetric LoRA with shared A and multiple B heads",
+   "paper_title": "HydraLoRA: An Asymmetric LoRA Architecture for Efficient Fine-Tuning",
+   "authors": "Tian et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2404.19245",
+   "url": "https://arxiv.org/abs/2404.19245",
+   "code_url": "https://github.com/Clin0212/HydraLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\sum_{i=1}^{N}\\omega_i(x)\\,B_iAx,\\ \\ \\omega(x)=\\operatorname{softmax}(W_g^{\\top}x),\\ W_g\\in\\mathbb{R}^{d_{in}\\times N}\\ (\\text{official code; the paper prints }\\mathbb{R}^{r\\times N});\\ A\\in\\mathbb{R}^{r\\times d_{in}}\\text{ shared},\\ B_i\\in\\mathbb{R}^{d_{out}\\times r};\\ N\\text{ chosen by k-means over the corpus (or by the developer)};\\ W_0\\text{ frozen}",
+   "trainable_params": "r\\,d_{in}+N\\,r\\,d_{out}+N\\,d_{in}\\ \\text{per adapted matrix}",
+   "locus": "LoRA-adapted linear layers of the LLM",
+   "modification_kind": "composition-or-routing",
+   "structure": "Asymmetric LoRA: one shared down-projection A and N up-projection heads B_i mixed by a router, i.e. a factorization through one shared r-dimensional subspace with an input-dependent output map.",
+   "mergeable": "no",
+   "mergeable_reason": "The B heads are combined by an input-dependent router at inference.",
+   "identity_at_init": "Not discussed in the paper. The official code (Clin0212/HydraLoRA, peft/tuners/lora.py) zero-initializes every B_i (A and router Kaiming-uniform), so the model starts unchanged.",
+   "key_idea": "On heterogeneous corpora the A matrices of separately trained LoRAs look alike while B matrices differ, so share A to capture common knowledge and keep several router-mixed B heads for sub-domains discovered without labels.",
+   "results_note": "On LLaMA2-7B, HydraLoRA with r = 8 (0.124% parameters) beats LoRA with r = 32 and split-LoRA variants on MMLU, medical, law, HumanEval and GSM8K.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "shares A across experts"
+    },
+    {
+     "target": "lily",
+     "type": "competes-with",
+     "note": "both share down-projections and route among up-projection experts"
+    },
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "MoE of LoRA experts"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.19245",
+    "https://arxiv.org/html/2404.19245",
+    "https://neurips.cc/virtual/2024/oral/97953"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2404.19245 (Tian, 2024); NeurIPS 2024 confirmed in papers.nips.cc 2024. Shared A with N router-mixed B heads (Eq. 3-4), k-means choice of N, and r = 8 (0.124%) beating LoRA r = 32 confirmed.",
+   "corrections": [
+    "identity_at_init: confirmed from the official code instead of inferring it.",
+    "formula_latex: wrote the output as h = W_0 x + sum omega_i B_i A x (paper Eq. 3), not as a weight W. Gave the router shape d_in x N from the official code (nn.Linear(in_features, lora_num)); the paper prints R^{r x N}."
+   ]
+  },
+  {
+   "id": "lily",
+   "name": "Lily",
+   "full_name": "Low-rank interconnected adaptation across layers",
+   "paper_title": "Low-Rank Interconnected Adaptation across Layers",
+   "authors": "Zhong et al.",
+   "year": 2024,
+   "venue": "Findings of ACL 2025",
+   "arxiv": "2407.09946",
+   "url": "https://arxiv.org/abs/2407.09946",
+   "code_url": "https://github.com/yibozhong/lily",
+   "hf_peft": true,
+   "hf_peft_config": "LilyConfig(r, stride_A, num_B, scaling, target_modules)",
+   "formula_latex": "x'=A_{g(l)}x,\\quad S=\\operatorname{softmax}\\Big(\\sum_{t}R\\,x'_t\\Big)\\in\\mathbb{R}^{N_e}\\ (\\text{paper Eq. 2; HF PEFT instead averages per-token softmaxes over the batch and sequence}),\\quad \\Delta h=s\\Big(\\sum_{i=1}^{N_e}S_i\\,B^{i}\\Big)x';\\ A\\in\\mathbb{R}^{r\\times d_{in}}\\text{ shared by stride}_A\\text{ consecutive layers},\\ \\{B^{i}\\in\\mathbb{R}^{d_{out}\\times r}\\}\\text{ shared model-wide},\\ R\\in\\mathbb{R}^{N_e\\times r};\\ W_0\\text{ frozen}",
+   "trainable_params": "\\tfrac{L}{\\mathrm{stride}_A}\\,r\\,d_{in}+N_e\\,r\\,d_{out}+L\\,N_e\\,r\\ \\text{per target-module type}",
+   "locus": "target linear layers across all Transformer layers (cross-layer sharing)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Cross-layer factor sharing: locally shared down-projections and a global pool of up-projection experts mixed per input by a router acting in the r-dimensional space, which allows a much larger rank at LoRA's budget.",
+   "mergeable": "no",
+   "mergeable_reason": "The combination of B experts depends on the input activations (HF PEFT explicitly disables merge/unmerge).",
+   "identity_at_init": "HF PEFT zero-initializes the B experts (A and router Kaiming-uniform), so the model is unchanged at init.",
+   "key_idea": "Replace per-layer LoRA pairs by a few shared A adapters and a model-wide pool of B experts selected by data-dependent routers, so every layer can draw on all layers' adapters and use a higher rank for the same parameters.",
+   "results_note": "Reports better performance and efficiency than LoRA-family baselines across commonsense reasoning, GLUE, subject-driven image generation and visual adaptation benchmarks.",
+   "relations": [
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "shared down-projection with routed up-projection experts"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "cross-layer shared LoRA factors"
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "cross-layer parameter sharing for efficiency"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.09946",
+    "https://arxiv.org/html/2407.09946",
+    "https://huggingface.co/docs/peft/package_reference/lily",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lily/layer.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2407.09946 (Zhong, 2024); Findings of ACL 2025 confirmed (DOI 10.18653/v1/2025.findings-acl.874). Paper Eq. 2 router, locally shared A and global B experts confirmed. PEFT LilyConfig/LilyLayer read on main: one nn.Linear(r, num_B) router per adapted layer, B zero-initialized, merge/unmerge raise NotImplementedError.",
+   "corrections": [
+    "formula_latex: noted that PEFT's Lily pools router probabilities as mean(softmax(R A x)) over the batch and sequence (tuners/lily/layer.py), unlike the paper's softmax of summed logits. Added the router shape.",
+    "hf_peft_config: added the direct multiplier 'scaling' (Lily has no alpha/r)."
+   ]
+  },
+  {
+   "id": "phatgoose",
+   "name": "PHATGOOSE",
+   "full_name": "Post-Hoc Adaptive Tokenwise Gating Over an Ocean of Specialized Experts",
+   "paper_title": "Learning to Route Among Specialized Experts for Zero-Shot Generalization",
+   "authors": "Muqeeth et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.05859",
+   "url": "https://arxiv.org/abs/2402.05859",
+   "code_url": "https://github.com/r-three/phatgoose",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{per contributed expert }z:\\ Wu_t+B_zA_zu_t\\,\\sigma(v_z^{\\top}u_t)\\ (\\text{train only }v_z,\\ \\text{init }0,\\ \\approx100\\text{ steps});\\quad \\text{inference: }\\alpha_{t,z}=\\bar v_z^{\\top}\\bar u_t\\ (\\text{standardized}),\\ \\mathcal{E}_t=\\operatorname{top\\text{-}k}(\\alpha_t),\\ w_t=\\operatorname{softmax}\\big(\\{\\alpha_{t,z}/\\sqrt{d_{in}}\\}_{z\\in\\mathcal{E}_t}\\big),\\ h=Wu_t+\\sum_{z\\in\\mathcal{E}_t}w_{t,z}B_zA_zu_t",
+   "trainable_params": "d_{in}\\ \\text{per adapted matrix per contributed expert (the gate vector }v_z)",
+   "locus": "every linear layer carrying a PEFT (LoRA) module; per-token, per-module routing (LM-adapted T5.1.1 XL in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Decentralized MoE: each contributor learns a sigmoid gate vector for its frozen module; at inference the standardized gate vectors become the rows of a top-k router over the pooled experts.",
+   "mergeable": "no",
+   "mergeable_reason": "Different tokens and modules are routed to different experts.",
+   "identity_at_init": "Gate vectors start at zero (\\sigma(0)=1/2 scaling of the frozen module during gate training).",
+   "key_idea": "Experts produced independently by different contributors can be recycled for zero-shot generalization by having each contributor cheaply train a gate that recognizes its own activations, then using those gates as a token-level router.",
+   "results_note": "With T5-XL expert pools, PHATGOOSE outperforms prior post-hoc routing and expert-merging methods and in some cases explicit multitask training on held-out zero-shot benchmarks.",
+   "relations": [
+    {
+     "target": "arrow",
+     "type": "competes-with",
+     "note": "post-hoc token-level routing over a LoRA library; Arrow needs no gate training"
+    },
+    {
+     "target": "loraretriever",
+     "type": "competes-with",
+     "note": "routing among independently trained LoRAs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.05859",
+    "https://arxiv.org/html/2402.05859"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.05859 (Muqeeth, 2024); ICML 2024 confirmed in PMLR v235. Gate W u + B A u sigma(v^T u) with v initialized to zeros and trained ~100 steps, standardized gate/activation affinities, top-k (k = 2) and softmax(alpha / sqrt(n)) weights, per-module routing, and the Arrow comparison confirmed.",
+   "corrections": [
+    "relations: removed 'builds-on smear'. The PHATGOOSE paper does not cite SMEAR. Same-lab provenance does not justify a builds-on link."
+   ]
+  },
+  {
+   "id": "arrow",
+   "name": "Arrow",
+   "full_name": "Arrow routing over a LoRA library (with model-based clustering, MBC)",
+   "paper_title": "Towards Modular LLMs by Building and Reusing a Library of LoRAs",
+   "authors": "Ostapenko et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2405.11157",
+   "url": "https://arxiv.org/abs/2405.11157",
+   "code_url": "https://github.com/microsoft/mttl",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(arrow_config=ArrowConfig(top_k, router_temperature, use_gks)) via create_arrow_model",
+   "formula_latex": "v_i=\\text{first right singular vector of }\\Delta W_i=B_iA_i;\\ \\ \\ell_i(h)=|v_i^{\\top}h|,\\ \\ p(h)=\\operatorname{softmax}\\big(\\ell(h)\\ \\text{restricted to top-}k\\big);\\ \\ A^{*}=\\sum_ip_iA_i,\\ B^{*}=\\sum_ip_iB_i\\ (\\text{per token, per layer});\\ h'=W_0h+s\\,B^{*}A^{*}h;\\ \\text{no training}",
+   "trainable_params": "0\\ \\text{(router computed from the library by SVD)}",
+   "locus": "every LoRA-adapted linear layer (the paper patches attention layers only; Phi-2 and Mistral-7B, LoRA rank 4)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Data-free MoE router whose rows are the leading right singular vectors of each library LoRA, with sign-agnostic top-k scores; composition mixes factors in the paper and mixes expert outputs (sum of B_iA_ix) in the HF PEFT implementation. MBC builds the library by clustering tasks on LoRA-parameter similarity.",
+   "mergeable": "no",
+   "mergeable_reason": "Each token at each layer uses its own expert mixture.",
+   "identity_at_init": "Not applicable (training-free routing over trained LoRAs).",
+   "key_idea": "The direction a LoRA amplifies most (its top right singular vector) is a free prototype of the inputs it was trained for, so a router can be read off the adapters themselves without any data or training.",
+   "results_note": "With LoRA libraries built from 256 Flan tasks on Phi-2 and Mistral, Arrow routing beats other zero-shot routing for private libraries and nearly matches oracle routing upstream; MBC libraries match or exceed multitask training.",
+   "relations": [
+    {
+     "target": "phatgoose",
+     "type": "competes-with",
+     "note": "zero-shot token-level routing among independent LoRAs"
+    },
+    {
+     "target": "polytropon",
+     "type": "builds-on",
+     "note": "same composition operator, routing obtained post hoc"
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "LoraHub is used as a supervised routing baseline"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2405.11157",
+    "https://arxiv.org/html/2405.11157",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/arrow.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.11157 (Ostapenko, 2024); ICML 2024 confirmed in PMLR v235. Alg. 2 (prototype = first right singular vector, logits |W h|, top-k softmax) and factor-wise composition A* = sum w_i A_i, B* = sum w_i B_i (Sec. 4.2) confirmed. PEFT arrow.py mixes expert outputs with per-expert scaling instead. ArrowConfig fields top_k, router_temperature, use_gks and rng_seed confirmed.",
+   "corrections": [
+    "locus: added that the paper applies LoRA to attention layers only (rank 4; Sec. 4)."
+   ]
+  },
+  {
+   "id": "loraretriever",
+   "name": "LoraRetriever",
+   "full_name": "LoraRetriever: input-aware LoRA retrieval and composition",
+   "paper_title": "LoraRetriever: Input-Aware LoRA Retrieval and Composition for Mixed Tasks in the Wild",
+   "authors": "Zhao et al.",
+   "year": 2024,
+   "venue": "Findings of ACL 2024",
+   "arxiv": "2402.09997",
+   "url": "https://aclanthology.org/2024.findings-acl.263/",
+   "code_url": "https://github.com/StyxXuan/LoraRetriever",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "E(\\phi)=\\tfrac{1}{m}\\sum_{i=1}^{m}E(I\\oplus x_{i\\phi}),\\ \\ s(x,\\phi)=\\cos\\big(E(I\\oplus x),E(\\phi)\\big),\\ \\ \\Phi_x=\\operatorname{TopK}_{\\phi}\\,s(x,\\phi);\\ \\text{Mixture: }\\Delta h=\\tfrac{1}{k}\\sum_{\\phi\\in\\Phi_x}B_{\\phi}A_{\\phi}x;\\ \\text{Fusion: }\\Theta=\\tfrac{1}{k}\\sum_{\\phi\\in\\Phi_x}\\Theta_{\\phi};\\ \\text{retriever }E\\text{ contrastively instruction-tuned; LLM and LoRAs frozen}",
+   "trainable_params": "0\\ \\text{per adapted matrix (only the sentence-embedding retriever is fine-tuned once)}",
+   "locus": "LoRA-adapted layers of the LLM, selected per input prompt (Llama-2 in the paper)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Retrieve-then-compose: an embedding retriever selects the top-k LoRAs per input, which are combined by output averaging (mixture) or parameter averaging (fusion); batched inference over heterogeneous requests.",
+   "mergeable": "no",
+   "mergeable_reason": "The selected LoRAs change from input to input (fusion could be merged per request only).",
+   "identity_at_init": "Not applicable (training-free composition of trained LoRAs).",
+   "key_idea": "In the wild, prompts from many tasks arrive and the LoRA pool keeps changing, so route by retrieval: embed each LoRA by a few of its training samples and retrieve the most similar LoRAs for each input.",
+   "results_note": "On mixed-task evaluation with Llama-2 LoRA pools, LoraRetriever consistently outperforms MoE-style routing, SMEAR, AdapterSoup and LoraHub baselines in- and out-of-distribution.",
+   "relations": [
+    {
+     "target": "adaptersoup",
+     "type": "generalizes",
+     "note": "per-input retrieval instead of per-domain selection"
+    },
+    {
+     "target": "arrow",
+     "type": "competes-with",
+     "note": "routing among an open LoRA library"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.09997",
+    "https://arxiv.org/html/2402.09997",
+    "https://aclanthology.org/2024.findings-acl.263/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.09997 (Zhao, 2024); Findings of ACL 2024 confirmed (ACL Anthology 2024.findings-acl.263). Instruction embedding E(I + x), cosine retrieval, mixture (output averaging) and fusion (parameter averaging) (Sec. 4.2), and the SMEAR, AdapterSoup and LoraHub baselines confirmed.",
+   "corrections": [
+    "relations: removed 'combines s-lora'. LoraRetriever implements its own batched inference with a LoRA mapping matrix (Sec. 4.3) and cites S-LoRA only as background. It does not use or combine with S-LoRA."
+   ]
+  },
+  {
+   "id": "lora-flow",
+   "name": "LoRA-Flow",
+   "full_name": "LoRA-Flow: dynamic token-level LoRA fusion",
+   "paper_title": "LoRA-Flow: Dynamic LoRA Fusion for Large Language Models in Generative Tasks",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "ACL 2024",
+   "arxiv": "2402.11455",
+   "url": "https://aclanthology.org/2024.acl-long.695/",
+   "code_url": "https://github.com/thunlp/LoRAFlow",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "w^{l}=\\operatorname{softmax}\\big(W_{\\mathrm{gate}}^{l}x_t^{l}+b^{l}\\big)\\in\\mathbb{R}^{k},\\quad h'=h+[\\Delta h_1;\\dots;\\Delta h_k]\\,w^{l},\\ \\ \\Delta h_i=B_iA_ix;\\ \\text{only }W_{\\mathrm{gate}}^{l}\\in\\mathbb{R}^{k\\times d},\\ b^{l}\\in\\mathbb{R}^{k}\\text{ trained (about 200 examples); model and LoRAs frozen}",
+   "trainable_params": "k(d+1)\\ \\text{per layer (shared by all LoRA modules of that layer)}",
+   "locus": "all LoRA-adapted modules; one fusion gate per layer driven by the layer input",
+   "modification_kind": "composition-or-routing",
+   "structure": "Token- and layer-wise softmax gate over the outputs of k frozen LoRAs (output mixing, which also allows LoRAs of different ranks).",
+   "mergeable": "no",
+   "mergeable_reason": "Fusion weights change at every generation step.",
+   "identity_at_init": "Not applicable (fusion gate over trained LoRAs).",
+   "key_idea": "In generative tasks different tokens need different skills (e.g. language vs math LoRA for a Chinese math problem), so LoRA fusion weights should be predicted per token from the current hidden state rather than fixed per task.",
+   "results_note": "Across six generative tasks with Llama-2, LoRA-Flow consistently outperforms task-level fusion baselines such as LoraHub, with a gate of about 0.2% of a LoRA's parameters.",
+   "relations": [
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "token-level output-space fusion vs LoraHub task-level factor-space composition; LoraHub cross terms B_iA_j are not representable by LoRA-Flow, so neither generalizes the other; LoraHub is LoRA-Flow's main baseline"
+    },
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "token-level gating of frozen LoRAs"
+    },
+    {
+     "target": "mole",
+     "type": "competes-with",
+     "note": "learned gating of trained LoRAs"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.11455",
+    "https://arxiv.org/pdf/2402.11455",
+    "https://aclanthology.org/2024.acl-long.695/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.11455 (Wang, 2024; arXiv comment 'Work in Progress'); ACL 2024 confirmed (ACL Anthology 2024.acl-long.695). Gate w^l = softmax(W_gate^l x_t^l + b^l), W_gate in R^{k x d} (Eq. 5), 200 training examples, and gate size ~0.2% of a LoRA (0.26M vs 117.44M for Llama-2-7b, r = 64, consistent with k(d+1) per layer) confirmed.",
+   "corrections": [
+    "relations: 'generalizes lorahub' -> 'competes-with'. LoRA-Flow mixes LoRA outputs, LoraHub mixes factors (product of sums with cross terms), so static LoRA-Flow weights do not recover LoraHub."
+   ]
+  },
+  {
+   "id": "s-lora",
+   "name": "S-LoRA",
+   "full_name": "S-LoRA: scalable serving of many LoRA adapters",
+   "paper_title": "S-LoRA: Serving Thousands of Concurrent LoRA Adapters",
+   "authors": "Sheng et al.",
+   "year": 2023,
+   "venue": "MLSys 2024",
+   "arxiv": "2311.03285",
+   "url": "https://arxiv.org/abs/2311.03285",
+   "code_url": "https://github.com/S-LoRA/S-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_b=W_0x_b+B_{a(b)}A_{a(b)}x_b\\ \\ \\text{for request }b\\text{ using adapter }a(b);\\ W_0X\\ \\text{batched over all requests},\\ \\text{LoRA terms by gather kernels (MBGMM prefill, MBGMV decode) over heterogeneous ranks};\\ \\text{adapters and KV cache paged in one Unified Memory Pool}",
+   "trainable_params": "0\\ \\text{(inference system)}",
+   "locus": "LLM inference server (adapters on all LoRA-adapted projections)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Separates the batchable shared-base computation W_0X from per-request low-rank terms; Unified Paging of variable-rank adapter weights with KV-cache blocks, custom heterogeneous-batching kernels and LoRA-aware tensor parallelism.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Adapters are deliberately left unmerged so requests for thousands of different adapters can share one base-model batch; any single adapter could be merged.",
+   "identity_at_init": "Not applicable (serving system).",
+   "key_idea": "Many LoRAs derived from one base model can be served together: keep one copy of the base weights, batch its computation across all requests, and fetch and apply each request's small adapter with paged memory and custom kernels.",
+   "results_note": "Serves 2,000 adapters on a single A100 with small overhead and up to 4x the throughput of vLLM-packed (and far more than HF PEFT), increasing the number of served adapters by orders of magnitude.",
+   "relations": [
+    {
+     "target": "punica",
+     "type": "builds-on",
+     "note": "decode kernel extends an early Punica SGMV kernel"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "exploits the additive low-rank form xW_0 + xBA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2311.03285",
+    "https://arxiv.org/html/2311.03285",
+    "https://proceedings.mlsys.org/paper_files/paper/2024"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2311.03285 (Sheng, 2023); MLSys 2024 confirmed in proceedings.mlsys.org 2024, where it is listed as 'SLoRA: Scalable Serving of Thousands of LoRA Adapters'. Unified Paging, MBGMM/MBGMV kernels built on earlier Punica kernels, 2,000 adapters on one A100, and up to 4x over vLLM-packed and 30x over HF PEFT confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "punica",
+   "name": "Punica",
+   "full_name": "Punica: multi-tenant LoRA serving with SGMV",
+   "paper_title": "Punica: Multi-Tenant LoRA Serving",
+   "authors": "Chen et al.",
+   "year": 2023,
+   "venue": "MLSys 2024",
+   "arxiv": "2310.18547",
+   "url": "https://arxiv.org/abs/2310.18547",
+   "code_url": "https://github.com/punica-ai/punica",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_b=W_0x_b+B_{a(b)}A_{a(b)}x_b;\\ \\text{requests sorted into segments }[s_i,s_{i+1})\\text{ sharing adapter }i:\\ \\ Y_{[s_i:s_{i+1}]}\\mathrel{+}=X_{[s_i:s_{i+1}]}A_i^{\\top}B_i^{\\top}\\ \\ (\\text{SGMV-shrink then SGMV-expand})",
+   "trainable_params": "0\\ \\text{(inference system)}",
+   "locus": "LLM inference on a shared GPU cluster (LoRA on q, k, v, o and MLP projections)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Segmented Gather Matrix-Vector multiplication batches the low-rank terms of different LoRA models in one kernel, so each GPU keeps a single copy of the base model; a scheduler consolidates tenants and migrates requests.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Adapters stay unmerged to batch heterogeneous tenants; each individual adapter is mergeable.",
+   "identity_at_init": "Not applicable (serving system).",
+   "key_idea": "Batching requests for different LoRAs is almost as cheap as batching requests for the same LoRA if the low-rank terms are computed by a segmented gather kernel, so multi-tenant LoRA serving can be consolidated onto few GPUs.",
+   "results_note": "Achieves 12x higher throughput than state-of-the-art LLM serving systems for multi-LoRA workloads while adding only about 2 ms latency per token.",
+   "relations": [
+    {
+     "target": "s-lora",
+     "type": "competes-with",
+     "note": "concurrent multi-LoRA serving system"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "serves LoRA models"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.18547",
+    "https://arxiv.org/html/2310.18547"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2310.18547 (Chen, 2023); MLSys 2024 confirmed in proceedings.mlsys.org 2024. SGMV shrink/expand kernels, 12x throughput, and +2 ms per token confirmed.",
+   "corrections": []
+  },
+  {
+   "id": "hyperformer",
+   "name": "HyperFormer",
+   "full_name": "HyperFormer / HyperFormer++: shared hypernetworks for task-conditioned adapters",
+   "paper_title": "Parameter-efficient Multi-task Fine-tuning for Transformers via Shared Hypernetworks",
+   "authors": "Karimi Mahabadi et al.",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2106.04489",
+   "url": "https://aclanthology.org/2021.acl-long.47/",
+   "code_url": "https://github.com/rabeehk/hyperformer",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "(U_{\\tau}^{l},D_{\\tau}^{l})=\\big(W^{U^l},W^{D^l}\\big)I_{\\tau},\\ \\ I_{\\tau}=h_I(z_{\\tau})\\ \\ (\\text{HyperFormer++: }I_{\\tau}=h'_I(z_{\\tau},l_i,p_j)\\text{ with one hypernetwork shared by all layers});\\quad A_{\\tau}^{l}(x)=LN_{\\tau}^{l}\\big(U_{\\tau}^{l}\\operatorname{GeLU}(D_{\\tau}^{l}x)\\big)+x;\\ \\text{trained: hypernetworks, task/layer/position embeddings, layer norms; T5 frozen}",
+   "trainable_params": "\\text{HyperFormer++ (whole model, }T\\text{ tasks): }t(T+4+2L)+8te+2t(2rd+2d)\\ \\ (t=64,\\ e=128;\\ \\text{task/layer/position embeddings, two task projectors, adapter and LayerNorm hypernetworks for encoder and decoder}),\\ \\text{a new task adds }t;\\ \\text{HyperFormer: one hypernetwork per layer with }t(2rd+2d)\\ \\text{weights; T5 LayerNorms also trained; 0.29\\% added parameters per task reported}",
+   "locus": "adapters after the attention and feed-forward blocks of every T5 layer, plus conditional layer norms",
+   "modification_kind": "architectural-insertion",
+   "structure": "Linear hypernetwork mapping a (task, layer, position) embedding to the down/up projections of a residual bottleneck adapter and to layer-norm parameters; knowledge shared through the hypernetwork, specialization through task embeddings.",
+   "mergeable": "no",
+   "mergeable_reason": "The generated modules are non-linear bottleneck adapters inserted into the computation graph.",
+   "identity_at_init": "No explicit guarantee; generated adapters sit in a residual branch A(x) = LN(...) + x.",
+   "key_idea": "Instead of separate adapters per task, generate all adapters from shared hypernetworks conditioned on task and position embeddings, sharing information across tasks while keeping task-specific modules.",
+   "results_note": "Improves multi-task GLUE performance with only 0.29% added parameters per task and gives substantial gains in few-shot domain generalization.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "generates bottleneck adapters"
+    },
+    {
+     "target": "text-to-lora",
+     "type": "competes-with",
+     "note": "both condition a hypernetwork on task representations; T2L generates LoRAs from text"
+    },
+    {
+     "target": "polytropon",
+     "type": "competes-with",
+     "note": "routing over modules vs generating modules"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.04489",
+    "https://arxiv.org/html/2106.04489",
+    "https://aclanthology.org/2021.acl-long.47/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2106.04489 (Karimi Mahabadi, 2021); ACL 2021 confirmed (ACL Anthology 2021.acl-long.47). (U, D) = (W^U, W^D) I_tau (Eq. 6), conditional LN hypernetwork (Eq. 7), HyperFormer++ with I_tau = h'_I(z_tau, l_i, p_j) (Eq. 8), and 0.29% per task confirmed. Paper notation h (input) and d (bottleneck) is mapped to d and r here.",
+   "corrections": [
+    "trainable_params: replaced '2rd t per layer / 2rd t shared' with the paper's count (Sec. 4.1): t(T+4+2L) + 8te + 2t(2hd+2h), with paper h = model dim and d = bottleneck, rewritten in shared notation. The old count missed the encoder/decoder factor 2, the LayerNorm hypernetworks and the embeddings."
+   ]
+  },
+  {
+   "id": "hyperdreambooth",
+   "name": "HyperDreamBooth",
+   "full_name": "HyperDreamBooth with Lightweight DreamBooth (LiDB)",
+   "paper_title": "HyperDreamBooth: HyperNetworks for Fast Personalization of Text-to-Image Models",
+   "authors": "Ruiz et al.",
+   "year": 2023,
+   "venue": "CVPR 2024",
+   "arxiv": "2307.06949",
+   "url": "https://arxiv.org/abs/2307.06949",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat\\theta=\\mathcal{H}(x)\\ (\\text{one face image}\\to\\text{LiDB weights by iterative refinement from }\\theta^{(0)}=0);\\quad \\Delta W=P_{out}\\,B_{tr}A_{tr}\\,P_{in},\\ P_{out}\\in\\mathbb{R}^{d_{out}\\times b},\\ P_{in}\\in\\mathbb{R}^{a\\times d_{in}}\\ \\text{frozen random row-orthogonal},\\ B_{tr}\\in\\mathbb{R}^{b\\times r},\\ A_{tr}\\in\\mathbb{R}^{r\\times a},\\ r=1,\\ a=100,\\ b=50;\\ \\text{then rank-relaxed fast fine-tuning (LoRA with }r>1\\text{, 40 iterations) from }W_0+\\Delta W(\\hat\\theta);\\ \\text{paper's notation: }\\Delta W x=A_{aux}A_{train}B_{train}B_{aux}",
+   "trainable_params": "r(a+b)\\ \\text{per adapted matrix (}\\approx30\\text{K values, }\\approx120\\text{ KB for the whole model); hypernetwork trained once}",
+   "locus": "attention layers of the Stable Diffusion UNet (and text encoder)",
+   "modification_kind": "additive-weight",
+   "structure": "Hypernetwork prediction of a rank-1 LoRA expressed in a further-compressed random orthogonal sub-basis (LiDB), used as initialization for a brief higher-rank LoRA fine-tune.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both the predicted LiDB update and the refined LoRA are additive low-rank updates that can be folded into W_0.",
+   "identity_at_init": "Not applicable at generation time (predicted weights are non-zero); the hypernetwork's iterative refinement starts from zero weights.",
+   "key_idea": "Shrink the personalization weight space enough (LiDB) that a hypernetwork can predict it from a single face image, then finish with a short rank-relaxed fine-tune for fidelity.",
+   "results_note": "Personalizes faces in about 20 seconds from one image, 25x faster than DreamBooth and 125x faster than Textual Inversion, with a model 10,000x smaller than DreamBooth at similar quality.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "predicts and refines LoRA weights"
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "structural analogue: both train a tiny core between frozen random projections (LiDB: dense r = 1 factors inside random orthogonal bases; VeRA: scaling vectors around shared random matrices)"
+    },
+    {
+     "target": "text-to-lora",
+     "type": "competes-with",
+     "note": "hypernetwork-generated LoRAs from a conditioning input"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2307.06949",
+    "https://arxiv.org/html/2307.06949"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2307.06949 (Ruiz, 2023); CVPR 2024 confirmed (IEEE DOI 10.1109/CVPR52733.2024.00624). LiDB decomposition (Sec. 4.1), 30K variables / 120 KB, iterative prediction from zero weights, rank-relaxed fine-tuning, 20 s, 25x vs DreamBooth, 125x vs Textual Inversion, 10,000x smaller, and LoRA on UNet attention plus the CLIP text encoder confirmed. No official code.",
+   "corrections": [
+    "formula_latex: added the paper's sizes a = 100 and b = 50 (which give the 30K-variable count), the zero start of the iterative hypernetwork prediction, the 40-iteration fast fine-tune, and the paper's own factor order.",
+    "relations: clarified that the vera link is a structural analogy (frozen random projections plus a small trained core)."
+   ]
+  },
+  {
+   "id": "text-to-lora",
+   "name": "Text-to-LoRA (T2L)",
+   "full_name": "Text-to-LoRA: instant transformer adaptation from task descriptions",
+   "paper_title": "Text-to-LoRA: Instant Transformer Adaption",
+   "authors": "Charakorn et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2506.06105",
+   "url": "https://arxiv.org/abs/2506.06105",
+   "code_url": "https://github.com/SakanaAI/text-to-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W^{i}_{m,l}=B^{i}_{m,l}A^{i}_{m,l}=h_{\\theta}\\big(\\operatorname{concat}[f(z^{i}),E[m],E[l]]\\big),\\ z^{i}\\text{: natural-language task description};\\quad \\theta=\\arg\\min_{\\theta}\\mathbb{E}_{i,z}\\,\\mathcal{L}_{\\mathrm{SFT}}\\big(\\mathcal{D}^{i},\\Psi,h_{\\theta}(\\phi^{i})\\big)\\ \\text{or reconstruction }\\mathbb{E}\\,|\\Delta W^{i}-h_{\\theta}(\\phi^{i})|;\\ \\text{base LLM }\\Psi\\text{ frozen}",
+   "trainable_params": "\\text{hypernetwork only, shared by all tasks: }55{,}252{,}992\\ (\\text{L}),\\ 34{,}282{,}240\\ (\\text{M}),\\ 4{,}923{,}392\\ (\\text{S})\\ \\text{for Mistral-7B q/v LoRAs of rank 8 (output heads }d_{out}\\cdot2rd,\\ d_{out}\\cdot rd,\\ d_{emb}\\cdot d,\\ d_{out}=512);\\ \\text{each generated adapter has }r(d_{in}+d_{out})\\text{ entries per module (3.4M in total); zero training per new task}",
+   "locus": "LoRA target modules (e.g. query/value projections) of every layer of the base LLM",
+   "modification_kind": "additive-weight",
+   "structure": "Amortized adapter generation: one MLP hypernetwork maps (task-description embedding, module-type embedding, layer embedding) to the rank-r factors of every LoRA in a single batched forward pass.",
+   "mergeable": "yes",
+   "mergeable_reason": "The generated adapter is an ordinary LoRA.",
+   "identity_at_init": "Bias-HyperInit (App. G): the hypernetwork's output head starts with zero weights, a U(-1/d, 1/d) bias for A and a zero bias for B, so the untrained hypernetwork emits B = 0 (Delta W = 0). Trained, it emits non-zero task-specific adapters.",
+   "key_idea": "Train a hypernetwork that turns a text description of a task into a LoRA in one forward pass, either by compressing a library of LoRAs or end-to-end with SFT, enabling zero-shot adaptation to unseen tasks from language alone.",
+   "results_note": "Reconstruction-trained on 9 benchmark LoRAs, T2L's generated adapters match the task-specific LoRAs on their test sets. Trained on hundreds of tasks (479 SNI tasks, SFT), it generates adapters zero-shot for entirely unseen tasks from their descriptions.",
+   "relations": [
+    {
+     "target": "hyperformer",
+     "type": "builds-on",
+     "note": "task-conditioned hypernetwork for PEFT modules"
+    },
+    {
+     "target": "doc-to-lora",
+     "type": "competes-with",
+     "note": "same group; D2L conditions on documents and uses context distillation"
+    },
+    {
+     "target": "drag-and-drop-llms",
+     "type": "competes-with",
+     "note": "prompt-conditioned LoRA generation"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "generates LoRA factors"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.06105",
+    "https://arxiv.org/html/2506.06105",
+    "https://pub.sakana.ai/doc-to-lora/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2506.06105 (Charakorn, 2025); ICML 2025 confirmed in PMLR v267. h_theta(concat[f(z), E[m], E[l]]), L1 reconstruction or SFT objective, L/M/S heads (Sec. 3.1), and parameter counts (App. F) confirmed. Mergeable 'yes': a generated adapter is an ordinary LoRA (verified/frontier.json uses 'conditional' for the same id).",
+   "corrections": [
+    "trainable_params: added the exact hypernetwork sizes from App. F (55.25M / 34.28M / 4.92M) and the generated-adapter size. Head formulas kept.",
+    "identity_at_init: replaced the vague statement with the Bias-HyperInit details (App. G), which give Delta W = 0 at the hypernetwork's initialization.",
+    "results_note: tied each claim to its training regime (reconstruction on 9 LoRAs vs SFT on 479 tasks)."
+   ]
+  },
+  {
+   "id": "drag-and-drop-llms",
+   "name": "DnD",
+   "full_name": "Drag-and-Drop LLMs: zero-shot prompt-to-weights",
+   "paper_title": "Drag-and-Drop LLMs: Zero-Shot Prompt-to-Weights",
+   "authors": "Liang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.16406",
+   "url": "https://arxiv.org/abs/2506.16406",
+   "code_url": "https://github.com/jerryliang24/Drag-and-Drop-LLMs",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "c_i=\\operatorname{Enc}(p_i)\\ (\\text{frozen Sentence-BERT over a batch of unlabeled task prompts}),\\quad \\hat\\Theta_{\\mathrm{LoRA}}=G_{\\phi}(c_i)\\ (\\text{cascaded hyper-convolutional decoder}\\to\\text{tokenized LoRA weights});\\quad \\phi=\\arg\\min_{\\phi}\\big\\|G_{\\phi}(c_i)-\\operatorname{tok}(m_j)\\big\\|_2^2\\ \\text{over random prompt-checkpoint pairs }(p_i,m_j);\\ \\text{base LLM frozen}",
+   "trainable_params": "\\text{generator only; zero training per new dataset (one forward pass)}",
+   "locus": "all LoRA matrices of the base LLM (Qwen2.5 family in the paper)",
+   "modification_kind": "additive-weight",
+   "structure": "Prompt-conditioned parameter generator: embeddings of a few unlabeled prompts are decoded by convolutional blocks into the full set of tokenized LoRA weights, trained by MSE regression onto collected checkpoints.",
+   "mergeable": "yes",
+   "mergeable_reason": "The generated parameters form an ordinary LoRA.",
+   "identity_at_init": "Not applicable (generated weights).",
+   "key_idea": "Unlabeled prompts act as a fingerprint of a dataset, so a generator trained on prompt-checkpoint pairs can map new prompts directly to task-specific LoRA weights without any gradient-based tuning.",
+   "results_note": "Generates task-specific LoRAs in seconds with up to 12,000x lower overhead than full fine-tuning and average gains up to 30% over the strongest training LoRAs on unseen commonsense, math, coding and multimodal benchmarks.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "competes-with",
+     "note": "prompt samples vs task descriptions as the condition"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "generates LoRA weights"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.16406",
+    "https://arxiv.org/html/2506.16406",
+    "https://mlanthology.org/neurips/2025/liang2025neurips-draganddrop/"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2506.16406 (Liang, 2025); NeurIPS 2025 confirmed (neurips.cc 2025 paper list; README: accepted Sept 19, 2025). Hyper-convolutional decoder, MSE objective, Qwen2.5 base models, up to 12,000x lower overhead and up to 30% gains confirmed.",
+   "corrections": [
+    "formula_latex: named the default text encoder (Sentence-BERT, Sec. 4)."
+   ]
+  },
+  {
+   "id": "doc-to-lora",
+   "name": "Doc-to-LoRA (D2L)",
+   "full_name": "Doc-to-LoRA: meta-learned context distillation into LoRA",
+   "paper_title": "Doc-to-LoRA: Learning to Instantly Internalize Contexts",
+   "authors": "Charakorn et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.15902",
+   "url": "https://arxiv.org/abs/2602.15902",
+   "code_url": "https://github.com/SakanaAI/doc-to-lora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_l=B_lA_l=h_{\\phi}(Z_{l-1}),\\ \\ U_l=\\operatorname{XAttn}\\big(Q_m,K(Z_{l-1}),V(Z_{l-1})\\big)\\in\\mathbb{R}^{r\\times d_u}\\ (\\text{each latent}\\to\\text{a row of }A_l\\text{ and a column of }B_l),\\ W'_l=W_l+\\alpha_lB_lA_l;\\quad \\min_{\\phi}\\mathbb{E}\\,\\mathrm{KL}\\big(p_{\\theta}(y\\mid x,c)\\,\\|\\,p_{\\theta+H_{\\phi}(c)}(y\\mid x)\\big);\\ \\text{chunks: }A_l=[A_l^{(1)};\\dots;A_l^{(K)}],\\ B_l=[B_l^{(1)}\\cdots B_l^{(K)}]",
+   "trainable_params": "\\text{hypernetwork only (Perceiver with 8 cross-attention blocks, }309\\text{M parameters for Gemma-2-2b-it, Sec. 5); learnable per-layer scales }\\alpha_l;\\ \\text{zero training per document; generated adapter }Kr(d_{in}+d_{out})\\text{ per down-projection for }K\\text{ chunks}",
+   "locus": "the down-projection of every MLP block of the target LLM (rank-8 LoRAs per chunk); per-layer context activations of the frozen LLM feed the hypernetwork",
+   "modification_kind": "additive-weight",
+   "structure": "Meta-learned context distillation: a Perceiver hypernetwork reads the frozen LLM's per-layer activations of a document and emits rank-r LoRA factors; long documents are composed by rank-concatenation (direct sum) of per-chunk adapters, giving rank rK.",
+   "mergeable": "yes",
+   "mergeable_reason": "The generated adapter is an ordinary LoRA.",
+   "identity_at_init": "Not applicable (generated weights); a learnable per-layer scale alpha_l modulates the update.",
+   "key_idea": "Amortize context distillation: instead of distilling each document into weights by gradient descent, train a hypernetwork once so that any new document is internalized into a LoRA in one sub-second forward pass, removing it from the context window.",
+   "results_note": "Achieves near-perfect zero-shot needle-in-a-haystack accuracy at lengths more than 4x the target LLM's native context window and outperforms standard context distillation on QA with much lower memory and update latency.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "builds-on",
+     "note": "extends T2L-style hypernetworks from task descriptions to documents"
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "dual-to",
+     "note": "App. D shows the same hypernetwork can instead emit a compressed KV cache (prefix-tuning parametrization): weight-space vs KV-space internalization of one context"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.15902",
+    "https://arxiv.org/html/2602.15902",
+    "https://pub.sakana.ai/doc-to-lora/",
+    "https://raw.githubusercontent.com/SakanaAI/doc-to-lora/main/README.md"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2602.15902 (Charakorn, 2026). ICML 2026 confirmed by the official README citation (booktitle 'Forty-third International Conference on Machine Learning'). It is not yet in PMLR, and Semantic Scholar still lists arXiv. W'_l = W_l + alpha_l B_l A_l (Eq. 5), KL context-distillation objective, Perceiver latents mapped to rows of A and columns of B, rank concatenation over chunks (rank rK), and NIAH beyond 4x the native context confirmed.",
+   "corrections": [
+    "locus: 'MLP layers' -> 'the down-projection of every MLP block' (paper Sec. 5: the adapter is applied to the 'down projection' layer of each MLP block).",
+    "trainable_params: sourced the 309M figure from the paper (Sec. 5, 'only 309M trainable parameters'), not only the project page. Added the generated adapter size Kr(d_in + d_out).",
+    "relations: removed 'competes-with lora-soups'. D2L neither cites nor competes with LoRA Soups. The shared rank-concatenation operator is a structural fact, already stated in the structure field.",
+    "relations: cited App. D for the prefix-tuning duality."
+   ]
+  }
+ ],
+ "papers": [
+  {
+   "id": "modular-deep-learning",
+   "title": "Modular Deep Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2023,
+   "venue": "TMLR 2023",
+   "arxiv": "2302.11529",
+   "url": "https://arxiv.org/abs/2302.11529",
+   "claim": "Surveys modular deep learning as parameter-efficient modules whose computation is conditionally routed to a subset of modules and then aggregated, unifying adapters, mixture-of-experts, composition and hypernetwork threads under computation / routing / aggregation functions.",
+   "relevance": "Its module-routing-aggregation decomposition is the informal signature that a categorical treatment of PEFT composition formalizes: modules as morphisms, routing as selection among parallel morphisms, aggregation as a monoidal combination.",
+   "sources": [
+    "https://arxiv.org/abs/2302.11529",
+    "https://arxiv.org/html/2302.11529"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2302.11529 (Pfeiffer, 2023); TMLR (Dec 2023, Survey Certification) confirmed in the TMLR accepted-paper list. Claim matches the abstract (computation, routing and aggregation functions).",
+   "corrections": []
+  },
+  {
+   "id": "tangent-task-arithmetic",
+   "title": "Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models",
+   "authors": "Ortiz-Jimenez et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.12827",
+   "url": "https://arxiv.org/abs/2305.12827",
+   "claim": "Weight disentanglement (distinct weight directions controlling separate, localized regions of function space) is the property that makes task arithmetic work; fine-tuning in the linearized (tangent) regime amplifies it and improves task addition and negation.",
+   "relevance": "Identifies when the map from task vectors to functions behaves like a linear map (a homomorphism of the additive structure), which is the precondition for treating merging as vector-space arithmetic.",
+   "sources": [
+    "https://arxiv.org/abs/2305.12827",
+    "https://arxiv.org/html/2305.12827"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2305.12827 (Ortiz-Jimenez, 2023); NeurIPS 2023 confirmed (arXiv journal-ref, papers.nips.cc). Weight-disentanglement claim matches the paper.",
+   "corrections": []
+  },
+  {
+   "id": "git-re-basin",
+   "title": "Git Re-Basin: Merging Models modulo Permutation Symmetries",
+   "authors": "Ainsworth et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2209.04836",
+   "url": "https://arxiv.org/abs/2209.04836",
+   "claim": "After accounting for permutation symmetries of hidden units, loss landscapes often contain nearly a single basin; aligning one model's units to another's permutation lets independently trained models be merged by linear interpolation.",
+   "relevance": "Shows that merging is well-defined only up to a symmetry group acting on weights; LoRA factorizations carry an analogous GL(r)/permutation gauge (cf. LoRA-LEGO, KnOTS), so adapters are naturally objects up to isomorphism.",
+   "sources": [
+    "https://arxiv.org/abs/2209.04836",
+    "https://arxiv.org/html/2209.04836"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2209.04836 (Ainsworth, 2022); ICLR 2023 per Semantic Scholar venue metadata. Claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "linear-mode-connectivity",
+   "title": "Linear Mode Connectivity and the Lottery Ticket Hypothesis",
+   "authors": "Frankle et al.",
+   "year": 2019,
+   "venue": "ICML 2020",
+   "arxiv": "1912.05671",
+   "url": "https://arxiv.org/abs/1912.05671",
+   "claim": "Networks become stable to SGD noise early in training: from then on, runs that share a starting point end in minima connected by a linear path of low loss.",
+   "relevance": "Grounds the shared-basin assumption behind all merging of models or adapters fine-tuned from one pre-trained point, i.e. why deltas from a common base can be treated as vectors in one affine chart.",
+   "sources": [
+    "https://arxiv.org/abs/1912.05671"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1912.05671 (Frankle, 2019); ICML 2020 per arXiv comment ('Published in ICML 2020'). Claim matches.",
+   "corrections": []
+  },
+  {
+   "id": "model-merging-survey",
+   "title": "Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities",
+   "authors": "Yang et al.",
+   "year": 2024,
+   "venue": "ACM Computing Surveys 2026",
+   "arxiv": "2408.07666",
+   "url": "https://arxiv.org/abs/2408.07666",
+   "claim": "Proposes a taxonomy of model merging methods (pre-merging alignment, during-merging weighting/subspace/routing methods), reviews the theory, and surveys applications in LLMs, multimodal models and more than ten machine-learning subfields.",
+   "relevance": "The most complete map of the merging half of this family; its taxonomy is a reference point to check against a categorical classification of merge operators.",
+   "sources": [
+    "https://arxiv.org/abs/2408.07666",
+    "https://arxiv.org/html/2408.07666",
+    "https://doi.org/10.1145/3787849"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2408.07666 (Yang, 2024); published in ACM Computing Surveys (DOI 10.1145/3787849, 2026). The taxonomy claim matches the abstract.",
+   "corrections": [
+    "venue: 'ACM Computing Surveys' -> 'ACM Computing Surveys 2026' (Crossref DOI 10.1145/3787849, issued 2026-02-09). The year field stays 2024, the arXiv first version."
+   ]
+  },
+  {
+   "id": "merging-at-scale",
+   "title": "What Matters for Model Merging at Scale?",
+   "authors": "Yadav et al.",
+   "year": 2024,
+   "venue": "TMLR 2025",
+   "arxiv": "2410.03617",
+   "url": "https://arxiv.org/abs/2410.03617",
+   "claim": "Merging experts fine-tuned from 1B-64B models shows that merging works better from strong (instruction-tuned) base models, larger models merge more easily and more experts, merged models generalize better, and different merging methods behave very similarly at large scale.",
+   "relevance": "Empirical evidence that at scale the choice of merge operator matters less than the base point, suggesting that the algebra of merging becomes closer to linear near strong pre-trained models.",
+   "sources": [
+    "https://arxiv.org/abs/2410.03617",
+    "https://arxiv.org/html/2410.03617",
+    "https://openreview.net/forum?id=qjNdGpgpV8"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.03617 (Yadav, 2024); TMLR 2025. The 1B-64B scale, up to 8 experts, and the five findings in the claim match the abstract.",
+   "corrections": [
+    "venue: 'arXiv' -> 'TMLR 2025'. The TMLR accepted-paper list has 'What Matters for Model Merging at Scale?' (Yadav et al., July 2025, OpenReview qjNdGpgpV8).",
+    "confidence: medium -> high after confirming the venue and the five findings in the abstract."
+   ]
+  },
+  {
+   "id": "hypernetworks",
+   "title": "HyperNetworks",
+   "authors": "Ha et al.",
+   "year": 2016,
+   "venue": "ICLR 2017",
+   "arxiv": "1609.09106",
+   "url": "https://arxiv.org/abs/1609.09106",
+   "claim": "A small network can generate the weights of a larger main network and be trained end-to-end, acting as a relaxed form of weight sharing; generated non-shared LSTM weights reach near state-of-the-art results on sequence modelling.",
+   "relevance": "Adapter generators (HyperFormer, HyperDreamBooth, Text-to-LoRA, Doc-to-LoRA, DnD) are hypernetworks: maps from a conditioning space (task, image, text, document) into the space of adapters.",
+   "sources": [
+    "https://arxiv.org/abs/1609.09106"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1609.09106 (Ha, 2016); ICLR 2017 per Semantic Scholar venue metadata. Claim matches.",
+   "corrections": []
+  },
+  {
+   "id": "neural-network-diffusion",
+   "title": "Neural Network Diffusion",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2402.13144",
+   "url": "https://arxiv.org/abs/2402.13144",
+   "claim": "An autoencoder plus a latent diffusion model trained on checkpoints can generate new, high-performing parameters for a subset of network weights that are not mere memorized copies of the training checkpoints.",
+   "relevance": "Establishes generative modelling directly over parameter (adapter) space, the line that prompt-conditioned LoRA generators such as Drag-and-Drop LLMs extend.",
+   "sources": [
+    "https://arxiv.org/abs/2402.13144",
+    "https://arxiv.org/html/2402.13144"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.13144 (Wang, 2024). No peer-reviewed venue found (Semantic Scholar lists arXiv), so venue stays 'arXiv'. The p-diff claim (autoencoder plus latent diffusion over a subset of parameters) matches the abstract.",
+   "corrections": []
+  }
+ ],
+ "notes": "Scope: 42 methods across five sub-families: (i) training-free / post-hoc merging of deltas or adapters (model-soups, fisher-merging, regmean, task-arithmetic, ties-merging, dare, adamerging, tsv-merge, knots, pem-arithmetic, adaptersoup, lorahub, lora-soups, lora-lego, ziplora, mix-of-show, orthogonal-adaptation, multi-lora-composition); (ii) learned composition and mixtures (adapterfusion, adamix, polytropon, mhr, smear, mov, loramoe, moelora, mole, mixlora, x-lora, hydralora, lily); (iii) post-hoc routing and retrieval over adapter libraries (phatgoose, arrow, loraretriever, lora-flow); (iv) multi-adapter serving (s-lora, punica); (v) adapter generation by hypernetworks (hyperformer, hyperdreambooth, text-to-lora, drag-and-drop-llms, doc-to-lora). Seed checks: all 21 seeds exist and belong. 'MoELoRA' is ambiguous: we used Liu et al. (SIGIR 2024, arXiv 2310.18339, spelled MOELoRA); Luo et al. 2024 ('MoELoRA: Contrastive Learning Guided Mixture of Experts...', arXiv 2402.12851) is a different, less-cited method that we did not verify. Polytropon's arXiv title ('Combining Modular Skills in Multitask Learning') differs from the EACL 2023 title used here. LoRAMoE's published title says 'Alleviating' (arXiv: 'Alleviate'). Key algebraic distinction for the theory: 'product of sums' factor mixing (LoraHub, Polytropon/MHR, Arrow-paper, PEM addition, HF PEFT combination_type='linear') creates cross terms B_iA_j, whereas 'sum of products' / rank-concatenation (LoRA Soups CAT, HF 'cat', LoRA-LEGO with k=sum r_i, Doc-to-LoRA chunking, X-LoRA, LoRA-Flow, PHATGOOSE, HF Arrow implementation) is the direct sum along the rank axis. HF PEFT's Arrow mixes expert outputs while the Arrow paper mixes factors. HF PEFT: add_weighted_adapter supports svd, linear, cat, ties, ties_svd, dare_linear, dare_ties, dare_*_svd, magnitude_prune(_svd); negative weights are applied to one factor only (PEM-style negation). PEFT also implements XLoraConfig, PolyConfig (Poly and MHR), ArrowConfig (+GenKnowSub) inside LoraConfig, and LilyConfig. Not in PEFT: MoLE, LoRAMoE, MixLoRA, HydraLoRA, MOELoRA, LoraHub (separate library), CAT with learned weights, serving systems. Uncertainties: MoLE gate parameter shapes are as written in the paper (Eq. 9-10: e in R^{(N L d) x N} over flattened block outputs), now checked; identity-at-init for LoRAMoE, MOELoRA, MixLoRA and HydraLoRA is confirmed from the official code (zero-initialized B), not the papers; Orthogonal Adaptation's trainable-factor init remains unstated; MixLoRA has no formal venue found (arXiv); 'What Matters for Model Merging at Scale?' is TMLR 2025 (verified); Doc-to-LoRA hypernetwork size (309M) is stated in the paper (Sec. 5) and on the Sakana project page. Skipped as lower-uptake or out of PEFT focus: Model Breadcrumbs, EMR-Merging, Twin-Merging, WEMoE, Consensus/TALL masks, Iso-C/Iso-CTS, K-LoRA, further LoRA-MoE variants (AdaMoLE, MoLA, SiRA, MoSLoRA), dLoRA and CaraServe serving systems, HINT and HyperTuning hypernetworks, ATTEMPT (covered in the prompts family).",
+ "verification_summary": "Adversarially verified on 2026-10-01: 42 methods and 8 papers, none dropped. All 50 arXiv ids were batch-checked against the arXiv API: titles, first authors and first-version years all match (two titles differ only in the published versions: Polytropon at EACL 2023 and LoRAMoE at ACL 2024). Venues were confirmed via arXiv comments, ACL Anthology, PMLR (v235, v267), proceedings.iclr.cc (2024, 2025), papers.nips.cc, proceedings.mlsys.org 2024, the TMLR accepted list, Crossref DOIs (ECCV, CVPR, SIGIR, APL ML, ACM CSUR, Findings ACL 2025) and Semantic Scholar. Doc-to-LoRA's ICML 2026 venue comes from the official README citation. Every formula and parameter count was checked against the arXiv PDF text. Official code was read for initialization (LoRAMoE, MOELoRA, MixLoRA, HydraLoRA) and for HydraLoRA's router shape. HF PEFT claims were checked against huggingface/peft main (v0.21.1, 2026-09-29): lora/model.py add_weighted_adapter, utils/merge_utils.py, ia3/model.py, poly, lily, xlora, lora/arrow.py and the docs. 61 corrections. Key fixes: merging-at-scale venue arXiv -> TMLR 2025; model-merging-survey -> ACM Computing Surveys 2026; MoLE code_url (paper link 404s); AdapterSoup mergeable conditional -> no; trainable counts for AdaMix ((M+1)rd), HyperFormer (paper Sec. 4.1 formula), MoV, MoLE, X-LoRA, SMEAR, T2L (exact 55.25M/34.28M/4.92M) and D2L; Orthogonal Adaptation crosstalk condition; Lily PEFT router pooling; HydraLoRA router shape; D2L locus (MLP down-projection). Eleven unjustified relations fixed (8 deleted, 3 retyped): TA->PEM, TIES->ia3, OrthAdapt->TA, SMEAR->MoV, SMEAR->PHATGOOSE, PHATGOOSE->SMEAR, LoraRetriever->S-LoRA, D2L->LoRA Soups deleted; LoRA Soups<->LoRA-LEGO and LoRA-Flow->LoraHub retyped to competes-with. Cross-file differences left for reconciliation: AdaMix mergeable (here 'conditional', since the paper reports adapter and LoRA forms; adapters.json says 'no'), and T2L, DnD and D2L mergeable (here 'yes', since a generated adapter is a plain LoRA; frontier.json says 'conditional')."
+}

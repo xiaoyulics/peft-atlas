@@ -1,0 +1,59 @@
+{
+ "hash": "4f0a6dc2443e9bcb",
+ "seconds": 50.0,
+ "pauses": [
+  [
+   2.136,
+   2.519
+  ],
+  [
+   2.715,
+   3.068
+  ],
+  [
+   6.053,
+   6.354
+  ],
+  [
+   10.435,
+   10.972
+  ],
+  [
+   17.571,
+   17.904
+  ],
+  [
+   22.282,
+   22.982
+  ],
+  [
+   24.797,
+   25.07
+  ],
+  [
+   26.326,
+   26.889
+  ],
+  [
+   27.312,
+   27.889
+  ],
+  [
+   30.229,
+   30.858
+  ],
+  [
+   40.749,
+   41.095
+  ],
+  [
+   45.094,
+   45.361
+  ],
+  [
+   49.579,
+   50.0
+  ]
+ ],
+ "text": "Now the last nut. A method that rotates the weights from the input side, exactly, never changes the inner products between neurons. That is what OFT was designed for. So it never changes a single singular value, and in exact arithmetic you can merge as often as you like: a rotation times a rotation is still a rotation. <short pause> One caution that matters in practice. The default OFT in recent versions of Hugging Face's PEFT library uses an approximation that isn't exactly orthogonal. Each merge shrinks the weights a little, and in the paper's test, two hundred merges move the neuron inner products by about a fifth."
+}

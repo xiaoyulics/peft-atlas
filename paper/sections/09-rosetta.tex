@@ -1,0 +1,503 @@
+% Exposé IX. Rosetta stone.
+% Sources: theory/framework.md (Exposé IX), site/sections/11-rosetta.html, theory/rosetta.json (all 36 entries, with the
+% referee-safe wording of site/js/fig-rosetta.js applied where rosetta.json still carries the first-round gloss),
+% theory/propositions.json (public statements). The site's interactive Figure 19 becomes Table~\ref{tab:rosetta}.
+\section{Rosetta stone}\label{sec:rosetta}
+
+\begin{flushright}
+\small\itshape A half-seen analogy between two theories is the most fertile thing a mathematician can hold.\\
+One day the hunch turns into certainty, and the twin theories show the source they share.\\[2pt]
+{\upshape\footnotesize after Weil's Rosetta-stone letter of 1940}
+\end{flushright}
+
+This exposé is a dictionary from fine-tuning phrases to the objects of the relative theory, with the result behind each
+pairing that needs one.
+
+\paragraph{In brief}
+\begin{itemize}
+  \item LoRA+ is $\alpha$ in disguise. Under Adam with $\varepsilon=0$, no weight decay or clipping and one schedule,
+    LoRA+ with ratio $\lambda$ trains exactly like LoRA with $\alpha$ multiplied by $\lambda$, given the same data order
+    and dropout masks \citep{schulman2025lora}.
+  \item Under Adam without weight decay or full-gradient clipping, GaLore is one-sided LoRA, restarted every period with
+    its optimizer state kept \citep{xtorrobahennigen2025duality}. QLoRA is LoRA attached at the quantised weight, off
+    $\theta_0$ by a generically full-rank error.
+  \item Read from the mathematical side, some constructions are known methods. In the SVD frames of $W_0$, when
+    $\rk W_0\ge r$, the product of the two one-sided LoRAs is LoRA-XS, and for injective $W_0$ and even $r\le n-2$
+    LoRA's image meets the rotation orbit of $W_0$ in the image of HRA (without Gram--Schmidt, the HF default).
+\end{itemize}
+
+A fine-tuning paper says that LoRA+ gives $B$ a larger learning rate than $A$. The relative theory says that, under the
+hypotheses of \thmref{Theorem}{III.10}, LoRA+ lies on the torus orbit of plain LoRA with a larger $\alpha$. Passing
+between such sentences lets each side borrow the other's theorems. Table~\ref{tab:rosetta}, at the end of this exposé,
+is a dictionary for the passage. It lists all 36 entries, each a PEFT phrase, its categorical or geometric counterpart,
+and a gloss citing the results behind it; the hypotheses live in the cited statements. The sections below read six
+entries closely, one from each of Exposés~\ref{sec:slice} to~\ref{sec:merge}, and then read the dictionary from the
+right.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{How to read an entry}\label{sec:rosetta-read}
+
+An entry claims that a phrase names a definite object, on which claims about the phrase can be checked. There are three
+strengths (Table~\ref{tab:rosetta-strengths}).
+
+\begin{table}[t]
+\centering\small
+\caption{The three strengths of a dictionary entry.}\label{tab:rosetta-strengths}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.7cm}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X@{}}
+  \toprule
+  \headrow \textbf{Strength} & \textbf{What the entry asserts} & \textbf{Example}\\
+  \midrule
+  Definition & The phrase gets a precise, computable meaning. & ``Effective number of parameters'' is $d(M)$, the
+    generic rank of $d\rho$ (\thmref{Definition}{I.5}).\\
+  Theorem & The phrase hides a claim, proved under stated hypotheses. & ``No initialisation buys rank above $2r$''
+    means that on one $m\times n$ box the exact pointings of $\mathrm{LoRA}_r$ together reach
+    $\theta_0+\MM_{\le\min(2r,m,n)}$ (\thmref{Theorem}{II.1}).\\
+  Analogy & A borrowed word names a pattern and adds nothing to the theorem behind it. & ``Noether charge'', ``gauge'',
+    ``Erlangen'', ``moduli space''.\\
+  \bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Credit}
+The language of parametrised maps and lenses on our right-hand side comes from \citet{fong2017backprop} and
+\citet{cruttwell2021categorical}. Inside PEFT, \citet{he2021unified} wrote an earlier dictionary of this kind, reading
+adapters, prefix tuning and LoRA as modifications of one hidden state.
+
+The box below fixes each borrowed word's sense. Exposé~\ref{sec:analogy} says more
+(Table~\ref{tab:analogy}).
+
+\begingroup\renewcommand{\label}[1]{}%
+\begin{analogy*}{the borrowed words}
+\begin{itemize}
+  \item \emph{Noether}: conserved charges from symmetries, proved for continuous-time flows with constant rates
+    (\thmref{Theorem}{III.5}); Adam and momentum break them.
+  \item \emph{Gauge}: the symmetry group of a parametrisation, with no connection.
+  \item \emph{Erlangen}: a theorem for group-type methods (\thmref{Theorem}{II.5}), and a name for the shape of cones
+    such as LoRA's image.
+  \item \emph{Moduli space}: LoRA initialisations in three full-rank strata, classified only as a set
+    (\thmref{Theorem}{II.2}).
+  \item \emph{Lens duality}: exact only at degree one, for optimizers that read neither the parameters nor the full
+    gradient (\thmref{Proposition}{IV.2}).
+\end{itemize}
+\end{analogy*}
+\endgroup
+
+Most of the right-hand column concerns images, which measure expressivity. Learnability is a separate property, and
+entries with dynamical claims state their optimizer.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Six entries, one from each exposé}\label{sec:rosetta-six}
+
+\paragraph{I. ``Method $N$ can do whatever $M$ can''}
+
+\begin{example*}{entries 3 and 4, Exposé~\ref{sec:slice}}
+\labelsf{PEFT}\enspace ``method $N$ can do whatever $M$ can''; the frozen model and full fine-tuning.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace a morphism $h:M\to N$ of the pointed slice, a
+pointed smooth map with $\rho_N\circ h=\rho_M$; the initial and terminal objects.
+\end{example*}
+
+The weak reading asks that $N$ reach every weight $M$ reaches. The useful one asks that $N$ also follow $M$'s parameter
+paths, through a map $h$ with $\rho_N\circ h=\rho_M$. Methods at $\theta_0$ with such arrows form the pointed slice
+$\Meth(\Theta,\theta_0)$ (\thmref{Definition}{I.2}). The frozen model is initial, full fine-tuning is terminal, and the
+arrow from $M$ to full fine-tuning is $\rho_M$ itself (\thmref{Observation}{I.4}(a)). Image inclusion gives only a map of
+sets over $\Theta$, which need not be smooth (\thmref{Observation}{I.4}(c)).
+
+\begin{explains}
+Every weight-space method pointed at $\theta_0$ lies between the frozen model and full fine-tuning, and in exact
+arithmetic on a full-precision base its merge is that canonical arrow. Merging questions remain for extensions such as
+adapters, prefixes and ReFT (reading VI below), for quantised bases (\thmref{Proposition}{V.2}) and for combinations of
+adapters (\thmref{Proposition}{V.4}).
+\end{explains}
+
+\paragraph{A first-order test, and defaults that start elsewhere}
+The first-order image $S_1$ detects part of the gap between sets and smooth maps. Take $\rho_M(t)=t$ and
+$\rho_N(u)=u^3$ on $\R$, both pointed at $0$. The images agree, but $S_1(M)=\R$ is not inside $S_1(N)=0$, so no smooth
+simulation $M\to N$ exists (\thmref{Observation}{I.4}(c), \thmref{Observation}{I.6}). Several initialisations start
+away from $\theta_0$ and carry a pointing defect (Exposé~\ref{sec:base}): HF's default FourierFT spectrum and VB-LoRA
+bank, \texttt{init\_lora\_weights=False}, LoRA-XS's small random $R$, and quantised bases.
+
+\paragraph{II. ``The effective number of parameters''}
+
+\begin{example*}{entries 6 and 11, Exposé~\ref{sec:image}}
+\labelsf{PEFT}\enspace expressivity, the effective number of parameters; redundant parameters.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace the image germ of $\rho$ at $\theta_0$ and its
+dimension $d(M)$; the gauge group (automorphisms of $Q$ over $\Theta$) and the generic fibre.
+\end{example*}
+
+A parameter count measures $Q$, while expressivity lives in the image. The difference is spent on the fibres of $\rho$,
+along which the gauge group moves. LoRA spends $r^2$ parameters there, since $(Bg^{-1},gA)$ and $(B,A)$ give the same
+weights for every $g\in\GL_r$.
+
+With $\lvert M\rvert=\dim Q$ and $d(M)=\dim\Im M$ (\thmref{Definition}{I.5}),
+\begin{equation}\label{eq:rosetta-gauge}
+  d(M)\le\lvert M\rvert-\dim(\text{generic gauge orbit}),
+\end{equation}
+with equality when the gauge is locally transitive on generic fibres (\thmref{Proposition}{II.12}(a)). For
+$\mathrm{LoRA}_r$ on an $m\times n$ box with $r\le\min(m,n)$, $d=r(m+n-r)$. Compare $\mathrm{LoHa}_{r,r}$ with
+$\mathrm{LoRA}_{2r}$ at their shared budget $2r(m+n)$, with $2r\le\min(m,n)$. If $2r^2<m+n-1$, LoHa reaches at least
+$(m+n-1)-2r^2$ fewer dimensions; if moreover $r^2\le\min(m,n)$, it trades them for rank up to $r^2$ when $r\ge3$, and
+it lies strictly inside $\mathrm{LoRA}_{2r}$ when $r\le2$ (\thmref{Proposition}{II.12}(c)). If $2r^2\ge m+n-1$, as for
+$r=64$ on $4096\times4096$ or for $r=32$ on layers 320 to 640 wide, LoHa matches or beats $\mathrm{LoRA}_{2r}$ in
+rank, and in dimension by its numerically checked dimension formula. Rank, in turn, is bounded by a minimum cut of the
+method's tensor network (\thmref{Theorem}{II.10}).
+
+\begin{explains}
+Report $d(M)$ beside $\lvert M\rvert$ in every comparison (\thmref{Prediction}{X.10}).
+\end{explains}
+
+\paragraph{Credit}
+LoHa is the Hadamard-product parametrisation of FedPara \citep{hyeonwoo2021fedpara}. Its dimension bound is proved, and
+equality is checked numerically (Exposé~\ref{sec:analogy}, Appendix~\ref{app:repro}).
+
+\paragraph{III. ``The LoRA+ ratio, $\alpha$, the init scale, rsLoRA''}
+
+\begin{example*}{entry 23, Exposé~\ref{sec:fibres}}
+\labelsf{PEFT}\enspace the LoRA+ ratio, $\alpha$, the initial scale, rsLoRA.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace coordinates on the orbit space of a
+hyperparameter torus.
+\end{example*}
+
+Multiplying $B$ by $c>0$ and dividing the scale $s$ by $c$ leaves the weights unchanged, and Adam with $\varepsilon=0$
+ignores a positive rescaling of a block's gradient history. Rescaling the block's learning rate too then reproduces the
+run step for step, and the per-block factors form a torus acting on the hyperparameters.
+
+\thmref{Theorem}{III.10} makes this exact for any multihomogeneous method, assuming no parameter-dependent regulariser,
+no global clipping, the same data order and dropout masks, and exact arithmetic. For LoRA
+(\thmref{Corollary}{III.11}(b)), under Adam with $\varepsilon=0$, no weight decay or clipping and one schedule for both
+groups, LoRA+ with ratio $\lambda$ at scale $s$ produces exactly the trajectory of plain LoRA at scale $\lambda s$, with
+the same $\eta_A$ and $A_0$. For $\varepsilon>0$ this needs $\varepsilon_B'=\lambda\varepsilon$, and with AdamW a decay
+$\lambda\cdot\mathrm{wd}$ on $B$. Under SGD the scale is $\sqrt\lambda\,s$.
+
+\begin{explains}
+Only the torus orbit of $(s,\eta_A,\eta_B,\sigma_A)$ matters. Under Adam it is fixed by $s\eta_A\eta_B$ and
+$\sigma_A/\eta_A$ (\thmref{Corollary}{III.11}(a)), so at a fixed rank LoRA+, rsLoRA and $\alpha$-tuning are one family. A
+gain of LoRA+ over LoRA with $\alpha$ multiplied by $\lambda$ needs something that breaks the torus, such as global-norm
+clipping (a Hugging Face Trainer default), an $\varepsilon$ or decay shared across groups, or different schedules
+(\thmref{Prediction}{X.1}). Figure~\ref{fig:orbit} runs both trainings.
+\end{explains}
+
+\paragraph{Credit}
+The LoRA and Adam case, with its $\varepsilon>0$ extension and the two effective hyperparameters, is due to
+\citet{schulman2025lora}, for the method of \citet{hayou2024lora}. The torus for any multihomogeneous method and the
+$c^2$ law for SGD are added here.
+
+\paragraph{The same fibres under gradient flow}
+Entry 22 reads the same fibres under gradient flow. With block-scalar rates the gauge yields the conserved charge
+\begin{equation}\label{eq:rosetta-charge}
+  \Phi=\frac{B\T B}{\eta_B}-\frac{AA\T}{\eta_A}
+\end{equation}
+(\thmref{Theorem}{III.5}), after \citet{du2018algorithmic}, \citet{arora2018optimization}, \citet{zhao2022symmetries}
+and \citet{marcotte2023abide}. Balanced points $B\T B=AA\T$ form the Kempf--Ness slice (\thmref{Proposition}{III.7};
+\citealp{xkempf1979length,xrichardson1990minimum}).
+
+\paragraph{IV. ``GaLore versus LoRA''}
+
+\begin{example*}{entry 25, Exposé~\ref{sec:lens}}
+\labelsf{PEFT}\enspace GaLore versus LoRA.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace cotangent-side and tangent-side lens
+2-cells, which coincide for linear charts (the degree-one collapse).
+\end{example*}
+
+Backpropagation makes each map a lens, running forward from parameters to outputs and backward from output gradients to
+parameter gradients. LoRA restricts the forward side. GaLore compresses the gradient before the optimizer and expands
+its output after.
+
+Let $\rho_k(C)=W_k+\mathcal LC$ with $\mathcal L$ linear and $C_0=0$. Let the optimizer's state and output depend only
+on the gradients fed to it, with one implementation on both sides (SGD, heavy-ball or Nesterov momentum, Adam without
+weight decay, Adafactor without parameter scaling). Then training $C$ and merging at the end of a period gives the same
+$W$-trajectory as the backward method with compression $\mathcal L^*$ and anchor $\mathcal L$, started at $W_k$ from the
+same optimizer state (\thmref{Proposition}{IV.2}). Decoupled weight decay, LAMB and LARS trust ratios, parameter-scaled
+Adafactor and full-gradient clipping break the identity.
+
+\begin{explains}
+Under these hypotheses, GaLore with a projector $P_k$ fixed on each period is one-sided LoRA $W_k+P_kC$, merged and
+restarted every period with $C$'s optimizer state carried over unchanged. It adds two things to one-sided LoRA, a frame
+from the gradient's SVD and that carry-over, which reads moments written for $P_{k-1}$ as if written for $P_k$. LDAdam
+\citep{xrobert2025ldadam} transports them instead.
+\end{explains}
+
+\paragraph{Credit}
+The identity for GaLore \citep{zhao2024galore} is due to \citet{xtorrobahennigen2025duality}, and its SGD case with a
+frozen random factor to \citet{hao2024flora}.
+
+\paragraph{The rest of the cotangent family}
+Under the same hypotheses the identity (\thmref{Proposition}{IV.2}, \thmref{Proposition}{IV.3}) covers LoRA-FA and
+GaLore with random projectors, MeZO up to its finite-difference estimate, GaLore with gradient SVDs, and BitFit and LISA
+(without weight decay) with coordinate blocks. Flora as published, APOLLO and Fira update outside their projected
+subspace and are not covered.
+
+\paragraph{V. ``QLoRA and LoftQ''}
+
+\begin{example*}{entry 28, Exposé~\ref{sec:base}}
+\labelsf{PEFT}\enspace QLoRA, LoftQ.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace base change along a map that does not
+preserve the function; a pointing defect; an approximate section.
+\end{example*}
+
+A quantiser $\kappa$ moves the pretrained point to $\kappa\theta_0$ and changes the function. Additive methods commute
+with translation, $M(\theta+v)=\tau_v\circ M(\theta)$, so QLoRA \citep{dettmers2023qlora} is LoRA attached at
+$\kappa\theta_0$, with pointing defect $e=\kappa\theta_0-\theta_0$ (\thmref{Definition}{V.1}), and $\theta_0$ lies
+outside its image unless $\rk e\le r$ (\thmref{Proposition}{V.2}(a)). Splitting initialisations come in three orders
+with three different defects (\thmref{Proposition}{V.2}(b); Table~\ref{tab:rosetta-orders}). Write $W$ for the
+full-precision weight, $\delta_0$ for the initial adapter, $W_{\mathrm{res}}=W-\delta_0$ and $s=\alpha/r$.
+
+\begin{table}[t]
+\centering\small
+\caption{Three orders of quantising and splitting, and the pointing defect $\rho(q_0)-W$ each leaves
+(\thmref{Proposition}{V.2}(b)).}\label{tab:rosetta-orders}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X@{}}
+  \toprule
+  \headrow \textbf{Order} & \textbf{Used by} & \textbf{Pointing defect}\\
+  \midrule
+  split, then quantise the residual & QPiSSA; HF's PiSSA and CorDA workflow &
+    $\kappa(W_{\mathrm{res}})-W_{\mathrm{res}}$\\
+  quantise, then fit the error & LoftQ with one iteration (HF default \texttt{loftq\_iter=1}) &
+    $e-s\,\mathrm{SVD}_r(e)$, as HF does not divide the fit by $s$; at $s=1$, $e$ minus its best rank-$r$
+    approximation\\
+  quantise, split, re-quantise & HF \texttt{olora\_init} on bitsandbytes weights & $e+\kappa(r')-r'$, with
+    $r'=\kappa W-\delta_0$\\
+  \bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{explains}
+Measured from its own start, QLoRA obeys the rank bound of any LoRA (\thmref{Theorem}{II.1}(c)); measured from
+$\theta_0$, its update also contains the generically full-rank defect. Since $e-\mathrm{SVD}_r(e)$ is orthogonal to
+$\mathrm{SVD}_r(e)$, one-step LoftQ in HF beats QLoRA in Frobenius norm only for $0<s<2$. Further LoftQ iterations need
+not decrease their objective, and at $s=1$ the output is an approximate section, pointed up to its attained residual
+(\thmref{Proposition}{V.2}(c)).
+\end{explains}
+
+\paragraph{Credit}
+QLoRA is due to \citet{dettmers2023qlora}, LoftQ to \citet{li2023loftq}, and PiSSA and QPiSSA to
+\citet{meng2024pissa}.
+
+\paragraph{VI. ``Merging an adapter into the weights''}
+
+\begin{example*}{entry 5, Exposé~\ref{sec:merge}}
+\labelsf{PEFT}\enspace merging an adapter into the weights; zero inference latency.\par
+\noindent\labelsf{Category theory\,\textperiodcentered\,geometry}\enspace for weight-space methods, the canonical arrow to
+the terminal object; for extensions, a lift along the realisation $\Phi_f$, certified box by box by rewriting.
+\end{example*}
+
+Reading I settled merging for weight-space methods on a full-precision base. Adapters, prefixes and (IA)$^3$ scalings
+insert new boxes and live on an extension of $f$, so merging one is a lifting problem along the realisation
+$\theta\mapsto f(\theta,-)$.
+
+A method $\rho$ on an extension $\tilde f$ is mergeable if some $\mu:Q\to\Theta$ has
+$\Phi_{\tilde f}\circ\rho=\Phi_f\circ\mu$ (\thmref{Definition}{VI.1}). \thmref{Theorem}{VI.3} gives sufficient
+conditions box by box, through seven rewrite rules with side conditions such as position-uniform edits, unshared
+absorbing weights and bias slots for shifts. For instance, HF applies the feed-forward vector $\ell$ of (IA)$^3$
+\citep{liu2022few} to the input of $W_{\mathrm{down}}$, where it always fuses. It fuses into $W_{\mathrm{up}}$ instead
+under SwiGLU or GeGLU for every $\ell$, and under ReLU when $\ell\ge0$. Under GELU, an entry $\ell_i$ on a nonzero row
+of $W_{\mathrm{up}}$ fuses there only if it is $0$ or $1$.
+
+\begin{explains}
+``Zero inference latency'' is certified by local rewriting, a sufficient test that also names the absorbing weight; the
+$W_{\mathrm{up}}$ route is idle in practice, as $W_{\mathrm{down}}$ always works. Nonlinear adapters, input-routed
+mixtures and prefixes do not merge box-locally. At its layer a prefix is a gated parallel adapter
+(\thmref{Theorem}{VI.5}(b)), and it is not box-locally mergeable for generic frozen weights and prefixes
+(\thmref{Theorem}{VI.5}(f)); whole-network merging of prefixes is open.
+\end{explains}
+
+\paragraph{Credit}
+The (IA)$^3$ merge is noted by \citet{liu2022few}, and the gated-adapter reading of prefix tuning is due to
+\citet{he2021unified}. Scale migration through SwiGLU, ReLU and norm layers, with the GELU obstruction, already appears
+in SmoothQuant \citep{xxiao2023smoothquant} and AWQ \citep{xlin2024awq}. The activation symmetries behind slides R2 and
+R3 (\thmref{Lemma}{VI.2}) are classical \citep{xsussmann1992uniqueness,xchen1993geometry,xgodfrey2022symmetries}.
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{Reading from the right}\label{sec:rosetta-reverse}
+
+Some mathematical constructions are methods already in use.
+\begin{itemize}
+  \item The product $\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)$ of the two one-sided LoRAs is the sandwich
+    $R\mapsto W_0+B_0RA_0$. In the SVD frames of $W_0$, with $\sigma_r>0$, it is LoRA-XS pointed at $R=0$
+    (\thmref{Proposition}{I.8}(a); \citealp{baazy2024lora}).
+  \item For injective $W_0$ and even $r$ with $2\le r\le n-2$, LoRA's image meets the rotation orbit $W_0\cdot\SO(n)$
+    exactly in the image of HRA without Gram--Schmidt, the HF default (\thmref{Theorem}{II.7};
+    \citealp{yuan2024bridging}). This is a meet of sets, and HRA is not the categorical product.
+  \item Transport along a fixed $T\in\GL(\Theta)$ is an automorphism of the slice. It carries coordinate masks to
+    FourierFT \citep{gao2024parameter} (with no conjugate frequency pair sampled), WaveFT \citep{bilican2025exploring}
+    (when its padded inverse wavelet transform is invertible) and C3A \citep{chen2024parameter}, each started at zero,
+    and to LoRA-XS and SVFT \citep{lingam2024svft} in the SVD frame of $W_0$, which depends on $\theta_0$. The inverse
+    of the rearrangement of \citet{loan1993approximation} carries $\mathrm{LoRA}_k$ to unconstrained sums of $k$
+    Kronecker products (\thmref{Proposition}{II.13}).
+  \item The monoidal sum $\oplus$ adds updates, so its image is a Minkowski sum. RoSA \citep{nikdan2024rosa}, GraLoRA
+    \citep{jung2025gralora} and the stages of ReLoRA \citep{lialin2023relora}, unrolled in time, are words in $\oplus$
+    (\thmref{Observation}{I.7}).
+\end{itemize}
+
+\begin{explains}
+Products and meets can be tried on other pairs too. Meets of images always exist as sets of weights, while products can
+fail to exist (\thmref{Observation}{I.4}(b)). Which meets admit a polynomial chart, as LoRA-XS and HRA's image do, is an
+open problem (\S\ref{sec:analogy-open}, problem~4).
+\end{explains}
+
+% ----------------------------------------------------------------------------------------------------------------------
+\subsubsection{The full dictionary}\label{sec:rosetta-table}
+
+Table~\ref{tab:rosetta} gives every entry. Result numbers in the glosses point to the statements whose hypotheses the
+entry inherits; entries without a number are definitions or bookkeeping.
+
+\begingroup
+\footnotesize
+\renewcommand{\arraystretch}{1.18}
+\setlength{\LTpre}{6pt}\setlength{\LTpost}{6pt}
+\begin{longtable}{@{}>{\raggedleft\arraybackslash}p{0.45cm}>{\raggedright\arraybackslash}p{2.75cm}>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{6.15cm}@{}}
+\caption{Rosetta stone: the full dictionary from PEFT phrases to their categorical or geometric counterparts. The gloss
+names the results behind each pairing; their hypotheses are part of the entry.}\label{tab:rosetta}\\
+\toprule
+\headrow \textbf{\#} & \textbf{PEFT} & \textbf{Categorical / geometric} & \textbf{Gloss}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\footnotesize\itshape Table~\ref{tab:rosetta}, continued}\\
+\toprule
+\headrow \textbf{\#} & \textbf{PEFT} & \textbf{Categorical / geometric} & \textbf{Gloss}\\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{@{}r}{\footnotesize\itshape continued on the next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+1 & pretrained checkpoint & base point $\theta_0:1\to\Theta$; a pointed 1-cell $(\Theta,\theta_0,f)$ of
+  $\Para(\Diff)$ & Fine-tuning moves a point; everything is measured relative to it (\thmref{Def.}{I.1}).\\
+2 & PEFT method & object of the pointed slice $\Meth(\Theta,\theta_0)=\Diff_*/(\Theta,\theta_0)$, equivalently the
+  opposite of the pointed coslice of reparametrisation 2-cells under $F$ & A method is a pointed map
+  $\rho:(Q,q_0)\to(\Theta,\theta_0)$. The slice depends only on $(\Theta,\theta_0)$; $\Para$ is bookkeeping for
+  weight-space methods (\thmref{Rem.}{I.3}).\\
+3 & ``method $N$ can do whatever $M$ can'' & morphism (simulation) $h:M\to N$ with $\rho_N\circ h=\rho_M$ & Smooth
+  simulations also carry parameter paths; at the level of sets they reduce to image inclusion (\thmref{Obs.}{I.4}).\\
+4 & frozen model / full fine-tuning & initial / terminal object & Every weight-space method lies in the interval
+  [frozen, full FT]; adapters, prefixes and ReFT are extensions, not objects of $\Meth$ (\thmref{Obs.}{I.4}).\\
+5 & merging an adapter into the weights & the canonical morphism to the terminal object (it is $\rho$ itself); for
+  extensions, a lift along the realisation $\Phi_f$ & For weight-space methods merging is definitional; for extensions
+  zero inference overhead is a lifting problem, certified box-locally by rewriting (sufficient conditions and box-local
+  obstructions) under side conditions such as position-uniformity, no weight sharing and bias slots
+  (\thmref{Thm}{VI.3}).\\
+6 & expressivity / effective number of parameters & image germ of $\rho$ at $\theta_0$; its dimension $d(M)$, the
+  generic rank of $d\rho$ & Rank is a cut invariant; dimension is a volume invariant (\thmref{Thm}{II.10},
+  \thmref{Prop.}{II.12}).\\
+7 & lazy / NTK-regime capability & first-order image $S_1=d\rho_{q_0}(T_{q_0}Q)$, a functorial isomorphism invariant &
+  The lazy kernel has range $J_f(S_1)$; $S_1$ separates zero-init pointings ($\mathrm T_A$ vs $\mathrm T_B$, the row
+  space of $A_0$) that the image cannot, while the image already separates split inits (\thmref{Obs.}{I.6}).\\
+8 & zero-init vs PiSSA-type init & apex (singular vertex) vs smooth point of the image; Type~I (new $q_0$ in the apex
+  fibre) vs Type~II (new $\rho$ by splitting) & Zero-$B$ init loses $r(n-r)$ first-order directions (zero-$A$ init
+  $r(m-r)$); split inits are different objects, incomparable with LoRA (\thmref{Thm}{II.2}, \thmref{Prop.}{III.8}).\\
+9 & the zoo of LoRA initialisations & points of three distinguished strata of full-rank pointings, classified as a set
+  by $\Gr(r,n)\sqcup\Gr(r,m)\sqcup\MM_r$ & Vanilla LoRA on linear layers, EVA, Init[B], HF's default LoRA on embedding
+  layers, PiSSA, MiLoRA, OLoRA, CorDA, LoRA-GA and Astra are points; LoRA-FA and MiCA are frozen-factor sub-objects of
+  the zero-$B$ and zero-$A$ strata; HF's \texttt{orthogonal} init lies outside the three strata, and LoftQ/QLoRA are
+  defect pointings. The optimizer sees a finer quotient (\thmref{Thm}{II.2}, \thmref{Cor.}{III.13}).\\
+10 & no init buys rank above $2r$ & union over pointings, $\bigcup_q\Im M_q=\theta_0+(C-C)=\theta_0+\MM_{\le\min(2r,m,n)}$
+  & An exact initialisation picks a translate of the shape; from any starting point the update has rank at most $2r$.
+  This is the known rank-$2r$ PiSSA-to-LoRA conversion (\thmref{Thm}{II.1}).\\
+11 & redundant parameters & gauge group, the automorphisms of $Q$ over $\Theta$; generic fibre & LoRA wastes $r^2$
+  parameters; LoHa wastes at least $r_1^2+r_2^2+m+n-1$ below the $mn$ cap (exactly that many, numerically), and more
+  where the cap binds (\thmref{Prop.}{II.12}).\\
+12 & high-rank PEFT (LoHa, LoKr, HiRA, MoRA, C3A) & tensor networks whose min-cut avoids the bond; transport of
+  structure along $\GL(\Theta)$ & High rank is not $\GL(\Theta)$-invariant (though rank is $\GL_m\times\GL_n$-invariant)
+  and need not mean large volume; a large min-cut is necessary for high rank and is not sufficient
+  (\thmref{Thms}{II.10}--\hyperref[res:II.11]{II.11}, \thmref{Prop.}{II.13}).\\
+13 & Kronecker adapters (unconstrained Kronecker sums, KronA, LoKr) & LoRA across a different cut of the same 4-leg
+  tensor (Van Loan--Pitsianis rearrangement, a coordinate permutation) & For aligned splits (equal square splits, and
+  every split HF PEFT's factorisation produces), a generic rank-one update has maximal Kronecker rank, so unconstrained
+  Kronecker sums with fewer terms and zero-init $\mathrm{LoRA}_r$ below the rank of a full-rank Kronecker product are
+  incomparable. LoKr with inner rank $r'\le\min(m_2,n_2)$ sits inside zero-init $\mathrm{LoRA}_r$ exactly when
+  $r\ge\min(m_1,n_1)\,r'$; Compacter's PHM weights live in a nonlinear adapter (\thmref{Thm}{II.11}).\\
+14 & ``new method = old method'' & transport $T_*$ along $T\in\GL(\Theta)$: an automorphism of the category, not an
+  arrow inside it & FourierFT (when no conjugate frequency pair is sampled), WaveFT, C3A, LoRA-XS, SVFT and SHiRA are
+  coordinate masks in transported frames, and HiRA (for $W_0$ without zero entries) is LoRA in a transported frame; for
+  LoRA-XS, SVFT and HiRA the frame depends on $\theta_0$ (\thmref{Prop.}{II.13}).\\
+15 & orthogonal fine-tuning preserves knowledge & the image lies in a fibre of the complete invariant $W\mapsto WW\T$
+  (first fundamental theorem for $\Ort(n)$) & In exact arithmetic, exactly orthogonal input-side methods (OFT with an
+  exact Cayley map, strict GOFT without its optional scaler, HRA) can never change the spectrum or neuron angles,
+  however often they are merged; HF's default Cayley--Neumann OFT is only approximately orthogonal
+  (\thmref{Cor.}{II.6}).\\
+16 & HRA bridges LoRA and OFT & image-level meet with the rotation orbit, $(W_0+\Mr)\cap W_0\,\SO(n)$, for injective
+  $W_0$ and even $r\le n-2$; not a product of methods & LoRA meets exact-Cayley OFT in a strictly smaller set, and HF's
+  default Cayley--Neumann OFT, which is not orthogonal, is incomparable with HRA. At HRA's paired identity init the
+  image germ is the skew-determinantal cone, so that init is an apex (\thmref{Thm}{II.7}).\\
+17 & LoRA-XS & categorical product $\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)$ of the two one-sided LoRAs, in the SVD
+  frames of $W_0$ (with $\rk W_0\ge r$) & The overlap that a split init double-counts (\thmref{Prop.}{I.8},
+  \thmref{Prop.}{II.3}).\\
+18 & DoRA's magnitude/direction decoupling & diagonal saturation $\mathrm{Diag}_m\cdot(W_0+\Mr)$, the image of LoRA
+  followed by a trainable output scale & Equal images, for $W_0$ without zero rows. Under gradient flow the exact
+  gradient changes the metric and the detached backward is a non-gradient update; under AdamW the magnitude
+  coordinates matter too (\thmref{Prop.}{II.8}).\\
+19 & (IA)$^3$, SSF, LN tuning, RoAd, HiRA & the scalings and HiRA are rungs of the Hadamard-torus ladder
+  $W_0\odot(J+Z)$; $\mathrm{RoAd}_1$ is the complex torus $(\mathbb C^\times)^{m/2}$, and $\mathrm{RoAd}_2$ and
+  $\mathrm{RoAd}_4$ apply arbitrary $2\times2$ blocks (group part block-$\GL_2$) & On every rung zeros of $W_0$ stay
+  zero. RoAd can fill them, so it is a rung only for zero-free $W_0$, and for generic $W_0$ it lies on no low-rank rung.
+  Covariance $\mathrm{Mon}_m\times\GL_n$ on output-scaled boxes, $\GL_m\times\mathrm{Mon}_n$ on \texttt{down\_proj},
+  exactly $\mathrm{Mon}_m\times\mathrm{Mon}_n$ for HiRA, never $\GL_m\times\GL_n$ (\thmref{Prop.}{II.9}).\\
+20 & ``the geometry a method lives in'' & covariance group $\mathcal G_M$ (Klein): the largest group of pairs $(g,h)$
+  with $\Im M(gW_0h^{-1})=g\,\Im M(W_0)\,h^{-1}$ & Descent depends on whether each induced pair $(g,h)$ lies in
+  $\mathcal G_M$, a question of side for one-sided methods and of group for coordinate-structured ones. LoRA and
+  (IA)$^3$ (HF defaults) provably keep their reachable function sets under a global residual rotation of a gain-fused
+  pre-norm model; block OFT, LoHa ($r\ge2$), HiRA and masks fail the sufficient condition (\thmref{Obs.}{II.15},
+  \thmref{Conj.}{A}).\\
+21 & how a method trains & induced cometric $K=D\rho\,\Lambda\,D\rho\T$ (pulled-back gradient of the lens) & Two
+  isomorphic objects can train differently; gradient descent is natural exactly where cometrics agree, which for LoRA's
+  linear gauge means $\Ort(r)$ (\thmref{Thm}{III.3}).\\
+22 & balancedness $B\T B=AA\T$ & Noether charge of the non-compact half $\Sym_r$ of $\gl_r$; the Kempf--Ness slice of
+  the gauge action & Conserved under gradient flow with constant rates for any cotangent signal of the form
+  $\Lambda\,D\rho\T\gamma$ (DoRA's detached norm, clipping), after \citet{zhao2022symmetries} (\thmref{Thm}{III.5},
+  \thmref{Prop.}{III.7}).\\
+23 & LoRA+ ratio, $\alpha$, init scale, rsLoRA & coordinates on the orbit space of a hyperparameter torus & Under Adam
+  with $\varepsilon=0$, no weight decay, no clipping and a shared schedule, LoRA+ with ratio $\lambda$ is exactly LoRA
+  with $\alpha$ times $\lambda$ (the LoRA case is \citealp{schulman2025lora}); at a fixed rank, rsLoRA is isomorphic to
+  LoRA (\thmref{Thm}{III.10}, \thmref{Cor.}{III.11}).\\
+24 & transformation-invariant optimizer (Riemannian preconditioning, ScaledGD, LoRA-Pro, LoRA-RITE) & update rule
+  equivariant under the whole gauge $\GL_r$, so it descends to the quotient $\MM_r$ & On the full-rank locus, undamped
+  scaled GD and LoRA-RITE are $\GL_r$-equivariant in the parameters; damped variants and LoRA-Pro's step are only
+  $\Ort(r)$-equivariant, and Adam only $B_r$-equivariant (\thmref{Prop.}{III.4}, \thmref{Thm}{III.12}).\\
+25 & GaLore vs LoRA & cotangent-side vs tangent-side lens 2-cells, which coincide for linear charts (the degree-one
+  collapse) & Without weight decay or full-gradient clipping, GaLore is one-sided LoRA with a moving frame, with
+  optimizer state carried across re-basings rather than transported (\thmref{Prop.}{IV.2}, credited to
+  \citealp{xtorrobahennigen2025duality}).\\
+26 & when a gradient-projection method is really a reparametrisation & Frobenius integrability of the anchor
+  distribution & GaLore, LISA and MeZO keep a $\theta$-independent anchor within each period, hence affine leaves, and
+  under the hypotheses of \thmref{Prop.}{IV.2} are rebasing schemes of linear forward methods; Frobenius integrability
+  matters only for $\theta$-dependent anchors such as full-batch GaLore with $T=1$ (\thmref{Prop.}{IV.3}).\\
+27 & activation memory & backward reach of the composite lens (the backprop cone) & An upper bound: LST avoids the
+  backbone's backward pass; LoRA-FA stores $A_0x$; LISA's cone is the whole network because its embedding is always
+  trained, though its frozen layers need not store their linear-input residuals; MeZO has no reverse pass
+  (\thmref{Obs.}{IV.4}).\\
+28 & QLoRA / LoftQ & base change along a map that does not preserve the function; pointing defect; approximate section &
+  Split-then-quantise, quantise-then-fit (LoftQ's default, whose HF init ignores the LoRA scale) and
+  quantise-split-requantise leave three different defects (\thmref{Prop.}{V.2}).\\
+29 & ReLoRA, re-OFT, iterated BOFT/HRA & the monoid (or Lie subgroup) generated by the reachable displacements & ReLoRA
+  reaches exactly $W_0+\MM_{\le\min(Kr,m,n)}$; exact-Cayley block OFT is stuck; iterated BOFT reaches the orbit
+  $W_0\,\SO(n)$, up to output scaling, only at full butterfly depth; re-HRA reaches $(W_0+\MM_{\le Kr})\cap W_0\,\SO(n)$
+  (\thmref{Thm}{V.3}).\\
+30 & task arithmetic vs TIES/DARE & $\GL(\Theta)$-natural vs coordinatewise operations (TIES with sign election by
+  total mass: homotheties times signed permutations; DARE: the monomial group, its permutations in distribution) &
+  Coordinate merges depend on the basis; factor-space merges depend on the gauge (\thmref{Prop.}{V.4}).\\
+31 & LoraHub / Poly factor mixing & a rule on factors that is not invariant under $\prod\GL_r$, hence not a function of
+  the adapters & Post-hoc LoraHub (and HF's \texttt{linear} combination) needs a joint gauge fixing that produces a
+  shared factor (KnOTS) or a shared frozen factor (FFA-LoRA); Poly/MHR are trained jointly and, for fixed generic
+  routing with fewer skills than tasks, have only the diagonal $\GL_r$ symmetry, which is checked numerically
+  (\thmref{Prop.}{V.4}).\\
+32 & adapters (Houlsby, parallel), LLaMA-Adapter, LoReFT & pointed extensions: function-preserving embeddings with a
+  neutral point & LoReFT is LoRA on an inserted affine identity box (bias confined to $\operatorname{col}B$), applied at
+  selected positions; pyreft's default init is not neutral (\thmref{Prop.}{VI.4}).\\
+33 & prompt / prefix tuning & unpointed extensions on the sequence wire & Prefix = gated parallel adapter (attention =
+  monoid homomorphism followed by a perspective map); content-attention ratios are rigid only within the layer where the
+  prefix acts; prompt tuning maps into deep prefix tuning in causal decoders with matching position offsets
+  (\thmref{Thm}{VI.5}).\\
+34 & privileged neuron basis & automorphism group of the elementwise activation (the $\sigma$-spider) & For ungated
+  FFNs: permutations for GELU/SiLU, signed permutations for tanh, positive monomials for ReLU; gated FFNs (SwiGLU,
+  GeGLU) have the full monomial group (\thmref{Lemma}{VI.2}).\\
+35 & RoSA, GraLoRA, HF \texttt{cat} merges, ReLoRA stages & words in the convolution monoidal product $\oplus$ of
+  additive methods (Minkowski sum of images) & $\oplus$ is not the categorical product, whose image is the
+  intersection when it exists. LoRA-soup CAT is a $\oplus$ of frozen line methods (a span), and UniPELT/MAM are not
+  $\oplus$-words (\thmref{Obs.}{I.7}).\\
+36 & \texttt{target\_modules} / applying a method to every layer & assigning a 2-cell to each generator box and
+  composing horizontally; $T$-points for routing, tasks and tenants & Non-local methods (VB-LoRA, Compacter, FacT,
+  Uni-LoRA) share parameters across boxes and are not generator-wise.\\
+\end{longtable}
+\endgroup

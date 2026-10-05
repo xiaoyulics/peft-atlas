@@ -1,0 +1,361 @@
+{
+ "family": "addendum2026-4",
+ "family_title": "2026 sweep batch 4",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "prompt2effect",
+   "name": "Prompt2Effect",
+   "full_name": "Prompt2Effect: weight-driven hypernetwork for SVD-canonicalized LoRA prediction",
+   "paper_title": "Prompt2Effect: Training-Free Image-to-Video Model Specialization via LoRA Generation",
+   "authors": "Yang et al.",
+   "year": 2026,
+   "venue": "ECCV 2026",
+   "arxiv": "2606.13971",
+   "url": "https://arxiv.org/abs/2606.13971",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "X_W^{l}=\\big[\\,W_0^{l}P_B^{l}\\,;\\,(W_0^{l})^{\\top}P_A^{l}\\,\\big]\\in\\mathbb{R}^{(d_{out}+d_{in})\\times d_h},\\ \\ Q_W^{l}=\\mathrm{CrossAttn}(Q_{\\text{learned}},X_W^{l},X_W^{l})\\in\\mathbb{R}^{n\\times d_h};\\ \\ X_{\\mathcal{E}}=H_{\\mathcal{E}}\\big(\\{Q_W^{l}+e_l+e_M^{l}\\}_{l=1}^{L},\\,E_{\\text{text}}(c_{\\text{eff}})\\big);\\ \\ X_{\\mathcal{D}}^{l}=\\mathrm{CrossAttn}(X_W^{l},X_{\\mathcal{E}}^{l},X_{\\mathcal{E}}^{l});\\ \\ \\hat B^{l}=\\mathrm{Head}_B\\big(X_{\\mathcal{D}}^{l}[:d_{out}]\\big)\\in\\mathbb{R}^{d_{out}\\times r},\\ \\ \\hat A^{l}=\\mathrm{Head}_A\\big(X_{\\mathcal{D}}^{l}[d_{out}:]\\big)^{\\top}\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ h=(W_0^{l}+\\hat B^{l}\\hat A^{l})\\,x;\\ \\ \\text{targets: }\\Delta W_{\\star}^{l}=U^{l}S^{l}(V^{l})^{\\top}\\Rightarrow B^{\\star,l}=U^{l}(S^{l})^{1/2},\\ A^{\\star,l}=(S^{l})^{1/2}(V^{l})^{\\top};\\ \\ \\min_{\\phi}\\ \\frac{1}{2L}\\sum_{l=1}^{L}\\Big(\\frac{\\|\\hat A^{l}-A^{\\star,l}\\|_F^2}{\\|A^{\\star,l}\\|_F^2+\\epsilon}+\\frac{\\|\\hat B^{l}-B^{\\star,l}\\|_F^2}{\\|B^{\\star,l}\\|_F^2+\\epsilon}\\Big);\\ \\ \\text{frozen: } W_0,\\ E_{\\text{text}};\\ \\text{trained once: hypernetwork } \\phi=(H_{\\mathcal{E}},H_{\\mathcal{D}},P_A,P_B,Q_{\\text{learned}},e);\\ \\text{nothing trained per effect}",
+   "trainable_params": "|\\phi|\\approx 1.3\\text{B (one hypernetwork, trained once by NMSE regression on the SVD-canonicalised factors of 70 per-effect LoRAs for the 11B proprietary model, }\\approx12\\%\\text{ of its size; 49 rank-32 community LoRAs for Wan2.1)};\\ \\text{per new effect: } 0\\ \\text{trained, generated adapter } r(d_{in}+d_{out})\\ \\text{per adapted matrix } (r=128;\\ r=32\\ \\text{on Wan2.1})",
+   "locus": "LoRA target layers (a selected set of \\(L\\) linear layers) of a DiT image-to-video diffusion model: Snap's proprietary 11B I2V model, with the findings reproduced on Wan2.1-I2V-14B-480P",
+   "modification_kind": "hybrid",
+   "structure": "Amortised LoRA generation: one 1.3B Transformer hypernetwork maps \\((c_{\\text{eff}},\\{W_0^{l}\\}_{l=1}^{L})\\) to all layer-wise rank-\\(r\\) factor pairs \\((\\hat B^{l},\\hat A^{l})\\) in a single forward pass. The frozen base matrix is tokenised CUR-style into its \\(d_{out}\\) rows and \\(d_{in}\\) columns at full rank (truncating \\(W_0\\) to its top singular directions hurt in ablation). These tokens are compressed by learned-query cross-attention to \\(n=256\\) latents and mixed with the prompt by cross-attention. They are then decompressed by cross-attention that uses the original row and column tokens as queries, so the rows of \\(\\hat B^{l}\\) and the columns of \\(\\hat A^{l}\\) are indexed by the same coordinates as \\(W_0^{l}\\). The regression targets are SVD-canonicalised: the gauge orbit \\(\\{(BR,R^{-1}A):R\\in GL(r)\\}\\) of each trained LoRA is replaced by its balanced representative \\((US^{1/2},S^{1/2}V^{\\top})\\), which is unique up to joint sign flips of paired singular vectors (and rotations inside repeated singular values). The deployed object is an ordinary additive low-rank delta \\(\\Delta W^{l}=\\hat B^{l}\\hat A^{l}\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "Each generated update \\(\\Delta W^{l}=\\hat B^{l}\\hat A^{l}\\) is a plain low-rank additive delta that can be folded into \\(W_0^{l}\\) for a given effect. Generated deltas also blend linearly in weight space: the paper composes two effects as \\(\\Delta W=0.5\\,\\Delta W_A+0.5\\,\\Delta W_B\\). The hypernetwork is needed only to produce new effects.",
+   "identity_at_init": "Not identity by design, since a non-zero \\(\\Delta W^{l}\\) is the output. Dropping the generated LoRA recovers the frozen base. When the prediction is used to initialise LoRA fine-tuning, training starts from \\(B_0=\\hat B,\\ A_0=\\hat A\\) instead of \\(B_0=0\\).",
+   "key_idea": "A LoRA delta is defined relative to \\(W_0\\), so the generator is conditioned on the full-rank base weights (tokenised by rows and columns) as well as the effect prompt. The factorisation gauge \\((B,A)\\sim(BR,R^{-1}A)\\) is removed by regressing SVD-canonical factors \\((US^{1/2},S^{1/2}V^{\\top})\\). Together these two choices make one-pass LoRA synthesis stable at video-DiT scale, where a HyperDreamBooth-style generator trains unstably and scores zero on the VLM judge.",
+   "results_note": "On Snap's 11B image-to-video model, the zero-shot predicted LoRAs score 56.93 overall on the VLM judge for in-distribution effects, against 57.57 for per-effect trained LoRAs and 42.57 for the base model, while replacing about 56 GPU-hours of training with 3.3 s of hypernetwork inference. Used as an initialisation, 100 fine-tuning steps reach an overall VLM score of 56.33 on out-of-distribution effects, versus 56.70 for a 1,000-step LoRA trained from scratch.",
+   "relations": [
+    {
+     "target": "text-to-lora",
+     "type": "builds-on",
+     "note": "Cited prompt-to-LoRA hypernetwork. Prompt2Effect follows the same recipe of regressing a library of trained LoRAs from a text prompt with learned layer and module-type embeddings, and adds conditioning on the base weights and SVD-canonicalised targets."
+    },
+    {
+     "target": "hyperdreambooth",
+     "type": "competes-with",
+     "note": "A HyperDreamBooth-style hypernetwork is the main learned baseline. Scaled to video LoRAs it trains unstably and gives near-zero VLM scores."
+    },
+    {
+     "target": "drag-and-drop-llms",
+     "type": "competes-with",
+     "note": "Cited prompt-to-weights generator for LLMs. Prompt2Effect targets video DiTs and adds base-weight conditioning."
+    },
+    {
+     "target": "doc-to-lora",
+     "type": "competes-with",
+     "note": "Same amortised LoRA-generation line (not cited). D2L conditions on the frozen model's activations over a document and trains by context distillation. Prompt2Effect conditions on the frozen weights and an effect prompt and trains by regression on a LoRA library."
+    },
+    {
+     "target": "learning-on-loras-gl-equivariance",
+     "type": "competes-with",
+     "note": "Two treatments of the same \\(GL(r)\\) symmetry of LoRA factors (not cited). Prompt2Effect picks a canonical SVD representative of each orbit; Learning on LoRAs builds GL-equivariant networks that act on whole orbits."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2606.13971",
+    "https://arxiv.org/html/2606.13971",
+    "https://eccv.ecva.net/virtual/2026/poster/3453",
+    "https://xiaomeng-yang.github.io/Prompt2Effect/",
+    "https://github.com/LukeLIN-web/Prompt2Effect",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, all ten authors (first author Xiaomeng Yang) and first-version date (v1 2026-06-11; v3 2026-08-21) read from the arXiv abstract page; the arXiv export API and Semantic Scholar returned rate-limit errors, so metadata came from arxiv.org/abs. ECCV 2026 acceptance confirmed in the ECCV 2026 accepted-paper list and virtual-site JSON (poster 3453), where the paper is listed as 'Prompt2Effect: Training-Free LoRA Synthesis for Controllable Video Effects'; paper_title keeps the arXiv title. Formula checked against Eqs. 4-13 and Appendix 0.D: row tokens \\(W_0P_B\\), column tokens \\(W_0^{\\top}P_A\\), learned-query compression to \\(n=256\\), text injected by cross-attention, decompression with the uncompressed weight tokens as queries, two linear heads, and the NMSE loss on \\(B^{\\star}=US^{1/2}\\), \\(A^{\\star}=S^{1/2}V^{\\top}\\). The 1.3B hypernetwork size (about 12% of the 11B base), rank 128, 70 training effects and the Table 1-2 numbers were re-read. The Wan2.1 reproduction uses 49 rank-32 Remade-AI LoRAs (Appendix 0.A). The original Snap code is not public; the project page links an independent Wan2.1 reproduction, so code_url stays empty. Not in Hugging Face PEFT (tuners directory at main, release v0.21.2). All relation targets are catalogue ids. LoFA (arXiv 2512.08785), which the paper calls recent prior art in weight-driven LoRA prediction, is not in the catalogue.",
+   "corrections": [
+    "trainable_params: added the Wan2.1 setting (49 rank-32 community LoRAs, generated rank 32).",
+    "key_idea: 'fails to train' replaced by what the paper reports (unstable training, VLM score 0.00).",
+    "results_note: added the in-distribution VLM numbers (56.93 vs 57.57, base 42.57) behind 'come close'.",
+    "locus: L wrapped as math; Wan model named as Wan2.1-I2V-14B-480P.",
+    "text-to-lora relation note: names the shared recipe (LoRA-library regression with layer and module-type embeddings).",
+    "sources: added the ECCV 2026 virtual-site page and the PEFT tuners directory."
+   ]
+  },
+  {
+   "id": "giva",
+   "name": "GiVA",
+   "full_name": "Gradient-Informed Bases for Vector-Based Adaptation",
+   "paper_title": "GiVA: Gradient-Informed Bases for Vector-Based Adaptation",
+   "authors": "Gangwar et al.",
+   "year": 2026,
+   "venue": "AISTATS 2026",
+   "arxiv": "2604.21901",
+   "url": "https://arxiv.org/abs/2604.21901",
+   "code_url": "https://github.com/neerajgangwar/giva",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\Gamma B\\,\\Lambda A\\,x,\\quad \\Gamma=\\mathrm{diag}(\\gamma),\\ \\gamma\\in\\mathbb{R}^{d_{out}},\\ \\ \\Lambda=\\mathrm{diag}(\\lambda),\\ \\lambda\\in\\mathbb{R}^{r};\\ \\ G=\\nabla_W\\mathcal{L}(W_0)\\ \\text{(full fine-tuning gradient on one batch)},\\ G\\approx U\\Sigma V^{\\top}\\ \\text{(low-rank SVD)};\\ \\ A=V_r^{\\top}\\in\\mathbb{R}^{r\\times d_{in}},\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{with } B^{\\top}B=I_r\\ \\ (\\text{TopSV-B: } U_{[:,1:r]},\\ \\text{SecSV-B: } U_{[:,r+1:2r]},\\ \\text{Rand-B: QR of a Gaussian});\\ \\ \\gamma_0=0,\\ \\lambda_0=\\mathbf{1};\\ \\ \\text{frozen: } W_0,\\ A,\\ B\\ \\text{(per layer)};\\ \\text{trained: } \\gamma,\\ \\lambda",
+   "trainable_params": "d_{out}+r\\ \\text{per adapted matrix (plus frozen per-layer bases, } r(d_{in}+d_{out})\\text{, stored once per task)}",
+   "locus": "any linear layer; paper: all attention and MLP projections of RoBERTa-base/large (GLUE); query, key, value, up and down projections (plus gate for Phi-3) of Qwen2-0.5B, Phi-3-3.8B and OLMo-2-7B (commonsense reasoning), OLMo-2-7B (MetaMathQA, Code-Feedback) and all attention and MLP projections of Mistral-7B (Alpaca instruction tuning); DINOv2-ViT-B/14 and CLIP-ViT-L/14 (image classification)",
+   "modification_kind": "additive-weight",
+   "structure": "This is VeRA-type vector adaptation \\(\\Delta W=\\Gamma B\\Lambda A\\): two trainable diagonals around a frozen rank-\\(r\\) pair. Unlike VeRA, the frozen pair is per-layer and task-informed rather than shared and random. \\(A\\) spans the top-\\(r\\) right singular subspace of the one-batch full fine-tuning gradient \\(G\\), and \\(B\\) is any matrix with orthonormal columns. Theorem 1 shows this choice minimises \\(\\|GA^{\\top}B^{\\top}BA-G\\|_F\\): it makes \\(GA^{\\top}B^{\\top}BA=GV_rV_r^{\\top}\\) the best rank-\\(r\\) approximation of \\(G\\) (Eckart-Young). The objective comes from a first-order expansion at \\(\\Gamma_0=0,\\Lambda_0=I\\) that writes \\(\\nabla_\\Gamma\\mathcal{L}\\) as the full matrix \\(GA^{\\top}B^{\\top}\\). For the diagonal \\(\\Gamma\\) actually trained, only the diagonal of that matrix is used, so the matching is exact only for this relaxation. After training, the row space of \\(\\Delta W\\) lies in the fixed subspace \\(\\mathrm{span}(V_r)\\) and its column space in \\(\\Gamma\\,\\mathrm{span}(B)\\). The trainable freedom is an \\(r\\)-vector rescaling of the frozen directions plus a \\(d_{out}\\)-vector rescaling of output coordinates.",
+   "mergeable": "yes",
+   "mergeable_reason": "After training, \\(\\Delta W=\\Gamma B\\Lambda A\\) is a fixed matrix of rank at most \\(r\\) that folds into \\(W_0\\), as with VeRA.",
+   "identity_at_init": "Exact: \\(\\gamma_0=0\\) gives \\(\\Delta W_0=0\\). Because \\(\\Gamma_0=0\\), the gradient with respect to \\(\\lambda\\) is zero at the first step, so only \\(\\gamma\\) moves initially.",
+   "key_idea": "Vector-based adapters such as VeRA need very high rank (e.g. \\(r=1024\\)) because their frozen bases are random and carry no task information. GiVA sets the bases to the dominant right singular vectors of the first-step full fine-tuning gradient, with \\(B\\) orthonormal. The same \\(d_{out}+r\\) trainable scalars then suffice at one-eighth of VeRA's rank or less (from \\(8\\times\\) lower on MetaMathQA and image classification to \\(128\\times\\) lower on GLUE with RoBERTa-base), which brings training time close to LoRA's.",
+   "results_note": "On GLUE with RoBERTa-base, GiVA at \\(r=8\\) (0.08M trainable parameters, Rand-B) averages 83.8, versus 83.6 for VeRA at \\(r=1024\\) (0.16M) and 83.3 for LoRA at \\(r=4\\) (0.66M); parameter counts exclude the classification heads. Fine-tuning OLMo-2-7B on MetaMathQA takes 2h57m, versus 2h54m for LoRA and 3h26m for VeRA.",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "builds-on",
+     "note": "Same \\(\\Gamma B\\Lambda A\\) parameterisation and scaling-vector initialisation. The frozen shared random bases are replaced by per-layer gradient-SVD bases."
+    },
+    {
+     "target": "lora-ga",
+     "type": "builds-on",
+     "note": "Borrows the first-step full-gradient SVD initialisation. LoRA-GA then trains \\(A\\) and \\(B\\), whereas GiVA freezes them and trains only the two scaling vectors. The SecSV-B variant mirrors LoRA-GA's use of singular vectors \\(r+1\\) to \\(2r\\)."
+    },
+    {
+     "target": "lora-one",
+     "type": "builds-on",
+     "note": "The TopSV-B variant uses the top left singular vectors of the gradient, as LoRA-One does for LoRA."
+    },
+    {
+     "target": "lora-sb",
+     "type": "competes-with",
+     "note": "Cited. Also freezes gradient-initialised low-rank bases but trains a tiny \\(r\\times r\\) core (\\(r^2\\) entries); GiVA trains \\(d_{out}+r\\) diagonal entries instead."
+    },
+    {
+     "target": "randlora",
+     "type": "competes-with",
+     "note": "Compared vector-based baseline with frozen random bases and full-rank updates."
+    },
+    {
+     "target": "pvera",
+     "type": "competes-with",
+     "note": "Another VeRA derivative (not cited). It keeps random bases and makes the bottleneck stochastic instead of task-informed."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.21901",
+    "https://arxiv.org/html/2604.21901",
+    "https://virtual.aistats.org/virtual/2026/poster/14009",
+    "https://neerajgangwar.com/publications/",
+    "https://github.com/neerajgangwar/giva",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, authors (first author Neeraj Gangwar) and first-version date (v1 2026-04-23, single version) read from the arXiv abstract page and Semantic Scholar; the arXiv export API was rate-limited. AISTATS 2026 acceptance confirmed in the AISTATS 2026 virtual-site JSON, where it is 'Accept (Poster)' in Poster Session 1 with no OpenReview link. The 'spotlight (top 2.5%)' label appears only on the first author's homepage, and the OpenReview forum 80lrQEKKJg cited in the raw entry could not be opened (OpenReview bot check, no Wayback copy), so the venue is given without the qualifier and that link is dropped. Formula, Theorem 1 (\\(A=V_r^{\\top}\\), \\(B^{\\top}B=I_r\\)), the three B choices, \\(\\Gamma_0=0\\), \\(\\Lambda_0=I\\), and the efficiency trade-offs were read from Section 3; the released code (a fork of PEFT v0.15.2 with a giva tuner) stores \\(A\\) and \\(B\\) as per-layer buffers, trains \\(\\lambda_s\\in\\mathbb{R}^{r}\\) and \\(\\lambda_o\\in\\mathbb{R}^{d_{out}}\\), and defaults to the SecSV-B initialisation. trainable_params re-derived: RoBERTa-base with all six projections per layer gives \\(12\\times(4\\cdot776+3080+776)=83{,}520\\approx0.08\\)M, matching Table 1. Not in upstream Hugging Face PEFT (tuners directory at main, release v0.21.2). All relation targets are catalogue ids; OSoRA, a main baseline, is not in the catalogue.",
+   "corrections": [
+    "venue: 'AISTATS 2026 (spotlight)' -> 'AISTATS 2026'; the official AISTATS 2026 listing says 'Accept (Poster)', and the spotlight label is only on the author's homepage.",
+    "locus: instruction tuning used Mistral-7B, not Qwen2/Phi-3/OLMo-2; math and code used OLMo-2-7B only; per-task target modules added.",
+    "key_idea: 'about one-eighth of the rank' -> one-eighth or less (8x to 128x lower than VeRA across benchmarks).",
+    "results_note: LoRA parameter count added; noted that counts exclude classification heads.",
+    "pvera relation note: marked as not cited; lora-sb and randlora notes say they are cited or compared; LoRA-GA note math wrapped.",
+    "sources: unverifiable OpenReview link replaced by the AISTATS virtual-site page and the author's publication page."
+   ]
+  },
+  {
+   "id": "activation-prompt",
+   "name": "AP (Activation Prompt)",
+   "full_name": "Activation Prompt: universal additive perturbation of one intermediate activation map",
+   "paper_title": "Visual prompting reimagined: The power of the Activation Prompts",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "AISTATS 2026",
+   "arxiv": "2604.06440",
+   "url": "https://arxiv.org/abs/2604.06440",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "z^{(k)}=f_{\\theta^{(k)}}\\big(z^{(k-1)}\\big),\\ z^{(0)}=x;\\quad z^{(l)}\\ \\leftarrow\\ z^{(l)}+\\delta^{(l)}\\ \\text{at a single chosen layer } l,\\ \\ \\delta^{(l)}\\in\\mathbb{R}^{D'\\times P'}\\ \\ (\\text{channels}\\times\\text{spatial positions for CNNs};\\ d\\times\\text{tokens for ViTs});\\quad \\min_{\\delta^{(l)},\\,W_{head}}\\ \\frac{1}{|\\mathcal{D}|}\\sum_{(x,y)\\in\\mathcal{D}}\\ell\\big(f_{\\theta}(x,\\delta^{(l)});y\\big);\\ \\ l=0\\ \\text{recovers additive input-level VP};\\ \\ \\text{frozen: backbone } \\theta;\\ \\text{trained: } \\delta^{(l)}\\ \\text{and the linear head}",
+   "trainable_params": "D'P'=|z^{(l)}|\\ \\text{(one activation-sized tensor, e.g. } d\\times\\text{tokens at a ViT block input)}+|W_{head}|;\\ \\text{Table 2 totals, which also count the trained head: } 0.12\\text{M (ResNet-101)},\\ 0.16\\text{M (ViT-L/16)}\\ \\text{(the paper does not state the exact prompt shape; a full } 197\\times1024\\ \\text{ViT-L/16 token map would be}\\approx0.20\\text{M)}",
+   "locus": "a single intermediate activation map: by default the input of the third-to-last residual block of ResNet-101 (CNNs prefer deep layers) and the input of the third Transformer block of ViT-L/16 (ViTs prefer shallow layers); also tested on CLIP and Swin",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "An input-independent additive offset \\(z^{(l)}\\mapsto z^{(l)}+\\delta^{(l)}\\) on the full activation tensor of one layer. Each channel and each position gets its own value, so this is a constant bias map rather than a per-channel bias. Input-level additive VP is the case \\(l=0\\). Proposition 1 (Appendix C.2) matches AP with shift-only normalisation tuning at the same layer under unit effective scale: for CNNs, if \\(\\gamma_d/\\sigma_d=1\\) and \\(\\delta^{(l)}\\) is the same \\(\\delta_*\\) at every position, AP equals BatchNorm tuning with \\(\\beta_d=w_d^{(l)}\\delta_*+\\mu_d\\); for ViTs, if \\(\\gamma_d/\\sigma_{b,p}=1\\) and the LayerNorm mean \\(\\mu_{b,p}=\\mu_p\\) is the same for every sample, AP equals LayerNorm tuning with \\(\\beta_d=\\delta^{(l)}_{p,d}+\\mu_p\\), i.e. \\(\\delta^{(l)}=\\beta-\\mu\\). AP is therefore a position-resolved relative of a single-layer normalisation shift. Unlike VPT, it adds no tokens and touches one layer. Backpropagation only has to reach layer \\(l\\), so a deep \\(l\\) in a CNN cuts training memory and time.",
+   "mergeable": "conditional",
+   "mergeable_reason": "\\(\\delta^{(l)}\\) is a fixed tensor added to the activations, so inference costs one addition and no extra matmuls; the paper claims no additional inference overhead but does not discuss folding. Folding into existing parameters is possible only for a position-uniform \\(\\delta^{(l)}\\) at a point where the next operations are affine (for example the output bias of the preceding block's last linear layer in a ViT residual stream). A position-specific \\(\\delta^{(l)}\\) needs a per-position bias, which standard layers lack, so it is stored as a constant bias map.",
+   "identity_at_init": "Exact when \\(\\delta^{(l)}=0\\), because the frozen network is then unchanged. The paper does not state how \\(\\delta^{(l)}\\) is initialised. The linear head is trained as in linear probing.",
+   "key_idea": "Moving the universal additive prompt from pixels to one intermediate activation turns visual prompting into a single-layer activation shift that is provably related to normalisation tuning. The best layer depends on the architecture (deep for CNNs, shallow for ViTs), which the authors tie to where global features live. Theorem 1, for a two-layer ViT on a four-pattern data model, gives zero generalisation error with \\(N=\\Theta(P)\\) samples when AP is at the first layer and with \\(N=\\Theta(P^{2}\\log P)\\) when it is at the second, where \\(P\\) is the number of tokens; these are sufficient sample sizes, which the paper reads as shallow AP needing fewer samples.",
+   "results_note": "Across 19 datasets from FGVC, VTAB and five other benchmarks, AP beats input-level VP on every dataset for both ResNet-101 and ViT-L/16, with average gains of about 4% and 1.5%. On ResNet-101 it also nearly halves training memory relative to VP (6.3 GB vs 12.2 GB) and cuts time per epoch from 72 s to 41 s. On VTAB-1k few-shot it beats VP by 4.3 points (ResNet-101) and about 1 point (ViT-L/16).",
+   "relations": [
+    {
+     "target": "visual-prompting",
+     "type": "generalizes",
+     "note": "Additive input-level VP is AP at layer \\(l=0\\) (the padding-frame VP prompt is a restriction of the full-image \\(\\delta^{(0)}\\)); the paper uses AP to explain why VP lags."
+    },
+    {
+     "target": "ln-tuning",
+     "type": "competes-with",
+     "note": "Norm-Tune (Basu et al. 2023, which trains all normalisation affine parameters, the same mechanism as LN-tuning) is a main baseline. Proposition 1 links single-layer AP to unit-scale, shift-only normalisation tuning at that layer under extra conditions, but AP does not contain multi-layer \\(\\gamma,\\beta\\) tuning, so it does not generalize LN-tuning."
+    },
+    {
+     "target": "vpt",
+     "type": "competes-with",
+     "note": "VPT prepends tokens at the input or at every layer; AP adds a bias map at one chosen layer. On ViT-L/16 (Table 3) AP beats VPT-deep on the VTAB and 'Others' averages (90.25 vs 89.24, 91.09 vs 90.14) but trails it on FGVC (85.30 vs 86.34), with fewer parameters (0.16M vs 0.25M), less memory and higher throughput."
+    },
+    {
+     "target": "red",
+     "type": "competes-with",
+     "note": "Not cited. Both edit activations without touching weights. RED applies a per-channel scale and bias, shared across positions, at every FFN output; AP is bias-only but position-specific and confined to one layer."
+    },
+    {
+     "target": "lofit",
+     "type": "competes-with",
+     "note": "Not cited. LoFiT adds learned offset vectors to selected attention-head outputs; AP adds an offset to an entire activation map of one layer."
+    },
+    {
+     "target": "ssf",
+     "type": "competes-with",
+     "note": "SSF's scale-and-shift feature modulation in every layer is a compared PEFT baseline (Table A8); SSF is better on FGVC and slightly worse on VTAB."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.06440",
+    "https://arxiv.org/html/2604.06440",
+    "https://virtual.aistats.org/virtual/2026/poster/13832",
+    "https://openreview.net/forum?id=7onqhBs7NV",
+    "https://openreview.net/forum?id=0b328CMwn1",
+    "https://web.archive.org/web/20240228131526/https://openreview.net/forum?id=0b328CMwn1",
+    "https://openreview.net/forum?id=3gwNb8qZDr",
+    "https://research.ibm.com/publications/visual-prompting-reimagined-the-power-of-activation-prompts"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, authors (first author Yihua Zhang) and arXiv first-version date (v1 2026-04-07) read from the arXiv abstract page; the arXiv export API was rate-limited. AISTATS 2026 acceptance confirmed in the AISTATS 2026 virtual-site JSON ('Accept (Poster)', linked to OpenReview 7onqhBs7NV). Year 2023 confirmed: a Wayback snapshot (2024-02-28) of OpenReview 0b328CMwn1 shows the same title and eight authors as an ICLR 2024 submission (venueid Rejected_Submission), created 2023-09-18 and opened to the public 2023-10-13; a web search also finds a withdrawn ICLR 2025 version (3gwNb8qZDr). The CPAL and TMLR history in the raw notes was not independently checked. Formula, default layers, Proposition 1 (Appendix C.2), Lemma 1 and Theorem 1, and Tables 1-4, A4-A8 re-read from the arXiv HTML. The paper does not say how \\(\\delta^{(l)}\\) is initialised and gives no code link; no public code was found. Not in Hugging Face PEFT. All relation targets are catalogue ids.",
+   "corrections": [
+    "structure: Proposition 1's ViT case (Appendix C.2) is \\(\\beta_d=\\delta^{(l)}_{p,d}+\\mu_p\\) with a batch-invariant LayerNorm mean \\(\\mu_p\\), so \\(\\delta^{(l)}\\) may vary over tokens only through \\(\\mu_p\\) (the main text assumes token-uniform \\(\\delta\\)); the raw entry gave only the special case \\(\\beta=\\delta_*\\) with \\(\\mu=0\\).",
+    "ln-tuning relation: 'generalizes' -> 'competes-with'; single-layer AP does not contain multi-layer \\(\\gamma,\\beta\\) tuning, and the matching needs extra conditions.",
+    "vpt relation: 'matches or beats VPT-deep' was false on FGVC (85.30 vs 86.34); per-benchmark numbers given.",
+    "key_idea: Theorem 1 gives sufficient sample sizes, not lower bounds; 'needs' rephrased.",
+    "trainable_params: totals marked as including the head, and the unresolved prompt shape flagged.",
+    "mergeable_reason: states where folding is and is not possible; the paper itself does not discuss merging.",
+    "results_note: added time per epoch and the VTAB-1k few-shot gains; red and lofit relation notes marked as not cited."
+   ]
+  },
+  {
+   "id": "stable-lora",
+   "name": "Stable-LoRA",
+   "full_name": "Stable-LoRA: early-step weight shrinkage of the LoRA down-projection",
+   "paper_title": "Stable-LoRA: Stabilizing Feature Learning of Low-Rank Adaptation",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2603.05204",
+   "url": "https://arxiv.org/abs/2603.05204",
+   "code_url": "https://github.com/Yize-Wu/Stable-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+s\\,BAx,\\quad B_0=0,\\ \\ A_0\\ \\text{entries sampled from } [-1/d_{in},\\,1/d_{in}];\\ \\ \\text{while not stable: if } \\|A_t\\|_F/d_{in}>\\|B_t\\|_F/d_{out}\\ \\text{then } A_t\\leftarrow(1-\\lambda)A_t\\ \\text{else set stable};\\ \\ A_{t+1}=A_t-\\eta g_A^t-\\eta wA_t,\\ \\ B_{t+1}=B_t-\\eta g_B^t-\\eta wB_t\\ \\ (g=\\text{AdamW-processed gradients},\\ w=\\text{weight decay});\\ \\ \\lambda\\in\\{5\\times10^{-4},10^{-3},2\\times10^{-3},5\\times10^{-3}\\}\\ \\text{(searched)};\\ \\ \\text{frozen: } W_0;\\ \\text{trained: } A\\in\\mathbb{R}^{r\\times d_{in}},\\ B\\in\\mathbb{R}^{d_{out}\\times r}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{(identical to LoRA; the shrinkage is in place, so no extra memory)}",
+   "locus": "any LoRA-adapted linear layer; paper default q_proj and v_proj (\\(r=8\\)) of Qwen2-0.5B/1.5B and LLaMA-3.2-1B/3B, with ablations on qkvo and all seven projections and a Llama-3.1-8B math run (Appendix D.2)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "The parameterisation is plain LoRA, \\(\\Delta W=sBA\\); only the optimisation trajectory changes. During the first few steps, an in-place multiplicative decay \\(A\\leftarrow(1-\\lambda)A\\), independent of the learning rate, is applied to the down-projection only, before the AdamW update. It stops once the balance condition \\(\\|A\\|_F/d_{in}\\le\\|B\\|_F/d_{out}\\) holds, after which training is ordinary AdamW (Algorithm 1 uses one flag; the released optimizer keeps a separate stop flag per adapted matrix). Because only \\(A\\) is shrunk, each shrink step rescales the current update \\(\\Delta W\\) by \\((1-\\lambda)\\). This differs from a gauge move \\((A,B)\\mapsto(cA,B/c)\\), which would leave \\(\\Delta W\\) unchanged. After \\(N\\) shrink steps the initialisation enters \\(A_N\\) only through \\((1-\\lambda)^{N}A_0\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained adapter is a standard \\(sBA\\) and merges like LoRA; the procedure changes only how \\(A\\) and \\(B\\) are reached.",
+   "identity_at_init": "Exact: \\(B_0=0\\) gives \\(\\Delta W_0=0\\). Shrinking \\(A\\) while \\(B=0\\) leaves the function unchanged; later shrink steps scale \\(\\Delta W\\) by \\((1-\\lambda)\\).",
+   "key_idea": "The paper writes \\(v=\\Theta(n^{\\gamma[v]})\\) for scaling in the width \\(n\\) and assumes Adam-normalised gradients with \\(\\gamma[g_A^tZ]=1\\). Under these conditions, LoRA is self-stabilised, meaning feature updates \\(\\Delta Y_t=\\Theta(1)\\) for all \\(t\\), when \\(\\gamma[s]+2\\gamma[\\eta]+1=0\\), \\(\\gamma[A_0Z]\\le\\gamma[\\eta]+1\\) and \\(\\gamma[B_0]\\le\\gamma[\\eta]\\) (Theorem 3.1). The usual non-zero \\(A_0\\) violates the \\(A_0\\) condition at practical learning rates, and the violation persists through training. Stable-LoRA therefore keeps \\(A_0\\)'s early benefit (escaping the saddle at zero) but decays it geometrically until the balance condition holds.",
+   "results_note": "On Qwen2 (0.5B, 1.5B) and LLaMA-3.2 (1B, 3B) multiple-choice QA, Stable-LoRA has the best or tied-best accuracy on every dataset and model against AdamW-LoRA, LoRA+, Riemannian preconditioning and LoRA-RITE, with gains of up to 4 points over AdamW (average gains 0.5 to 2.1 points), at 0.6% extra training time and no extra memory. It also beats AdamW-LoRA on MetaMathQA-to-GSM8K chain-of-thought training (LLaMA-3.2-1B/3B and Llama-3.1-8B).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Same parameterisation; only the training procedure changes."
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "LoRA+ restores width-stable feature learning with \\(\\eta_B>\\eta_A\\) (baseline run with \\(\\eta_B=4\\eta_A\\)). Stable-LoRA keeps one learning rate and decays \\(A\\) early."
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "competes-with",
+     "note": "Alternative route to stable LoRA feature learning (\\(r\\times r\\) preconditioners), used as a baseline. It costs +8.3% training time versus +0.6% for Stable-LoRA in their timing (Table 5)."
+    },
+    {
+     "target": "lora-rite",
+     "type": "competes-with",
+     "note": "Transformation-invariant LoRA optimiser, used as a baseline. It costs +46% training time versus +0.6% for Stable-LoRA (Table 5)."
+    },
+    {
+     "target": "hayou-lora-init-dynamics",
+     "type": "builds-on",
+     "note": "Keeps the initialisation \\(B_0=0,\\ A_0\\neq0\\) that Hayou et al. favour. Stable-LoRA shows that this non-zero \\(A_0\\) breaks width-stability unless the learning rate is large enough, and removes its long-term effect by shrinkage."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2603.05204",
+    "https://arxiv.org/html/2603.05204",
+    "https://openreview.net/forum?id=xSa19DAieH",
+    "https://web.archive.org/web/20260419154753/https://openreview.net/forum?id=xSa19DAieH",
+    "https://iclr.cc/virtual/2026/poster/10006643",
+    "https://github.com/Yize-Wu/Stable-LoRA",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Title, authors (first author Yize Wu) and arXiv first-version date (v1 2026-03-05) read from the arXiv abstract page and Semantic Scholar; the arXiv export API was rate-limited. ICLR 2026 acceptance confirmed in the ICLR 2026 virtual-site JSON ('Accept (Poster)', OpenReview xSa19DAieH). Year 2025 confirmed from a Wayback snapshot (2026-04-19) of that forum: the submission was created 2025-09-19 and opened to the public 2025-10-08 (published as an ICLR 2026 poster 2026-01-26). Theorem 3.1, Assumption 1 and Algorithm 1 were re-read; the released stable_lora.py shrinks lora_A in place before the AdamW step while \\(\\|A\\|<(\\mathrm{numel}(A)/\\mathrm{numel}(B))\\|B\\|\\) fails, which is the paper's \\(\\|A\\|_F/d_{in}\\le\\|B\\|_F/d_{out}\\) stop test, tracked per adapted matrix. Tables 1, 2 and 5 and Appendix D.2 re-read. Not in Hugging Face PEFT (no tuner, and src/peft/optimizers holds only loraplus, lorafa and riemannian). All relation targets are catalogue ids.",
+   "corrections": [
+    "formula: shrink ratio is a searched grid {5e-4, 1e-3, 2e-3, 5e-3}, not a continuous interval.",
+    "locus: added the qkvo and qkvogud ablations and the Llama-3.1-8B run; \\(r=8\\) wrapped as math.",
+    "structure: shrink happens before the AdamW update; the released code keeps a per-adapter stop flag.",
+    "results_note: 'consistently outperforms' made precise (best or tied-best on every cell; LoRA-RITE ties on 3B SIQA) and the 8B math run added.",
+    "relation notes: inline math wrapped (\\(\\eta_B>\\eta_A\\), \\(r\\times r\\), \\(B_0=0,\\ A_0\\neq0\\))."
+   ]
+  },
+  {
+   "id": "mdpd",
+   "name": "MDPD",
+   "full_name": "Masked Dual Path Distillation with fading side networks",
+   "paper_title": "Memory-Efficient Transfer Learning with Fading Side Networks via Masked Dual Path Distillation",
+   "authors": "Zhang et al.",
+   "year": 2026,
+   "venue": "CVPR 2026",
+   "arxiv": "2604.09088",
+   "url": "https://arxiv.org/abs/2604.09088",
+   "code_url": "https://github.com/Zhang-VKk/MDPD",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "b^{1:L}=\\Phi_{1:L}\\big(x;\\theta_0,\\{\\gamma_l,\\beta_l\\}_{l=1}^{L}\\big)\\in\\mathbb{R}^{N\\times D_B},\\ \\ s^{l}=\\Theta_l\\big(s^{l-1},\\mathrm{fuse}(b^{l},b^{L})\\big)\\in\\mathbb{R}^{N\\times D_S},\\ D_S<D_B;\\ \\ Y^{B}=W_B\\,\\mathrm{GAP}(b^{L}),\\ Y^{S}=W_S\\,\\mathrm{GAP}(s^{L});\\ \\ \\mathcal{L}=\\mathcal{L}_{task}(Y^{S},y)+\\lambda_{log}\\sum_i\\big(Y^{S}_i-\\phi(Y^{B})_i\\big)^2+\\lambda_{sha}\\sum_{l\\in\\text{shallow}}\\big\\|b^{l}-s^{l}M_{down}M_{up}\\big\\|_F^2+\\lambda_{deep}\\sum_{l\\in\\text{deep}}\\sum_{i=1}^{N}m_i\\big\\|b^{l}_i-\\mathcal{G}(\\bar s^{l})_i\\big\\|^2,\\ \\ \\bar s^{l}_i=\\begin{cases}f_{mask}, & m_i=1\\ (\\text{mask ratio }\\lambda)\\\\ s^{l}_i, & \\text{otherwise}\\end{cases};\\ \\ \\text{frozen: backbone weights } \\theta_0;\\ \\text{trained: per-block LayerNorm } (\\gamma_l,\\beta_l),\\ W_B,\\ \\text{side network } \\Theta,\\ W_S,\\ \\text{bottlenecks } M_{down},M_{up},\\ \\mathcal{G},\\ f_{mask};\\ \\ \\text{inference: } \\hat y=W_B\\,\\mathrm{GAP}\\big(\\Phi_{1:L}(x;\\theta_0,\\{\\gamma_l,\\beta_l\\})\\big)\\ \\text{(side network discarded)}",
+   "trainable_params": "\\text{training: } |\\Theta|+\\sum_l|\\phi_l|\\ (\\approx(1+D_S+D_B)d_b+D_B\\ \\text{each})+|\\mathcal{G}|+|f_{mask}|+|W_S|+|W_B|+2D_B\\ \\text{per backbone LayerNorm};\\ \\ \\text{kept at inference: } 2D_B\\ \\text{per LayerNorm}+|W_B|",
+   "locus": "training: a thin side network (widths divided by a reduction factor, initialised from pretrained weights) fed by the backbone's per-layer features, plus distillation bottlenecks and a generator; deployed: the LayerNorm affine parameters of every backbone block and a new task head (ViT-B on VTAB-1K, T5-base/large on GLUE, VSE-infinity, CLIP4Clip, CLIP-ViL and MDETR for vision-language tasks)",
+   "modification_kind": "hybrid",
+   "structure": "A training-only ladder side network serves as scaffolding and is discarded at inference. Two distillation paths couple it to the frozen backbone. In the feature path (backbone to side), each side layer is regressed onto the backbone's features: directly through a bottleneck \\(\\phi(s)=sM_{down}M_{up}\\) in shallow layers, and in deep layers by regenerating the teacher features from masked student tokens with a small convolutional generator \\(\\mathcal{G}\\) (two \\(3\\times3\\) convolutions and a ReLU). In the logit path (side to backbone), the task-trained side head teaches a new backbone head \\(W_B\\). The paper states that the only trainable state left in the backbone is the per-block LayerNorm \\((\\gamma,\\beta)\\) plus \\(W_B\\), so the deployed model is a normalisation-tuned backbone plus head; the paper does not say what is tuned in its CNN backbones (ResNeXt-101 in VSE\\(\\infty\\), ResNet-101 in MDETR), which have no LayerNorm, and T5's LayerNorm has no shift. The side network acts as an auxiliary teacher whose task knowledge is distilled into that selective subset.",
+   "mergeable": "yes",
+   "mergeable_reason": "The deployed model changes only normalisation affine parameters and adds a head, with no extra modules or tokens: the new \\((\\gamma,\\beta)\\) replace the pretrained values in place, and where a LayerNorm feeds only linear maps they could also be folded into those maps. The side network, the bottlenecks \\(\\phi\\) and the generator \\(\\mathcal{G}\\) are discarded.",
+   "identity_at_init": "Backbone features are unchanged at initialisation: \\((\\gamma_l,\\beta_l)\\) start at their pretrained values, and the side network does not feed back into the backbone. The task heads \\(W_B,W_S\\) are new, so the output layer is not identity-initialised.",
+   "key_idea": "Memory-efficient side-tuning keeps its side network at inference and pays for it in latency. MDPD instead uses the side network as a training-time teacher, mutually distilled with the frozen backbone. Its task knowledge ends up in the backbone's LayerNorm \\((\\gamma,\\beta)\\) and head, so it can be dropped at deployment.",
+   "results_note": "On vision-language tasks MDPD improves accuracy over UniPT and SHERL at almost the same training memory and cuts SHERL's inference time by at least 25.2% (the abstract's figure; the contribution list says 22.5%). On VTAB-1K with ViT-B its mean of 78.3 is the best among the compared PETL and METL methods (HST 78.1, SHERL 77.9), at 2.1 GB training memory.",
+   "relations": [
+    {
+     "target": "ladder-side-tuning",
+     "type": "builds-on",
+     "note": "Uses an LST-style side network with ladder inputs from the backbone layers and LST's T5 layer-dropping, and is compared against LST. Unlike LST, the side network is dropped at inference."
+    },
+    {
+     "target": "ln-tuning",
+     "type": "combines",
+     "note": "Not cited (MDPD cites Kim et al. 2021 for normalisation tuning). The deployed model is a LayerNorm-tuned backbone plus head; MDPD learns those LayerNorm parameters through distillation from a side network instead of the task loss alone."
+    },
+    {
+     "target": "res-tuning",
+     "type": "competes-with",
+     "note": "Res-Tuning and its memory-efficient Bypass variant are both compared baselines on VTAB-1K (means 76.3 and 72.3)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.09088",
+    "https://arxiv.org/html/2604.09088",
+    "https://openaccess.thecvf.com/content/CVPR2026/html/Zhang_Memory-Efficient_Transfer_Learning_with_Fading_Side_Networks_via_Masked_Dual_CVPR_2026_paper.html",
+    "https://github.com/Zhang-VKk/MDPD",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "Title, authors (first author Yutong Zhang) and first-version date (v1 2026-04-10, single version) read from the arXiv abstract page; the arXiv export API was rate-limited. CVPR 2026 confirmed on the CVF open-access page (pp. 25043-25054). Formula checked against Eqs. 1-7 and Appendix B (loss weights \\(10^{-4}\\) logit, \\(6\\times10^{-5}\\) deep, \\(4\\times10^{-5}\\) shallow; reduction factor 2 and mask ratio 0.5 for VSE\\(\\infty\\); LST layer-dropping for T5). The bottleneck size \\((1+D_S+D_B)d+D_B\\) is the paper's. The open concern stands: Section 3.1 says the LayerNorm parameters of every backbone block are updated, which needs gradients through the backbone, yet the reported training memory (2.1 GB on VTAB-1K) matches backprop-free side-tuning methods; Appendix C argues for side networks but does not resolve this, and the code repository holds only a README saying the implementation 'will be released soon' (checked 2026-10-02), so it cannot be checked in code. Confidence stays medium. Not in Hugging Face PEFT. All relation targets are catalogue ids; UniPT and SHERL, the main baselines, are not in the catalogue.",
+   "corrections": [
+    "structure: noted that the CNN backbones have no LayerNorm and T5's LayerNorm has no shift, so 'exactly a LayerNorm-tuned backbone' is the paper's claim, not a checked fact; generator architecture added.",
+    "mergeable_reason: folding is only possible where a LayerNorm feeds only linear maps; otherwise the values are simply replaced.",
+    "results_note: flagged the 25.2% vs 22.5% inconsistency between abstract and contributions; added the VTAB-1K means.",
+    "ln-tuning relation note: marked as not cited; res-tuning note gives both compared variants.",
+    "verification: code_url points to a README-only repository; implementation not released."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "All five requested methods exist and none duplicates a catalogued id (checked against existing_index.json, raw/, verified/ and addenda/). Every method was read from its arXiv HTML method section; the arXiv export API and Semantic Scholar both returned HTTP 429, so metadata came from arxiv.org/abs pages and the OpenReview search API. Venues verified: Stable-LoRA is an ICLR 2026 poster (OpenReview xSa19DAieH). GiVA is in AISTATS 2026 (listed as a poster on the AISTATS site; 'spotlight' only on the author's homepage; the OpenReview id 80lrQEKKJg could not be confirmed). AP is an AISTATS 2026 poster (7onqhBs7NV). MDPD is in CVF open access for CVPR 2026. Prompt2Effect is ECCV 2026 per its arXiv comment and project page. Year follows the first public version: Stable-LoRA is 2025, because the ICLR 2026 submission was public on OpenReview from 2025-10-08 and arXiv v1 came on 2026-03-05. AP is 2023, because the same paper was a public ICLR 2024 submission (OpenReview 0b328CMwn1, open 2023-10-13) before a withdrawn ICLR 2025 version, the CPAL 2025 spotlight track, a TMLR rejection and finally AISTATS 2026; arXiv v1 is 2026-04-07. Prompt2Effect: the original Snap code is not public. The project page links an independent reproduction on Wan2.1 (https://github.com/LukeLIN-web/Prompt2Effect), so code_url is left empty. GiVA: the paper's derivation treats the gradient with respect to the diagonal output scaling as a full matrix, so the first-step-matching optimality (Theorem 1) holds for that relaxation; this is recorded in the structure field. OSoRA, a GiVA baseline that takes its bases from the SVD of \\(W_0\\), is not in the catalogue. MDPD: the deployed model is a LayerNorm-tuned backbone plus head. The paper says LayerNorm parameters in every backbone block are updated, but does not explain how they get gradients without backpropagating through the backbone, which would cut against the memory claims. Confidence is therefore medium. None of the five is in Hugging Face PEFT (tuners directory and releases up to v0.21.2 checked). No standalone theory papers were added; the stability theorem (Stable-LoRA) and the sample-complexity theorem (AP) are recorded inside the method entries.",
+ "verification_summary": "Adversarial check on 2026-10-02 of all 5 methods (0 papers); nothing dropped, all 5 verified. Metadata: titles, authors and first-version dates from arxiv.org/abs pages (the export API and Semantic Scholar were rate-limited; Semantic Scholar answered for GiVA and Stable-LoRA and agreed). Venues confirmed from primary sources: ECCV 2026 accepted list (Prompt2Effect, poster 3453, listed under a shorter title), AISTATS 2026 virtual-site JSON (GiVA and Activation Prompt, both 'Accept (Poster)'), ICLR 2026 virtual-site JSON (Stable-LoRA, poster), CVF open access (MDPD, CVPR 2026). OpenReview pages were behind a bot check; Wayback snapshots confirmed the two early years: Activation Prompt was a public ICLR 2024 submission from 2023-10-13 (year 2023), and Stable-LoRA's ICLR 2026 submission was public from 2025-10-08 (year 2025). Main fixes: GiVA venue drops the unconfirmed 'spotlight' and its locus mis-assigned instruction tuning (Mistral-7B, not Qwen2/Phi-3/OLMo-2); Activation Prompt's Proposition 1 ViT case was given only as a special case, the ln-tuning relation is downgraded from generalizes to competes-with, the claim that AP matches or beats VPT-deep fails on FGVC, and Theorem 1 gives sufficient rather than necessary sample sizes; Stable-LoRA's shrink ratio is a searched grid; MDPD's code repository is README-only, and its LayerNorm-gradient versus memory tension stays open (confidence medium). trainable_params re-derived (GiVA's 0.08M on RoBERTa-base reproduced exactly). None of the five is in Hugging Face PEFT (tuners and optimizers at main, release v0.21.2). All relation targets exist in existing_index.json; no id collides with the index or other raw/verified files. Inline math in prose fields wrapped in \\( \\)."
+}

@@ -1,0 +1,75 @@
+{
+ "hash": "7b5c70cb89a9e002",
+ "seconds": 39.68,
+ "pauses": [
+  [
+   0.0,
+   0.259
+  ],
+  [
+   1.643,
+   2.271
+  ],
+  [
+   2.65,
+   2.979
+  ],
+  [
+   6.882,
+   7.171
+  ],
+  [
+   11.559,
+   11.967
+  ],
+  [
+   12.84,
+   13.399
+  ],
+  [
+   14.726,
+   14.99
+  ],
+  [
+   17.729,
+   18.3
+  ],
+  [
+   18.731,
+   19.062
+  ],
+  [
+   21.41,
+   21.724
+  ],
+  [
+   24.394,
+   24.861
+  ],
+  [
+   25.199,
+   25.738
+  ],
+  [
+   27.981,
+   28.546
+  ],
+  [
+   32.156,
+   32.604
+  ],
+  [
+   33.907,
+   34.228
+  ],
+  [
+   36.112,
+   36.37
+  ],
+  [
+   39.347,
+   39.68
+  ]
+ ],
+ "text": "Let's look at images. <short pause> LoRA adds a low-rank matrix to each weight, and the matrices of rank at most r don't form a flat space. They form a cone, and for standard LoRA its tip sits right at theta-zero. <short pause> OFT rotates the weights, so it moves theta-zero along an orbit. I-A-cubed rescales neurons; in this picture, it slides along a line through the origin. And BitFit, which trains only the biases, moves parallel to a few coordinate axes."
+}

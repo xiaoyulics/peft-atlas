@@ -1,0 +1,1262 @@
+% Appendix C (continued): complete proofs for Exposé III, Definition III.1 to Corollary III.13.
+% Sources: theory/propositions.json (statements, repaired proofs, public statements, round-2 notes),
+% theory/round2_verdicts.json (suggested fixes for III.4, III.5, III.6, III.12), theory/framework.md (Exposé III),
+% site/sections/06-fibres.html. The restated results follow sections/03a-fibres.tex and sections/03b-dynamics.tex.
+% This file continues Appendix C and has no \section of its own.
+
+% ====================================================================================================
+\subsection{Definition III.1}\label{proof:III.1}
+
+\begin{restate}{Definition}{III.1}{trained method; cometric; three equivalences}
+A \emph{trained method} is a method together with optimizer data: a learning-rate operator $\Lambda\succ0$ (per-block
+rates), an initial scale, and an update rule. Gradient flow $\dot q=-\Lambda\nabla_q(L\circ\rho)$ moves the weights by
+\[\dot\theta=-K_q\nabla_\theta L,\qquad K_q=D\rho_q\,\Lambda\,D\rho_q^\top.\]
+We call $K_q$ the \textbf{induced cometric}. For a backward method with compression $c_t$ and anchor $a_t$
+(\thmref{Definition}{IV.1}), $K_t=a_tc_t$. Two methods are \emph{expressively equivalent} if their images agree,
+\emph{first-order equivalent} if their $K_{q_0}$ agree, and \emph{dynamically equivalent} if they produce the same
+$\theta$-trajectory for every loss.
+\end{restate}
+
+A definition needs no proof. This subsection fixes the conventions used in all proofs of Exposé~III and checks the two
+identities that the definition records.
+
+\paragraph{Conventions}
+Weight space $\Theta=\R^{m\times n}$ carries the Frobenius inner product $\langle X,Y\rangle=\tr(X^\top Y)$, and every
+parameter space carries its Euclidean (Frobenius) inner product. Gradients are identified with covectors through these
+inner products, and the transpose of a linear map is its adjoint. A covector on $\Theta$ is written as a matrix, usually
+$G$. When $G=\nabla_\theta L$ is a weight gradient we say so; otherwise $G$ is an arbitrary cotangent signal.
+
+LoRA is $\rho(B,A)=W_0+sBA$ with $B\in\R^{m\times r}$, $A\in\R^{r\times n}$ and $s>0$. Its differential and the
+adjoint of the differential are
+\begin{equation}\label{eq:C2-lora-diff}
+D\rho_{(B,A)}(\dot B,\dot A)=s(\dot BA+B\dot A),\qquad D\rho_{(B,A)}^\top(G)=(sGA^\top,\ sB^\top G),
+\end{equation}
+since $\langle G,s(\dot BA+B\dot A)\rangle=\langle sGA^\top,\dot B\rangle+\langle sB^\top G,\dot A\rangle$. With
+$G=\nabla_\theta L(\rho(B,A))$ this gives $\nabla_B(L\circ\rho)=sGA^\top$ and $\nabla_A(L\circ\rho)=sB^\top G$, written
+$\nabla_B$ and $\nabla_A$. \emph{Block-scalar rates} are $\Lambda(B,A)=(\eta_BB,\eta_AA)$ with $\eta_A,\eta_B>0$.
+
+The gauge group $\GL_r$ acts by $g\cdot(B,A)=(Bg^{-1},gA)$, and $\rho(g\cdot q)=\rho(q)$ (\bgref{D.21}). At
+$q'=g\cdot q$ the weight is unchanged, hence so is the weight gradient $G$, and \eqref{eq:C2-lora-diff} gives
+\begin{equation}\label{eq:C2-gauge-grad}
+\nabla_{B'}=sGA^\top g^\top=\nabla_Bg^\top,\qquad \nabla_{A'}=sg^{-\top}B^\top G=g^{-\top}\nabla_A .
+\end{equation}
+The \emph{full-rank locus} is $\{\rk B=\rk A=r\}$. There $BA$ has rank $r$, $U:=\operatorname{col}B=\operatorname{col}(BA)$
+and $V:=\operatorname{row}A=\operatorname{row}(BA)$, and the orthogonal projectors onto them are
+$P_U=B(B^\top B)^{-1}B^\top$ and $P_V=A^\top(AA^\top)^{-1}A$.
+
+An update rule is \emph{equivariant} under $g$ (\bgref{D.18}) if, for every sequence of losses (the same data order and
+dropout masks in both runs), the run started from $g\cdot q_0$ with correspondingly transformed optimizer state produces
+$g\cdot q_t$ at every step $t$. Equivariance gives identical weight trajectories, since $\rho(g\cdot q_t)=\rho(q_t)$. It
+is checked one step at a time. If $q_t'=g\cdot q_t$, the two runs see the same weight and the same loss, hence the same
+$G$, and their gradients are related by \eqref{eq:C2-gauge-grad}. It then suffices that the steps are transported,
+\begin{equation}\label{eq:C2-equivariant-step}
+\delta B'=\delta B\,g^{-1},\qquad\delta A'=g\,\delta A,
+\end{equation}
+together with the optimizer state, and induction over $t$ concludes.
+
+\begin{proof}[Verification of the identities in Definition III.1]
+By the chain rule $\nabla_q(L\circ\rho)=D\rho_q^\top\nabla_\theta L$, so gradient flow moves the weights by
+$\dot\theta=D\rho_q\dot q=-D\rho_q\Lambda D\rho_q^\top\nabla_\theta L=-K_q\nabla_\theta L$. The operator $K_q$ is
+symmetric, and $\langle\gamma,K_q\gamma\rangle=\langle D\rho_q^\top\gamma,\Lambda D\rho_q^\top\gamma\rangle\ge0$. Since
+$\Lambda\succ0$, $\ker K_q=\ker D\rho_q^\top$, so $\rk K_q=\rk D\rho_q\le\dim Q$. Thus $K_q$ is a cometric in the sense
+of \bgref{D.23}, possibly degenerate.
+
+A backward method updates $\theta\leftarrow\theta-\eta\,a_t(\mathrm{opt}(c_t(\nabla L)))$ (\thmref{Definition}{IV.1}).
+When $\mathrm{opt}$ is the identity, that is, plain (S)GD on the compressed gradient, and $\eta$ is absorbed into $a_t$,
+the continuous-time update is $\dot\theta=-a_tc_t\nabla_\theta L$, which is the statement $K_t=a_tc_t$. This operator
+is symmetric positive semidefinite when $a_t=c_t^\top$, as for GaLore ($P_tP_t^\top$), LISA (a coordinate projection)
+and MeZO ($z_tz_t^\top$).
+
+Finally, for two methods trained by gradient flow, dynamical equivalence implies first-order equivalence. For a linear
+loss $L(\theta)=\langle\gamma,\theta\rangle$ the initial weight velocities are $-K_{q_0}\gamma$ and $-K'_{q_0'}\gamma$,
+and $\gamma$ is arbitrary.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Observation III.2}\label{proof:III.2}
+
+\begin{restate}{Observation}{III.2}{chain rule for cometrics}
+Let $\sigma:Q'\to Q$ and $\rho:Q\to X$ be smooth, with $X=\Theta$ or a function or output space. Train $Q'$ by gradient
+flow with a constant rate operator $\Lambda'\succ0$, and put $K^\sigma_{q'}:=D\sigma_{q'}\Lambda'D\sigma_{q'}^\top$. Then
+\[K^{\rho\sigma}_{q'}=D\rho_{\sigma(q')}\,K^\sigma_{q'}\,D\rho_{\sigma(q')}^\top,\]
+and no metric on $Q$ is used. $K$ is a degenerate cometric (positive semidefinite, of rank $\le\dim Q'$); when $\sigma$
+is not injective, $K^\sigma$ is a field along $\sigma$ and fails to be a cometric on $Q$.
+
+For LoRA, $\rho(B,A)=W_0+sBA$ with $s=\alpha/r$ (or $\alpha/\sqrt r$ for rsLoRA), with block rates
+$\Lambda=\diag(\eta_BI,\eta_AI)$ and no LoRA dropout, under gradient flow (equivalently, to first order in the step
+size for GD),
+\[K_{(B,A)}(G)=s^2\big(\eta_B\,GA^\top A+\eta_A\,BB^\top G\big).\]
+Under Adam there is no state-independent linear cometric; \thmref{Theorem}{III.10} and \thmref{Theorem}{III.12} treat
+Adam.
+\end{restate}
+
+\begin{proof}
+\emph{Chain rule.} By definition $K^{\rho\sigma}_{q'}=D(\rho\sigma)_{q'}\Lambda'D(\rho\sigma)_{q'}^\top$, and
+$D(\rho\sigma)_{q'}=D\rho_{\sigma(q')}D\sigma_{q'}$. Hence
+\[K^{\rho\sigma}_{q'}=D\rho_{\sigma(q')}\big(D\sigma_{q'}\Lambda'D\sigma_{q'}^\top\big)D\rho_{\sigma(q')}^\top
+=D\rho_{\sigma(q')}K^\sigma_{q'}D\rho_{\sigma(q')}^\top.\]
+Equivalently, the flow $\dot q'=-\Lambda'\nabla_{q'}(L\circ\rho\circ\sigma)=-\Lambda'D\sigma^\top D\rho^\top dL$ moves
+$x=\rho(\sigma(q'))$ by $\dot x=-D\rho\,K^\sigma D\rho^\top dL$. In this formula
+$D\rho_{\sigma(q')}^\top:T^*_xX\to T^*_{\sigma(q')}Q$ and $D\sigma_{q'}^\top:T^*_{\sigma(q')}Q\to T^*_{q'}Q'$ are dual
+maps, and $K^\sigma_{q'}:T^*_{\sigma(q')}Q\to T_{\sigma(q')}Q$ is built from $\Lambda'$ alone. No inner product on $Q$
+enters.
+
+\emph{Degeneracy.} As in \S\ref{proof:III.1}, $K^{\rho\sigma}_{q'}$ is symmetric and positive semidefinite, and its
+rank is at most $\rk D\sigma_{q'}\le\dim Q'$. The operator $K^\sigma_{q'}$ depends on $q'$ and not only on
+$\sigma(q')$. For example, with $\sigma(a,b)=ab$ from $\R^2$ to $\R$ and $\Lambda'=I$, $K^\sigma_{(a,b)}=a^2+b^2$ takes
+the value $2$ at $(1,1)$ and $17/4$ at $(2,1/2)$, two points over the same value $\sigma=1$. So for non-injective
+$\sigma$, $K^\sigma$ is a field along $\sigma$ (a section of $\sigma^*(TQ\otimes TQ)$) and need not descend to $Q$.
+
+\emph{LoRA.} By \eqref{eq:C2-lora-diff}, $\Lambda D\rho^\top(G)=(\eta_BsGA^\top,\eta_AsB^\top G)$, and applying $D\rho$
+gives
+\[K_{(B,A)}(G)=s\big((\eta_BsGA^\top)A+B(\eta_AsB^\top G)\big)=s^2\big(\eta_BGA^\top A+\eta_ABB^\top G\big).\]
+A discrete GD step $\delta B=-\eta_BsGA^\top$, $\delta A=-\eta_AsB^\top G$ changes the weight by
+\[\rho(B+\delta B,A+\delta A)-\rho(B,A)=s(\delta BA+B\delta A)+s\,\delta B\,\delta A
+=-K_{(B,A)}(G)+s^3\eta_A\eta_B\,GA^\top B^\top G,\]
+and the last term is of order $\eta^2$. With LoRA dropout the factors are trained on masked inputs. The same computation
+then gives $K_{(B,A)}$ applied to the masked signal $\tilde G$ (for one example with output gradient $\delta$, input $x$
+and mask $\mathsf m$, $\tilde G=\delta(\mathsf m\odot x)^\top$), which differs from $\nabla_\theta L$. This is why the
+formula with $G=\nabla_\theta L$ assumes no dropout.
+
+\emph{Adam.} Adam's step depends on its moment buffers, so it is not a function of $q$ and $G$ alone, and even the first
+step from zero state has no linear cometric. Take $B=0$ and $A$ of full row rank. Then $\nabla_A=0$, so $A$ does not
+move, and the bias-corrected first step on $B$ is $\delta B=-\eta_B\phi(sGA^\top)$, with $\phi(x)=x/(\lvert x\rvert+\varepsilon)$
+entrywise and $0/0=0$. (Without bias correction the step is a positive multiple of the same expression with a rescaled
+$\varepsilon$.) The weight moves by $\delta W=s\,\delta B\,A=-s\eta_B\phi(sGA^\top)A$, which is nonzero whenever
+$GA^\top\ne0$, because $A$ has full row rank. Suppose $\delta W=-K(G)$ for a linear map $K$. At $\varepsilon=0$,
+$\phi(cx)=\phi(x)$ for $c>0$ gives $K(G)=K(cG)=cK(G)$, so $K=0$. For $\varepsilon>0$, $\lvert\phi\rvert<1$ makes
+$G\mapsto\delta W$ bounded, and a bounded linear map is $0$. Both conclusions contradict $\delta W\ne0$.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem III.3}\label{proof:III.3}
+
+\begin{restate}{Theorem}{III.3}{gradient descent is natural exactly where cometrics agree; for LoRA's linear gauge, exactly along $\Ort(r)$}
+(a) Let $\varphi:Q\to Q'$ be a diffeomorphism with $\rho'\circ\varphi=\rho$, and let $\Lambda,\Lambda'$ be the rate
+operators on $Q,Q'$. Under gradient flow, the two methods induce the same $\theta$-velocity at $q$ and at $\varphi(q)$
+for every loss iff $K^\rho_q=K^{\rho'}_{\varphi(q)}$, that is,
+\[D\rho'_{\varphi(q)}\big(D\varphi_q\Lambda D\varphi_q^\top-\Lambda'\big)D\rho'^\top_{\varphi(q)}=0.\]
+This holds whenever $D\varphi\Lambda D\varphi^\top=\Lambda'$, which is an isometry when $\Lambda=\Lambda'=I$. That
+condition is necessary when $D\rho'_{\varphi(q)}$ is injective, and fails to be necessary in general. Every linear gauge
+of a linear parametrisation is natural; for instance, for $\rho(x,y)=\theta_0+x+y$ the shear $(x,y)\mapsto(2x,y-x)$
+preserves $\rho$ and $K$ without being orthogonal. So is every pointwise-orthogonal non-linear LoRA gauge
+$\varphi(q)=\varphi_{g(q)}(q)$ with $g(q)\in\Ort(r)$.
+
+(b) For LoRA's linear gauge $\varphi_g(B,A)=(Bg^{-1},gA)$ with block-scalar rates, at points where $A$ has full row rank
+($B$ arbitrary, including $B=0$) and $r<n$, the criterion holds iff $g\in\Ort(r)$. The same holds symmetrically where $B$
+has full column rank and $r<m$.
+\end{restate}
+
+\begin{proof}
+(a) Fix $q\in Q$ and put $\theta=\rho(q)=\rho'(\varphi(q))$. Gradient flow with rates $\Lambda$ on $Q$ moves the weight
+at $q$ by $-K^\rho_q\nabla_\theta L$ (\S\ref{proof:III.1}); gradient flow with rates $\Lambda'$ on $Q'$ moves it at
+$\varphi(q)$ by $-K^{\rho'}_{\varphi(q)}\nabla_\theta L$. As $L$ ranges over the linear losses $\langle\gamma,\cdot\rangle$,
+the covector $\nabla_\theta L(\theta)=\gamma$ ranges over all of $T^*_\theta\Theta$, so the two velocities agree for every
+loss iff the linear maps $K^\rho_q$ and $K^{\rho'}_{\varphi(q)}$ agree. Differentiating $\rho=\rho'\circ\varphi$ gives
+$D\rho_q=D\rho'_{\varphi(q)}D\varphi_q$, so
+\[K^\rho_q-K^{\rho'}_{\varphi(q)}=D\rho'_{\varphi(q)}\big(D\varphi_q\Lambda D\varphi_q^\top-\Lambda'\big)D\rho'^\top_{\varphi(q)},\]
+which is the displayed criterion.
+
+If $D\varphi_q\Lambda D\varphi_q^\top=\Lambda'$, the bracket vanishes. For $\Lambda=\Lambda'=I$ the condition says that
+$D\varphi_q$ is orthogonal; in general it says that $\varphi$ is an isometry from $(Q,\langle\cdot,\Lambda^{-1}\cdot\rangle)$
+to $(Q',\langle\cdot,\Lambda'^{-1}\cdot\rangle)$. If $D\rho'_{\varphi(q)}$ is injective, it has a left inverse $E$, and
+multiplying $D\rho'MD\rho'^\top=0$ by $E$ on the left and by $E^\top$ on the right gives $M=0$; so the condition is then
+necessary.
+
+It is not necessary in general. Let $\rho(x)=\theta_0+\mathcal Lx$ be affine with linear part $\mathcal L$, and let $P$
+be a linear gauge, $\mathcal LP=\mathcal L$, with $\Lambda'=\Lambda$. Then $D\rho'=\mathcal L$ and $D\varphi=P$, and
+$\mathcal LP\Lambda P^\top\mathcal L^\top=\mathcal L\Lambda\mathcal L^\top$, so the criterion holds for every
+$\Lambda$. For $\rho(x,y)=\theta_0+x+y$ and $\Lambda=I$, the shear $P(x,y)=(2x,y-x)$ satisfies $\mathcal LP=\mathcal L$,
+while in block form $PP^\top=\begin{psmallmatrix}4&-2\\-2&2\end{psmallmatrix}\ne I$.
+
+For a pointwise gauge $\varphi(q)=\varphi_{g(q)}(q)$ of LoRA, with $g:Q\to\GL_r$ smooth and $\varphi$ a diffeomorphism,
+the product rule gives $D\varphi_q=\varphi_{g(q)}+V_q$. Here $\varphi_{g(q)}$ is the linear map
+$(\dot B,\dot A)\mapsto(\dot Bg(q)^{-1},g(q)\dot A)$, and $V_q(v)=\frac{d}{d\epsilon}\big|_{\epsilon=0}\varphi_{g(q+\epsilon v)}(q)$
+is tangent to the $\GL_r$-orbit of $\varphi(q)$. That orbit lies in a fibre of $\rho$, so $D\rho_{\varphi(q)}V_q=0$ and
+$D\rho_{\varphi(q)}D\varphi_q=D\rho_{\varphi(q)}\varphi_{g(q)}$. The criterion depends on $D\varphi_q$ only through
+$D\rho_{\varphi(q)}D\varphi_q$, so it reduces to the criterion for the linear gauge $\varphi_{g(q)}$ at $q$, which holds
+for $g(q)\in\Ort(r)$ by (b).
+
+(b) Here $Q'=Q$, $\rho'=\rho$, $\Lambda'=\Lambda$ is block-scalar and $\varphi_g(q)=g\cdot q$. By
+\thmref{Observation}{III.2},
+\[K_{g\cdot q}(G)=s^2\big(\eta_BGA^\top g^\top gA+\eta_ABg^{-1}g^{-\top}B^\top G\big),\]
+so $K_q=K_{g\cdot q}$ iff, for every $G\in\R^{m\times n}$,
+\[GX=YG,\qquad X=\eta_BA^\top(g^\top g-I)A\in\R^{n\times n},\quad Y=\eta_AB(I-g^{-1}g^{-\top})B^\top\in\R^{m\times m}.\]
+
+\emph{Matrix-unit lemma: if $GX=YG$ for every $G\in\R^{m\times n}$, then $X=cI_n$ and $Y=cI_m$ for some $c\in\R$.} Take
+$G=E_{ij}=e_ie_j^\top$. Comparing the $(k,l)$ entries of $E_{ij}X$ and $YE_{ij}$ gives $\delta_{ik}X_{jl}=Y_{ki}\delta_{jl}$.
+With $k=i$ and $l\ne j$ this gives $X_{jl}=0$; with $l=j$ and $k\ne i$ it gives $Y_{ki}=0$; with $k=i$ and $l=j$ it gives
+$X_{jj}=Y_{ii}$ for all $i,j$.
+
+Now $\rk X\le r<n$, so $X=cI_n$ forces $c=0$, that is, $A^\top(g^\top g-I)A=0$. Since $A$ has full row rank, $AA^\top$ is
+invertible, and multiplying by $(AA^\top)^{-1}A$ on the left and by $A^\top(AA^\top)^{-1}$ on the right gives
+$g^\top g=I$. Conversely, $g\in\Ort(r)$ makes $X$ and $Y$ vanish. Only the full row rank of $A$ and $r<n$ were used, and
+$B$ is arbitrary, including $B=0$. If instead $B$ has full column rank and $r<m$, then $\rk Y\le r<m$ forces $c=0$, so
+$B(I-g^{-1}g^{-\top})B^\top=0$; multiplying by $(B^\top B)^{-1}B^\top$ on the left and by $B(B^\top B)^{-1}$ on the right
+gives $g^{-1}g^{-\top}=I$, and again $g\in\Ort(r)$.
+\end{proof}
+
+\begin{remark*}{the family of plain-GD dynamics; LoRA+ under GD}
+The formula for $K_{g\cdot q}$ depends on $g$ only through $g^\top g$, since $g^{-1}g^{-\top}=(g^\top g)^{-1}$, and
+$g^\top g=h^\top h$ iff $hg^{-1}\in\Ort(r)$. So along a gauge orbit the cometrics of plain gradient descent are indexed by
+$\Ort(r)\backslash\GL_r$, which $g\mapsto g^\top g$ identifies with $\Sym_r^+$ (\bgref{D.27}, \auxref{B.19}(a)). For $g=cI$ with $c>0$,
+gradient flow with a single rate $\eta$ started from $g\cdot q$, pulled back by $g^{-1}$, satisfies $\dot B=c\dot B'=-\eta c^2\nabla_B$
+and $\dot A=c^{-1}\dot A'=-\eta c^{-2}\nabla_A$ by \eqref{eq:C2-gauge-grad}. This is LoRA with rates
+$(\eta_A,\eta_B)=(\eta c^{-2},\eta c^2)$, and the same holds step by step for GD, whose steps are linear in the gradients.
+Choosing $c=\lambda^{1/4}$ and $\eta=\sqrt\lambda\,\eta_A$ gives LoRA+ with ratio $\lambda=\eta_B/\eta_A$. Under gradient
+descent, LoRA+ is therefore the scalar gauge $\lambda^{1/4}I$ together with an overall change of rate.
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Proposition III.4}\label{proof:III.4}
+
+\begin{restate}{Proposition}{III.4}{cometrics that descend to the rank-$r$ manifold; known in part}
+Write $U=\operatorname{col}B$ and $V=\operatorname{row}A$. Statements (a), (b) and the first sentence of (d) are on the
+full-rank locus; (c) needs only $\rk A_0=r$, with $B$ arbitrary, including $B_0=0$. All statements concern gradient
+flow, or (S)GD to first order, on the stated gradients, undamped and without Adam. Cometrics include the learning rate.
+
+(a) Scaled GD, $\delta B=-\eta\nabla_B(AA^\top)^{-1}$ and $\delta A=-\eta(B^\top B)^{-1}\nabla_A$, is $\GL_r$-equivariant
+with first-order cometric $K(G)=\eta s^2(P_UG+GP_V)$.
+
+(b) LoRA-Pro's equivalent gradient $\tilde g=P_UG+(I-P_U)GP_V$ is the Frobenius-orthogonal projection
+$\Pi_{T_{W-W_0}\MM_r}(G)$. The flow of its SGD variant (LoRA-Pro Alg.~1) is the Riemannian gradient flow on
+$W_0+\MM_r$.
+
+(c) LoRA-FA's corrected gradient $s^{-2}\nabla_B(A_0A_0^\top)^{-1}$, fed to SGD with $A_0$ frozen, gives
+$K(G)=\eta\,GP_V$ with $V=\operatorname{row}A_0$, which depends on $A_0$ only through $V\in\Gr(r,n)$. Its original form,
+plain SGD on $B$, has $K(G)=s^2\eta_BGA_0^\top A_0$.
+
+(d) The cometrics of (a) and (b) are functions of $W$ on the full-rank locus and define vector fields tangent to
+$W_0+\MM_r$. The field of (c) is $G\mapsto\eta GP_V$ with $V=\operatorname{row}A_0$. Its flow is the Frobenius gradient
+flow on the slice $W_0+\{XA_0\}=W_0+\R^{m\times n}P_V$, of dimension $mr$, which contains $W_0$ and lies in $W_0+\Mr$.
+The rank-$r$ part of the slice, $N_V=\{\operatorname{row}(W-W_0)=V\}$, is open and dense in it and is a submanifold of
+$W_0+\MM_r$. On $N_V$ the field is tangent to $\MM_r$ and equals $\eta GP_{\operatorname{row}(W-W_0)}$, a function of
+$W$. So (c) descends too, as a degenerate cometric of rank $mr$ (less than $r(m+n-r)$ when $r<n$) whose flow keeps
+$\operatorname{row}(W-W_0)=\operatorname{row}A_0$ fixed. The cometric of plain GD depends on the representative; it is
+invariant only under $\Ort(r)$.
+\end{restate}
+
+\begin{proof}
+In (a), (b) and the first sentence of (d), $(B,A)$ lies on the full-rank locus and the conventions of
+\S\ref{proof:III.1} apply. Write $\mathcal T:=T_{W-W_0}\MM_r$, where $W-W_0=sBA$ has rank $r$, column space $U$ and row
+space $V$.
+
+(a) The steps are $\delta B=-\eta\nabla_B(AA^\top)^{-1}=-\eta s\,GA^\top(AA^\top)^{-1}$ and
+$\delta A=-\eta(B^\top B)^{-1}\nabla_A=-\eta s\,(B^\top B)^{-1}B^\top G$. Hence
+\begin{align*}
+\delta W&=s(\delta BA+B\delta A)+s\,\delta B\,\delta A=-\eta s^2\big(GA^\top(AA^\top)^{-1}A+B(B^\top B)^{-1}B^\top G\big)+O(\eta^2)\\
+&=-\eta s^2(GP_V+P_UG)+O(\eta^2),
+\end{align*}
+and the flow version gives $\dot W=-\eta s^2(P_UG+GP_V)$ exactly. Left multiplication by $P_U$ and right
+multiplication by $P_V$ are orthogonal projections of $(\R^{m\times n},\langle\cdot,\cdot\rangle)$, so
+$K(G)=\eta s^2(P_UG+GP_V)$ is symmetric positive semidefinite. For equivariance, let $q'=g\cdot q$. By
+\eqref{eq:C2-gauge-grad} and $(A'A'^\top)^{-1}=(gAA^\top g^\top)^{-1}=g^{-\top}(AA^\top)^{-1}g^{-1}$,
+\[\delta B'=-\eta\nabla_Bg^\top g^{-\top}(AA^\top)^{-1}g^{-1}=\delta B\,g^{-1},\]
+and $(B'^\top B')^{-1}=(g^{-\top}B^\top Bg^{-1})^{-1}=g(B^\top B)^{-1}g^\top$ gives
+$\delta A'=-\eta g(B^\top B)^{-1}g^\top g^{-\top}\nabla_A=g\,\delta A$. So the discrete step satisfies
+\eqref{eq:C2-equivariant-step} for every $g\in\GL_r$.
+
+(b) \emph{The tangent space.} We show that
+\[\{XA+BY:\ X\in\R^{m\times r},\ Y\in\R^{r\times n}\}=\{D:\ P_{U^\perp}DP_{V^\perp}=0\}=\mathcal T.\]
+The first inclusion $\subseteq$ holds because $AP_{V^\perp}=0$ and $P_{U^\perp}B=0$. Conversely, if
+$P_{U^\perp}DP_{V^\perp}=0$, then
+$D=P_UD+P_{U^\perp}DP_V=B\big[(B^\top B)^{-1}B^\top D\big]+\big[P_{U^\perp}DA^\top(AA^\top)^{-1}\big]A$. The common space
+has dimension $mn-(m-r)(n-r)=r(m+n-r)=\dim\MM_r$ (\bgref{C.12}). The curves $t\mapsto s(B+t\dot B)(A+t\dot A)$ lie in
+$\MM_r$ for small $t$, so $\{\dot BA+B\dot A\}\subseteq\mathcal T$, and equality of dimensions gives equality.
+
+\emph{The projection.} Let $\mathcal N=\{P_{U^\perp}EP_{V^\perp}:E\in\R^{m\times n}\}$. For $D\in\mathcal T$ we
+have $\langle D,P_{U^\perp}EP_{V^\perp}\rangle=\langle P_{U^\perp}DP_{V^\perp},E\rangle=0$, so
+$\mathcal N\perp\mathcal T$. Moreover $G=(G-P_{U^\perp}GP_{V^\perp})+P_{U^\perp}GP_{V^\perp}$, with the first term in
+$\mathcal T$ and the second in $\mathcal N$. Hence
+\[\Pi_{\mathcal T}(G)=G-(I-P_U)G(I-P_V)=P_UG+GP_V-P_UGP_V=P_UG+(I-P_U)GP_V=\tilde g.\]
+
+\emph{LoRA-Pro's SGD variant.} Algorithm~1 of \citet{wang2024lorac} takes the steps $\delta B=-\eta g^B$ and
+$\delta A=-\eta g^A$ along a pair that minimises $\lVert s(g^BA+Bg^A)-G\rVert_F$ (their Theorem~2.1). As $(g^B,g^A)$
+ranges over all pairs, $s(g^BA+Bg^A)$ ranges over $\mathcal T$, and the closest point of $\mathcal T$ to $G$ is
+$\Pi_{\mathcal T}G$. So every minimiser satisfies $s(g^BA+Bg^A)=\Pi_{\mathcal T}G$; explicitly, the minimisers are
+\[g^A=s^{-1}(B^\top B)^{-1}B^\top G+XA,\qquad g^B=s^{-1}(I-P_U)GA^\top(AA^\top)^{-1}-BX,\qquad X\in\R^{r\times r},\]
+for which $sBg^A=P_UG+sBXA$ and $sg^BA=(I-P_U)GP_V-sBXA$. For every choice of the free matrix $X$,
+\[\delta W=s(\delta BA+B\delta A)+s\,\delta B\,\delta A=-\eta\,\Pi_{\mathcal T}G+O(\eta^2).\]
+The flow version is $\dot W=-\eta\,\Pi_{T_{W-W_0}\MM_r}\nabla_\theta L(W)$. Since $\Pi_{\mathcal T}\nabla_\theta L$ is the
+Riemannian gradient of $L$ restricted to $W_0+\MM_r$ for the metric induced by the Frobenius inner product
+(\bgref{D.24}, \auxref{B.30}; \citealp[Ch.~3]{xabsil2008optimization}), this is the Riemannian gradient flow on $W_0+\MM_r$, run at
+rate $\eta$.
+
+(c) Here $A=A_0$ is frozen with $\rk A_0=r$, and $B$ is arbitrary. The corrected step is
+$\delta B=-\eta s^{-2}\nabla_B(A_0A_0^\top)^{-1}=-\eta s^{-1}GA_0^\top(A_0A_0^\top)^{-1}$, so
+\[\Delta W=s\,\delta B\,A_0=-\eta\,GA_0^\top(A_0A_0^\top)^{-1}A_0=-\eta\,GP_V,\]
+exactly, since $A_0$ does not move. $P_V$ depends only on $V=\operatorname{row}A_0$. The original LoRA-FA step
+$\delta B=-\eta_B\nabla_B=-\eta_BsGA_0^\top$ gives $\Delta W=s\,\delta B\,A_0=-s^2\eta_BGA_0^\top A_0$.
+
+(d) On the full-rank locus $P_U$ and $P_V$ are the projectors onto $\operatorname{col}(W-W_0)$ and
+$\operatorname{row}(W-W_0)$, so the cometrics of (a) and (b) are functions of $W$. Their values lie in $\mathcal T$:
+this is clear for $\Pi_{\mathcal T}$, and $P_{U^\perp}(P_UG+GP_V)P_{V^\perp}=0$.
+
+For (c), the trajectory satisfies $W-W_0=sBA_0\in\{XA_0:X\in\R^{m\times r}\}$, and $\{XA_0\}=\{Z:\operatorname{row}Z\subseteq V\}=\R^{m\times n}P_V$,
+a linear space of dimension $mr$. Right multiplication by $P_V$ is the Frobenius-orthogonal projection onto it, so
+$\dot W=-\eta\nabla_\theta L(W)P_V$ is the gradient flow of $L$ restricted to the affine slice $W_0+\R^{m\times n}P_V$
+with its flat Frobenius metric. The slice contains $W_0$ ($X=0$) and lies in $W_0+\Mr$, since $\rk XA_0\le r$. Because
+$X\mapsto XA_0$ is injective, $\rk XA_0=\rk X$, and $\operatorname{row}(XA_0)=V$ iff $\rk X=r$. So
+$N_V=W_0+\{XA_0:\rk X=r\}$, which is open in the slice because rank $r$ is an open condition (\auxref{B.1}(a)), and
+dense because every $X\in\R^{m\times r}$ ($m\ge r$) is a limit of rank-$r$ matrices $X+tE$ as $t\to0$: if $E$ has
+$I_r$ in its first $r$ rows and zeros elsewhere, the top $r\times r$ minor of $X+tE$ is a monic polynomial of degree $r$
+in $t$, so it vanishes for only finitely many $t$. $N_V$ is an open
+subset of an affine subspace, hence an embedded submanifold of $\R^{m\times n}$, and it lies in the embedded
+submanifold $W_0+\MM_r$. The inclusion $N_V\hookrightarrow W_0+\MM_r$ is smooth by \auxref{B.2}(c), an immersion
+because its composite with the inclusion $W_0+\MM_r\hookrightarrow\R^{m\times n}$ is one, and a homeomorphism onto its
+image because both sets carry the subspace topology of $\R^{m\times n}$. So it is an embedding, and $N_V$ is an embedded
+submanifold of $W_0+\MM_r$ (\bgref{C.4}). At $W\in N_V$, $\operatorname{row}(W-W_0)=V$, so $GP_V=GP_{\operatorname{row}(W-W_0)}$ is a
+function of $W$, and, with $U_W=\operatorname{col}(W-W_0)$, $P_{U_W^\perp}(GP_V)P_{V^\perp}=0$ shows that it lies in $T_{W-W_0}\MM_r$ (it lies in
+$\R^{m\times n}P_V=T N_V$ as well). The operator $G\mapsto\eta GP_V$ has rank $\dim\R^{m\times n}P_V=mr$, and
+$mr<r(m+n-r)$ when $r<n$. Along the flow $W(t)$ stays in the slice, so $\operatorname{row}(W(t)-W_0)\subseteq V$ for
+all $t$, with equality whenever $W(t)\in N_V$.
+
+The last sentence of (d) is \thmref{Theorem}{III.3}(b).
+\end{proof}
+
+\begin{remark*}{the departures listed under Practice}
+The symmetry statements in the Practice paragraph after \thmref{Proposition}{III.4} are proved with
+\thmref{Theorem}{III.12}: damping $(B^\top B+\delta I)^{-1}$, $(AA^\top+\delta I)^{-1}$ with $\delta>0$ leaves exactly
+$\Ort(r)$; an AdamW step applied after the preconditioner, as in scaled AdamW and in HF's LoRA-FA optimizer, leaves
+exactly the signed permutations $B_r$; and LoRA-Pro's Sylvester-optimal free matrix leaves exactly $\Ort(r)$ at the
+parameter level. For LoRA-FA with the undamped correction and AdamW at $\varepsilon=0$, the first step from $B_0=0$ is
+$\Delta W=-s\eta_B\operatorname{sign}\big(GA_0^\top(A_0A_0^\top)^{-1}\big)A_0$. Replacing $A_0$ by $2A_0$, which has the
+same row space, doubles this step, so the trajectory depends on $A_0$ beyond its row space (see also
+\S\ref{proof:III.13}).
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Theorem III.5}\label{proof:III.5}
+
+\begin{restate}{Theorem}{III.5}{Noether charges and isometries for cotangent signals; known, \citet{zhao2022symmetries}}
+Let a Lie group act linearly on $Q=\R^N$ with $\rho\circ k=\rho$, let $\Lambda\succ0$ be constant, and let
+$\gamma(t)\in T^*_{\rho(q(t))}\Theta$ be any cotangent signal, gradient or not. Consider the continuous-time updates
+\[\dot q=-\Lambda\,D\rho_q^\top\gamma(t).\]
+
+(i) For every generator $\xi$ with $\Lambda^{-1}\xi$ symmetric, the charge $J_\xi(q)=\tfrac12\langle q,\Lambda^{-1}\xi q\rangle$
+is conserved.
+
+(ii) For every generator $\xi$ with $\Lambda^{-1}\xi$ antisymmetric, $k=e^{\tau\xi}$ preserves
+$\langle\cdot,\Lambda^{-1}\cdot\rangle$, so $K_{kq}=K_q$ along the orbit; for the same cotangent $\gamma$, the
+$\theta$-velocities at $q$ and at $kq$ agree. Suppose moreover that $\gamma$ depends on $q$ only through $(t,\rho(q))$, as
+$\gamma=\nabla_\theta L$ or an open-loop signal does, and that solutions are unique ($\gamma$ measurable in $t$ and
+locally Lipschitz in $\theta$, $\rho$ of class $C^{1,1}_{\mathrm{loc}}$). Then the $\theta$-trajectories from $q_0$ and
+from $kq_0$ coincide. If $\gamma$ uses Euclidean norms on $Q$, as global-norm clipping does, the trajectory statement
+holds when, in addition, $k$ is a Euclidean isometry, and can fail otherwise. So (i) and the velocity statement of (ii)
+hold for arbitrary $\gamma$, while the trajectory statement needs a gradient-like signal.
+
+(iii) When $\mathfrak g$ is closed under $\xi\mapsto\Lambda\xi^\top\Lambda^{-1}$, every generator splits into a part of
+type (i) and a part of type (ii), a Cartan decomposition $\mathfrak g=\mathfrak k\oplus\mathfrak p$. This holds for
+LoRA's $\gl_r$ with per-block scalar rates. Without closure, there are generators of neither type. With per-rank-channel
+rates $\Lambda(B,A)=(BD_B,D_AA)$, where $D_B=\diag(\eta_{B,j})$ and $D_A=\diag(\eta_{A,j})$, the generator $\xi_X$ is of
+type (i) iff $XD_B^{-1}$ and $D_A^{-1}X$ are both symmetric, and of type (ii) iff both are antisymmetric. An off-diagonal
+pair $(i,j)$ contributes one charge and one isometry iff $\eta_{B,i}\eta_{A,i}=\eta_{B,j}\eta_{A,j}$, and $\mathfrak g$
+is closed iff all the products $\eta_{B,j}\eta_{A,j}$ are equal. In that case one gets a $D$-conjugate of
+$\so_r\oplus\Sym_r$ whose isometries are not all Euclidean unless the rates are
+block-scalar, so the clipping caveat of (ii) applies. For pairwise distinct
+products, only the diagonal $X$ give charges and no nonzero $X$ gives an isometry.
+\end{restate}
+
+\begin{proof}
+Part (i) is Noether's theorem in the form of \auxref{B.29}, which allows an arbitrary cotangent signal; we give the
+short argument in full. Solutions are absolutely continuous and the identities below hold for almost
+every $t$. For $\xi$ in the Lie algebra
+$\mathfrak g\subseteq\gl(N)$ of the group, $\rho(e^{\tau\xi}q)=\rho(q)$ for all $\tau$; differentiating at $\tau=0$
+gives the infinitesimal invariance
+\begin{equation}\label{eq:C2-infinitesimal}
+D\rho_q(\xi q)=0\qquad(q\in Q,\ \xi\in\mathfrak g).
+\end{equation}
+
+(i) If $\Lambda^{-1}\xi$ is symmetric, the gradient of $J_\xi$ is $\Lambda^{-1}\xi q$. Along a solution, using that
+$\Lambda$ is symmetric and \eqref{eq:C2-infinitesimal},
+\[\tfrac{d}{dt}J_\xi(q)=\langle\Lambda^{-1}\xi q,\dot q\rangle=-\langle\Lambda^{-1}\xi q,\Lambda D\rho_q^\top\gamma\rangle
+=-\langle\xi q,D\rho_q^\top\gamma\rangle=-\langle D\rho_q\xi q,\gamma\rangle=0.\]
+Nothing about $\gamma$ was used, so it may depend on $q$ in any way.
+
+(ii) \emph{Isometry and cometric.} If $\Lambda^{-1}\xi$ is antisymmetric, then $\xi^\top\Lambda^{-1}=-\Lambda^{-1}\xi$, so
+\[\tfrac{d}{d\tau}\big(e^{\tau\xi^\top}\Lambda^{-1}e^{\tau\xi}\big)=e^{\tau\xi^\top}(\xi^\top\Lambda^{-1}+\Lambda^{-1}\xi)e^{\tau\xi}=0,\]
+and $k=e^{\tau\xi}$ satisfies $k^\top\Lambda^{-1}k=\Lambda^{-1}$, equivalently $k\Lambda k^\top=\Lambda$. From
+$\rho\circ k=\rho$ we get $D\rho_q=D\rho_{kq}k$, so
+\[K_q=D\rho_{kq}\,k\Lambda k^\top D\rho_{kq}^\top=D\rho_{kq}\Lambda D\rho_{kq}^\top=K_{kq}.\]
+Since $\rho(kq)=\rho(q)$, the same covector $\gamma$ acts at both points, and the velocities $-K_q\gamma$ and
+$-K_{kq}\gamma$ agree. The rest of the argument uses only the two properties $k\Lambda k^\top=\Lambda$ and $\rho\circ k=\rho$,
+so it applies to every such $k$, not only to those of the form $e^{\tau\xi}$.
+
+\emph{Trajectories.} Let $\gamma=\gamma(t,\rho(q))$ and let $q(t)$ solve $\dot q=F(t,q):=-\Lambda D\rho_q^\top\gamma(t,\rho(q))$
+from $q_0$. Put $p(t)=kq(t)$. Then, using $D\rho_q^\top=k^\top D\rho_{kq}^\top$ and $\rho(p)=\rho(q)$,
+\[\dot p=k\dot q=-k\Lambda k^\top D\rho_p^\top\gamma(t,\rho(q))=-\Lambda D\rho_p^\top\gamma(t,\rho(p))=F(t,p),\]
+so $p$ solves the same equation from $kq_0$. Under the stated regularity, read locally uniformly in $t$, $F$ is measurable in
+$t$ and locally bounded and locally Lipschitz in $p$, because $D\rho$ and $\rho$ are locally Lipschitz and $\gamma$ is
+locally Lipschitz in $\theta$. By Gronwall's inequality two solutions with the same initial value coincide (\auxref{B.28}), so $p$ is the solution from
+$kq_0$, and $\rho(p(t))=\rho(q(t))$ for all $t$.
+
+\emph{Clipping.} Suppose $\gamma$ depends on $q$ through $(t,\rho(q))$ and through Euclidean norms
+$\lVert D\rho_q^\top v\rVert$ of pulled-back covectors $v$ that are themselves functions of $(t,\rho(q))$. Global-norm
+clipping is of this kind:
+\[\gamma=\min\big(1,C/\lVert D\rho_q^\top\nabla_\theta L\rVert\big)\,\nabla_\theta L .\]
+If $k$ is also a Euclidean isometry, then
+$\lVert D\rho_{kq}^\top v\rVert=\lVert k^{-\top}D\rho_q^\top v\rVert=\lVert D\rho_q^\top v\rVert$, so $\gamma$ takes the
+same value at $q$ and at $kq$, and the argument above goes through. Otherwise it can fail. Take $Q=\R^2$,
+$\Theta=\R$, $\Lambda=\diag(1,4)$, $\rho(q)=\tfrac12q^\top\Lambda^{-1}q$ and $L(\theta)=\theta^2/2$. The group
+$\{k:k^\top\Lambda^{-1}k=\Lambda^{-1}\}$ acts linearly and preserves $\rho$; its generator $\xi=\Lambda^{1/2}J\Lambda^{-1/2}$,
+with $J=\begin{psmallmatrix}0&-1\\1&0\end{psmallmatrix}$, has $\Lambda^{-1}\xi=\Lambda^{-1/2}J\Lambda^{-1/2}$
+antisymmetric, and $k=e^{(\pi/2)\xi}=\Lambda^{1/2}e^{(\pi/2)J}\Lambda^{-1/2}$ maps $q_0=(1,0)$ to $kq_0=(0,2)$, both with
+$\theta=1/2$. Here $D\rho_q^\top\gamma=\gamma\Lambda^{-1}q$ and $\dot\theta=-\gamma\,q^\top\Lambda^{-1}q=-2\theta\gamma$.
+The parameter gradients $L'(\theta)\Lambda^{-1}q$ have norms $1/2$ at $q_0$ and $1/4$ at $kq_0$, so with $C=1/10$ the
+clipping factors are $1/5$ and $2/5$, and the initial velocities are $\dot\theta=-1/10$ and $\dot\theta=-1/5$. The
+$\theta$-trajectories differ, while without clipping they coincide by the argument above.
+
+(iii) \emph{Splitting.} Put $\vartheta(\xi)=-\Lambda\xi^\top\Lambda^{-1}$. It is an involution of $\gl(N)$
+($\vartheta^2(\xi)=\Lambda\Lambda^{-1}\xi\Lambda\Lambda^{-1}=\xi$) and a Lie algebra automorphism:
+$\vartheta([\xi,\zeta])=-\Lambda(\zeta^\top\xi^\top-\xi^\top\zeta^\top)\Lambda^{-1}=[\vartheta\xi,\vartheta\zeta]$. A
+generator is of type (ii) iff $\Lambda^{-1}\xi$ is antisymmetric, iff $\Lambda\xi^\top\Lambda^{-1}=-\xi$, iff
+$\vartheta\xi=\xi$; it is of type (i) iff $\vartheta\xi=-\xi$. If $\mathfrak g$ is closed under
+$\xi\mapsto\Lambda\xi^\top\Lambda^{-1}$, it is $\vartheta$-stable, and
+\[\xi=\tfrac12(\xi+\Lambda\xi^\top\Lambda^{-1})+\tfrac12(\xi-\Lambda\xi^\top\Lambda^{-1})\]
+writes every $\xi\in\mathfrak g$ as a type (i) part (in the $-1$ eigenspace $\mathfrak p$ of $\vartheta$) plus a type (ii)
+part (in the $+1$ eigenspace $\mathfrak k$). Since $\vartheta$ is an automorphism, $[\mathfrak k,\mathfrak k]\subseteq\mathfrak k$,
+$[\mathfrak k,\mathfrak p]\subseteq\mathfrak p$ and $[\mathfrak p,\mathfrak p]\subseteq\mathfrak k$, which is the Cartan
+decomposition (\bgref{D.27}, \auxref{B.19}(b)). If some $\xi\in\mathfrak g$ has $\Lambda\xi^\top\Lambda^{-1}\notin\mathfrak g$, then
+$\vartheta\xi\ne\pm\xi$, so $\xi$ is of neither type.
+
+\emph{LoRA.} The generators of the gauge are $\xi_X(B,A)=(BX,-XA)$ for $X\in\gl_r$ (the derivative of $\tau\mapsto e^{-\tau X}\cdot(B,A)$),
+and $X\mapsto\xi_X$ is injective. For per-rank-channel rates $\Lambda(B,A)=(BD_B,D_AA)$,
+\[\Lambda^{-1}\xi_X(B,A)=(BXD_B^{-1},\ -D_A^{-1}XA),\qquad (\Lambda^{-1}\xi_X)^\top(B,A)=\big(B(XD_B^{-1})^\top,\ -(D_A^{-1}X)^\top A\big),\]
+because $\langle B',BM\rangle=\langle B'M^\top,B\rangle$ and $\langle A',NA\rangle=\langle N^\top A',A\rangle$. Hence
+$\Lambda^{-1}\xi_X$ is symmetric iff $XD_B^{-1}$ and $D_A^{-1}X$ are symmetric, and antisymmetric iff both are
+antisymmetric. Entrywise, $(XD_B^{-1})_{ij}=X_{ij}/\eta_{B,j}$ and $(D_A^{-1}X)_{ij}=X_{ij}/\eta_{A,i}$. For $i\ne j$, the
+two symmetry conditions read $X_{ji}=X_{ij}\eta_{B,i}/\eta_{B,j}$ and $X_{ji}=X_{ij}\eta_{A,j}/\eta_{A,i}$; the
+antisymmetry conditions are the same with a minus sign. Both admit $X_{ij}\ne0$ iff
+$\eta_{B,i}/\eta_{B,j}=\eta_{A,j}/\eta_{A,i}$, that is, iff $\eta_{B,i}\eta_{A,i}=\eta_{B,j}\eta_{A,j}$, and then the pair
+$(i,j)$ carries a one-dimensional space of each type. On the diagonal the symmetry conditions are empty and the
+antisymmetry conditions force $X_{ii}=0$. So for pairwise distinct products the type (i) generators are exactly the
+diagonal $X$, and the only type (ii) generator is $X=0$.
+
+For closure, $\xi_X^\top(B,A)=(BX^\top,-X^\top A)$, so $\Lambda\xi_X^\top\Lambda^{-1}(B,A)=(BD_B^{-1}X^\top D_B,\ -D_AX^\top D_A^{-1}A)$.
+An operator $(B,A)\mapsto(BM,-NA)$ lies in $\mathfrak g=\{\xi_Y\}$ iff $M=N$, so closure holds iff
+$D_B^{-1}X^\top D_B=D_AX^\top D_A^{-1}$ for all $X$. The $(i,j)$ entries are $X_{ji}\eta_{B,j}/\eta_{B,i}$ and
+$X_{ji}\eta_{A,i}/\eta_{A,j}$, which agree for all $X$ iff all products $\eta_{B,j}\eta_{A,j}$ are equal. With block-scalar
+rates ($D_B=\eta_BI$, $D_A=\eta_AI$) this holds, the type (i) generators are the symmetric $X$ and the type (ii) ones the
+antisymmetric $X$, and $\gl_r=\so_r\oplus\Sym_r$.
+
+When all products equal $p$, $D_B=pD_A^{-1}$, and the type (i) generators are $X=SD_B$ with $S$ symmetric (then
+$D_A^{-1}X=pD_A^{-1}SD_A^{-1}$ is symmetric too); the type (ii) generators are $X=KD_B$ with $K$ antisymmetric. With
+$D=D_B^{1/2}$, conjugation $X\mapsto DXD^{-1}$ maps $SD_B$ to $DSD$ and $KD_B$ to $DKD$, so
+$\mathfrak k\oplus\mathfrak p=D^{-1}(\so_r\oplus\Sym_r)D$. The isometries are the group elements $D^{-1}OD$ with
+$O\in\SO(r)$, and $D^{-1}OD$ is orthogonal iff $O$ commutes with $D^2=D_B$. Unless $D_B$ is a multiple of the identity
+(the block-scalar case), some of these isometries are not orthogonal, so they act on $Q$ by non-Euclidean maps and the
+clipping caveat of (ii) applies.
+\end{proof}
+
+\begin{remark*}{instances and the discrete step}
+Each instance listed after \thmref{Theorem}{III.5} applies (i) to the generator named there; we record the checks. All
+assume gradient flow, or SGD without momentum, with per-block rates.
+\begin{itemize}
+\item \emph{LoRA.} For symmetric $X$, $J_{\xi_X}(B,A)=\tfrac12\big(\langle B,BX\rangle/\eta_B-\langle A,XA\rangle/\eta_A\big)=\tfrac12\tr(X\Phi)$
+with $\Phi=B^\top B/\eta_B-AA^\top/\eta_A$, so the $r(r+1)/2$ charges are the entries of $\Phi$. The $\so_r$ generators
+act by $(BO^\top,OA)$ with $O\in\SO(r)$, which are Euclidean isometries commuting with $\Lambda$, so (ii) holds under
+global-norm clipping.
+\item \emph{DyLoRA.} At each step the loss uses $\rho_b(B,A)=W_0+s_bBE_bA$ for a sampled $b$, with
+$E_b=\diag(1,\dots,1,0,\dots,0)$ of rank $b$. The update is $-\Lambda D\rho_{b(t)}^\top\gamma$, and the proof of (i) needs
+only $D\rho_{b(t)}(\xi q)=0$. Now $\rho_b(g\cdot q)=\rho_b(q)$ for all $(B,A)$ iff $g^{-1}E_bg=E_b$, that is, iff
+$g$ preserves $\spanop(e_1,\dots,e_b)$ and $\spanop(e_{b+1},\dots,e_r)$. When every $b\in\{1,\dots,r\}$ can be sampled,
+$g$ then preserves each line $\spanop(e_b)=\spanop(e_1,\dots,e_b)\cap\spanop(e_b,\dots,e_r)$, so it is diagonal. Diagonal $X$ are symmetric, which gives the charges $\diag\Phi$.
+\item \emph{VeRA.} $\rho(b,d)=W_0+\diag(b)B_{\mathrm f}\diag(d)A_{\mathrm f}$ with frozen $B_{\mathrm f},A_{\mathrm f}$ is
+invariant under $(b,d)\mapsto(cb,d/c)$, with generator $(b,-d)$ and charge $\tfrac12(\lVert b\rVert^2/\eta_b-\lVert d\rVert^2/\eta_d)$.
+NOLA's two coefficient vectors behave in the same way.
+\item \emph{AdaLoRA.} $\rho(P,\lambda,Q)=W_0+P\diag(\lambda)Q$ is invariant under $(p_k,\lambda_k)\mapsto(cp_k,\lambda_k/c)$ and
+under $(\lambda_k,q_k)\mapsto(\lambda_k/c,cq_k)$; at equal rates the charges are proportional to
+$\lVert p_k\rVert^2-\lambda_k^2$ and $\lVert q_k\rVert^2-\lambda_k^2$. The orthogonality regulariser
+$\lVert P^\top P-I\rVert^2+\lVert QQ^\top-I\rVert^2$ is not invariant under these scalings, so the regularised loss does not
+factor through $\rho$, and rank-budget masking changes $\rho$.
+\item \emph{HRA.} $\rho(u_1,\dots,u_r)=W_0\prod_i(I-2u_iu_i^\top/\lVert u_i\rVert^2)$ is invariant under $u_i\mapsto cu_i$,
+with charge $\tfrac12\lVert u_i\rVert^2/\eta$.
+\item \emph{ReLU bottleneck adapters} $h\mapsto h+U\operatorname{relu}(Dh+\beta)$. Multiplying row $j$ of $D$ and $\beta_j$ by
+$c>0$ and column $j$ of $U$ by $1/c$ preserves the function, since $\operatorname{relu}(cz)=c\operatorname{relu}(z)$. The
+target is a function space, which \thmref{Observation}{III.2} allows, and the derivative of $\rho$ along the scaling
+direction vanishes by homogeneity even at the kinks. Each hidden unit gives the charge
+$\tfrac12\big((\lVert D_{j,:}\rVert^2+\beta_j^2)/\eta_D-\lVert U_{:,j}\rVert^2/\eta_U\big)$, with a common rate for $D$
+and $\beta$.
+\item \emph{TT adapters.} Neighbouring cores share a bond of dimension $r_k$, on which $\GL(r_k)$ acts by $h^{-1}$ on one
+side and $h$ on the other. The symmetric generators give one conserved symmetric $r_k\times r_k$ matrix per bond, the
+Gram matrix of the left unfolding of one core divided by its rate minus that of the right unfolding of the next core
+divided by its rate.
+\item \emph{DoRA's detached-norm backward, global-norm clipping, LoRA dropout.} DoRA writes $W=V\diag(\mathsf g/\lVert V\rVert_c)$
+with $V=W_0+sBA$, column norms $\lVert V\rVert_c$ and magnitudes $\mathsf g$. Treating $\lVert V\rVert_c$ as a constant in
+the backward pass gives $\nabla_B=s\gamma A^\top$ and $\nabla_A=sB^\top\gamma$ with
+$\gamma=\nabla_WL\,\diag(\mathsf g/\lVert V\rVert_c)$. Clipping multiplies the factor gradients by one scalar, and dropout
+replaces $G$ by the masked signal of \S\ref{proof:III.2}. In each case the update of $(B,A)$ is
+$-\Lambda D\rho_{\mathrm{LoRA}}^\top\gamma$ for some $\gamma$, so $\Phi$ is conserved.
+\item \emph{Discrete GD.} With $s$ absorbed into $G$, one step $B^+=B-\eta_BGA^\top$, $A^+=A-\eta_AB^\top G$ gives
+\begin{gather*}
+\tfrac{1}{\eta_B}B^{+\top}B^+=\tfrac{1}{\eta_B}B^\top B-(AG^\top B+B^\top GA^\top)+\eta_BAG^\top GA^\top,\\
+\tfrac{1}{\eta_A}A^+A^{+\top}=\tfrac{1}{\eta_A}AA^\top-(B^\top GA^\top+AG^\top B)+\eta_AB^\top GG^\top B,
+\end{gather*}
+so $\Phi^+-\Phi=\eta_BAG^\top GA^\top-\eta_AB^\top GG^\top B$ exactly. This is of order $\eta$ while $\Phi$ is of order
+$1/\eta$, so $\eta\Phi$, or $\Phi$ relative to its size, drifts by $O(\eta^2)$ per step.
+\item \emph{Momentum and Adam.} A heavy-ball step adds a buffer of gradients taken at past points, $D\rho_{q_s}^\top G_s$
+with $s<t$, and Adam rescales gradients coordinatewise. Neither step has the form $-\Lambda D\rho_q^\top\gamma$ at the
+current $q$ with a constant $\Lambda$, so (i) does not apply.
+\end{itemize}
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Corollary III.6}\label{proof:III.6}
+
+\begin{restate}{Corollary}{III.6}{charge at initialisation; weight decay}
+(a) $\Phi_0=B_0^\top B_0/\eta_B-A_0A_0^\top/\eta_A$ is the value of the conserved charge, fixed by the initialisation and
+the rates. Since $\Ort(r)$ acts on $\Phi$ by conjugation and preserves $\theta$-trajectories (\thmref{Theorem}{III.5}(ii)),
+only the spectrum of $\Phi_0$ labels a $\theta$-trajectory.
+
+\smallskip
+{\upshape\small\renewcommand{\arraystretch}{1.12}\noindent
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.5\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule\headrow
+\textbf{Initialisation} & \textbf{Charge $\Phi_0$}\\
+\midrule
+HF default LoRA on Linear and Conv layers ($B_0=0$; Kaiming-uniform $A_0$ with entries $U(-n^{-1/2},n^{-1/2})$, $n$ the fan-in, which is \texttt{in\_channels} times the kernel size for Conv) & $-A_0A_0^\top/\eta_A$, with $\mathbb{E}[A_0A_0^\top]=\tfrac13I_r$ and fluctuations $O(n^{-1/2})$ on and off the diagonal\\
+HF default LoRA on embedding layers ($A_0=0$, normal $B_0$) & $+B_0^\top B_0/\eta_B$ (Init[B]-type)\\
+HF \texttt{mica} \citep{rudiger2026mica} ($A_0=0$, frozen minor-singular $B_0$) & $+B_0^\top B_0/\eta_B$ (Init[B]-type, with $B$ frozen)\\
+EVA \citep{paischer2024parameter} (orthonormal rows; default \texttt{whiten=False}) & $-I/\eta_A$ exactly\\
+PiSSA in HF PEFT \citep{meng2024pissa}, and MiLoRA \citep{wang2024milora} if implemented like \texttt{pissa\_init} with the bottom-$r$ singular values (MiLoRA is not in HF PEFT); $B_0^\top B_0=A_0A_0^\top=S_r/s$, with $S_r$ the top-$r$, resp.\ bottom-$r$, singular values and $s$ the LoRA scale & $(S_r/s)(1/\eta_B-1/\eta_A)$, zero \textbf{iff} $\eta_A=\eta_B$ (when $S_r\ne0$)\\
+OLoRA \citep{buyukakyuz2024olora} ($B_0=Q_r$, $A_0=R_r$) & $I/\eta_B-R_rR_r^\top/\eta_A$\\
+``Init[B]'' \citep{hayou2024impact} ($A_0=0$) & $+B_0^\top B_0/\eta_B$\\
+\bottomrule
+\end{tabularx}}
+\smallskip
+
+(b) Let $G$ be any cotangent signal, with the scale $s$ absorbed into it. Under gradient flow, if decay acts per unit time
+and identically on both factors,
+\[\dot B=-\eta_BGA^\top-\lambda B,\qquad\dot A=-\eta_AB^\top G-\lambda A,\]
+then $\dot\Phi=-2\lambda\Phi$. With learning-rate-coupled decay (PyTorch SGD \texttt{weight\_decay}; the decay term of
+PyTorch AdamW), $\dot B=-\eta_B(GA^\top+\lambda B)$ and likewise for $A$, so that $\dot\Phi=-2\lambda(B^\top B-AA^\top)$.
+Then $\Phi(t)=e^{-2\eta\lambda t}\Phi(0)$ holds when $\eta_A=\eta_B=\eta$. For $\eta_A\ne\eta_B$ it fails in general,
+since $-2\lambda(B^\top B-AA^\top)$ is not a function of $\Phi$. With an actual Adam(W) gradient term, $\Phi$ drifts even
+without decay, at first order in the step size; Adam lies outside \thmref{Theorem}{III.5}. So neither law describes AdamW
+training.
+\end{restate}
+
+\begin{proof}
+(a) \emph{Conservation and conjugation.} With block-scalar rates the entries of $\Phi$ are the charges of
+\thmref{Theorem}{III.5}(i) (\S\ref{proof:III.5}, remark on instances), so under gradient flow $\Phi(t)=\Phi_0$, the value
+fixed by $(B_0,A_0)$ and $(\eta_A,\eta_B)$. For $O\in\Ort(r)$, the map $k:(B,A)\mapsto(BO,O^\top A)$ is the gauge
+element $g=O^\top$, and
+\[\Phi(BO,O^\top A)=O^\top\tfrac{B^\top B}{\eta_B}O-O^\top\tfrac{AA^\top}{\eta_A}O=O^\top\Phi(B,A)\,O.\]
+The linear map $k$ is orthogonal on $Q$ and commutes with block-scalar $\Lambda$, so $k\Lambda k^\top=\Lambda$, and
+$\rho\circ k=\rho$. The trajectory argument of \thmref{Theorem}{III.5}(ii) uses only these two properties
+(\S\ref{proof:III.5}), so the $\theta$-trajectories from $q_0$ and from $kq_0$ coincide for every signal that depends on
+$q$ only through $(t,\rho(q))$, and also under global-norm clipping, since $k$ is a Euclidean isometry. This covers all of
+$\Ort(r)$, reflections included. So initialisations whose charges are conjugate under $\Ort(r)$ produce the same
+$\theta$-trajectory, and a function of $\Phi_0$ that labels $\theta$-trajectories must be invariant under
+$\Phi_0\mapsto O^\top\Phi_0O$. By the spectral theorem the $\Ort(r)$-conjugacy class of the symmetric matrix $\Phi_0$ is
+determined by its eigenvalues, so such a function is a function of the spectrum of $\Phi_0$.
+
+\emph{The table.} Each entry follows by substituting the initialisation into $\Phi_0$.
+\begin{itemize}
+\item \emph{HF default, Linear and Conv.} $B_0=0$ gives $\Phi_0=-A_0A_0^\top/\eta_A$. HF initialises $A_0$ with
+\texttt{kaiming\_uniform\_} at $a=\sqrt5$, whose bound is $\sqrt{2/(1+a^2)}\sqrt{3/n}=n^{-1/2}$, with $n$ the fan-in
+(\texttt{in\_channels} times the product of the kernel sizes for Conv). An entry $U(-n^{-1/2},n^{-1/2})$ has variance
+$1/(3n)$ and fourth moment $1/(5n^2)$. A diagonal entry of $A_0A_0^\top$ is a sum of $n$ independent squares, with mean
+$1/3$ and variance $n\big(1/(5n^2)-1/(9n^2)\big)=4/(45n)$; an off-diagonal entry is a sum of $n$ independent products,
+with mean $0$ and variance $n\cdot1/(9n^2)=1/(9n)$. So $\mathbb E[A_0A_0^\top]=\tfrac13I_r$, with fluctuations of standard
+deviation $2/(3\sqrt{5n})$ on the diagonal and $1/(3\sqrt n)$ off it.
+\item \emph{Embeddings, Init[B] and \texttt{mica}.} $A_0=0$ gives $\Phi_0=B_0^\top B_0/\eta_B$. For \texttt{mica}, $B$ is
+frozen, so its rate is $0$ and \thmref{Theorem}{III.5} does not apply to it; the entry records the formula and its sign
+type, and the training dynamics are those of the one-sided method $A\mapsto W_0+sB_0A$, along which $B_0^\top B_0$ is
+constant and $AA^\top$ moves.
+\item \emph{EVA.} $B_0=0$ and orthonormal rows, $A_0A_0^\top=I$, give $\Phi_0=-I/\eta_A$.
+\item \emph{PiSSA in HF PEFT.} \texttt{pissa\_init} takes the top-$r$ singular triples $(U_r,S_r,V_r)$ of $W_0$, divides
+$S_r$ by the scale $s$, and sets $A_0=(S_r/s)^{1/2}V_r^\top$ and $B_0=U_r(S_r/s)^{1/2}$. With $U_r^\top U_r=V_r^\top V_r=I$,
+$B_0^\top B_0=A_0A_0^\top=S_r/s$, so $\Phi_0=(S_r/s)(1/\eta_B-1/\eta_A)$, which vanishes iff $\eta_A=\eta_B$ when
+$S_r\ne0$. The same computation with the bottom-$r$ triples gives the MiLoRA entry.
+\item \emph{OLoRA.} $B_0=Q_r$ has orthonormal columns, so $\Phi_0=I/\eta_B-R_rR_r^\top/\eta_A$.
+\end{itemize}
+
+(b) Write both decay conventions as $\dot B=-\eta_BGA^\top-c_BB$ and $\dot A=-\eta_AB^\top G-c_AA$, with $c_B=c_A=\lambda$
+per unit time and $c_B=\eta_B\lambda$, $c_A=\eta_A\lambda$ when coupled. Then
+\[\tfrac{d}{dt}\tfrac{B^\top B}{\eta_B}=-(AG^\top B+B^\top GA^\top)-2c_B\tfrac{B^\top B}{\eta_B},\qquad
+\tfrac{d}{dt}\tfrac{AA^\top}{\eta_A}=-(B^\top GA^\top+AG^\top B)-2c_A\tfrac{AA^\top}{\eta_A},\]
+and subtracting, the $G$-terms cancel:
+\[\dot\Phi=-2c_B\tfrac{B^\top B}{\eta_B}+2c_A\tfrac{AA^\top}{\eta_A}.\]
+Per unit time this is $\dot\Phi=-2\lambda\Phi$, so $\Phi(t)=e^{-2\lambda t}\Phi(0)$. Coupled, it is
+$\dot\Phi=-2\lambda(B^\top B-AA^\top)$; when $\eta_A=\eta_B=\eta$ the right-hand side is $-2\lambda\eta\Phi$, so
+$\Phi(t)=e^{-2\eta\lambda t}\Phi(0)$. For $\eta_A\ne\eta_B$ there are states with the same $\Phi$ and different
+$B^\top B-AA^\top$: replacing $(B^\top B,AA^\top)$ by $(B^\top B+\eta_BC,AA^\top+\eta_AC)$ with $C\succeq0$ (realised by
+suitable factors, since $m,n\ge r$) leaves $\Phi$ unchanged and changes $B^\top B-AA^\top$ by $(\eta_B-\eta_A)C$. Since
+$\dot\Phi$ does not involve $G$, two such initial states have equal $\Phi(0)$ and different $\dot\Phi(0)$, so no law
+$\dot\Phi=F(\Phi)$, and in particular no exponential law, holds for all trajectories. Some trajectories do satisfy one:
+with $B=0$ and $G=0$, $\Phi(t)=e^{-2\eta_A\lambda t}\Phi(0)$; so the law fails in general and not always.
+
+\emph{Adam.} One Adam step can move $\eta\Phi$ at first order. Take $m=n=r=1$, $s$ absorbed into $G$, rates
+$\eta_B=\eta_A=\eta$, $(b,a)=(2,1)$, $G=1$ and zero optimizer state. The bias-corrected first step at $\varepsilon=0$ is
+$\delta b=-\eta\operatorname{sign}(Ga)=-\eta$ and $\delta a=-\eta\operatorname{sign}(bG)=-\eta$, so
+\[\eta\Phi^+-\eta\Phi=(2-\eta)^2-(1-\eta)^2-(4-1)=-2\eta,\]
+of first order in $\eta$; the GD step of the previous remark moves $\eta\Phi$ by $O(\eta^2)$. Adam's step is not of the
+form $-\Lambda D\rho^\top\gamma$, so it lies outside \thmref{Theorem}{III.5}, and neither decay law describes AdamW
+training.
+\end{proof}
+
+\begin{remark*}{the two decay conventions as gauge fixings}
+Per-time decay is the $\Lambda$-gradient flow of $L+\tfrac\lambda2\big(\lVert B\rVert^2/\eta_B+\lVert A\rVert^2/\eta_A\big)$,
+since $-\eta_B\nabla_B\big(\tfrac\lambda2\lVert B\rVert^2/\eta_B\big)=-\lambda B$. Coupled decay is the $\Lambda$-gradient
+flow of $L+\tfrac\lambda2(\lVert B\rVert^2+\lVert A\rVert^2)$. At an equilibrium of the coupled flow,
+$\nabla_B=-\lambda B$ and $\nabla_A=-\lambda A$; since $B^\top\nabla_B=sB^\top GA^\top=\nabla_AA^\top$, this gives
+$\lambda(B^\top B-AA^\top)=0$, so equilibria lie on the unweighted balanced slice $\mu=B^\top B-AA^\top=0$. At an
+equilibrium of the per-time flow, $\eta_B\nabla_B=-\lambda B$ and $\eta_A\nabla_A=-\lambda A$, and the same identity gives
+$\Phi=0$; per-time decay also drives $\Phi\to0$ exponentially by (b). The two slices
+$\{B^\top B=AA^\top\}$ and $\{B^\top B=(\eta_B/\eta_A)AA^\top\}$ coincide iff $\eta_A=\eta_B$. HF's PiSSA has
+$B_0^\top B_0=A_0A_0^\top$ at every rate, so it starts on the coupled-decay slice $\mu=0$, and off the per-time slice
+$\Phi=0$ when $\eta_A\ne\eta_B$.
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Proposition III.7}\label{proof:III.7}
+
+\begin{restate}{Proposition}{III.7}{Kempf--Ness slice; Loewner floor; known, \citet{xkempf1979length,xsrebro2004maximum}}
+(a) On a full-rank $\GL_r$-orbit, the critical points of $\lVert B\rVert^2+\lVert A\rVert^2$ are exactly the balanced
+representatives, those with $\mu=B^\top B-AA^\top=0$. They form one $\Ort(r)$-orbit, they are the minima, and the minimum
+value is $2\lVert BA\rVert_*$.
+
+(b) Assume gradient flow with block-scalar rates $\eta_A,\eta_B$, no weight decay, a loss that depends on $(B,A)$ only
+through $BA$, and any cotangent signal of the form $\Lambda D\rho^\top\gamma$ (dropout, minibatches and clipping
+included). From $B_0=0$,
+\[B^\top B=\tfrac{\eta_B}{\eta_A}\big(AA^\top-A_0A_0^\top\big)\succeq0,\]
+so $AA^\top\succeq A_0A_0^\top$ for all time; the $A$-factor never shrinks below its initialisation in the Loewner order.
+$AA^\top(t)$ need not be monotone in $t$; only this floor is guaranteed. Discrete steps break the bound by $O(\eta^2)$ per
+step. Under Adam it is not guaranteed and fails empirically. With per-time decay $\lambda$, only
+$AA^\top\succeq e^{-2\lambda t}A_0A_0^\top$ holds.
+\end{restate}
+
+\begin{proof}
+(a) Let $x=(B,A)$ have $\rk B=\rk A=r$, put $f(B,A)=\lVert B\rVert^2+\lVert A\rVert^2$, and let
+$\mathcal O=\GL_r\cdot x$. Every factorisation $B'A'$ of $BA$ with inner dimension $r$ lies in $\mathcal O$: from
+$\operatorname{col}B'=\operatorname{col}(BA)=\operatorname{col}B$ we get $B'=Bg^{-1}$ for a unique $g\in\GL_r$, and then
+$Bg^{-1}A'=BA$ gives $A'=gA$ because $B$ is injective. As in Kempf--Ness theory (\bgref{D.30}, \auxref{B.26}), $x$ is a critical point
+of $f$ on $\mathcal O$ when $e\in\GL_r$ is a critical point of $g\mapsto f(g\cdot x)$. With $e^{t\xi}\cdot x=(Be^{-t\xi},e^{t\xi}A)$,
+\[\tfrac{d}{dt}\Big|_{t=0}f(e^{t\xi}\cdot x)=-2\langle B,B\xi\rangle+2\langle A,\xi A\rangle=-2\tr\big(\xi(B^\top B-AA^\top)\big)=-2\tr(\xi_s\mu),\]
+where $\xi_s$ is the symmetric part of $\xi$ and the antisymmetric part drops out because $\mu$ is symmetric. This vanishes
+for all $\xi$ iff $\mu=0$ (take $\xi=\mu$). So the critical points are exactly the balanced points of $\mathcal O$.
+
+\emph{Convexity along symmetric directions.} The function $f$ is $\Ort(r)$-invariant, $f(BO^\top,OA)=f(B,A)$, and $\mu$
+is $\Ort(r)$-equivariant, $\mu(O\cdot x)=O\mu(x)O^\top$. By the polar decomposition every $g\in\GL_r$ is $g=Oe^\xi$ with
+$O\in\Ort(r)$ and $\xi$ symmetric (\bgref{D.27}, \auxref{B.19}(a); \citealp[\S7.3]{xhorn2013matrix}), so every point of $\mathcal O$ is
+$O\cdot(e^\xi\cdot x)$ and $f(g\cdot x)=f(e^\xi\cdot x)$. For symmetric $\xi=R\diag(d)R^\top$ with $R$ orthogonal, put
+$h(t)=f(e^{t\xi}\cdot x)$. Orthogonal invariance of the Frobenius norm gives
+\[h(t)=\lVert BRe^{-t\diag(d)}\rVert^2+\lVert e^{t\diag(d)}R^\top A\rVert^2=\sum_i\Big(\lVert(BR)_{:,i}\rVert^2e^{-2td_i}+\lVert(R^\top A)_{i,:}\rVert^2e^{2td_i}\Big),\]
+\[h''(t)=4\sum_id_i^2\Big(\lVert(BR)_{:,i}\rVert^2e^{-2td_i}+\lVert(R^\top A)_{i,:}\rVert^2e^{2td_i}\Big)\ge0 .\]
+So $h$ is convex.
+
+\emph{Balanced points are the minima.} Let $x$ be balanced and $y=O\cdot(e^\xi\cdot x)\in\mathcal O$. Then
+$h'(0)=-2\tr(\xi\mu(x))=0$, and convexity gives $f(y)=h(1)\ge h(0)=f(x)$. So every balanced point is a global minimum on
+$\mathcal O$; conversely every minimum is a critical point, hence balanced.
+
+\emph{One $\Ort(r)$-orbit.} Let $x$ and $y=O\cdot(e^\xi\cdot x)$ both be balanced. Then $e^\xi\cdot x=O^{-1}\cdot y$ is
+balanced by equivariance of $\mu$, so $h'(0)=0$ and $h'(1)=-2\tr\big(\xi\mu(e^\xi\cdot x)\big)=0$. Since $h'$ is
+non-decreasing, $h'\equiv0$ on $[0,1]$, so $h''(0)=0$. Every column $(BR)_{:,i}$ is nonzero because $BR$ has full column
+rank, so all $d_i=0$, $\xi=0$ and $y=O\cdot x$. Conversely the $\Ort(r)$-orbit of a balanced point consists of balanced
+points.
+
+\emph{Existence and value.} Let $BA=U\Sigma V^\top$ be a compact SVD (\auxref{B.11}(a)) with $\Sigma\in\R^{r\times r}$ positive diagonal. The
+factorisation $(U\Sigma^{1/2},\Sigma^{1/2}V^\top)$ lies in $\mathcal O$ by the first paragraph, is balanced since both
+Gram matrices equal $\Sigma$, and has $f=2\tr\Sigma=2\lVert BA\rVert_*$. This is the minimum value.
+
+(b) Under these hypotheses the update has the form of \thmref{Theorem}{III.5}, so $\Phi$ is conserved. With $B_0=0$,
+$\Phi_0=-A_0A_0^\top/\eta_A$, and $B^\top B/\eta_B-AA^\top/\eta_A=-A_0A_0^\top/\eta_A$ rearranges to
+$B^\top B=\tfrac{\eta_B}{\eta_A}(AA^\top-A_0A_0^\top)$. Since $B^\top B\succeq0$, $AA^\top\succeq A_0A_0^\top$.
+
+\emph{No monotonicity.} Take $m=n=r=1$, $a(0)=a_0>0$, $b(0)=0$ and the signal $\gamma=-1$ on $[0,1)$ and $\gamma=+1$ on
+$[1,2]$, the gradients of the minibatch losses $-w$ and $w$. The flow is $\dot b=-\eta_Bs\gamma a$, $\dot a=-\eta_As\gamma b$.
+On $[0,1]$, $a(t)=a_0\cosh(s\sqrt{\eta_A\eta_B}\,t)$ increases. On $[1,2]$ the system is the time reversal of the first one,
+so it retraces its path and returns to $(a_0,0)$ at $t=2$, and $a$ decreases. The floor $a^2\ge a_0^2$ holds throughout,
+but $a^2$ is not monotone.
+
+\emph{Discrete steps.} By the discrete formula of \S\ref{proof:III.5}, after $k$ GD steps (with $s$ absorbed into $G_j$)
+\begin{align*}
+A_kA_k^\top&=\eta_A\Big(\tfrac{1}{\eta_B}B_k^\top B_k-\Phi_k\Big)\succeq-\eta_A\Phi_k
+=A_0A_0^\top-\sum_{j<k}\big(\eta_A\eta_BA_jG_j^\top G_jA_j^\top-\eta_A^2B_j^\top G_jG_j^\top B_j\big)\\
+&\succeq A_0A_0^\top-\eta_A\eta_B\sum_{j<k}A_jG_j^\top G_jA_j^\top,
+\end{align*}
+so the floor holds up to an error of order $\eta^2$ per step. The identity itself breaks at that order already at the first
+step, where $B_1=-\eta_BG_0A_0^\top$ and $A_1=A_0$ give $B_1^\top B_1=\eta_B^2A_0G_0^\top G_0A_0^\top$ against
+$\tfrac{\eta_B}{\eta_A}(A_1A_1^\top-A_0A_0^\top)=0$.
+
+\emph{Adam.} Take $m=n=r=1$, $s=1$, $(b_0,a_0)=(0,1)$, minibatch gradients $G_1=1$ and $G_2=-1$, any $\varepsilon\ge0$
+and bias correction. At step 1, $\nabla_a=b_0G_1=0$, so $a_1=1$, and $b_1=-\eta_B\phi(G_1a_0)$ has sign $-1$. At step 2,
+$\nabla_a=b_1G_2>0$ is the first nonzero gradient of $a$, so Adam's step on $a$ is
+$-\eta_A\hat m/(\sqrt{\hat v}+\varepsilon)$ with $\hat m=\nabla_a/(1+\beta_1)>0$; at $\varepsilon=0$ it equals
+$-\eta_A\sqrt{1+\beta_2}/(1+\beta_1)$. So $a_2<1=a_0$ for every $\varepsilon\ge0$, and at $\varepsilon=0$ the violation is of first order in $\eta_A$.
+
+\emph{Per-time decay.} By \thmref{Corollary}{III.6}(b), $\Phi(t)=e^{-2\lambda t}\Phi(0)=-e^{-2\lambda t}A_0A_0^\top/\eta_A$,
+so $AA^\top=e^{-2\lambda t}A_0A_0^\top+\tfrac{\eta_A}{\eta_B}B^\top B\succeq e^{-2\lambda t}A_0A_0^\top$.
+\end{proof}
+
+\begin{remark*}{nuclear-norm penalties}
+By (a), $\min\{\lambda(\lVert B\rVert^2+\lVert A\rVert^2):sBA=\Delta W\}=2\lambda\lVert\Delta W\rVert_*/s$ for $\Delta W$ of
+rank $r$; \citet{xsrebro2004maximum} show (\auxref{B.21}) that $\min\{\tfrac12(\lVert B\rVert^2+\lVert A\rVert^2):BA=Z\}=\lVert Z\rVert_*$
+for every inner dimension at least $\rk Z$, which covers rank-deficient $\Delta W$. So the explicit penalty
+$\lambda(\lVert B\rVert^2+\lVert A\rVert^2)$ matches a $(2\lambda/s)$-nuclear-norm penalty at its minimisers, and coupled
+decay with coefficient $\lambda$, the flow of $L+\tfrac\lambda2(\lVert B\rVert^2+\lVert A\rVert^2)$, matches a
+$(\lambda/s)$-nuclear-norm penalty.
+\end{remark*}
+
+% ====================================================================================================
+\subsection{Proposition III.8}\label{proof:III.8}
+
+\begin{restate}{Proposition}{III.8}{the balance--escape trilemma}
+No LoRA initialisation is simultaneously
+\begin{enumerate}[label=(\alph*)]
+\item identity-at-init without a residual split ($B_0A_0=0$),
+\item balanced ($B_0^\top B_0=cA_0A_0^\top$ for some $c>0$: unweighted, $c=1$, or rate-weighted, $\Phi_0=0$ with
+$c=\eta_B/\eta_A$), and
+\item non-stationary, meaning that $D\rho$ at $(B_0,A_0)$ is not the zero map; equivalently, $\dot W(0)\ne0$ for some
+parameter velocity, under any first-order optimizer.
+\end{enumerate}
+Moreover, if $B_0A_0=0$ then $\langle B_0^\top B_0,A_0A_0^\top\rangle_F=0$, so
+\[\lVert B_0^\top B_0-cA_0A_0^\top\rVert_F^2=\lVert B_0^\top B_0\rVert_F^2+c^2\lVert A_0A_0^\top\rVert_F^2,\]
+and zero-product initialisations are maximally unbalanced.
+\end{restate}
+
+\begin{proof}
+Assume (a) and (b). Then $0=B_0^\top(B_0A_0)=(B_0^\top B_0)A_0=cA_0A_0^\top A_0$, and multiplying by $A_0^\top$ on the left
+gives $c(A_0^\top A_0)^2=0$. The matrix $A_0^\top A_0$ is symmetric positive semidefinite with vanishing square, so its
+eigenvalues vanish and $A_0^\top A_0=0$, that is, $A_0=0$. Then $B_0^\top B_0=cA_0A_0^\top=0$, so $B_0=0$. At $(0,0)$,
+$D\rho(\dot B,\dot A)=s(\dot B\cdot0+0\cdot\dot A)=0$, which contradicts (c). The equivalence in (c) is the definition of
+the zero map: some parameter velocity has $\dot W=D\rho(\dot B,\dot A)\ne0$ iff $D\rho\ne0$. At $(0,0)$ also
+$\nabla_B=sGA^\top=0$ and $\nabla_A=sB^\top G=0$, so every update rule built from these gradients and the current
+parameters, including Adam, momentum and weight decay started from zero state, stays at $(0,0)$.
+
+For the identity, $\langle B_0^\top B_0,A_0A_0^\top\rangle_F=\tr(B_0^\top B_0A_0A_0^\top)=\tr\big(B_0^\top(B_0A_0)A_0^\top\big)=0$,
+and expanding the square gives the displayed formula. For positive semidefinite $P$ and $N$,
+$\langle P,N\rangle_F=\tr(P^{1/2}NP^{1/2})\ge0$, so $\lVert P-cN\rVert_F^2\le\lVert P\rVert_F^2+c^2\lVert N\rVert_F^2$, with
+equality iff $\langle P,N\rangle_F=0$. Zero-product initialisations attain this maximum for the given norms of the two
+Gram matrices.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem III.9}\label{proof:III.9}
+
+\begin{restate}{Theorem}{III.9}{closed-form isotropic-charge LoRA dynamics; known, \citet{xtarmoun2021understanding} and \citet{xmin2021explicit}}
+Let $\rho(B,A)=W_{\mathrm{res}}+sBA$ be trained by gradient flow with rates $\eta_A,\eta_B$, and suppose the charge is
+isotropic, $\Phi=-\kappa I_r$. Put $\mu=s\sqrt{\eta_A\eta_B}$ (a rate, unrelated to the moment map $\mu$ of
+\thmref{Proposition}{III.7}), and on the locus where $Z=W-W_{\mathrm{res}}$ has rank $r$ write its compact SVD
+$Z=U\Sigma V^\top$. Then
+\[\dot W=-\mu^2\big[G\,V g_\kappa(\Sigma^2/\mu^2)V^\top+U f_\kappa(\Sigma^2/\mu^2)U^\top G\big],\qquad
+f_\kappa(x)=\sqrt{x+\kappa^2/4}-\kappa/2,\quad g_\kappa=f_\kappa+\kappa .\]
+The identity holds pointwise on $\{\Phi=-\kappa I,\ \rk Z=r\}$; gradient flow is used only to keep $\Phi$ fixed. The two
+terms under the root are equal at the \emph{crossover scale} $\sigma^*=\mu\lvert\kappa\rvert/2$.
+\begin{itemize}
+\item For $\sigma\ll\sigma^*$ with $\kappa>0$, $f\to0$ and $g\to\kappa$, so $\dot W\approx-\mu^2\kappa\,GP_V$. These are
+LoRA-FA dynamics. The contribution of $A$ to $\dot W$ is $O(\sigma^2/(\mu^2\kappa))$, although $A$ itself still drifts
+slowly. For $\kappa<0$ the roles swap, $\dot W\approx-\mu^2\lvert\kappa\rvert P_UG$, and only $A$ effectively moves
+(Init[B]).
+\item For $\sigma\gg\sigma^*$, $f\approx g\approx\sigma/\mu$, so $\dot W\approx-\mu\big[G(Z^\top Z)^{1/2}+(ZZ^\top)^{1/2}G\big]$.
+These are the balanced dynamics of Arora, Cohen and Hazan.
+\item \emph{Off the rank-$r$ locus.} Write $\dot W=-\mu^2(GS+TG)$ with $S=A^\top A/\eta_A$ and $T=BB^\top/\eta_B$, so that
+on the rank-$r$ locus $S=Vg_\kappa(\Sigma^2/\mu^2)V^\top$ and $T=Uf_\kappa(\Sigma^2/\mu^2)U^\top$. For $\kappa\ge0$,
+$T=f_\kappa(ZZ^\top/\mu^2)$ still holds as a full matrix function, but $S$ gains the term
+$\kappa(P_{\operatorname{row}A}-P_V)$; symmetrically, for $\kappa<0$, $T$ gains $\lvert\kappa\rvert(P_{\operatorname{col}B}-P_U)$.
+At the default-LoRA start $Z=0$ ($B_0=0$) this leaves $S=\kappa P_{\operatorname{row}A_0}$ and $T=0$, so
+$\dot W=-\mu^2\kappa\,GP_{\operatorname{row}A_0}$, and the $\sigma\ll\sigma^*$ regime extends continuously to $t=0$.
+\end{itemize}
+\end{restate}
+
+\begin{proof}
+Let $G$ be the signal driving the flow, $\dot B=-\eta_BsGA^\top$ and $\dot A=-\eta_AsB^\top G$; under gradient flow
+$G=\nabla_\theta L$, and \thmref{Theorem}{III.5}(i) keeps $\Phi=-\kappa I$ for all time if it holds at $t=0$. Everything
+below uses only the value of $\Phi$ at the point considered.
+
+\emph{Normalisation.} Put $\beta=B/\sqrt{\eta_B}$ and $\alpha=A/\sqrt{\eta_A}$. Then
+$\beta^\top\beta-\alpha\alpha^\top=\Phi=-\kappa I$ and $\beta\alpha=BA/\sqrt{\eta_A\eta_B}=Z/\mu$. Let
+$T=\beta\beta^\top=BB^\top/\eta_B$ and $S=\alpha^\top\alpha=A^\top A/\eta_A$. Then
+\[\dot W=s(\dot BA+B\dot A)=-s^2\big(\eta_BGA^\top A+\eta_ABB^\top G\big)=-s^2\eta_A\eta_B(GS+TG)=-\mu^2(GS+TG).\]
+
+\emph{Two quadratic identities.} Using $\alpha\alpha^\top=\beta^\top\beta+\kappa I$ and $\beta^\top\beta=\alpha\alpha^\top-\kappa I$,
+\[\tfrac{ZZ^\top}{\mu^2}=\beta\alpha\alpha^\top\beta^\top=\beta(\beta^\top\beta+\kappa I)\beta^\top=T^2+\kappa T,\qquad
+\tfrac{Z^\top Z}{\mu^2}=\alpha^\top\beta^\top\beta\alpha=\alpha^\top(\alpha\alpha^\top-\kappa I)\alpha=S^2-\kappa S .\]
+These hold at every point with $\Phi=-\kappa I$.
+
+\emph{Spectra on the rank-$r$ locus.} If $\rk Z=r$, then $\beta$ and $\alpha^\top$ have full column rank, so
+$\beta^\top\beta\succ0$ and $\alpha\alpha^\top\succ0$. The nonzero eigenvalues of $T=\beta\beta^\top$ are the eigenvalues of
+$\beta^\top\beta=\alpha\alpha^\top-\kappa I$ (\auxref{B.36}(c)), which are positive and exceed $-\kappa$; so they exceed $\max(0,-\kappa)$.
+Likewise the nonzero eigenvalues of $S$ are those of $\alpha\alpha^\top=\beta^\top\beta+\kappa I$, which exceed $\max(0,\kappa)$.
+The range of $T$ is $\operatorname{col}\beta=\operatorname{col}Z=U$, and that of $S$ is $\operatorname{row}\alpha=\operatorname{row}Z=V$.
+
+\emph{Inversion.} The polynomial $p(t)=t^2+\kappa t$ is strictly increasing on $[-\kappa/2,\infty)$, which contains the
+nonzero eigenvalues of $T$ because $\max(0,-\kappa)\ge-\kappa/2$, and $p(t)>0$ there while $p(0)=0$. So $p$ is injective
+on the spectrum of $T$, the eigenspaces of $T$ are those of $p(T)=ZZ^\top/\mu^2=U(\Sigma^2/\mu^2)U^\top$ (by the compact SVD of $Z$,
+\auxref{B.11}(a)), and on the
+eigenvector $u_i$ with $ZZ^\top u_i=\sigma_i^2u_i$ the eigenvalue of $T$ is the unique root $t>\max(0,-\kappa)$ of
+$t^2+\kappa t=\sigma_i^2/\mu^2$, namely $f_\kappa(\sigma_i^2/\mu^2)$. On $U^\perp$ both $T$ and $ZZ^\top$ vanish. Hence
+$T=Uf_\kappa(\Sigma^2/\mu^2)U^\top$. In the same way $q(s)=s^2-\kappa s$ is strictly increasing on $[\kappa/2,\infty)$,
+the root above $\max(0,\kappa)$ of $s^2-\kappa s=x$ is $\kappa/2+\sqrt{x+\kappa^2/4}=g_\kappa(x)$, and
+$S=Vg_\kappa(\Sigma^2/\mu^2)V^\top$. The compact SVD matters: $f_\kappa(0)=\lvert\kappa\rvert$ for $\kappa<0$ and
+$g_\kappa(0)=\kappa$ for $\kappa>0$, so the full matrix functions $f_\kappa(ZZ^\top/\mu^2)$ and
+$g_\kappa(Z^\top Z/\mu^2)$ would put nonzero values on $\ker Z^\top$ and $\ker Z$, where $T$ and $S$ vanish. Substituting
+into $\dot W=-\mu^2(GS+TG)$ gives the formula. The crossover: $x=\sigma^2/\mu^2$ equals $\kappa^2/4$ iff
+$\sigma=\mu\lvert\kappa\rvert/2$.
+
+\emph{The regimes.} For $\kappa>0$, $f_\kappa(x)=x/\big(\sqrt{x+\kappa^2/4}+\kappa/2\big)\in[0,x/\kappa]$ and
+$g_\kappa(x)-\kappa=f_\kappa(x)$. So $\dot W=-\mu^2\kappa\,GP_V+E$ with $E=-\mu^2\big(GVf_\kappa(\Sigma^2/\mu^2)V^\top+TG\big)$
+and $\lVert E\rVert\le2(\sigma_1^2/\kappa)\lVert G\rVert$, where $\sigma_1$ is the largest singular value of $Z$. The
+contribution $-\mu^2TG=s\,B\dot A$ of $A$ has gain at most $f_\kappa(\sigma_1^2/\mu^2)\le\sigma_1^2/(\mu^2\kappa)$, against
+the gain $g_\kappa\ge\kappa$ of the $B$-term. The factor $A$ still moves, at speed
+$\lVert\dot A\rVert\le\eta_As\lVert B\rVert_2\lVert G\rVert$ with $\lVert B\rVert_2^2=\eta_B\lVert T\rVert_2\le\eta_B\sigma_1^2/(\mu^2\kappa)$.
+For $\kappa<0$ the same bounds hold with the roles exchanged: $g_\kappa(x)\in[0,x/\lvert\kappa\rvert]$ and
+$f_\kappa=g_\kappa+\lvert\kappa\rvert$, so $\dot W=-\mu^2\lvert\kappa\rvert P_UG+O(\sigma_1^2/\lvert\kappa\rvert)\lVert G\rVert$.
+For large $x$, $0\le\sqrt{x+\kappa^2/4}-\sqrt x\le\lvert\kappa\rvert/2$ gives $\lvert f_\kappa(x)-\sqrt x\rvert\le\lvert\kappa\rvert$
+and $\lvert g_\kappa(x)-\sqrt x\rvert\le\lvert\kappa\rvert$. At $x=\sigma_i^2/\mu^2$ the relative error is at most
+$\lvert\kappa\rvert\mu/\sigma_i=2\sigma^*/\sigma_i$, so for $\sigma_i\gg\sigma^*$, $f\approx g\approx\sigma_i/\mu$ and
+\[\dot W\approx-\mu^2\big[GV(\Sigma/\mu)V^\top+U(\Sigma/\mu)U^\top G\big]=-\mu\big[G(Z^\top Z)^{1/2}+(ZZ^\top)^{1/2}G\big].\]
+This is the end-to-end dynamics of a balanced depth-2 linear network with rate $\mu$ \citep[Thm.~1 with
+$N=2$]{arora2018optimization}; at $\kappa=0$ it is exact, since $f_0(x)=g_0(x)=\sqrt x$.
+
+\emph{Off the rank-$r$ locus.} Let $\kappa>0$ and $\rk Z<r$. The nonzero eigenvalues of $T$ are those of
+$\beta^\top\beta\succeq0$, and on them $p(t)=t^2+\kappa t>0$; if $ZZ^\top v=0$ then $T(T+\kappa I)v=0$ with $T+\kappa I\succ0$,
+so $Tv=0$. Hence $\ker T=\ker ZZ^\top$ and the inversion above gives $T=f_\kappa(ZZ^\top/\mu^2)$ as a full matrix function,
+using $f_\kappa(0)=0$ for $\kappa\ge0$. For $S$, decompose $\operatorname{row}A=\operatorname{row}Z\oplus(\operatorname{row}A\cap\ker Z)$
+orthogonally, which is possible since $\operatorname{row}Z\subseteq\operatorname{row}A$ and $(\operatorname{row}Z)^\perp=\ker Z$.
+On $(\operatorname{row}A)^\perp=\ker\alpha$, $S=0$. If $v=\alpha^\top w\in\operatorname{row}A$ has $Zv=0$, then
+$0=\beta\alpha\alpha^\top w=\beta(\beta^\top\beta+\kappa I)w$, so $\beta^\top\beta(\beta^\top\beta+\kappa I)w=0$; as
+$\beta^\top\beta+\kappa I\succ0$ commutes with $\beta^\top\beta\succeq0$, this forces $\beta^\top\beta w=0$, hence $\beta w=0$,
+and $Sv=\alpha^\top(\alpha\alpha^\top)w=\alpha^\top(\beta^\top\beta+\kappa I)w=\kappa v$. On $\operatorname{row}Z$ the
+eigenvalues of $S$ exceed $\kappa$ and the inversion gives $Vg_\kappa(\Sigma^2/\mu^2)V^\top$. Together,
+$S=Vg_\kappa(\Sigma^2/\mu^2)V^\top+\kappa(P_{\operatorname{row}A}-P_V)$. The case $\kappa<0$ is symmetric under
+$(B,A,Z,\eta_B,\eta_A,\kappa)\mapsto(A^\top,B^\top,Z^\top,\eta_A,\eta_B,-\kappa)$, which exchanges $S$ and $T$. At $\kappa=0$ the correction terms vanish. At $Z=0$ with $B_0=0$
+and $A_0A_0^\top=cI$, $\kappa=c/\eta_A>0$, $T=0$ and $S=\kappa P_{\operatorname{row}A_0}$, so
+$\dot W=-\mu^2\kappa\,GP_{\operatorname{row}A_0}=-s^2\eta_BcGP_{\operatorname{row}A_0}$, which agrees with the direct value
+$-s^2\eta_BGA_0^\top A_0$ because $A_0^\top A_0=cP_{\operatorname{row}A_0}$. As $Z\to0$ along the flow with $V\to\operatorname{row}A_0$,
+the rank-$r$ formula tends to the same value, since $g_\kappa(0)=\kappa$ and $f_\kappa(0)=0$.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem III.10}\label{proof:III.10}
+
+\begin{restate}{Theorem}{III.10}{the hyperparameter torus; the LoRA/Adam case is known, \citet{schulman2025lora}}
+Let $\rho(q)=\theta_b+s\,\delta(q_1,\dots,q_k)$ with $\delta$ multihomogeneous of multidegree $(d_1,\dots,d_k)$. Train block
+$i$ from $q_i(0)=\sigma_iu_i$ with Adam ($\beta_1\in[0,1)$, $\beta_2\in(0,1)$, bias correction allowed) at learning rate
+$\eta_i(t)$, on the loss $L\circ\rho$ with no $q$-dependent regulariser. Assume no gradient clipping (or per-block
+clipping with thresholds rescaled as below), common random numbers (the same data order and dropout masks in both runs),
+and exact arithmetic (the result is bit-exact in floating point when every $c_i$ is a power of $2$). Then the trajectory
+$t\mapsto\rho(q(t))$ is invariant under the torus action of $c\in\R_{>0}^k$:
+\[\big(s,\ \eta_i(t),\ \sigma_i,\ \varepsilon_i,\ \lambda_i,\ C_i\big)\mapsto\Big(s\prod_ic_i^{-d_i},\ c_i\eta_i(t),\ c_i\sigma_i,\ \varepsilon_i/c_i,\ \lambda_i/c_i,\ C_i/c_i\Big).\]
+Here $\varepsilon_i$ is a per-block Adam $\varepsilon$ (with the convention $0/0=0$ at $\varepsilon=0$), $\lambda_i$ a
+per-block decoupled (AdamW) weight decay, and $C_i$ a per-block clipping threshold. Under SGD, with or without heavy-ball
+or Nesterov momentum, the same holds with $\eta_i(t)\mapsto c_i^2\eta_i(t)$ and coupled $L^2$ decay
+$\lambda_i\mapsto\lambda_i/c_i^2$. In particular, any learning-rate schedule shared by all blocks, warm-up included, is
+preserved.
+\end{restate}
+
+\begin{proof}
+\emph{The rescaling is an isomorphism.} Write $c\odot q=(c_1q_1,\dots,c_kq_k)$ and $\rho'=\theta_b+s'\delta$ with
+$s'=s\prod_ic_i^{-d_i}$. Multihomogeneity (\bgref{D.19}) gives
+$\rho'(c\odot q)=\theta_b+s\prod_ic_i^{-d_i}\prod_ic_i^{d_i}\delta(q)=\rho(q)$ for all $q$, so $q\mapsto c\odot q$ is a
+diffeomorphism over $\Theta$ that maps the base point $q(0)$ to $q'(0)=c\odot q(0)$; it is an isomorphism in $\Meth$. Let
+$\ell_t=L_t\circ\rho$ and $\ell'_t=L_t\circ\rho'$ be the step-$t$ losses, with the same minibatch and dropout masks in
+both runs and no $q$-dependent regulariser. Differentiating $\ell'_t(c\odot q)=\ell_t(q)$ gives
+\begin{equation}\label{eq:C2-torus-grad}
+\nabla_{q_i}\ell'_t(c\odot q)=c_i^{-1}\nabla_{q_i}\ell_t(q).
+\end{equation}
+
+\emph{The optimizer.} For block $i$ at step $t\ge1$, Adam(W) computes the gradient $g_t$ of $\ell_t$ at $q_{t-1}$, clips it
+per block, $g_t\leftarrow g_t\min(1,C_i/\lVert g_t\rVert)$ (with factor $1$ when $g_t=0$, and no clipping step when there
+is no clipping), and sets
+\begin{gather*}
+m_t=\beta_1m_{t-1}+(1-\beta_1)g_t,\qquad v_t=\beta_2v_{t-1}+(1-\beta_2)\,g_t\odot g_t,\\
+q_t=q_{t-1}-\eta_i(t)\Big(\frac{m_t/b_{1,t}}{\sqrt{v_t/b_{2,t}}+\varepsilon_i}+\lambda_iq_{t-1}\Big),
+\end{gather*}
+with $m_0=v_0=0$, entrywise square root and division, $b_{j,t}=1-\beta_j^t$ with bias correction and $b_{j,t}=1$ without,
+and $0/0=0$. PyTorch's AdamW first multiplies $q_{t-1}$ by $1-\eta_i(t)\lambda_i$ and then takes the Adam step, which is the
+same update.
+
+\emph{Induction.} Run the original hyperparameters from $q(0)$ and the transformed ones from $q'(0)=c\odot q(0)$, which is
+what $\sigma_i\mapsto c_i\sigma_i$ means. Suppose that after step $t-1$, in every block,
+\[q'_{t-1}=c_iq_{t-1},\qquad m'_{t-1}=c_i^{-1}m_{t-1},\qquad v'_{t-1}=c_i^{-2}v_{t-1},\]
+which holds at $t=1$. By \eqref{eq:C2-torus-grad} the raw gradients satisfy $g'_t=c_i^{-1}g_t$. With $C'_i=C_i/c_i$ the
+clipping factors agree, $\min(1,C'_i/\lVert g'_t\rVert)=\min(1,C_i/\lVert g_t\rVert)$, so the clipped gradients also satisfy
+$g'_t=c_i^{-1}g_t$. The moment recursions are linear in $g_t$ and $g_t\odot g_t$, so $m'_t=c_i^{-1}m_t$ and
+$v'_t=c_i^{-2}v_t$. With $\varepsilon'_i=\varepsilon_i/c_i$ the normalised step is unchanged,
+\[\frac{m'_t/b_{1,t}}{\sqrt{v'_t/b_{2,t}}+\varepsilon'_i}=\frac{c_i^{-1}m_t/b_{1,t}}{c_i^{-1}\big(\sqrt{v_t/b_{2,t}}+\varepsilon_i\big)}=\frac{m_t/b_{1,t}}{\sqrt{v_t/b_{2,t}}+\varepsilon_i},\]
+including the entries where $v_t=0$, at which $m_t=0$ as well and both sides are $0$. The decay term transforms as
+$\lambda'_iq'_{t-1}=(\lambda_i/c_i)c_iq_{t-1}=\lambda_iq_{t-1}$. With $\eta'_i(t)=c_i\eta_i(t)$ the whole step is multiplied
+by $c_i$, so $q'_t=c_iq_t$, which closes the induction. Then $\rho'(q'_t)=\rho(q_t)$ for all $t$. The value of $\eta_i(t)$
+at each step was arbitrary, so any schedule works; a schedule shared by all blocks, $\eta_i(t)=\eta_i\varphi(t)$, becomes
+$c_i\eta_i\varphi(t)$, the same schedule.
+
+\emph{SGD.} With coupled $L^2$ decay the step-$t$ direction is $g_t+\lambda_iq_{t-1}$, the heavy-ball buffer is
+$b_t=\mu_mb_{t-1}+(1-\tau)(g_t+\lambda_iq_{t-1})$ (with momentum $\mu_m$ and dampening $\tau$), the direction is $b_t$, or
+$g_t+\lambda_iq_{t-1}+\mu_mb_t$ for Nesterov, and $q_t=q_{t-1}-\eta_i(t)\cdot(\text{direction})$. Suppose $q'_{t-1}=c_iq_{t-1}$
+and $b'_{t-1}=c_i^{-1}b_{t-1}$. Then $g'_t=c_i^{-1}g_t$ and, with $\lambda'_i=\lambda_i/c_i^2$,
+$\lambda'_iq'_{t-1}=c_i^{-1}\lambda_iq_{t-1}$; every quantity entering the direction is multiplied by $c_i^{-1}$, so
+$b'_t=c_i^{-1}b_t$ and the direction is multiplied by $c_i^{-1}$. With $\eta'_i(t)=c_i^2\eta_i(t)$ the step is multiplied by
+$c_i$, and $q'_t=c_iq_t$. Per-block clipping with $C_i/c_i$ is handled as for Adam.
+
+\emph{Floating point.} If every $c_i$ is a power of $2$, multiplication by $c_i^{\pm1}$ and by $\prod_ic_i^{\mp d_i}$ is
+exact, and it commutes with every correctly rounded addition, multiplication, division and square root, barring overflow
+and underflow (\auxref{B.39}). Then the forward pass computes bit-identical weights and outputs in both
+runs, the backward pass computes gradients that are exactly $c_i^{-1}$ times the original ones, and every quantity in the
+induction above holds exactly in floating point, so the two trajectories agree bit for bit.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Corollary III.11}\label{proof:III.11}
+
+\begin{restate}{Corollary}{III.11}{LoRA+ is $\alpha$ in disguise; rsLoRA is LoRA; (a) and the LoRA+ reading are known, \citet{schulman2025lora}}
+For linear LoRA modules ($k=2$, $d=(1,1)$, $\sigma_B=0$), under the hypotheses of \thmref{Theorem}{III.10}:
+
+(a) \emph{Effective hyperparameters.} Under Adam the torus invariants of $(s,\eta_A,\eta_B,\sigma_A)$ are
+$(s\eta_A\eta_B,\ \sigma_A/\eta_A)$; the quantities $\alpha\cdot\mathrm{init}_A\cdot\mathrm{LR}_B$ and
+$\mathrm{init}_A/\mathrm{LR}_A$ of Schulman et al.\ are equivalent generators. Under SGD the invariants are
+$(s^2\eta_A\eta_B,\ \sigma_A^2/\eta_A)$.
+
+(b) \emph{LoRA+.} Under Adam with $\varepsilon=0$, no weight decay, no gradient clipping and a learning-rate schedule
+shared by both groups, LoRA+ with ratio $\lambda$ at scale $s$ produces \emph{exactly} the trajectory of plain LoRA at
+scale $\lambda s$ (same $\eta_A$, same $A_0$). For $\varepsilon>0$ the equivalence needs a per-block
+$\varepsilon_B'=\lambda\varepsilon$, and with AdamW a per-group decay $\lambda\cdot\mathrm{wd}$ on $B$. Under SGD it holds at
+scale $\sqrt\lambda\,s$, or equivalently with plain LoRA at the single rate $\sqrt{\eta_A\eta_B}$ and
+$A_0\mapsto\lambda^{1/4}A_0$.
+
+(c) \emph{rsLoRA.} $\rho_{\mathrm{rs}}(B,A)=\rho_{\mathrm{LoRA}}(\sqrt r\,B,A)$ is an isomorphism of objects. Up to the
+hyperparameter torus, rsLoRA can be represented as LoRA at the same $\alpha$ with $\eta_B$ multiplied by $\sqrt r$ under
+Adam (by $r$ under SGD), or equally as LoRA with $\alpha$ multiplied by $\sqrt r$ at the same rates. The reading ``same
+object, different metric'' is a choice of representative within the orbit. Part (c) concerns a fixed rank; it does not
+address rsLoRA's rank-stability prescription, how $\alpha$ should scale with $r$.
+\end{restate}
+
+\begin{proof}
+Here $\delta(B,A)=BA$ has multidegree $(1,1)$, and $\sigma_B=0$ means $B_0=0$, which every $c_B$ leaves unchanged.
+
+(a) Under Adam, $(c_A,c_B)$ acts by $s\mapsto s/(c_Ac_B)$, $\eta_A\mapsto c_A\eta_A$, $\eta_B\mapsto c_B\eta_B$ and
+$\sigma_A\mapsto c_A\sigma_A$. In logarithms this is translation by the column space of
+\[a=\begin{pmatrix}-1&-1\\1&0\\0&1\\1&0\end{pmatrix}\qquad(\text{rows } \log s,\log\eta_A,\log\eta_B,\log\sigma_A),\]
+which has rank $2$, so the orbit space has dimension $2$ and a basis of the vectors $b$ with $b^\top a=0$ gives a complete
+set of invariant monomials (\bgref{D.20}). The vectors $(1,1,1,0)$ and $(0,-1,0,1)$ satisfy $b^\top a=0$ and are independent;
+they give $s\eta_A\eta_B$ and $\sigma_A/\eta_A$. Since $\alpha\propto s$ at fixed $r$, Schulman et al.'s quantities are
+$s\sigma_A\eta_B=(s\eta_A\eta_B)(\sigma_A/\eta_A)$ and $\sigma_A/\eta_A$, with exponent vectors $(1,0,1,1)$ and $(0,-1,0,1)$,
+another basis of the same lattice of invariant monomials. Under SGD the rates scale by $c_A^2$ and $c_B^2$; the weight
+matrix has rows $(-1,-1)$, $(2,0)$, $(0,2)$, $(1,0)$, again of rank $2$, and $(2,1,1,0)$ and $(0,-1,0,2)$ give the
+invariants $s^2\eta_A\eta_B$ and $\sigma_A^2/\eta_A$.
+
+(b) LoRA+ has $\eta_B=\lambda\eta_A$. Under Adam apply the torus element $c_A=1$, $c_B=1/\lambda$: it maps
+$(s,\eta_A,\lambda\eta_A,\sigma_A)$ to $(\lambda s,\eta_A,\eta_A,\sigma_A)$, plain LoRA at scale $\lambda s$ with the same
+$\eta_A$ and the same $A_0$; a shared schedule $\varphi(t)$ stays shared. \thmref{Theorem}{III.10} gives
+$\varepsilon_B'=\varepsilon/c_B=\lambda\varepsilon$ and $\mathrm{wd}_B'=\mathrm{wd}/c_B=\lambda\cdot\mathrm{wd}$, which are
+the stated per-block values, and both vanish when $\varepsilon=\mathrm{wd}=0$. Under SGD, $c_A=1$ and $c_B=\lambda^{-1/2}$
+give $\eta_B'=c_B^2\lambda\eta_A=\eta_A$ and $s'=\sqrt\lambda\,s$. The single-rate form uses $c_A=\lambda^{1/4}$ and
+$c_B=\lambda^{-1/4}$: then $\eta_A'=\sqrt\lambda\,\eta_A$, $\eta_B'=\lambda^{-1/2}\lambda\eta_A=\sqrt\lambda\,\eta_A$, both
+equal to $\sqrt{\eta_A\eta_B}$, $s'=s$, and $\sigma_A'=\lambda^{1/4}\sigma_A$, that is, $A_0\mapsto\lambda^{1/4}A_0$.
+
+(c) $\rho_{\mathrm{rs}}(B,A)=W_0+(\alpha/\sqrt r)BA=W_0+(\alpha/r)(\sqrt rB)A=\rho_{\mathrm{LoRA}}(\sqrt rB,A)$, and
+$(B,A)\mapsto(\sqrt rB,A)$ is a pointed diffeomorphism ($0\mapsto0$ in the $B$-factor), hence an isomorphism of objects.
+The rsLoRA scale $s_{\mathrm{rs}}=\alpha/\sqrt r$ is the LoRA scale for $\alpha'=\sqrt r\,\alpha$, which is the second
+representation. Applying the torus element $c_A=1$, $c_B=\sqrt r$ to rsLoRA gives $s'=s_{\mathrm{rs}}/\sqrt r=\alpha/r$,
+the LoRA scale at the same $\alpha$, with $\eta_B'=\sqrt r\,\eta_B$ under Adam and $\eta_B'=r\eta_B$ under SGD, and with
+$\varepsilon_B'=\varepsilon/\sqrt r$ and $\mathrm{wd}_B'=\mathrm{wd}/\sqrt r$ when these are nonzero. Both representations
+lie on the torus orbit of rsLoRA's hyperparameters, which is what ``up to the hyperparameter torus'' means. The rank $r$
+is fixed throughout.
+\end{proof}
+
+% ====================================================================================================
+\subsection{Theorem III.12}\label{proof:III.12}
+
+\begin{restate}{Theorem}{III.12}{the optimizer gauge hierarchy}
+On LoRA's full-rank locus, with hyperparameters shared by all rank channels, the largest subgroup of the gauge $\GL_r$
+under which an update rule is equivariant, at the level of parameters, is as follows.
+
+(a) SGD and GD with any block rates, with or without heavy-ball momentum: $\Ort(r)$.
+
+(b) Adam and AdamW at fixed learning rates ($\beta_1,\beta_2\in[0,1)$, any $\varepsilon\ge0$, any weight decay): the
+signed permutations $B_r$, of order $2^rr!$. A positive diagonal $g=\diag(d)$ is a symmetry only \emph{jointly} with
+per-rank-channel hyperparameters, and only without global-norm clipping. At $\varepsilon=0$ and without weight decay it
+suffices to rescale the rates, $\eta_{B,j}\mapsto\eta_{B,j}/d_j$ and $\eta_{A,j}\mapsto d_j\eta_{A,j}$. With
+$\varepsilon>0$ one must also give each channel its own $\varepsilon_{B,j}=d_j\varepsilon$ and
+$\varepsilon_{A,j}=\varepsilon/d_j$. With decoupled decay multiplied by the learning rate (PyTorch AdamW) one must also
+set $\lambda_{B,j}=d_j\lambda$ and $\lambda_{A,j}=\lambda/d_j$; under the convention of \citet{xloshchilov2019decoupled},
+where decay is scaled only by the schedule multiplier, $\lambda$ needs no change.
+
+(c) Undamped scaled GD ($\delta=0$; the Riemannian preconditioner of Tong, Ma and Chi and of Zhang and Pilanci, with or
+without heavy-ball momentum): all of $\GL_r$. The $W$-trajectory from gauge-related initial states (with zero or
+correspondingly transformed momentum) is independent of the representative; a step may drop rank, so the iteration maps
+into $W_0+\Mr$.
+\end{restate}
+
+\begin{proof}
+We use the conventions of \S\ref{proof:III.1}: at $g\cdot q$ the gradients are \eqref{eq:C2-gauge-grad}, and equivariance
+under $g$ means \eqref{eq:C2-equivariant-step} for all gradients, together with transported optimizer state. The set of
+such $g$ is a subgroup. On the full-rank locus $\nabla_B=sGA^\top$ ranges over all of $\R^{m\times r}$ as $G$ ranges over
+$\R^{m\times n}$, because $A$ has full row rank; this is the only use of the locus in the inclusions $\subseteq$ below.
+
+(a) An SGD step is $\delta B=-\eta_B\nabla_B$, $\delta A=-\eta_A\nabla_A$. At $g\cdot q$,
+$\delta B'=-\eta_B\nabla_Bg^\top$, and \eqref{eq:C2-equivariant-step} requires $\nabla_B(g^\top-g^{-1})=0$ for all
+$\nabla_B\in\R^{m\times r}$, that is, $g^\top=g^{-1}$. Conversely, for $g\in\Ort(r)$, $\delta B'=\delta Bg^\top=\delta Bg^{-1}$
+and $\delta A'=-\eta_Ag^{-\top}\nabla_A=g\,\delta A$. A heavy-ball or Nesterov buffer is a linear combination of past
+gradients, all taken at points related by the same $g$, so for orthogonal $g$ it transforms like the gradients, $b'_B=b_Bg^{-1}$
+and $b'_A=gb_A$, and the step is transported. The first step from a zero buffer is a positive multiple of an SGD step (the multiple is $1$ for heavy ball
+and $1+\mu_m$ for Nesterov with momentum coefficient $\mu_m$), so the inclusion $\subseteq\Ort(r)$ also holds with momentum.
+
+(b) \emph{The inclusion $\supseteq$.} Let $g$ be a signed permutation, so $g^{-1}=g^\top$ and $\nabla_{B'}=\nabla_Bg^{-1}$
+permutes the columns of $\nabla_B$ and flips some signs; likewise $\nabla_{A'}=g\nabla_A$ permutes and flips rows. Adam is
+coordinatewise: the first moment $m$ is permuted with the same sign flips, the second moment $v$ is permuted without sign
+changes, so the normalised step is transported, and so is a decoupled or coupled decay term, which is linear in the
+parameters. Hence the step satisfies \eqref{eq:C2-equivariant-step}. Since $g$ is orthogonal it preserves
+$\lVert\nabla_B\rVert$ and $\lVert\nabla_A\rVert$, so global-norm clipping does not affect this inclusion.
+
+\emph{The inclusion $\subseteq$.} Consider the first step from zero state at a full-rank point. With bias correction it is
+$\delta B=-\eta\big(\phi(\nabla_B)+\lambda B\big)$ with $\phi(x)=x/(\lvert x\rvert+\varepsilon)$ entrywise and $0/0=0$;
+without bias correction $\phi$ is replaced by a positive multiple of $x/(\lvert x\rvert+\varepsilon')$ with a rescaled
+$\varepsilon'$, which changes nothing below. At $g\cdot q$ the decay term $\lambda Bg^{-1}$ is already transported, so
+equivariance requires $\phi(\nabla_Bg^\top)=\phi(\nabla_B)g^{-1}$, row by row:
+\begin{equation}\label{eq:C2-adam-row}
+\phi(xg^\top)=\phi(x)h\qquad\text{for every row vector }x\in\R^{1\times r},\qquad h:=g^{-1}.
+\end{equation}
+(With coupled decay the argument of $\phi$ is $\nabla_B+\lambda B$; letting $\nabla_B$ grow along a fixed direction leads
+to the limit \eqref{eq:C2-adam-sign} below in the same way.)
+
+\emph{Case $\varepsilon=0$.} Then $\phi=\operatorname{sign}$ and \eqref{eq:C2-adam-row} reads
+\begin{equation}\label{eq:C2-adam-sign}
+\operatorname{sign}(xg^\top)=\operatorname{sign}(x)h\qquad\text{for every }x.
+\end{equation}
+Fix $\mathsf s\in\{\pm1\}^r$. The open orthant $\{x:\operatorname{sign}(x)=\mathsf s\}$ is not contained in the finite union
+of the hyperplanes $\{x:(xg^\top)_j=0\}$, which are proper because $g$ is invertible (a finite union of hyperplanes has
+empty interior), so it contains an $x$ with $xg^\top$
+free of zeros. For that $x$, \eqref{eq:C2-adam-sign} gives $\mathsf sh\in\{\pm1\}^r$. Thus $\mathsf sh\in\{\pm1\}^r$ for
+every $\mathsf s$. Flipping $\mathsf s_i$ changes $(\mathsf sh)_j$ by $2\mathsf s_ih_{ij}$, a difference of two elements of
+$\{\pm1\}$, so $h_{ij}\in\{0,\pm1\}$. If column $j$ of $h$ had no nonzero entry, $(\mathsf sh)_j=0$; if it had $t\ge2$
+nonzero entries, the choice $\mathsf s_i=h_{ij}$ on its support would give $(\mathsf sh)_j=t\ge2$. So every column of $h$
+has exactly one entry, equal to $\pm1$, and these entries lie in distinct rows because $h$ is invertible. Hence $h$, and
+with it $g=h^{-1}$, is a signed permutation matrix.
+
+\emph{Case $\varepsilon>0$.} For a fixed $x$ and $\tau\to\infty$, $\phi(\tau y)\to\operatorname{sign}(y)$ entrywise for every
+$y$, so applying \eqref{eq:C2-adam-row} to $\tau x$ and letting $\tau\to\infty$ gives \eqref{eq:C2-adam-sign}, and the case
+$\varepsilon=0$ shows $g\in B_r$. (For $\tau\to0$, $\phi(\tau y)=\tau y/\varepsilon+O(\tau^2)$, and the same comparison
+gives $g^\top=h$, that is, $g\in\Ort(r)$, which is consistent.) The order of $B_r$ is $2^rr!$: $r!$ permutations times
+$2^r$ sign patterns.
+
+\emph{The joint torus.} Let $g=\diag(d)$ with $d_j>0$, and give column $j$ of $B$ the hyperparameters
+$(\eta'_{B,j},\varepsilon'_{B,j},\lambda'_{B,j})$ and row $j$ of $A$ the hyperparameters $(\eta'_{A,j},\varepsilon'_{A,j},\lambda'_{A,j})$.
+By \eqref{eq:C2-gauge-grad}, column $j$ of $\nabla_{B'}$ is $d_j$ times column $j$ of $\nabla_B$, while
+\eqref{eq:C2-equivariant-step} asks for column $j$ of $\delta B'$ to be $1/d_j$ times that of $\delta B$. Suppose that before
+a step $B'_{:,j}=B_{:,j}/d_j$, $m'_{:,j}=d_jm_{:,j}$ and $v'_{:,j}=d_j^2v_{:,j}$ (true for zero initial state). After the
+moment updates these relations persist, and the normalised step of column $j$ is
+\[\frac{d_j\hat m}{d_j\sqrt{\hat v}+\varepsilon'_{B,j}}=\frac{\hat m}{\sqrt{\hat v}+\varepsilon'_{B,j}/d_j},\]
+which equals the original normalised step iff $\varepsilon'_{B,j}=d_j\varepsilon$ (at $\varepsilon=0$ both are $0$). The
+update of column $j$ is then $-\eta'_{B,j}\big(\text{step}+\lambda'_{B,j}B_{:,j}/d_j\big)$, which equals
+$-\tfrac1{d_j}\eta\big(\text{step}+\lambda B_{:,j}\big)$ iff $\eta'_{B,j}=\eta/d_j$ and $\eta'_{B,j}\lambda'_{B,j}/d_j=\eta\lambda/d_j$,
+that is, $\lambda'_{B,j}=d_j\lambda$. Under the convention of \citet{xloshchilov2019decoupled} the decay term is
+$-\zeta_t\lambda'_{B,j}B'_{:,j}$ with the schedule multiplier $\zeta_t$ alone, and it is transported iff $\lambda'_{B,j}=\lambda$.
+Row $j$ of $\nabla_{A'}$ is $1/d_j$ times that of $\nabla_A$ and the step must be multiplied by $d_j$, which gives
+$\varepsilon'_{A,j}=\varepsilon/d_j$, $\eta'_{A,j}=d_j\eta$ and $\lambda'_{A,j}=\lambda/d_j$ (no change under
+Loshchilov--Hutter). The relations persist by induction. With channel-uniform hyperparameters a positive diagonal
+$g\ne I$ is not in $B_r$, so by the inclusion $\subseteq$ it is a symmetry only jointly with these per-channel values.
+The induction compares the two runs at equal clipping factors. Global-norm clipping multiplies all gradients by
+$\min(1,C/\lVert(\nabla_B,\nabla_A)\rVert)$, and
+$\lVert(\nabla_{B'},\nabla_{A'})\rVert^2=\sum_jd_j^2\lVert\nabla_{B,:,j}\rVert^2+\sum_jd_j^{-2}\lVert\nabla_{A,j,:}\rVert^2$
+differs from the original norm for $d\ne\mathbf 1$ in general; the two runs then weight their gradient histories
+differently, and the relations above fail. This is why the joint symmetry is stated without global-norm clipping.
+
+(c) By \thmref{Proposition}{III.4}(a) the undamped scaled-GD step satisfies \eqref{eq:C2-equivariant-step} for every
+$g\in\GL_r$. With heavy-ball momentum on the preconditioned gradients, $p_B=\nabla_B(AA^\top)^{-1}$ transforms as
+$p_{B'}=p_Bg^{-1}$, so a buffer of such terms transforms in the same way and so does the step. With momentum on the raw
+gradients followed by preconditioning, the buffer transforms as $b_{B'}=b_Bg^\top$ because all past points are related by
+the same $g$, and $b_{B'}(A'A'^\top)^{-1}=b_Bg^\top g^{-\top}(AA^\top)^{-1}g^{-1}$ is again transported. The $A$-factor is
+symmetric. So from gauge-related initial states, with zero or correspondingly transformed momentum, $q'_t=g\cdot q_t$ for
+all $t$ and the $W$-trajectories coincide. Each iterate lies in $W_0+\Mr$, and the iteration is defined as long as both
+factors keep full rank; a step can lower the rank of $B+\delta B$ or $A+\delta A$, so the map goes into $W_0+\Mr$ rather
+than $W_0+\MM_r$.
+
+The hierarchy $B_r\subset\Ort(r)\subset\GL_r$ is strict for $r\ge2$, since $B_r$ is finite, $\Ort(r)$ is infinite and
+compact, and $\GL_r$ is not compact.
+\end{proof}
+
+\begin{proof}[Proof of the statements about published variants]
+\emph{Damped scaled GD.} With a damping constant $\delta>0$ the two inverses become $(AA^\top+\delta I)^{-1}$ and
+$(B^\top B+\delta I)^{-1}$.
+Equivariance of the $B$-step requires, for all $\nabla_B$,
+\[\nabla_Bg^\top(gAA^\top g^\top+\delta I)^{-1}=\nabla_B(AA^\top+\delta I)^{-1}g^{-1},\quad\text{that is,}\quad
+g^\top(gAA^\top g^\top+\delta I)^{-1}=(AA^\top+\delta I)^{-1}g^{-1}.\]
+Inverting both sides gives $(gAA^\top g^\top+\delta I)g^{-\top}=g(AA^\top+\delta I)$, that is,
+$gAA^\top+\delta g^{-\top}=gAA^\top+\delta g$, so $g^{-\top}=g$ and $g\in\Ort(r)$. Conversely, for orthogonal $g$ we have
+$(gAA^\top g^\top+\delta I)^{-1}=g(AA^\top+\delta I)^{-1}g^\top$, and both steps are transported. The computation does not use full rank, so it holds at every point, including $B=0$.
+
+\emph{Scaled AdamW} applies Adam to the preconditioned gradient $p_B=\nabla_B(AA^\top+\delta I)^{-1}$ (and similarly for
+$A$), with $\delta\ge0$. For a signed permutation $g$, $p_{B'}=p_Bg^{-1}$ by the previous paragraph, and Adam commutes with
+signed permutations, so the rule is $B_r$-equivariant. Conversely, the first step requires
+$\phi(\nabla_BM')=\phi(\nabla_BM)g^{-1}$ for all $\nabla_B$, with $M=(AA^\top+\delta I)^{-1}$ and
+$M'=g^\top(gAA^\top g^\top+\delta I)^{-1}$ invertible. Writing $y=xM$ and letting $y$ grow, as in the case $\varepsilon>0$
+above, gives $\operatorname{sign}(yM^{-1}M')=\operatorname{sign}(y)g^{-1}$ for all $y$, and the orthant argument, which
+used only invertibility of the matrix on the left, gives $g^{-1}\in B_r$.
+
+\emph{LoRA-Pro with the Sylvester-optimal $X$.} Write $\mathcal P=\R^{m\times r}\times\R^{r\times n}$ with its Frobenius
+inner product, $u=(u_B,u_A)\in\mathcal P$ for a parameter velocity, and $\mathcal K_q=\ker D\rho_q$. On the full-rank locus
+$\mathcal K_q=\{(-BX,XA):X\in\R^{r\times r}\}$: if $\dot BA=-B\dot A$, then $\dot B=-BX$ with $X=\dot AA^\top(AA^\top)^{-1}$,
+and $BXA=B\dot A$ gives $\dot A=XA$. By \S\ref{proof:III.4}(b), LoRA-Pro's directions $(g^B,g^A)$ form the affine space
+$\mathcal M_q(G)=\{u:D\rho_qu=\Pi_{\mathcal T}G\}$, and LoRA-Pro chooses $X$ by minimising the Frobenius distance from
+$(g^B,g^A)$ to LoRA's own gradients $D\rho_q^\top G=(sGA^\top,sB^\top G)$; the minimiser solves a Sylvester equation
+(\bgref{D.33}, \auxref{B.20}). Since $D\rho_q^\top G\perp\mathcal K_q$, for $u\in\mathcal M_q(G)$ the inner product
+$\langle u,D\rho_q^\top G\rangle$ is constant, and minimising $\lVert u-D\rho_q^\top G\rVert^2$ over $\mathcal M_q(G)$ is the
+same as minimising $\lVert u\rVert^2$. So LoRA-Pro's direction is the minimum-norm solution $u_q(G)$ of
+$D\rho_qu=\Pi_{\mathcal T}G$, that is, $u_q(G)=D\rho_q^+G$.
+
+We show that $u_{g\cdot q}(G)=\varphi_g(u_q(G))$ for all $G$ iff $g\in\Ort(r)$, where $\varphi_g(u)=(u_Bg^{-1},gu_A)$ is
+the linear action. Since $D\rho_{g\cdot q}\varphi_g=D\rho_q$ and $\Pi_{\mathcal T}$ depends only on $W$, substituting
+$u=\varphi_g(w)$ shows that $u_{g\cdot q}(G)=\varphi_g(w^*)$, where $w^*$ minimises $\langle w,\mathcal Nw\rangle$ over
+$\mathcal M_q(G)$ with $\mathcal N=\varphi_g^\top\varphi_g$. The adjoint of $\varphi_g$ is $\varphi_g^\top(v_B,v_A)=(v_Bg^{-\top},g^\top v_A)$,
+since $\langle w_Bg^{-1},v_B\rangle=\langle w_B,v_Bg^{-\top}\rangle$ and $\langle gw_A,v_A\rangle=\langle w_A,g^\top v_A\rangle$, so
+$\mathcal N(w_B,w_A)=(w_Bg^{-1}g^{-\top},g^\top gw_A)=(w_B(g^\top g)^{-1},(g^\top g)w_A)$. So
+equivariance holds iff, on every coset of $\mathcal K_q$ (as $G$ varies, $\mathcal M_q(G)$ runs through all cosets, since
+$D\rho_q$ maps onto $\mathcal T$), the $\mathcal N$-minimum-norm point equals the Euclidean one. The two minimisers are the
+intersections of the coset with $\mathcal K_q^{\perp_{\mathcal N}}=\mathcal N^{-1}(\mathcal K_q^\perp)$ and with
+$\mathcal K_q^\perp$; they agree on every coset iff these two complements are equal (each point of either complement is the minimiser on its
+own coset), iff $\mathcal N\mathcal K_q=\mathcal K_q$
+($\mathcal N$ is symmetric and invertible). Put $H=g^\top g\succ0$. Then $\mathcal N(-BX,XA)=(-BXH^{-1},HXA)$ lies in
+$\mathcal K_q$ iff some $Y$ has $BY=BXH^{-1}$ and $YA=HXA$, that is (as $B$ is injective and $A$ has full row rank),
+$XH^{-1}=HX$. Requiring this for every $X\in\R^{r\times r}$, the matrix-unit lemma of \S\ref{proof:III.3} gives
+$H^{-1}=cI=H$, so $c^2=1$, and $c=1$ because $H$ is positive definite. Hence $g^\top g=I$ and $g\in\Ort(r)$.
+Conversely, orthogonal $g$ give $\mathcal N=I$. So the parameter update with the Sylvester-optimal $X$ is equivariant
+exactly under $\Ort(r)$.
+
+The variant with $X=0$ is $g^A=s^{-1}(B^\top B)^{-1}B^\top G$, $g^B=s^{-1}(I-P_U)GA^\top(AA^\top)^{-1}$. At $g\cdot q$,
+$P_U$ is unchanged and
+\[g^{A'}=s^{-1}g(B^\top B)^{-1}g^\top g^{-\top}B^\top G=g\,g^A,\qquad g^{B'}=s^{-1}(I-P_U)GA^\top g^\top g^{-\top}(AA^\top)^{-1}g^{-1}=g^Bg^{-1},\]
+so it is $\GL_r$-equivariant and its discrete $W$-step descends exactly. The first-order $W$-step of either variant is
+$-\eta\Pi_{\mathcal T}G$ (\thmref{Proposition}{III.4}(b)). For the Sylvester variant, $\varphi_g^{-1}u_{g\cdot q}(G)-u_q(G)\in\mathcal K_q$
+equals $(-BY,YA)$ for some $Y$, and the second-order term $s\,\delta B\,\delta A=\eta^2s\,g^Bg^A$ becomes
+$\eta^2s(g^B-BY)(g^A+YA)$ at $g\cdot q$. The difference $\eta^2s(g^BYA-BYg^A-BY^2A)$ is exactly $\eta^2$ times a matrix that does not depend on $\eta$, and it
+is nonzero in general. Numerically, at random
+full-rank points with $(m,n,r)=(7,6,3)$, $s=0.8$ and $g$ a Gaussian matrix plus $2I$, the largest entry of the
+difference of the two $W$-steps at $\eta=0.1$ ranges from $8\times10^{-4}$ to $1.2\times10^{-2}$ over seven random draws,
+and it falls by a factor of exactly $100$ each time $\eta$ falls by $10$. It is of
+order $10^{-15}$ (rounding) for an orthogonal $g$ and for the variant with $X=0$.
+
+\emph{LoRA-RITE.} In the notation of \citet{yen2024lora} the update is $AB^\top$ with $A\in\R^{m\times r}$ and
+$B\in\R^{n\times r}$, and the gauge is $A_2=A_1R$, $B_2=B_1R^{-\top}$ with $R\in\GL_r$. We follow their Algorithm~1 line
+by line on the full-rank locus, where its pseudo-inverses are inverses. The rule is symmetric in $A$ and $B$, so we treat
+the step of $A$. Algorithm~1 writes $B=U_BR_B$ by polar decomposition, with $U_B$ having orthonormal columns, and
+forms, at step $t$:
+\begin{itemize}
+\item the unmagnified gradient $\bar\nabla_{A,t}=\nabla_{A,t}R_{B_t}^{-1}$ and the basis change
+$P_{A,t}=U_{B_t}^\top U_{B_{t-1}}$;
+\item a second moment $\bar V_{A,t}$, a combination with fixed weights of $P_{A,t}\bar V_{A,t-1}P_{A,t}^\top$ and
+$\bar\nabla_{A,t}^\top\bar\nabla_{A,t}$;
+\item the escaped mass
+\[\rho_{A,t}=\rho_{A,t-1}+d_\lambda\big(\bar V_{A,t-1},P_{A,t}\bar V_{A,t-1}P_{A,t}^\top\big),\qquad
+d_\lambda(E_1,E_2)=\max_i\lvert\lambda_i(E_1)-\lambda_i(E_2)\rvert,\]
+which depends only on the spectra of its two arguments;
+\item the preconditioned step, the first moment and the step
+\[\bar S_{A,t}=\bar\nabla_{A,t}(\bar V_{A,t}+\rho_{A,t}I)^{-1/2},\quad
+\bar M_{A,t}=\beta_1\bar M_{A,t-1}P_{A,t}^\top+(1-\beta_1)\bar S_{A,t},\quad
+\delta A_t=-\eta\,\bar M_{A,t}R_{B_t}^{-\top}.\]
+\end{itemize}
+Run the algorithm from $(A_1,B_1)$ and from $(A_2,B_2)=(A_1R,B_1R^{-\top})$, with zero initial moments and escaped
+mass. Suppose that at step $t$ the parameters of the two runs are related by $R$. Then $B_{2,t}$ and $B_{1,t}$ have the
+same column space, so $U_{B_{2,t}}=U_{B_{1,t}}O_t$ for some $O_t\in\Ort(r)$, and
+$R_{B_{2,t}}=U_{B_{2,t}}^\top B_{2,t}=O_t^\top R_{B_{1,t}}R^{-\top}$. With $G$ the gradient in the weight,
+$\nabla_{A_2}=GB_2=\nabla_{A_1}R^{-\top}$, so
+\[\bar\nabla_{A_2,t}=\nabla_{A_1,t}R^{-\top}R^\top R_{B_{1,t}}^{-1}O_t=\bar\nabla_{A_1,t}O_t.\]
+Suppose also that the internal states are related by $\bar V^{(2)}_{t-1}=O_{t-1}^\top\bar V^{(1)}_{t-1}O_{t-1}$,
+$\bar M^{(2)}_{t-1}=\bar M^{(1)}_{t-1}O_{t-1}$ and $\rho^{(2)}_{t-1}=\rho^{(1)}_{t-1}$; at $t=1$ this holds because all
+three start at zero. Then $P^{(2)}_{A,t}=O_t^\top P^{(1)}_{A,t}O_{t-1}$, so
+$P^{(2)}_{A,t}\bar V^{(2)}_{t-1}P^{(2)\top}_{A,t}=O_t^\top P^{(1)}_{A,t}\bar V^{(1)}_{t-1}P^{(1)\top}_{A,t}O_t$ and
+$\bar V^{(2)}_t=O_t^\top\bar V^{(1)}_tO_t$. Conjugation by an orthogonal matrix keeps eigenvalues, so
+$\rho^{(2)}_t=\rho^{(1)}_t$, and it commutes with $(\,\cdot+\rho I)^{-1/2}$, so $\bar S^{(2)}_t=\bar S^{(1)}_tO_t$. Since
+$\bar M^{(2)}_{t-1}P^{(2)\top}_{A,t}=\bar M^{(1)}_{t-1}P^{(1)\top}_{A,t}O_t$, also $\bar M^{(2)}_t=\bar M^{(1)}_tO_t$.
+Finally $R_{B_{2,t}}^{-\top}=O_t^\top R_{B_{1,t}}^{-\top}R$, so
+\[\delta A_{2,t}=-\eta\,\bar M^{(1)}_tO_tO_t^\top R_{B_{1,t}}^{-\top}R=\delta A_{1,t}R,\]
+the transported step. The step of $B$ is the same computation with $A$ and $B$ exchanged and $R$ replaced by
+$R^{-\top}$, so $\delta B_{2,t}=\delta B_{1,t}R^{-\top}$. The new parameters are again related by $R$, and the new
+internal states by the orthogonal matrices $O_t$, which completes the induction. The resulting step agrees with Eq.~15
+of \citet{yen2024lora}, $\delta A_2=\delta A_1B_1^\top(B_2^\top)^+$, since $(B_2^\top)^+=B_1(B_1^\top B_1)^{-1}R$ when
+$B_1$ has full column rank, and with the numerical replication reported after \thmref{Theorem}{III.12}, which agrees
+to $3\times10^{-14}$. LoRA-RITE is
+therefore an Adam-type optimizer in class (c).
+\end{proof}
+
+% ====================================================================================================
+\subsection{Corollary III.13}\label{proof:III.13}
+
+\begin{restate}{Corollary}{III.13}{what a zero-$B$ initialisation really chooses}
+At $q_0=(0,A_0)$ with $\rk A_0=r$, with hyperparameters shared by the rank channels and the same data order and dropout
+masks, two choices of $A_0$ give the same $\theta$-trajectory whenever the optimizer's gauge group relates them. The
+resulting invariant of $A_0$ is:
+\begin{itemize}
+\item $\operatorname{row}A_0\in\Gr(r,n)$ for an update rule that is $\GL_r$-equivariant at every point of its trajectory,
+including $B=0$ and rank-deficient $B$, run without global-norm clipping. An example is
+$\delta B=-\eta\nabla_B(AA^\top)^{-1}$, $\delta A=-\eta(AA^\top)\nabla_A$, which needs only $\rk A=r$;
+\item the PSD matrix $A_0^\top A_0$ for SGD, which is exactly the initial preconditioner in
+$\dot W(0)=-s^2\eta_BGA_0^\top A_0$;
+\item $A_0$ up to signed permutation of its rows for Adam.
+\end{itemize}
+The undamped scaled-GD optimizers of \thmref{Theorem}{III.12}(c) are not defined at $B=0$, since they need
+$(B^\top B)^{-1}$. LoRA-RITE uses pseudo-inverses and so is defined there, but its $\GL_r$-equivariance is established only
+on the full-rank locus. Their damped forms are only $\Ort(r)$-equivariant, so in practice their invariant is a
+$\delta$-dependent function of $A_0^\top A_0$, and their Adam-wrapped forms (Riemannian-preconditioned AdamW, HF's LoRA-FA
+optimizer) have the invariant $A_0$ modulo $B_r$. Conversely, different invariants give different dynamics, for SGD and
+for Adam at $\varepsilon=0$.
+
+Random-$A$ LoRA and EVA are different points of the $B=0$ stratum $\{(0,A):\rk A=r\}$ of the apex fibre
+$\rho^{-1}(\theta_0)=\{(B,A):BA=0\}$; Init[B] lies in another stratum of the same fibre. LoRA-FA is a different
+\emph{object}, the sub-object $\mathrm{FA}(A_0)\hookrightarrow\mathrm{LoRA}_{(0,A_0)}$ (\thmref{Proposition}{I.8}). More
+precisely, EVA is a point of the apex fibre of $\mathrm{LoRA}_{r_l}$ at its per-layer redistributed rank and adjusted
+$\alpha$, with orthonormal rows only when \texttt{whiten=False}.
+\end{restate}
+
+\begin{proof}
+\emph{Equivariance at $B=0$.} Only the inclusions $\supseteq$ of \thmref{Theorem}{III.12} are used. For SGD and $g\in\Ort(r)$
+the identities $\delta B'=-\eta_B\nabla_Bg^\top=\delta Bg^{-1}$ and $\delta A'=g\,\delta A$ hold at every point, with no rank
+condition, and similarly for momentum buffers. For Adam and $g\in B_r$ the coordinatewise argument also holds at every
+point, and the initial state $(m,v)=(0,0)$ is fixed by $B_r$. Orthogonal $g$ preserve $\lVert\nabla_B\rVert$ and
+$\lVert\nabla_A\rVert$ by \eqref{eq:C2-gauge-grad}, so global-norm clipping factors agree in the two runs. The start
+transforms as $g\cdot(0,A_0)=(0,gA_0)$, since $0\cdot g^{-1}=0$. By the induction of \S\ref{proof:III.1}, $A_0$ and
+$gA_0$ give the same $\theta$-trajectory whenever $g$ lies in the optimizer's group. In the first bullet the hypothesis is
+equivariance under $\GL_r$ at every point of the trajectory, and the same induction applies.
+
+\emph{The example rule.} At $g\cdot q$, by \eqref{eq:C2-gauge-grad} and
+$(A'A'^\top)^{-1}=g^{-\top}(AA^\top)^{-1}g^{-1}$,
+\[\delta B'=-\eta\nabla_Bg^\top g^{-\top}(AA^\top)^{-1}g^{-1}=\delta B\,g^{-1},\qquad
+\delta A'=-\eta\,gAA^\top g^\top g^{-\top}\nabla_A=g\,\delta A .\]
+Only $\rk A=r$ was used, so $B$ may be $0$ or rank deficient. Since $\delta A=-\eta AA^\top sB^\top G=A\,N$ with $N=-\eta sA^\top B^\top G$, the step maps $A$ to $A(I+N)$, which
+keeps rank $r$ whenever $I+N$ is invertible, in particular for small $\eta$; in continuous time $\dot A=AN(t)$ gives
+$A(t)=A_0\Psi(t)$ with $\Psi$ an invertible fundamental matrix, so $\rk A(t)=r$ for all $t$.
+
+\emph{The invariants.} The invariant of $A_0$ is its orbit under the optimizer's group acting by $A_0\mapsto gA_0$. For
+$\Ort(r)$, $A_0'=OA_0$ for some $O\in\Ort(r)$ iff $A_0'^\top A_0'=A_0^\top A_0$ (\thmref{Theorem}{II.5}(2)). For $B_r$ the
+orbit is the set of signed row permutations of $A_0$. For $\GL_r$, two full-row-rank matrices satisfy $A_0'=gA_0$ for some
+(unique) $g$ iff they have the same row space (proof of \thmref{Theorem}{II.2}), so the invariant is
+$\operatorname{row}A_0\in\Gr(r,n)$ (\bgref{C.15}). At $B_0=0$ the LoRA cometric of \thmref{Observation}{III.2} is
+$K_{(0,A_0)}(G)=s^2\eta_BGA_0^\top A_0$, so $\dot W(0)=-s^2\eta_BGA_0^\top A_0$.
+
+\emph{Practical forms.} Undamped scaled GD needs $(B^\top B)^{-1}$, which does not exist at $B=0$. The damped forms are
+$\Ort(r)$-equivariant at every point (\S\ref{proof:III.12}, published variants), so their trajectories from $(0,A_0)$
+depend on $A_0$ only through $A_0^\top A_0$, in a way that depends on $\delta$. A preconditioned step wrapped in Adam(W) is
+$B_r$-equivariant at every point (same place), so the invariant is $A_0$ modulo $B_r$.
+
+\emph{Converse for SGD.} The first SGD step from $(0,A_0)$ is $\delta B=-\eta_BsGA_0^\top$, $\delta A=-\eta_AsB_0^\top G=0$,
+so $\delta W_1=s\,\delta B\,A_0=-s^2\eta_BGA_0^\top A_0$ exactly. If $A_0$ and $A_0'$ give the same trajectory for every loss,
+the linear losses $\langle G,\cdot\rangle$ give $GA_0^\top A_0=GA_0'^\top A_0'$ for every $G$, so $A_0^\top A_0=A_0'^\top A_0'$.
+Hence different invariants give different first steps for some loss.
+
+\emph{Converse for Adam at $\varepsilon=0$.} The first step from $(0,A_0)$ with zero state has $\nabla_A=0$, so $\delta A=0$,
+and $\delta B=-\eta_B\operatorname{sign}(sGA_0^\top)$, so $\delta W_1=-s\eta_B\operatorname{sign}(GA_0^\top)A_0$ (without bias
+correction, a positive multiple of this). If $A_0$ and $A_0'$ give the same trajectory for every loss, then row by row
+\[F(x):=\operatorname{sign}(xA_0^\top)A_0=\sum_{j=1}^r\operatorname{sign}(x\cdot a_j)\,a_j\]
+equals $F'(x)=\sum_j\operatorname{sign}(x\cdot a'_j)\,a'_j$ for every $x\in\R^{1\times n}$, where $a_j$ and $a'_j$ are the rows
+of $A_0$ and $A_0'$. The rows $a_j$ are linearly independent, so the hyperplanes $H_j=a_j^\perp$ are pairwise distinct, and
+each $H_j$ contains points $x$ lying on no other $H_k$ (a hyperplane is not covered by finitely many proper subspaces of
+it, \auxref{B.36}(b)). At such a point, crossing $H_j$ in the direction of increasing $x\cdot a_j$ changes $F$ by $2a_j\ne0$, while $F$ is
+constant on the connected components of the complement of $\bigcup_jH_j$. So the closure of the set of discontinuities of
+$F$ is $\bigcup_jH_j$, and likewise for $F'$. From $F=F'$ we get $\bigcup_jH_j=\bigcup_kH'_k$, and since a hyperplane
+contained in a finite union of hyperplanes equals one of them (\auxref{B.36}(b) again), there is a permutation $\pi$ with $H_j=H'_{\pi(j)}$, that is,
+$a'_{\pi(j)}=c_ja_j$ with $c_j\ne0$. Crossing $H_j$ as above changes $F'$ by
+$2\operatorname{sign}(c_j)a'_{\pi(j)}=2\lvert c_j\rvert a_j$, and comparing with $2a_j$ gives $\lvert c_j\rvert=1$. So
+$A_0'$ is a signed row permutation of $A_0$. For the example $\GL_r$-rule the same argument is immediate: its first step is
+$\delta W_1=-\eta s^2GP_{\operatorname{row}A_0}$, which determines $\operatorname{row}A_0$.
+
+\emph{Strata and the sub-object.} Since $s>0$, $\rho^{-1}(\theta_0)=\{(B,A):W_0+sBA=W_0\}=\{BA=0\}$. Random-$A$ LoRA and
+EVA start at $(0,A_0)$ with $\rk A_0=r$, in the stratum $\{(0,A):\rk A=r\}$, at points that differ for a generic random
+draw; Init[B] starts at $(B_0,0)$ with $\rk B_0=r$, in the disjoint stratum $\{(B,0):\rk B=r\}$. The map $B\mapsto(B,A_0)$
+is injective, pointed ($0\mapsto(0,A_0)$) and commutes with the maps to $\Theta$, since $\rho(B,A_0)=W_0+sBA_0$; after the
+rescaling $B\mapsto sB$ its source is $\mathrm{FA}(A_0)$ of \thmref{Proposition}{I.8}. An injective morphism is a
+monomorphism, so $\mathrm{FA}(A_0)$ is a sub-object of $\mathrm{LoRA}_{(0,A_0)}$ (\bgref{A.15}). Its image
+$W_0+\{XA_0\}$ has dimension $mr$, smaller than the dimension $r(m+n-r)$ of the image $W_0+\Mr$ of
+$\mathrm{LoRA}_{(0,A_0)}$ when $r<n$, and images are isomorphism invariants, so the two objects are not isomorphic. The
+last sentence describes EVA's construction and needs no proof.
+\end{proof}

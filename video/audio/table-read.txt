@@ -1,0 +1,52 @@
+
+ 0.00 min  chapter 0
+   0.1      31.3 s  (budget  26 s, over)  Two runs, one path
+   0.2      27.3 s  (budget  25 s, over)  382 names
+   0.3       8.0 s  (budget   8 s)  Title
+
+ 1.14 min  chapter P
+   P.1      36.6 s  (budget  34 s, over)  Hammer or sea
+   P.2      41.0 s  (budget  36 s, over)  Four nuts on the shore
+
+ 2.45 min  chapter I
+   I.0       5.0 s  (budget   5 s)  Chapter card
+   I.1      16.1 s  (budget  16 s)  One point
+   I.2      19.3 s  (budget  18 s, over)  A method is a map
+   I.3      31.6 s  (budget  29 s, over)  The slice
+   I.4      30.1 s  (budget  35 s)  Three questions
+
+ 4.19 min  chapter II
+   II.0      5.0 s  (budget   5 s)  Chapter card
+   II.1     39.7 s  (budget  36 s, over)  Cone, orbit, line
+   II.2     21.6 s  (budget  20 s, over)  Disguises
+   II.3     56.9 s  (budget  50 s, over)  Tips and smooth points
+   II.4     59.0 s  (budget  60 s)  Nut ① dissolves
+   II.5     60.3 s  (budget  55 s, over)  Rank is a cut, dimension is a volume
+
+ 8.28 min  chapter III
+   III.0     5.0 s  (budget   5 s)  Chapter card
+   III.1    32.7 s  (budget  32 s, over)  The gauge
+   III.2    34.8 s  (budget  32 s, over)  A conserved charge
+   III.3    34.9 s  (budget  33 s, over)  What each optimizer sees
+   III.4    56.8 s  (budget  55 s, over)  Nut ② dissolves
+
+11.06 min  chapter IV
+   IV.0      5.0 s  (budget   5 s)  Chapter card
+   IV.1     50.2 s  (budget  50 s)  Nut ③ dissolves
+
+12.00 min  chapter V
+   V.0       5.0 s  (budget   5 s)  Chapter card
+   V.1      29.6 s  (budget  32 s)  Quantisation moves the base point
+   V.2      23.4 s  (budget  22 s, over)  Merge and restart
+   V.3      50.0 s  (budget  45 s, over)  Nut ④ dissolves
+
+13.83 min  chapter A
+   A.0       5.0 s  (budget   5 s)  Chapter card
+   A.1      42.8 s  (budget  38 s, over)  Seven coordinates
+   A.2      40.6 s  (budget  37 s, over)  Predictions and limits
+
+15.33 min  chapter C
+   C.1      20.0 s  (budget  25 s)  Three questions
+   C.2      11.0 s  (budget  20 s)  End card
+
+total 15.86 min

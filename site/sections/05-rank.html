@@ -1,0 +1,299 @@
+<section class="expose" id="rank" data-toc="II.C" data-toc-title="Rank is not volume">
+  <style>#rank td mjx-container svg, #rank th mjx-container svg { max-width: none; }</style>
+  <header class="expose-head">
+    <span class="label">Exposé II.C</span>
+    <h2>Rank is a cut, dimension is a volume</h2>
+    <p class="summary">At a fixed budget, the narrowest cut of a method’s diagram bounds the rank it can reach, the dimension of what it can reach is a separate count, and the two can move in opposite directions.</p>
+  </header>
+
+  <blockquote class="epigraph"><p>Rank lives on cuts and dimension lives in volumes. Count the wrong one and you will compare the wrong things.</p><footer>a working maxim</footer></blockquote>
+
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>A method’s update rank is bounded by the narrowest cut of its tensor-network diagram. The dimension \(d(M)\) of what it can reach is its parameter count minus the directions that change nothing.</li>
+    <li>The two can move in opposite directions. At the budget of LoRA\(_8\) on a \(4096\times4096\) layer, LoHa reaches rank 16 and at least 8,159 fewer dimensions; GraLoRA reaches rank 16 at LoRA’s dimension, with every block capped at rank 4.</li>
+    <li>Kronecker sums are LoRA across another cut of the same four-leg tensor, and HiRA is LoRA after \(X\mapsto W_0\odot X\) (for \(W_0\) without zero entries). Such changes of frame keep dimension and move rank.</li>
+    <li>LoRA respects every change of a layer’s coordinates and so reaches the same set of functions after a function-preserving rotation of the network; PiSSA, MiLoRA and CorDA splits respect only rotations and uniform scalings.</li>
+  </ul></div>
+
+  <div class="prose">
+
+    <p>PEFT papers usually report a method’s expressiveness as a rank and its cost as a parameter count. A third number, the dimension of the set of weights the method can reach, usually goes unreported.</p>
+
+    <p>Draw a method as a network of boxes and wires. The rank of its update is limited by the narrowest place where the network can be cut in two, so rank is a <em>cut</em> invariant. The dimension counts the independent directions in which the method can move the weights; we call it a <em>volume</em> invariant, loosely, since no measure is computed. In Figure 4, several methods raise one while lowering the other.</p>
+
+    <figure class="figure wide" id="fig-rankvol">
+      <div data-figure="rankvol" aria-label="Rank is not volume: at an equal parameter budget, a scatter of the maximum rank each PEFT method can reach against the dimension of its image, with a ledger of where the budget goes and a live Jacobian check."></div>
+      <figcaption><span class="fig-n">Figure 4</span>Rank is not volume. Six methods spend the budget \(R(m+n)\) of LoRA\(_R\) on one \(m\times n\) layer when they fit it, and you set the shape and \(R\). C3A fits only if a block size \(b\) dividing \(m\) and \(n\) has \(mn/b=R(m+n)\), and FourierFT only if \(R(m+n)\le mn\). Across is the largest rank of \(\Delta W\), log scale (<a href="#thm-II-10">Thm II.10</a>); up is \(d(M)\) (<a href="#thm-II-12">Prop II.12</a>); a ledger splits each budget into image and fibre. Cards state the comparison of Prop II.12(c) or <a href="#thm-II-13">Prop II.13</a> that holds at the current shape, including shapes where LoHa beats LoRA. LoHa’s \(d\) is the proved upper bound; FourierFT’s subtracts the conjugate pairs of a seeded draw. A live check recomputes \(d(M)\) as a float64 Jacobian rank on a copy at most \(20\times20\).</figcaption>
+    </figure>
+
+    <h3>Rank is a cut</h3>
+
+    <p>In LoRA every signal crosses the inner wire of dimension \(r\) between \(A\) and \(B\), so \(\Delta W=BA\) has rank at most \(r\). The argument works for any method drawn as a <a href="#app-b-tensor-networks" class="gloss">tensor network</a>, a <a href="#app-b-strings" class="gloss">string diagram</a> in \((\mathbf{FinVect},\otimes)\). Split the boxes into an input side and an output side, and the network factors through the wires that cross.</p>
+    <aside class="note"><span class="label">Credit</span>String diagrams go back to Joyal and Street (1991), and the copy spider to the Frobenius algebra of a basis (<a href="https://arxiv.org/abs/0810.0812">Coecke, Pavlovic and Vicary</a>). Cut bounds on rank are standard tensor-network reasoning (<a href="https://arxiv.org/abs/1609.00893">Cichocki et al., 2016</a>; <a href="https://epubs.siam.org/doi/10.1137/07070111X">Kolda and Bader, 2009</a>). The PEFT reading is ours.</aside>
+
+    <div class="env theorem" id="thm-II-10"><span class="env-head">Theorem II.10 <span class="env-name">(cut-rank bound)</span>.</span>
+      <div class="env-body">
+        <p>Let \(\Gamma\) be a tensor network, evaluated in the symmetric monoidal category \((\mathbf{FinVect},\otimes)\), with input legs \(V\) and output legs \(U\). Every wire and open leg is assumed incident to a vertex: insert an identity box on any bare strand, or equivalently count each bare input–output wire as crossing every cut. A crossing hyperedge (<a href="#app-b-frobenius" class="gloss">copy spider</a>) contributes its dimension once. Partition the vertices into \(\mathcal I\sqcup\mathcal O\). The weight \(w\) of the cut is the product of the dimensions of the internal wires between the two sides and of the open legs attached on the wrong side (input legs at \(\mathcal O\), output legs at \(\mathcal I\)). Then</p>
+        \[\operatorname{rank}[\![\Gamma]\!]\le\min_{\rm cuts}w,\]
+        <p>and rank is subadditive over formal sums. The bound refers to a chosen presentation of the network.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>Write \(V_{\mathcal I},V_{\mathcal O}\) for the input legs attached to \(\mathcal I\) and \(\mathcal O\), \(U_{\mathcal I},U_{\mathcal O}\) likewise for the outputs, and \(C\) for the tensor product of the cut wires. Contracting each side gives \(T_{\mathcal I}:V_{\mathcal I}\to U_{\mathcal I}\otimes C\) and \(T_{\mathcal O}:C\otimes V_{\mathcal O}\to U_{\mathcal O}\). Then</p>
+      \[[\![\Gamma]\!]=(\mathrm{id}_{U_{\mathcal I}}\otimes T_{\mathcal O})\circ(T_{\mathcal I}\otimes\mathrm{id}_{V_{\mathcal O}})\]
+      <p>factors through \(U_{\mathcal I}\otimes C\otimes V_{\mathcal O}\), whose dimension is \(w\). Symmetric monoidal structure suffices; no cups or caps are needed. Subadditivity is \(\operatorname{rank}(X+Y)\le\operatorname{rank}X+\operatorname{rank}Y\).</p>
+      <p>Numerical check: no violation in 283 random networks.</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p>Without the convention on bare strands, \(I_d\otimes BA\) would violate the bound. The bound also depends on the drawing. A naive expansion of HRA’s product of reflections has \(2^r-1\) terms, while a telescoping sum gives the sharp bound \(r\).</p>
+
+    <details class="aside"><summary>More: the bound for common methods</summary>
+      <div class="table-wrap"><table>
+        <thead><tr><th>method</th><th>presentation used</th><th>bound on \(\operatorname{rank}\Delta W\)</th></tr></thead>
+        <tbody>
+          <tr><td>LoRA family, \(BA\)</td><td>one bond of dimension \(r\)</td><td>\(r\)</td></tr>
+          <tr><td>split initialisations (PiSSA type), relative to \(W_0\)</td><td>\(\Delta W=BA-B_0A_0\), two bonds</td><td>\(2r\) (<a href="#thm-II-1">Thm II.1</a>)</td></tr>
+          <tr><td>HRA</td><td>telescoping sum \(R-I=\sum_k(H_k-I)H_{k+1}\cdots H_r\)</td><td>\(r\)</td></tr>
+          <tr><td>Givens circuit with \(g\) gates</td><td>the same telescoping sum</td><td>\(2g\)</td></tr>
+          <tr><td>ReLoRA after \(K\) phases</td><td>formal sum of \(K\) LoRAs</td><td>\(Kr\)</td></tr>
+          <tr><td>GraLoRA</td><td>sum of \(k^2\) block LoRAs</td><td>\(kr\)</td></tr>
+          <tr><td>LoHa</td><td>Hadamard product through copy spiders</td><td>\(r_1r_2\)</td></tr>
+          <tr><td>HiRA</td><td>\(W_0\) factored through a bond of dimension \(\operatorname{rk}W_0\)</td><td>\(r\operatorname{rk}W_0\)</td></tr>
+          <tr><td>LoKr</td><td>\(C\otimes BA\), inner rank \(r'\)</td><td>\(\operatorname{rk}C\cdot r'\)</td></tr>
+          <tr><td>FourierFT, \(n_c\) coefficients</td><td>sum of real cosine patterns, each of rank \(\le2\)</td><td>\(\min(2n_c,m,n)\)</td></tr>
+          <tr><td>MoRA (reshape), C3A, MPO adapters</td><td>no narrow cut</td><td>up to full rank</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+    <p class="explains">The “high-rank PEFT” literature consists of networks whose <a href="#app-b-min-cut" class="gloss">min-cut</a> avoids an \(r\)-dimensional bottleneck. A large min-cut is necessary for high rank and does not guarantee it, and attaining it can cost volume.</p>
+
+    <h3>Dimension is a volume</h3>
+
+    <p>Moving \(q\in Q\) along a fibre of \(\rho\) changes nothing. For LoRA, \((Bg^{-1},gA)\) gives the same weight as \((B,A)\) for every \(g\in GL_r\), so \(r^2\) of the \(r(m+n)\) parameters are spent on a symmetry and the image has dimension \(r(m+n-r)\). This is the expressive dimension \(d(M)\) of <a href="#thm-I-5">Definition I.5</a>; \(\lvert M\rvert-d(M)\) is the gauge waste.</p>
+    <aside class="note"><span class="label">Credit</span>The quotient \((\mathbb R^{m\times r}_*\times\mathbb R^{r\times n}_*)/GL_r\) is the classical geometry of fixed-rank matrices (<a href="https://arxiv.org/abs/1209.0430">Mishra et al., 2012</a>). <a href="https://arxiv.org/abs/2410.04207">Putterman et al., 2024</a> build learners on LoRA weights that respect this \(GL_r\) symmetry.</aside>
+    <details class="aside"><summary>More: what “gauge” means here</summary>
+      <p>“Gauge” means the symmetry group of a parametrisation. There is no connection, and away from the full-rank stratum the fibres jump in dimension.</p>
+    </details>
+
+    <div class="env proposition" id="thm-II-12"><span class="env-head">Proposition II.12 <span class="env-name">(gauge census: rank is a cut, dimension is a volume)</span>.</span>
+      <div class="env-body">
+        <p>(a) \(d(M)\le\lvert M\rvert-\dim(\text{generic gauge orbit})\), with equality when the gauge acts locally transitively on generic fibres.</p>
+        <p>(b) Values for one \(m\times n\) box (\(r\le\min(m,n)\) except for VeRA). The exhibited gauge is the generic gauge of Definition I.5 exactly when (a) is an equality, which can fail for LoHa and DoRA once the cap \(mn\) binds.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>method</th><th>budget \(\lvert M\rvert\)</th><th>exhibited gauge (dim)</th><th>\(d(M)\)</th><th>max rank</th></tr></thead>
+          <tbody>
+            <tr><td>LoRA\(_r\)</td><td>\(r(m+n)\)</td><td>\(GL_r\) \((r^2)\)</td><td>\(r(m+n-r)\)</td><td>\(r\)</td></tr>
+            <tr><td>GraLoRA (\(k\times k\) blocks, rank \(r/k\) each; HF default <code>hybrid_r=0</code>)</td><td>\(r(m+n)\)</td><td>\(\prod GL_{r/k}\) \((r^2)\)</td><td>\(r(m+n-r)\)</td><td>\(\min(kr,m,n)\)</td></tr>
+            <tr><td>LoHa\(_{r_1,r_2}\)</td><td>\((r_1+r_2)(m+n)\)</td><td>\(GL_{r_1}\times GL_{r_2}\times{}\)diagonal torus \((r_1^2+r_2^2+m+n-1)\)</td><td>\(\min(mn,F)\) [Num]; \(F\), below, is a proved upper bound</td><td>\(\min(r_1r_2,m,n)\)</td></tr>
+            <tr><td>HRA\(_r\) (\(\operatorname{rank}W_0=n\), <code>apply_GS=False</code>)</td><td>\(rn\)</td><td>non-linear; fibre dimension \(r(r+1)/2\); exhibited Lie gauge \((\mathbb R^\times)^r\)</td><td>\(rn-r(r+1)/2\)</td><td>\(r\)</td></tr>
+            <tr><td>DoRA\(_r\)</td><td>\(r(m+n)+m\)</td><td>\(GL_r\)</td><td>\(\min\big(mn,\) \(r(m+n-r)+m\big)\) for generic \(W_0\) [Num]</td><td>up to full</td></tr>
+            <tr><td>VeRA</td><td>\(m+r\)</td><td>\(\mathbb R^\times\)</td><td>\(m+r-1\) [Num]</td><td>\(\min(r,m,n)\)</td></tr>
+            <tr><td>KronA \(A\otimes B\)</td><td>\(m_1n_1+m_2n_2\)</td><td>\(\mathbb R^\times\)</td><td>\(m_1n_1+m_2n_2-1\)</td><td>\(\min(m_1,n_1)\min(m_2,n_2)\)</td></tr>
+            <tr><td>TT / Tucker</td><td>\(\sum\) cores</td><td>\(\prod_eGL_{r_e}\)</td><td>\(\lvert M\rvert-\sum_er_e^2\) at minimal ranks</td><td>up to full</td></tr>
+            <tr><td>linear methods (LoRA-FA, LoRA-XS, MiSS, FourierFT, C3A, masks)</td><td>\(\lvert M\rvert\)</td><td>translations by the kernel</td><td>rank of the linear map; \(=\lvert M\rvert\) when injective</td><td>varies</td></tr>
+          </tbody>
+        </table></div>
+        <p>In the LoHa row,</p>
+        \[F=r_1(m+n-r_1)+r_2(m+n-r_2)-(m+n-1).\]
+        <p>FourierFT is injective unless its sampled frequencies contain a conjugate pair \((u,v),(-u,-v)\), and then \(d=\lvert M\rvert-\#\{\text{pairs}\}\). At \(768\times768\) with \(1000\) frequencies a pair occurs in about half of the draws.</p>
+        <p>(c) <em>Equal-budget trades.</em> LoHa\(_{r,r}\) and LoRA\(_{2r}\) both cost \(2r(m+n)\). If \(2r\le\min(m,n)\) and \(r^2\le\min(m,n)\), LoHa reaches at least \((m+n-1)-2r^2\) fewer dimensions, exactly that many when \(F\) is attained. If also \(m+n\ge2r^2+2\), so that this gap is positive, then for \(r\ge3\) LoHa gains rank up to \(r^2\gt2r\) in exchange, and for \(r\le2\) (where \(r^2\le2r\)) \(\mathrm{Im}\,\mathrm{LoHa}_{r,r}\subsetneq\mathrm{Im}\,\mathrm{LoRA}_{2r}\). GraLoRA\(_k\) has the budget and dimension of LoRA\(_r\) and maximum rank \(\min(kr,m,n)\), but caps every block at rank \(r/k\). A generic rank-\(r\) update has rank \(r\) on every block, so for \(k\ge2\) and \(kr\le\min(m,n)\) the images of LoRA\(_r\) and GraLoRA\(_k\) are incomparable.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>(a) The generic fibre contains the generic gauge orbit, and \(d=\lvert M\rvert-\dim(\text{generic fibre})\).</p>
+      <p><em>LoHa.</em> The torus acts by</p>
+      \[(B_1,A_1,B_2,A_2)\mapsto(D_1B_1,\,A_1D_2,\,D_1^{-1}B_2,\,A_2D_2^{-1}),\]
+      <p>which preserves the product because \((D_1XD_2)\odot(D_1^{-1}YD_2^{-1})=X\odot Y\). The joint action of \(GL_{r_1}\times GL_{r_2}\times T_m\times T_n\) has generic stabiliser \(\{(cI,c^{-1}I,cI,c^{-1}I)\}\), so the orbit has dimension \(r_1^2+r_2^2+m+n-1\). Sketch for \(r_1\lt\min(m,n)\): an infinitesimal stabiliser \((\xi_1,\xi_2,\delta_1,\delta_2)\) satisfies \(\delta_1B_1=B_1\xi_1\), so the column space of \(B_1\) is invariant under the diagonal \(\delta_1\). A generic subspace of dimension below \(m\) is invariant only under scalar diagonals, so \(\delta_1=\xi_1=cI\). The equation for \(A_1\) then forces \(\delta_2=-cI\), and those for \(B_2,A_2\) give \(\xi_2=-cI\). The remaining corner shapes were checked numerically up to \(7\times7\). Trivially \(d\le mn\).</p>
+      <p><em>GraLoRA.</em> The image is a product of \(k^2\) cones \(\mathcal M_{\le r/k}(\tfrac mk\times\tfrac nk)\), of total dimension \(k^2\cdot\tfrac rk\cdot\tfrac{m+n-r}{k}=r(m+n-r)\). For the rank, write block \((i,j)\) as \(U_{ij}V_{ij}^\top\) with \(U_{ij}\in\mathbb R^{m/k\times r/k}\) and \(V_{ij}\in\mathbb R^{n/k\times r/k}\). Then \(\Delta W=\mathrm{blockdiag}(L_1,\dots,L_k)\,S\), with \(L_i=[U_{i1}\cdots U_{ik}]\in\mathbb R^{m/k\times r}\) and \(S\in\mathbb R^{kr\times n}\) stacking the \(V_{ij}^\top\), each supported on column block \(j\). For generic blocks and \(kr\le\min(m,n)\), each \(L_i\) has full column rank \(r\) and \(S\) has full row rank \(kr\), so \(\operatorname{rank}\Delta W=kr\). In general the rank is at most \(\min(kr,m,n)\). Placing rank-\(r/k\) blocks only on the diagonal would give rank \(r\), not \(kr\).</p>
+      <p><em>(c).</em> Since \(d(\mathrm{LoHa}_{r,r})\le F\) and \(d(\mathrm{LoRA}_{2r})=2r(m+n-2r)\) for \(2r\le\min(m,n)\),</p>
+      \[d(\mathrm{LoRA}_{2r})-d(\mathrm{LoHa}_{r,r})\ge2r(m+n-2r)-F=(m+n-1)-2r^2.\]
+      <p>LoHa\(_{r,r}\) maps into LoRA\(_{r^2}\) by the <a href="#app-b-hadamard" class="gloss">face-splitting product</a> \(h=(B_1\bullet B_2,(A_1^\top\bullet A_2^\top)^\top)\), one of the arrow rules of the atlas. For \(r\le2\) this gives \(\mathrm{Im}\,\mathrm{LoHa}_{r,r}\subseteq\mathrm{Im}\,\mathrm{LoRA}_{r^2}\subseteq\mathrm{Im}\,\mathrm{LoRA}_{2r}\), and a positive gap makes the inclusion strict. Without \(m+n\ge2r^2+2\) the argument fails: at \((m,n,r)=(4,4,2)\) both images are 16-dimensional, and a numerical solver found exact LoHa\(_{2,2}\) decompositions of every target tried.</p>
+      <p><em>Other rows.</em> The KronA image is a Segre cone, and \(\operatorname{rank}(A\otimes B)=\operatorname{rk}A\operatorname{rk}B\). HRA is <a href="#thm-II-7">Theorem II.7</a> for \(r\le n-2\); the cases \(r\in\{n-1,n\}\) were checked numerically. DoRA is <a href="#thm-II-8">Proposition II.8</a>. The TT and Tucker counts are the cited results, which assume minimal ranks. The remaining rows are standard. For FourierFT, \(\mathrm{Re}\circ\mathrm{ifft2}\) sends the frequencies \(p\) and \(-p\) to the same real pattern.</p>
+      <p>Numerical check: LoHa dimensions \(38,59,93,101\) at \((m,n,r)=(8,7,2),(12,10,2),(12,10,3),(20,16,2)\), and \(16=mn\) at \((4,4,2)\), where the uncapped formula gives \(17\). GraLoRA dimensions \(48,64,108\) at \((m,n,r,k)=(8,8,4,2),(12,8,4,2),(12,12,6,3)\); generic rank \(8=kr\) at \((16,16,4,2)\) and \(12=\min(m,n)\) at \((12,12,6,3)\).</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <p>When \(m+n\le2r^2+1\), still with \(2r\le\min(m,n)\) but without needing \(r^2\le\min(m,n)\), the count gives no gap, and wherever \(F\) is attained, as the numerical checks find, LoHa\(_{r,r}\) matches or exceeds LoRA\(_{2r}\) in dimension as well as rank, for example at \(r=64\) on a \(4096\times4096\) layer and at LyCORIS-style \(r=32\) on Stable Diffusion layers 320 to 640 wide, where \(r^2\gt\min(m,n)\).</p>
+    <aside class="note"><span class="label">Credit</span>LoHa is the low-rank Hadamard product of FedPara (<a href="https://arxiv.org/abs/2108.06098">Hyeon-Woo et al., 2021</a>); GraLoRA is <a href="https://arxiv.org/abs/2505.20355">Jung et al., 2025</a>. The Tucker gauge and dimension are due to Koch and Lubich (2010) and Uschmajew and Vandereycken (2013), the TT case to Holtz, Rohwedder and Schneider (2012), building on <a href="https://epubs.siam.org/doi/10.1137/090752286">Oseledets, 2011</a>.</aside>
+
+    <p class="explains">When \(2r^2\) is small next to \(m+n\), as on LLM projections at the usual ranks, LoHa reaches high rank on a thin, curved subvariety, because its Hadamard product spends a whole torus on gauge. GraLoRA keeps LoRA’s dimension and caps every block’s rank.</p>
+    <aside class="note"><span class="label">Credit</span>The intrinsic-dimension experiments of <a href="https://arxiv.org/abs/1804.08838">Li et al., 2018</a> and <a href="https://arxiv.org/abs/2012.13255">Aghajanyan et al., 2020</a> measure how many random directions a task needs. \(d(M)\) counts the directions a method’s image has, a complementary notion.</aside>
+
+    <h3>Kronecker adapters cut the other way</h3>
+
+    <p>If \(m=m_1m_2\) and \(n=n_1n_2\), an \(m\times n\) matrix is a tensor with output legs \(U_1,U_2\) and input legs \(V_1,V_2\). LoRA’s rank is the rank across \(\{U_1U_2\}\mid\{V_1V_2\}\); a sum of \(k\) Kronecker products has rank at most \(k\) across \(\{U_1V_1\}\mid\{U_2V_2\}\). The cuts disagree sharply, since \(I\otimes I\) is one Kronecker term of full rank.</p>
+
+    <div class="env theorem" id="thm-II-11"><span class="env-head">Theorem II.11 <span class="env-name">(Kronecker incomparability)</span>.</span>
+      <div class="env-body">
+        <p>Write \(\mathbb R^m=\mathbb R^{m_1}\otimes\mathbb R^{m_2}\) and \(\mathbb R^n=\mathbb R^{n_1}\otimes\mathbb R^{n_2}\), and view \(\Delta\in\mathbb R^{m\times n}\) as a 4-leg tensor. Let \(\operatorname{rk}\) be the rank across \(\{U_1U_2\}\mid\{V_1V_2\}\) and \(\operatorname{rk}_\otimes\) the rank across \(\{U_1V_1\}\mid\{U_2V_2\}\). Put \(\kappa_1:=\min(m_1,m_2)\min(n_1,n_2)\) and \(\nu:=\min(m_1,n_1)\min(m_2,n_2)\).</p>
+        <p>(a) \(\operatorname{rk}_\otimes\Delta\le k\) iff \(\Delta=\sum_{i\le k}C_i\otimes D_i\). Every \(\Delta\) has \(\operatorname{rk}_\otimes\Delta\le\min(m_1n_1,m_2n_2)\).</p>
+        <p>(b) \(\operatorname{rk}(C\otimes D)=\operatorname{rk}C\cdot\operatorname{rk}D\), while \(\operatorname{rk}_\otimes(C\otimes D)=1\) for \(C,D\ne0\). So \(\nu\) is the largest rank of a single Kronecker product.</p>
+        <p>(c) If \(u\in\mathbb R^m\) and \(v\in\mathbb R^n\) have <a href="#app-b-schmidt" class="gloss">Schmidt ranks</a> \(\rho_u,\rho_v\), then \(\operatorname{rk}_\otimes(uv^\top)=\rho_u\rho_v\). A generic rank-one update therefore has <a href="#app-b-vlp" class="gloss">Kronecker rank</a> \(\kappa_1\). For aligned splits, \((m_1-m_2)(n_1-n_2)\ge0\), which include equal square splits and HF PEFT’s default factorisation, \(\kappa_1=\min(m_1n_1,m_2n_2)\) is the largest Kronecker rank.</p>
+        <p>(d) <em>Incomparability.</em> For \(1\le r\lt\nu\) and \(1\le k\lt\kappa_1\), the sets \(\mathcal M_{\le r}\) and \(\mathcal K_{\le k}:=\{\Delta:\operatorname{rk}_\otimes\Delta\le k\}\) of unconstrained \(k\)-term Kronecker sums are incomparable: a generic rank-one update lies in the first and not the second, and a Kronecker product of full-rank factors lies in the second and not the first. For \(m=n=N\) and \(m_1=m_2=n_1=n_2=s\), \(\kappa_1=\nu=s^2=N\), and \(I_N\) is such a product.</p>
+        <p>(e) <em>Constrained Kronecker methods.</em> Let \(\mathrm{Im}\,M\subseteq W_0+\mathcal K_{\le k}\), and give LoRA\(_r\) its zero-initialised image \(W_0+\mathcal M_{\le r}\). Then \(\mathrm{Im}\,\mathrm{LoRA}_r\not\subseteq\mathrm{Im}\,M\) whenever \(k\lt\kappa_1\). For LoKr, \(\Delta W=C\otimes BA\) with \(C\in\mathbb R^{m_1\times n_1}\) and inner rank \(r'\le\min(m_2,n_2)\), the maximum rank \(\min(m_1,n_1)\cdot r'\) is attained, so \(\mathrm{Im}\,\mathrm{LoKr}_{r'}\subseteq\mathrm{Im}\,\mathrm{LoRA}_r\) iff \(r\ge\min(m_1,n_1)\,r'\), and otherwise the two images are incomparable, provided \(\kappa_1\gt1\).</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>(a) and (b) follow from the Van Loan–Pitsianis rearrangement \(\mathcal R(C\otimes D)=\mathrm{vec}\,C\,\mathrm{vec}\,D^\top\), which is wire-bending; \(\mathcal R\Delta\) is an \((m_1n_1)\times(m_2n_2)\) matrix, and \(\operatorname{rk}_\otimes\Delta=\operatorname{rank}\mathcal R\Delta\).</p>
+      <p>(c) Write the Schmidt decompositions \(u=\sum\sigma_ix_i\otimes y_i\) and \(v=\sum\tau_jz_j\otimes w_j\). Then</p>
+      \[uv^\top=\sum_{i,j}\sigma_i\tau_j\,(x_iz_j^\top)\otimes(y_iw_j^\top)\]
+      <p>is an operator-Schmidt decomposition with Frobenius-orthonormal families and \(\rho_u\rho_v\) nonzero coefficients. Generic \(u,v\) have full Schmidt ranks \(\min(m_1,m_2)\) and \(\min(n_1,n_2)\). If \(m_1\le m_2\) and \(n_1\le n_2\), then \(\kappa_1=m_1n_1\le m_2n_2\), and symmetrically in the other aligned case.</p>
+      <p>(d) follows from (b) and (c). (e) A generic \(W_0+uv^\top\) lies in \(\mathrm{Im}\,\mathrm{LoRA}_r\) and, by (c), outside \(W_0+\mathcal K_{\le k}\) when \(k\lt\kappa_1\). For LoKr, (b) gives \(\operatorname{rank}(C\otimes BA)=\operatorname{rk}C\cdot\operatorname{rk}(BA)\le\min(m_1,n_1)\,r'\), with equality for full-rank \(C\) and \(BA\) of rank \(r'\). So LoKr reaches rank above \(r\) exactly when \(r\lt\min(m_1,n_1)\,r'\); and LoKr lies in \(W_0+\mathcal K_{\le1}\), so the first clause applies when \(\kappa_1\gt1\).</p>
+      <p>Numerical check: Schmidt ranks \((1,3)\to3\), \((2,3)\to6\), \((3,3)\to9\), each with ordinary rank \(1\); for the \(2\times4\) split of \(\mathbb R^8\), \(\operatorname{rk}_\otimes(uv^\top)=4\), the largest Kronecker rank there; LoKr with \(s=4\), \(r'=1\) never exceeds rank \(4\).</p>
+      <span class="qed">∎</span>
+    </details>
+    <aside class="note"><span class="label">Credit</span>The rearrangement \(\mathcal R\) and the nearest-Kronecker-product problem are due to <a href="https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17">Van Loan and Pitsianis, 1993</a>. Kronecker-sum layers entered deep learning with PHM (<a href="https://arxiv.org/abs/2102.08597">Zhang et al., 2021</a>) and <a href="https://arxiv.org/abs/2106.04647">Compacter</a>; <a href="https://arxiv.org/abs/2212.10650">KronA</a> (Edalati et al., 2022) and <a href="https://arxiv.org/abs/2309.14859">LoKr</a> (Yeh et al., 2023) brought them to weight updates.</aside>
+
+    <p class="explains">Unconstrained Kronecker sums are LoRA across a different cut, so calling them higher-rank LoRAs mixes two cuts; with fewer than \(\kappa_1\) terms they miss a generic rank-one update. LoKr with inner rank \(r'\) lies inside LoRA\(_r\) only once \(r\ge\min(m_1,n_1)\,r'\), which is 192 on 768-wide layers and 512 on 4096-wide layers at HF’s default \(r'=8\). Below that, the images are incomparable.</p>
+    <details class="aside"><summary>More: LoKr in HF PEFT, Compacter and MPO</summary>
+      <p>HF PEFT factors LoKr’s second matrix as \(BA\) only when its <code>r</code> is below half the larger of \(m_2,n_2\). Otherwise the second factor is a full matrix, LoKr is an unconstrained Kronecker product, and its maximum rank is \(\nu\). On a \(768\times768\) layer split \(24\otimes32\), the maximum rank jumps from 360 at <code>r=15</code> to 768 at <code>r=16</code>. The <code>decompose_both</code> option also caps \(C\) at rank <code>r</code>.</p>
+      <p>Compacter’s PHM weights are Kronecker-structured weights inside a nonlinear bottleneck adapter, and MPO adapters are a multi-core reparametrisation that is lossless at full bond dimension. The image comparison does not transfer to either without more work.</p>
+    </details>
+
+    <p><span class="chip cond">Pred</span> Under a loss whose only minimiser is the target weight, LoRA\(_1\) fits \(W_0+uv^\top\) (generic \(u,v\)) exactly and no Kronecker sum with fewer than \(\kappa_1\) terms does. HF PEFT’s factorisation is aligned, so \(\kappa_1\) is maximal there (576 for \(768=24\times32\)). At equal budget neither family should dominate across tasks.</p>
+
+    <p>In Figure 5, at rest, a generic \(uv^\top\) on the split \(4\otimes4\) has rank 1 and Kronecker rank 16. LoRA\(_1\) fits it with 32 parameters and a Kronecker sum with 16 terms and 512. For \(I_{16}\) the costs trade places.</p>
+
+    <figure class="figure wide" id="fig-cut">
+      <div data-figure="cut" aria-label="Cut the tensor: a 16 by 16 update read as a four-leg tensor has a different rank across each of its three two-by-two cuts; LoRA pays the ordinary rank and a sum of Kronecker products pays the rank across the Kronecker cut."></div>
+      <figcaption><span class="fig-n">Figure 5</span>Cut the tensor. Pick an update \(\Delta\in\mathbb R^{16\times16}\) and a split, \(4\otimes4\), \(2\otimes8\), or the crossed \(2\otimes8\mid8\otimes2\), where \(\kappa_1=4\) is below the largest Kronecker rank 16. The three cuts reshape the same 256 numbers, so \(\sum\sigma_i^2=\lVert\Delta\rVert_F^2\) on each; singular values are computed live in float64, and replay animates the rearrangement \(\mathcal R\) of <a href="#thm-II-13">Prop II.13</a>. LoRA pays the rank across cut ①, a Kronecker sum the rank across cut ② (<a href="#thm-II-11">Thm II.11</a>). Schmidt-rank sliders reproduce \(\operatorname{rk}_\otimes(uv^\top)=\rho_u\rho_v\), and the last panel says which of the images of LoRA\(_r\) and of \(k\)-term Kronecker sums contains the other, for any \(r\) and \(k\).</figcaption>
+    </figure>
+
+    <h3>Transport of structure</h3>
+
+    <p>An invertible linear change of frame fixing \(\theta_0\) carries dimension, gauge, first-order image and degree along, since they are defined from \(\rho\) and its differential. It carries rank along only when it respects rows and columns, which the Kronecker rearrangement, Fourier and wavelet frames and the Hadamard rescaling by \(W_0\) do not.</p>
+
+    <div class="env proposition" id="thm-II-13"><span class="env-head">Proposition II.13 <span class="env-name">(transport of structure)</span>.</span>
+      <div class="env-body">
+        <p>For \(T\in GL(\Theta)\) put \(\tau_T(\theta)=\theta_0+T(\theta-\theta_0)\) and \(T_*M:=(Q,q_0,\tau_T\circ\rho)\).</p>
+        <ul>
+          <li>\(T_*\) is a strict automorphism of \(\mathsf{Meth}(\Theta,\theta_0)\), with inverse \((T^{-1})_*\). It maps \(S_1\) to \(T\,S_1\) and preserves \(d\), \(g\), the gauge group, the first-order deficit and polynomial degree. It does not preserve rank. Extended to natural families by \((T_*M)(\theta):=(Q,q_0,\theta+T(\rho_\theta-\theta))\) for a fixed \(T\), it does not preserve the covariance group.</li>
+          <li>\(K^{T_*M}=T\,K^M\,T^\top\) for every \(T\). An update rule that sees the loss only through \(q\mapsto L(\rho(q))\), with its state on \(Q\), runs \(T_*M\) on \(L\) exactly as it runs \(M\) on \(L\circ\tau_T\). Rules that read \(\nabla_\theta L\) or act on \(\theta\) (LoRA-Pro-style projections, weight decay or clipping in \(\theta\)) need \(T\) orthogonal, which is exactly when \(\tau_T\) is a Frobenius isometry.</li>
+          <li>For an additive family with fixed shape \(C\) and a fixed \(T\), transport commutes with rebasing: \(R_K(T_*M)=\tau_T(R_K(M))\) (<a href="#thm-V-3">Thm V.3</a>(a), with shape \(TC\)). This can fail when \(T\) depends on \(\theta_0\), and for action-type families even when \(T\) is fixed.</li>
+        </ul>
+        <p>Instances. A sum of \(k\) Kronecker products is \(\mathcal R^{-1}_*\mathrm{LoRA}_k\), with \(Q\) reshaped by vec, dynamics included for coordinatewise optimizers; KronA is \(\mathcal R^{-1}_*\mathrm{LoRA}_1\), and LoKr is the same with its second factor constrained to \(\mathrm{vec}\,\mathcal M_{\le r'}\). Started at \(\theta_0\), FourierFT (with no conjugate frequency pair sampled), C3A and WaveFT (when its padded inverse transform is invertible) are coordinate masks in a real cosine, circulant or wavelet frame, and LoRA-XS, SVFT and TinyLoRA are masks in the SVD frame of \(W_0\). HiRA is \((D_{W_0})_*\mathrm{LoRA}\), \(D_{W_0}:X\mapsto W_0\odot X\), when \(W_0\) has no zero entries; since \(D_{W_0}\) depends on \(\theta_0\), two rebasing cycles reach relative rank up to \(\min(2r+r^2,m,n)\), against \(2r\) for transported ReLoRA.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>\(D(\tau_T\circ\rho)=T\,D\rho\). This gives the statements about \(S_1\), the ranks of the differential, \(d\), \(g\) and the deficit, and \(K^{T_*M}=TD\rho\,\Lambda\,D\rho^\top T^\top\). Since \(T_*\) does not touch \(Q\), \(L\circ\rho_{T_*M}=(L\circ\tau_T)\circ\rho_M\) exactly, so the two objectives on \(Q\) coincide, and the \(\theta\)-trajectories are conjugate by \(\tau_T\). A rule that projects \(\nabla_\theta L\) by a Frobenius least-squares step moves by \(-(D\rho^\top T^\top TD\rho)^+D\rho^\top T^\top\nabla L\) on \(T_*M\), which matches its step on \(M\) for \(L\circ\tau_T\) when \(T^\top T=I\). Orthogonal \(T\) also keep the Frobenius spectrum of \(K\) and isometry-invariant losses such as \(\|\theta-\theta^\star\|^2\). Coordinate permutations of \(Q\) commute with every coordinatewise update rule.</p>
+      <p>Rebasing: for an additive family with shape \(C\), the transported family has shape \(TC\) at every base, and \(R_K\) is a \(K\)-fold Minkowski sum, so \(R_K(T_*M)=\theta_0+T(C+\dots+C)=\tau_T(R_K(M))\) by induction. For OFT with \(T=2I\), \(n=2\) and a unit base vector, two transported cycles reach norm \(9\), while the transported closure has norms in \([1,3]\).</p>
+      <p>The circulant identity is the DFT diagonalisation, and \(\mathrm{Re}\circ\mathrm{ifft2}\) sends conjugate frequencies to the same real pattern. For HiRA, two cycles reach \(W_0\odot(J+Z_1)\odot(J+Z_2)\), and \((J+Z_1)\odot(J+Z_2)=J+Z_1+Z_2+Z_1\odot Z_2\).</p>
+      <p>Numerical check: \(\|K^{T_*M}-TK^MT^\top\|=2\times10^{-14}\) for a Gaussian \(T\); Adam on \(T_*M\) with \(L\) and on \(M\) with \(L\circ\tau_T\) agree to \(8\times10^{-11}\); two HiRA cycles give relative-update rank \(3,8,15\) at \(r=1,2,3\) (\(m=n=30\)).</p>
+      <span class="qed">∎</span>
+    </details>
+    <details class="aside"><summary>More: the instances in detail</summary>
+      <ul>
+        <li>The mask readings assume a start at \(\theta_0\). HF’s defaults for FourierFT (a random spectrum unless <code>init_weights=True</code>) and C3A (<code>xavier_uniform</code>) start away from it.</li>
+        <li>FourierFT: HF’s \(\Delta W=s\cdot\mathrm{Re}(\mathrm{ifft2}(S))\), with a fixed scaling \(s\), is sparse in the real cosine half of the real Fourier frame. Each sampled conjugate pair \((u,v),(-u,-v)\) adds one dimension of gauge. The image lies in the point-symmetric subspace \(\Delta W_{j,l}=\Delta W_{-j,-l}\), and the frame is orthogonal only up to scale (self-conjugate frequencies have twice the squared norm).</li>
+        <li>C3A: block-circulant. Over \(\mathbb R\) the frame is given by the powers \(P^k\) of the cyclic shift (Gram matrix \(bI\)). Over \(\mathbb C\), \(\mathrm{circ}(w)=F^{-1}\mathrm{diag}(Fw)F\) for first column \(w\), and the real form has \(2\times2\) rotation–scaling blocks. HF adds a factor \(1/\mathrm{in\_features}\).</li>
+        <li>SHiRA, FISH and Trainable Tokens are masks in the standard frame.</li>
+        <li>MiSS/Bone in its default (balance) mode is \(\Delta W=D(\mathbf 1_g^\top\otimes I_r)\), LoRA-FA with a frozen <em>summing</em> projection. Its BAT mode, blockwise \(\Delta W=\mathrm{blocks}(W_0)\,D+D\), is linear in \(D\) and depends on \(\theta_0\).</li>
+        <li>LoKr: in HF PEFT the rank constraint on the second factor is active only below the threshold given after Theorem II.11, and <code>decompose_both</code> also constrains the first factor.</li>
+      </ul>
+    </details>
+    <aside class="note"><span class="label">Credit</span>The transported methods are <a href="https://arxiv.org/abs/2405.03003">FourierFT</a> (Gao et al., 2024), <a href="https://arxiv.org/abs/2505.12532">WaveFT</a> (Bilican et al., 2025), <a href="https://aclanthology.org/2025.findings-acl.102/">C3A</a> (Chen et al., 2024), <a href="https://arxiv.org/abs/2405.17604">LoRA-XS</a> (Bałazy et al., 2024), <a href="https://arxiv.org/abs/2405.19597">SVFT</a> (Lingam et al., 2024), <a href="https://arxiv.org/abs/2602.04118">TinyLoRA</a> (Morris et al., 2026), <a href="https://arxiv.org/abs/2406.13175">SHiRA</a> (Bhardwaj et al., 2024), <a href="https://arxiv.org/abs/2111.09839">FISH</a> (Sung et al., 2021), <a href="https://arxiv.org/abs/2409.15371">MiSS</a> (Kang and Yin, 2024) and <a href="https://openreview.net/forum?id=TwJrTz9cRS">HiRA</a> (Huang et al., 2025). <a href="https://arxiv.org/abs/2407.05417">Si et al., 2024</a> organise PEFT around the SVD frame of \(W_0\), a related unification.</aside>
+
+    <p class="explains">Rank is invariant under \(GL_m\times GL_n\) and changes under \(GL(\Theta)\), so “high rank” claims (MoRA, HiRA, LoKr, C3A, SHiRA, WaveFT) depend on a frame that the network function does not respect. Transport keeps every isomorphism invariant (\(d\), \(g\), gauge group, deficit, apex or smooth type, degree) and conjugates the dynamics. In Figure 4 the HiRA dot sits at LoRA’s height and at full rank (<a href="#thm-II-9">Prop II.9(a)</a>).</p>
+
+    <p><span class="chip cond">Pred</span> At matched learning-rate sweeps, the gap between a transported method and its source (Kronecker sums against LoRA, Fourier or wavelet methods against masks) tracks how well each image aligns with a full fine-tuning \(\Delta W\), more than it tracks optimizer effects.</p>
+
+    <h3>The plug, and a reporting rule</h3>
+
+    <p>Cut \(W_0\) out of a linear layer and a hole \(V\to U\) remains. A weight-space method fills it with a small network of frozen and trainable boxes, a plug. Every invariant above is read off the plug: the budget (<a href="#thm-I-2">Def I.2</a>), the min-cut, the Jacobian rank (<a href="#thm-I-5">Def I.5</a>), the gauges on its wires, and the merge type, set by whether an activation sits on the path (<a href="#thm-VI-3">Thm VI.3</a>).</p>
+    <aside class="note"><span class="label">Credit</span>The plug is a weight-space cousin of the unified view of <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>, which puts adapters, prefix tuning and LoRA in one design space.</aside>
+
+    <p>Here is one \(4096\times4096\) box and one budget, spent three ways (Proposition II.12).</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>method at \(\lvert M\rvert=131{,}072\)</th><th class="num">\(d(M)\)</th><th class="num">fibre \(\lvert M\rvert-d(M)\)</th><th class="num">max rank</th><th>block structure</th></tr></thead>
+      <tbody>
+        <tr><td>LoRA\(_{16}\)</td><td class="num">130,816</td><td class="num">256</td><td class="num">16</td><td>none</td></tr>
+        <tr><td>GraLoRA, \(k=2\)</td><td class="num">130,816</td><td class="num">256</td><td class="num">32</td><td>each of 4 blocks has rank \(\le8\)</td></tr>
+        <tr><td>LoHa\(_{8,8}\)</td><td class="num">≤&nbsp;122,753</td><td class="num">≥&nbsp;8,319</td><td class="num">64</td><td>none</td></tr>
+      </tbody>
+    </table></div>
+    <p>The methods differ by at least 8,063 dimensions and by a factor of four in rank. The LoHa row uses the upper bound \(F\), whose equality is checked numerically at small sizes and open in general.</p>
+
+    <p><span class="chip cond">Pred</span> Benchmarks should report \(d(M)\) beside \(\lvert M\rvert\), with the maximum rank and the cut it refers to. At budgets of a few thousand parameters, rankings at equal <em>effective</em> dimension can change.</p>
+
+    <p>At rest, Figure 6 shows LoHa\(_2\) on an \(8\times8\) box, with 64 entries, rank at most 4, Jacobian rank 41 and a gauge orbit of dimension \(23=4+4+15\) that fills the fibre. LoRA\(_4\) costs the same and reaches 7 more dimensions, with LoHa’s image strictly inside it.</p>
+
+    <figure class="figure wide" id="fig-workbench">
+      <div data-figure="workbench" aria-label="Plug workbench: build a parameter-efficient fine-tuning method as a tensor network and read off its budget, min-cut rank bound, image dimension, gauge and merge verdict."></div>
+      <figcaption><span class="fig-n">Figure 6</span>The plug workbench. Pick one of fifteen presets, or click a box and edit the plug. Every readout is recomputed in float64 at \(m=n=8\): the budget, the degree, the min-cut rank bound by brute force over vertex bipartitions (<a href="#thm-II-10">Thm II.10</a>) beside the rank attained, \(d(M)\) as a Jacobian rank (<a href="#thm-I-5">Def I.5</a>), the gauge orbit with each generator checked to lie in \(\ker d\rho\) (<a href="#thm-II-12">Prop II.12(a)</a>), the merge verdict (<a href="#thm-VI-3">Thm VI.3</a>), the nearest named method, and LoRA at the same budget. Presets are checked against Prop II.12’s closed forms; a match by signature alone is flagged, since equal invariants do not make plugs isomorphic.</figcaption>
+    </figure>
+
+    <h3>Covariance and descent</h3>
+
+    <p>A method is usually one recipe applied to every pretrained weight. Rename a layer’s input basis by \(h\) and its output basis by \(g\), so that \(W_0\) becomes \(gW_0h^{-1}\); the method is covariant under \((g,h)\) if its image moves the same way.</p>
+
+    <div class="env definition" id="thm-II-14"><span class="env-head">Definition II.14 <span class="env-name">(covariance group)</span>.</span> <span class="env-body">For a method defined for every \(W_0\) (a natural family), the <strong>covariance group</strong> \(\mathcal G_M\subseteq GL_m\times GL_n\) is the largest subgroup with \(\mathrm{Im}\,M(gW_0h^{-1})=g\,\mathrm{Im}\,M(W_0)\,h^{-1}\). When the method depends on random frames or on data, the identity is required in distribution, with the data transformed. \(\mathcal G_M\) is the <em>geometry the method lives in</em>, in Klein’s sense.</span></div>
+    <details class="aside"><summary>More: in what sense this is Klein’s</summary>
+      <p>Klein defined a geometry by its group of motions and studied what the group leaves unchanged. For group-type methods this reading is a theorem (Exposé II.B). For cones such as LoRA’s image it is a naming device, and the content is the shape of the image and its covariance group.</p>
+    </details>
+
+    <p>LoRA’s image \(W_0+\mathcal M_{\le r}\) is covariant under all of \(GL_m\times GL_n\), since rank ignores bases, while a coordinate mask has a much smaller group. This matters because networks have symmetries of their own, such as permutations of hidden neurons, rotations of the residual stream and the query–key gauge of attention, which change the weights and keep the function.</p>
+
+    <div class="env observation" id="thm-II-15"><span class="env-head">Observation II.15 <span class="env-name">(descent through function-preserving reparametrisations)</span>.</span>
+      <div class="env-body">
+        <p>Let \(M=\prod_bM_b\) be a box-wise method: each \(M_b\) is a member of a natural family with covariance group \(\mathcal G_{M_b}\), and no trainable parameters or random frames are shared across boxes. Let \(G_{\rm arch}\) act on \(\Theta=\prod_b\Theta_b\times\Theta_{\rm frozen}\), preserving this split and acting on each adapted box by \(W_b\mapsto g_bW_bh_b^{-1}\) with \((g_b,h_b)\in\mathcal G_{M_b}\). Assume \(f(g\theta,-)=f(\theta,-)\) on a \(G_{\rm arch}\)-stable set containing \(\mathrm{Im}\,M(\theta_0)\). Then \(\mathrm{Im}\,M(g\theta_0)=g\cdot\mathrm{Im}\,M(\theta_0)\), and the set of <em>functions</em> reachable by \(M\) from \(g\theta_0\) equals the set reachable from \(\theta_0\). With random frames drawn independently per box, this holds in distribution. For data-dependent methods it holds when each box’s covariance holds pathwise in the data and box \(b\) sees, at \(g\theta_0\), the transform of its data at \(\theta_0\), as for the gauges below. Training trajectories and outcomes can still differ.</p>
+        <p>Examples of \(G_{\rm arch}\): hidden-neuron permutations; the per-head query–key gauge \((W_Q,W_K)\mapsto(gW_Q,g^{-\top}W_K)\), with \(g\in GL_{d_k}\) without RoPE and \(g\) restricted further under RoPE and QK-norm (exact groups in the proof); and one global orthogonal rotation of the residual stream of a pre-norm transformer whose norm gains all fuse into the linear layers they feed, with LayerNorm converted to RMSNorm (SliceGPT’s computational invariance). Per-block rotations, sandwich norms and post-norms (Gemma-2/3, OLMo-2) are excluded.</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>Apply per-box covariance factor by factor; the frozen coordinates are single points, so \(\mathrm{Im}\,M(g\theta_0)=g\,\mathrm{Im}\,M(\theta_0)\). Then</p>
+      \[\{\Phi_f(\theta):\theta\in\mathrm{Im}\,M(g\theta_0)\}=\{\Phi_f(g\theta):\theta\in\mathrm{Im}\,M(\theta_0)\}=\{\Phi_f(\theta):\theta\in\mathrm{Im}\,M(\theta_0)\}.\]
+      <p>With independent per-box frames, the joint law of the image is the product of the per-box laws, and each factor moves covariantly in law. Shared frames are excluded because covariance in law box by box does not control the joint law. SliceGPT’s per-block rotations need extra residual matrices, which change the architecture.</p>
+      <p><em>Attention gauges.</em> With no positional encoding or an absolute one, any \(g\in GL_{d_k}\) preserves the scores. Under RoPE, \(g\) must commute with every RoPE rotation, which leaves the per-frequency rotation–scalings \((\mathbb C^\times)^{d_k/2}\), shared across a GQA group, or \((\mathbb C^\times)^{r/2}\times GL_{d_k-r}\) when RoPE covers \(r\) of the dimensions. Under QK-norm, \(g\) must in addition be orthogonal up to a positive scale (exactly orthogonal when the norm has \(\varepsilon\gt0\)) and compatible with the norm gains.</p>
+      <p>Numerical check: a tied rank-one update shared by two boxes violates the conclusion (relative distance up to \(0.30\)), while independent per-box LoRA satisfies it. Under RoPE a generic \(g\in GL_8\) changes attention scores by up to \(313\), a RoPE-commuting \(g\) by \(5\times10^{-14}\).</p>
+      <span class="qed">∎</span>
+    </details>
+    <aside class="note"><span class="label">Credit</span>Residual-stream rotations are the device of <a href="https://arxiv.org/abs/2401.15024">SliceGPT</a> (Ashkboos et al., 2024). <a href="https://arxiv.org/abs/2404.00456">QuaRot</a>’s offline per-head Hadamard on \(W_v\) and \(W_{\rm out}\) is a value–output head gauge in \(G_{\rm arch}\); its online Hadamards insert new operations and lie outside it.</aside>
+
+    <p class="explains">For one-sided methods ((IA)\(^3\), DoRA, OFT, BOFT), descent depends on the side: a residual rotation acts on the input side of \(q\), \(k\), \(v\), gate and up and on the output side of \(o\) and down. LoHa with \(r\ge2\), HiRA and magnitude-chosen masks pass hidden-unit permutations and fail rotations. The table compares gain-fused models with and without the rotation, since fusing gains is a diagonal rescaling. Failing a sufficient condition does not prove that reachable sets differ.</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>gauge</th><th>satisfy the hypothesis (reachable functions unchanged)</th><th>fail the sufficient condition</th></tr></thead>
+      <tbody>
+        <tr><td>SliceGPT-style residual rotation</td><td>LoRA, full FT, BitFit, PiSSA; (IA)\(^3\) with HF defaults (output side of \(k\) or \(q\) and \(v\), input side of down); DoRA on \(q\), \(k\), \(v\), gate and up; OFT on \(o\) and down</td><td>block OFT and BOFT on residual-input projections; BOFT on \(o\) and down (its output-side scale); DoRA on \(o\) and down; LoHa (\(r\ge2\)); HiRA; coordinate masks; FourierFT</td></tr>
+        <tr><td>query–key and value–output head gauges</td><td>LoRA</td><td>(IA)\(^3\) on \(k\) (or \(q\)) and \(v\); OFT on \(o\)</td></tr>
+      </tbody>
+    </table></div>
+
+    <p><span class="chip cond">Conj A</span> Against a gain-fused, unrotated control, a SliceGPT-style rotation measurably changes the fine-tuning results of block OFT/BOFT on residual-input projections, LoHa, HiRA and coordinate masks, because LLM residual streams have a privileged basis. Adam is only \(B_r\)-equivariant (<a href="#thm-III-12">Thm III.12</a>) and HF’s Kaiming-uniform \(A\) is not rotation-invariant in law, so LoRA <em>as trained</em> need not descend even though its image does.</p>
+
+    <p>SVD-based initialisations raise the same question. PiSSA, MiLoRA and CorDA split \(W_0\) into a trainable part and a frozen residual by a truncated SVD of \(W_0\), or, for CorDA, of \(W_0\) weighted by the input second moment. Truncated SVD commutes only with rotations and uniform scalings, so these splits depend on the input coordinates, and whitening removes that dependence.</p>
+
+    <div class="env proposition" id="thm-II-16"><span class="env-head">Proposition II.16 <span class="env-name">(covariant data-aware splits)</span>.</span>
+      <div class="env-body">
+        <p>Let \(C=\mathbb E[xx^\top]\succ0\) be the input second moment, so that under \(x\mapsto hx\) we have \(W\mapsto Wh^{-1}\) and \(C\mapsto hCh^\top\). Let \(LL^\top=C\) and \(p=\min(m,n)\). Write \([M]_r\) for the rank-\(r\) truncated SVD, \(\langle M\rangle_r:=M-[M]_{p-r}\) for the bottom \(r\) singular components, and \(CO(n)=\mathbb R_{\gt0}\cdot O(n)\). Assume \(1\le r\lt p\) and the relevant singular gaps (\(\sigma_r\gt\sigma_{r+1}\) for a top-\(r\) split, \(\sigma_{p-r}\gt\sigma_{p-r+1}\) for a bottom-\(r\) split, of \(W_0L\), \(W_0C\) or \(W_0\) as appropriate); covariance groups are taken over the generic set where these gaps hold.</p>
+        <p>(a) The whitened split \(X^*=\arg\min_{\operatorname{rank}X\le r}\|(W_0-X)L\|_F=[W_0L]_rL^{-1}=\Pi_rW_0\), where \(\Pi_r\) is the top-\(r\) eigenprojector of the output second moment \(W_0CW_0^\top\), is \(GL_n\)-covariant on the input side and \(CO(m)\)-covariant on the output side.</p>
+        <p>(b) The paper-form CorDA splits (IPM: \(X=[W_0C]_rC^{-1}\), the minimiser of \(\|(W_0-X)C\|_F\); KPM: \(X=\langle W_0C\rangle_rC^{-1}\)) and the PiSSA and MiLoRA splits (\([W_0]_r\) and \(\langle W_0\rangle_r\)) have input-side covariance group exactly \(CO(n)\).</p>
+      </div>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>Definition II.14 concerns images. For \(r\lt p\) the translation stabiliser of \(\mathcal M_{\le r}\) is \(\{0\}\), so covariance of the image \(W_0-X+\mathcal M_{\le r}\) is equivalent to covariance of the split \(X\).</p>
+      <p>(a) With \(L'=hL\), \([W_0h^{-1}hL]_r(hL)^{-1}=[W_0L]_rL^{-1}h^{-1}\), and the result does not depend on the square root chosen, since \([W_0LO]_rO^\top=[W_0L]_r\) for \(O\in O(n)\). Also \([W_0L]_r=\Pi_rW_0L\), because the top left singular vectors of \(W_0L\) are the top eigenvectors of \(W_0LL^\top W_0^\top\). On the output side, for \(g\in CO(m)\) the eigenprojector of \(gW_0CW_0^\top g^\top\) is \(g\Pi_rg^{-1}\).</p>
+      <p>(b) <em>Lemma.</em> For \(1\le r\lt p\), \([Mh]_r=[M]_rh\) for all \(M\) with a gap at \(r\) iff \(h\in CO(n)\). “If”: \(M\,cQ\) has the singular vectors of \(M\) rotated by \(Q\) and the singular values scaled by \(c\). “Only if”: take \(M=\sum_{i\le r+1}\sigma_iu_iv_i^\top\) with distinct \(\sigma\)’s. The top-\(r\) left singular space of \(Mh\) is \(\mathrm{span}\{u_1,\dots,u_r\}\) only if the coupling \(\sigma_r\sigma_{r+1}v_r^\top hh^\top v_{r+1}\) vanishes; requiring this for every orthonormal pair forces \(hh^\top\in\mathbb R_{\gt0}I\).</p>
+      <p>CorDA IPM’s covariance requires \([W_0Ch^\top]_rh^{-\top}C^{-1}h^{-1}=[W_0C]_rC^{-1}h^{-1}\), which is the lemma for \(h^\top\) applied to \(M=W_0C\), an arbitrary matrix. PiSSA is the lemma for \(h^{-1}\). For the bottom-\(r\) splits (KPM, MiLoRA), \(\langle M\rangle_r=M-[M]_{p-r}\), so the lemma applies at index \(p-r\).</p>
+      <p>Numerical check: under \(h=3Q\) with \(Q\) orthogonal, CorDA and PiSSA move covariantly to \(2\times10^{-15}\). Under a generic \(h\) only the whitened split does (\(2\times10^{-15}\), against \(0.63\) and \(1.1\)), and an absolute damping \(0.1\) breaks it (\(0.14\)).</p>
+      <span class="qed">∎</span>
+    </details>
+    <aside class="note"><span class="label">Credit</span>The splits are <a href="https://arxiv.org/abs/2406.05223">CorDA</a> (Yang et al., 2024), <a href="https://arxiv.org/abs/2404.02948">PiSSA</a> (Meng et al., 2024) and <a href="https://aclanthology.org/2025.naacl-long.248/">MiLoRA</a> (Wang et al., 2024). The whitened truncation is the one used by <a href="https://arxiv.org/abs/2403.07378">SVD-LLM</a> for compression.</aside>
+
+    <p>CorDA damps \(C\) by a multiple of \((\operatorname{tr}C)\,I\), which keeps the \(CO(n)\) covariance; an absolute damping \(C+\lambda I\) would cut it to \(O(n)\). The released CorDA code also divides each calibration sample by the absolute value of its largest entry, which keeps only positive scalings and coordinate permutations and so breaks even rotation covariance; (b) covers the published formulas only.</p>
+
+    <p class="explains">A data-aware split ignores the choice of input coordinates if it has the form \(X=F(W_0CW_0^\top)\,W_0\), as the whitened (SVD-LLM-style) split does; <a href="https://aclanthology.org/2026.findings-acl.1593/">Astra</a>’s paper form, a tail eigenprojector of the centred output covariance, has the same form with \(C\) replaced by the centred input covariance, which transforms in the same way. Diagonal rescalings such as norm-gain folding or SmoothQuant change the CorDA and PiSSA splits. Covariance on both sides would need an output-side statistic independent of \(W_0\) and \(C\), such as a gradient second moment, and training dynamics stay non-covariant.</p>
+
+    <details class="aside"><summary>More: EVA</summary>
+      <p><a href="https://arxiv.org/abs/2410.07170">EVA</a> (Paischer et al., 2024) does not split \(W_0\). It starts at \(B_0=0\) and points \(\mathrm{row}\,A_0\) at the top-\(r\) centred principal subspace of the inputs, which is \(CO(n)\)-covariant. At a fixed rank per layer its image \(W_0+\mathcal M_{\le r}\) is \(GL_m\times GL_n\)-covariant under Definition II.14. With HF’s default <code>rho=2</code>, ranks are redistributed by explained-variance ratios, which are invariant only under \(CO(n)\), so the image is \(GL_m\times CO(n)\)-covariant.</p>
+    </details>
+
+    <p><span class="chip cond">Conj C</span> Whitened CorDA or PiSSA is more robust to function-preserving input reparametrisations, and no worse otherwise.</p>
+
+    <p>Rank is a cut, dimension a volume and covariance a group. All three can be computed before training. The next exposé turns from what a method can reach to how it moves there.</p>
+
+  </div>
+</section>

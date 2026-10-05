@@ -1,0 +1,603 @@
+{
+ "family": "gap-0",
+ "family_title": "Gap fill batch 0: representation finetuning (LoReFT), long-context LoRA (LongLoRA), continual-learning LoRA (O-LoRA, InfLoRA), diffusion personalization (Textual Inversion, Custom Diffusion), MoE expert-selective tuning (ESFT), post-hoc LoRA surgery (intruder-dimension reduction)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "loreft",
+   "name": "LoReFT",
+   "full_name": "Low-rank Linear Subspace Representation Finetuning (ReFT family)",
+   "paper_title": "ReFT: Representation Finetuning for Language Models",
+   "authors": "Wu et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2404.03592",
+   "url": "https://arxiv.org/abs/2404.03592",
+   "code_url": "https://github.com/stanfordnlp/pyreft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Phi_{\\text{LoReFT}}(h)=h+R^{\\top}\\big(Wh+b-Rh\\big)=(I-R^{\\top}R)\\,h+R^{\\top}(Wh+b),\\quad R\\in\\mathbb{R}^{r\\times d}\\ (RR^{\\top}=I_r),\\ W\\in\\mathbb{R}^{r\\times d},\\ b\\in\\mathbb{R}^{r};\\ \\text{applied to the residual-stream vector } h^{(l)}_i \\text{ at the first } p \\text{ and last } s \\text{ prompt positions of the chosen layers } l\\in\\mathcal{L};\\ \\text{LM frozen},\\ \\{R,W,b\\}\\ \\text{trained};\\ \\text{DiReFT ablation: } \\Phi(h)=h+W_2^{\\top}(W_1h+b),\\ W_1,W_2\\in\\mathbb{R}^{r\\times d}",
+   "trainable_params": "(2rd+r)\\ \\text{per intervention } (R,W\\in\\mathbb{R}^{r\\times d},\\ b\\in\\mathbb{R}^{r});\\ |\\mathcal{L}|\\,(2rd+r)\\ \\text{with prefix and suffix weights tied},\\ 2|\\mathcal{L}|\\,(2rd+r)\\ \\text{untied (one intervention for the prefix and one for the suffix positions in each layer)}",
+   "locus": "residual-stream hidden states (Transformer block outputs) at a fixed number of prefix and suffix prompt positions in selected layers; generated tokens are not intervened on",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Low-rank affine edit of hidden states confined to an r-dimensional subspace. With the orthogonal projector P = R^T R, Phi(h) = (I - P)h + R^T(Wh + b): the component of h in row(R) is replaced by a learned affine function of h, and the orthogonal complement is untouched. The edit is sparse in both positions (prompt prefix and suffix) and layers. DiReFT drops the orthonormality and the difference term, giving a LoRA-shaped map h -> h + W_2^T(W_1 h + b) on activations.",
+   "mergeable": "no",
+   "mergeable_reason": "The edit acts on the residual stream, including the skip path, at specific token positions, so it cannot be folded into any weight matrix; its cost is a small constant per prompt rather than per generated token.",
+   "identity_at_init": "Not identity-preserving. In pyreft R gets a random orthogonal initialization (torch orthogonal parametrization) and W, b use the default nn.Linear initialization, so Phi(h) != h at step 0; the identity is recovered only when W = R and b = 0.",
+   "key_idea": "Learn task-specific interventions on hidden representations instead of changing weights. LoReFT adapts the distributed interchange intervention from causal-abstraction interpretability (DAS): it rewrites the hidden state only inside a learned low-rank orthonormal subspace and only at a few prompt positions, using 15x-65x fewer parameters than LoRA.",
+   "results_note": "With 0.031% trainable parameters on LLaMA-7B it averages 80.2 on eight commonsense-reasoning tasks, the best among the compared PEFTs. On Llama-2 7B instruction tuning it reaches an 85.60 AlpacaEval win rate with 0.0039% of parameters (LoRA: 81.48). It trails LoRA and adapters on arithmetic reasoning.",
+   "relations": [
+    {
+     "target": "red",
+     "type": "competes-with",
+     "note": "both edit representations; RED applies a diagonal affine map to FFN outputs at all positions, LoReFT a low-rank subspace edit at selected positions"
+    },
+    {
+     "target": "road",
+     "type": "competes-with",
+     "note": "both are framed as representation interventions; RoAd's is an element-wise 2D rotation that can be merged"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "DiReFT is essentially LoRA applied to hidden states at chosen positions; LoReFT reports 15x-65x fewer parameters than LoRA"
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "main weight-based baseline on commonsense and arithmetic reasoning"
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "competes-with",
+     "note": "both act only on activations at token positions and leave the weights untouched; prefix-tuning adds key/value states, LoReFT edits existing states"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.03592",
+    "https://arxiv.org/html/2404.03592",
+    "https://neurips.cc/virtual/2024/poster/94174",
+    "https://github.com/stanfordnlp/pyreft",
+    "https://raw.githubusercontent.com/stanfordnlp/pyreft/main/pyreft/interventions.py",
+    "https://api2.openreview.net/notes/search?term=ReFT%20Representation%20Finetuning%20for%20Language%20Models"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "trainable_params: spelled out that 'untied' means one prefix and one suffix intervention per layer (pyreft share_weights semantics, which reproduces the reported 0.031% and 0.0039% budgets). The paper's formal I_untied, read literally, has one intervention per position."
+   ],
+   "verification_notes": "arXiv 2404.03592 (Wu et al., 2024) matches. NeurIPS 2024 spotlight confirmed on OpenReview (NeurIPS.cc/2024/Conference). Phi_LoReFT and Phi_DiReFT checked against eqs. 2-3 of the arXiv HTML. Init checked in pyreft interventions.py: orthogonal R, default nn.Linear W and b, so the map is not the identity at init. Parameter budgets re-derived: LLaMA-7B, r=8, 32 layers tied gives 32*(2*8*4096+8)=2.10M (0.031%); Llama-2 7B, r=4, 4 layers untied gives 8*(2*4*4096+4)=0.26M (0.0039%). Results (80.2 commonsense average, 85.60 vs 81.48 AlpacaEval) checked against Tables 1 and 3. Not in HF PEFT main (no reft tuner); it ships in pyreft."
+  },
+  {
+   "id": "longlora",
+   "name": "LongLoRA",
+   "full_name": "LongLoRA (LoRA with trainable embeddings and norms, plus Shifted Sparse Attention)",
+   "paper_title": "LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models",
+   "authors": "Chen et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.12307",
+   "url": "https://openreview.net/forum?id=6PmJoRfdaK",
+   "code_url": "https://github.com/dvlab-research/LongLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_{\\{q,k,v,o\\}}=W_0+\\tfrac{\\alpha}{r}BA\\ \\ (B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}});\\ \\ E=E_0+\\Delta E\\ \\text{(input embedding, dense)};\\ \\ \\gamma_{\\text{norm}}\\ \\text{(all RMSNorm gains) trained};\\ \\ \\text{training-time attention } \\mathrm{S^2\\text{-}Attn}:\\ \\text{tokens split into groups of size } G,\\ \\text{half of the heads attend within groups, the other half within groups shifted by } G/2;\\ \\ \\text{inference: standard full attention};\\ \\ \\text{RoPE positions rescaled by Position Interpolation};\\ \\ \\text{MLP weights frozen}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted attention matrix } (4L \\text{ matrices}) \\;+\\; |\\mathcal{V}|\\,d\\ \\text{(input embedding)} \\;+\\; (2L+1)\\,d\\ \\text{(norm gains)}",
+   "locus": "W_q, W_k, W_v, W_o of every attention layer (LoRA, r = 8, alpha = 16 in the official code), plus the input token-embedding matrix and all normalization layers (trained densely); S2-Attn changes only the training-time attention pattern",
+   "modification_kind": "hybrid",
+   "structure": "Composite of three factors. (i) Rank-r additive updates Delta W = BA on the attention projections. (ii) Dense, selective updates of the input-embedding table and the norm gains, which together are under 2% of Llama2-7B's parameters. (iii) A training-only sparsification of the attention graph into block-diagonal token groups, with a G/2 shift on half of the heads so that information flows between neighbouring groups (Swin-style). The paper calls (i)+(ii) 'LoRA+', which is unrelated to LoRA+ by Hayou et al.",
+   "mergeable": "yes",
+   "mergeable_reason": "The LoRA factors merge into W_0, the trained embedding and norm tensors replace the originals, and S2-Attn is used only in training, so inference runs the original dense-attention architecture (with Position-Interpolation RoPE scaling) at the original cost.",
+   "identity_at_init": "Standard LoRA init (B = 0) and the pretrained embedding and norm values, so the weights are unchanged at step 0. The training-time function still differs from the base model, because attention is restricted to shifted local groups and positions are interpolated.",
+   "key_idea": "Plain LoRA fails at context extension at any rank, but also training the cheap embedding and normalization layers closes almost all of the gap to full fine-tuning. Training can use shifted sparse local attention, which approximates full attention and takes two lines of code, while inference keeps dense attention.",
+   "results_note": "Extends Llama2 7B, 13B and 70B to 100k, 64k and 32k tokens on a single 8xA100 machine. At 32k context on PG19, LoRA with trainable norms and embeddings reaches perplexity 8.12, versus 8.08 for full fine-tuning and 11.44 for plain rank-8 LoRA.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA on W_q, W_k, W_v, W_o, extended with dense updates of the embeddings and norms"
+    },
+    {
+     "target": "ln-tuning",
+     "type": "combines",
+     "note": "trains all normalization gains alongside LoRA; the norms account for the largest single perplexity gain per parameter"
+    },
+    {
+     "target": "sparselora",
+     "type": "competes-with",
+     "note": "both cut fine-tuning compute with training-only sparsity and keep dense inference; LongLoRA sparsifies attention over tokens, SparseLoRA sparsifies channels of the frozen weights"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.12307",
+    "https://arxiv.org/html/2309.12307",
+    "https://api2.openreview.net/notes/search?term=LongLoRA",
+    "https://github.com/dvlab-research/LongLoRA",
+    "https://raw.githubusercontent.com/dvlab-research/LongLoRA/main/fine-tune.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2309.12307 (Chen et al., 2023) matches. ICLR 2024 oral confirmed on OpenReview (6PmJoRfdaK) and in the ICLR 2024 accepted list. LoRA on W_q, W_k, W_v, W_o plus trainable embeddings and norms, S2-Attn used only in training (G/2 shift on half the heads) and Position Interpolation all checked against Sec. 3 and the official fine-tune.py (LoraConfig r=8, lora_alpha=16; trainable_params='embed,norm'). PG19 32k numbers checked against Table 2: full FT 8.08, LoRA r=8 11.44, LoRA+norm+embed 8.12. 100k/65536/32768 limits checked against Table 4. Not a native HF PEFT method."
+  },
+  {
+   "id": "o-lora",
+   "name": "O-LoRA",
+   "full_name": "Orthogonal Low-Rank Adaptation (orthogonal subspace learning for continual learning)",
+   "paper_title": "Orthogonal Subspace Learning for Language Model Continual Learning",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "Findings of EMNLP 2023",
+   "arxiv": "2310.14152",
+   "url": "https://aclanthology.org/2023.findings-emnlp.715/",
+   "code_url": "https://github.com/cmnfriend/O-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{(t)}=W_0+\\sum_{i<t}B_iA_i+B_tA_t,\\quad A_i\\in\\mathbb{R}^{r\\times d_{in}},\\ B_i\\in\\mathbb{R}^{d_{out}\\times r};\\quad \\text{paper: }\\min_{A_t,B_t}\\ \\mathcal{L}_{\\text{task}}(\\mathcal{D}_t)+\\lambda_1\\sum_{i=1}^{t-1}\\big\\|B_i^{\\top}B_t\\big\\|_F^2\\ \\ (\\mathcal{U}_t=\\operatorname{col}(B_t)\\subset\\mathbb{R}^{d_{out}};\\ \\text{the paper writes }\\Delta W=AB\\text{ with its }A\\in\\mathbb{R}^{d\\times r}\\text{ the output-side factor});\\quad \\text{official code: }\\lambda_1\\sum_{i<t}\\big\\|A_iA_t^{\\top}\\big\\|_{1}\\ (\\text{entry-wise, on PEFT lora\\_A})+\\lambda_2\\big(\\|A_t\\|_F+\\|B_t\\|_F\\big);\\quad W_0\\ \\text{and}\\ \\{A_i,B_i\\}_{i<t}\\ \\text{frozen; after task } t:\\ W_0\\leftarrow W_0+\\textstyle\\sum_{i\\le t}B_iA_i",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix per task (after } t \\text{ tasks } t\\,r(d_{in}+d_{out}) \\text{ are stored unless merged)}",
+   "locus": "W_q and W_v of every attention layer (T5-large, LLaMA-7B)",
+   "modification_kind": "additive-weight",
+   "structure": "Sum of per-task rank-r updates. A soft penalty on an r x r cross-Gram matrix, which vanishes exactly when two tasks' subspaces are orthogonal, pushes each new task's subspace away from all earlier ones. Delta W is therefore close to a direct sum of mutually orthogonal rank-r pieces; orthogonality is a regularizer, not a hard constraint. The paper defines each task's subspace as the column span of the output-side factor (catalog B_t, in R^{d_out}) and squares the entries of B_i^T B_t. The official trainer instead penalizes the input-side rows (PEFT lora_A) with an entry-wise absolute value and adds an L2 term (lambda_2).",
+   "mergeable": "yes",
+   "mergeable_reason": "Each task's BA is a static low-rank matrix that can be merged into W_0 after training, and inference needs no task ID.",
+   "identity_at_init": "Each new task's LoRA uses the standard init (B_t = 0), so the model function is unchanged at the start of every task.",
+   "key_idea": "Use each finished task's LoRA subspace as a cheap stand-in for its gradient subspace, instead of storing gradients as OGD does, and learn the next task's LoRA in a subspace orthogonal to all earlier ones. This gives continual learning without rehearsal or task IDs and preserves instruction-following generalization.",
+   "results_note": "On the standard 5-task continual-learning benchmark with T5-large, O-LoRA averages 75.8% over three task orders, against 72.7% for LFPT5 (the paper's previous state of the art) and 80.0% for multi-task training. On the 15-task benchmark it averages 69.6% against 69.2% for LFPT5. ProgPrompt, which needs task IDs at inference, scores 75.1% and 77.9%.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "one LoRA per task, with earlier LoRAs frozen"
+    },
+    {
+     "target": "inflora",
+     "type": "competes-with",
+     "note": "O-LoRA uses a soft orthogonality penalty between learned subspaces; InfLoRA uses a hard, data-designed frozen down-projection"
+    },
+    {
+     "target": "osf",
+     "type": "competes-with",
+     "note": "both enforce orthogonality to the update subspaces of earlier tasks; OSF does so inside full-rank SVD components"
+    },
+    {
+     "target": "sd-lora",
+     "type": "competes-with",
+     "note": "both grow per-task LoRA components for rehearsal-free continual learning without task IDs; SD-LoRA decouples magnitude and direction instead of enforcing orthogonality (SD-LoRA does not benchmark O-LoRA)"
+    },
+    {
+     "target": "orthogonal-adaptation",
+     "type": "competes-with",
+     "note": "both make per-task or per-concept LoRAs orthogonal so their sum does not interfere; O-LoRA uses a penalty during sequential training, Orthogonal Adaptation fixed orthogonal bases for later merging"
+    },
+    {
+     "target": "l2p",
+     "type": "competes-with",
+     "note": "rehearsal-free continual-learning baseline that uses a prompt pool"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2310.14152",
+    "https://arxiv.org/html/2310.14152",
+    "https://aclanthology.org/2023.findings-emnlp.715/",
+    "https://github.com/cmnfriend/O-LoRA",
+    "https://raw.githubusercontent.com/cmnfriend/O-LoRA/main/src/uie_trainer_lora.py"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: the old formula mixed the code's factor (A_i A_t^T on the down-projections) with the paper's squared-Frobenius penalty, so it matched neither source. Rewritten to give both explicitly: the paper penalizes ||B_i^T B_t||_F^2 on the output-side factors (the paper's A in Delta W = AB, A in R^{d x r}); the official code penalizes sum |A_i A_t^T| entry-wise on PEFT lora_A, plus lambda_2(||A_t||_F + ||B_t||_F).",
+    "structure: updated to state which factor each version penalizes (paper: column spaces of the up-projection; code: rows of the down-projection), consistent with the corrected formula.",
+    "results_note: 'previous best (LFPT5)' qualified. ProgPrompt scores higher (75.1 on 5 tasks, 77.9 on 15 tasks) in the same Table 2, but it requires task IDs at inference; the paper excludes it from the state-of-the-art comparison for that reason.",
+    "relations: sd-lora note corrected. The old note said SD-LoRA compares against O-LoRA, but the SD-LoRA paper (arXiv 2501.13198) never mentions O-LoRA. The competes-with edge is kept on structural grounds."
+   ],
+   "verification_notes": "arXiv 2310.14152 (Wang et al., 2023) matches. Findings of EMNLP 2023 confirmed by the arXiv comment and ACL Anthology 2023.findings-emnlp.715. Paper objective (eqs. 6-9: Delta W = AB with A in R^{d x r}, O_{i,t} = A_i^T A_t, squared entries) compared with the official uie_trainer_lora.py (|lora_A @ loranew_A^T|.sum() plus lambda_2 times the norms of the new A and B); the two penalize different factors. LoRA is placed on W_q and W_v as stated in Sec. 3; the related-work section loosely says 'key and value'. Results checked against Table 2. Not in HF PEFT (PEFT's OSF is a different method)."
+  },
+  {
+   "id": "inflora",
+   "name": "InfLoRA",
+   "full_name": "Interference-Free Low-Rank Adaptation",
+   "paper_title": "InfLoRA: Interference-Free Low-Rank Adaptation for Continual Learning",
+   "authors": "Liang & Li",
+   "year": 2024,
+   "venue": "CVPR 2024",
+   "arxiv": "2404.00228",
+   "url": "https://arxiv.org/abs/2404.00228",
+   "code_url": "https://github.com/liangyanshuo/InfLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_t=W_{t-1}+B_tA_t,\\quad A_t=(U_t)_{[1:r]}\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{frozen, from the SVD } \\hat H_t^{\\top}=V_t\\Sigma_tU_t,\\ \\ \\hat H_t=(I-M_tM_t^{\\top})H_t\\ \\ \\text{or}\\ \\ M_t^{\\perp}M_t^{\\perp\\top}H_t;\\quad B_t\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained, init } 0;\\quad \\Rightarrow\\ \\Delta_{B_t}W_t=(\\Delta_{W}W_t)\\,A_t^{\\top}A_t,\\ \\ (B_tA_t)\\,M_t=0",
+   "trainable_params": "r\\,d_{out}\\ \\text{per adapted matrix per task (}A_t\\text{ is designed, not trained; one } r(d_{in}+d_{out}) \\text{ branch is kept at a time, earlier branches are merged)}",
+   "locus": "key and value projections of every ViT-B/16 attention block (variant InfLoRA-b5: bottom 5 blocks only)",
+   "modification_kind": "additive-weight",
+   "structure": "Rank-r additive update with a frozen, data-designed down-projection A_t. Its orthonormal rows are the top principal directions of the current task's layer inputs H_t after projection onto the orthogonal complement of the old tasks' input subspace span(M_t), which DualGPM maintains; they therefore lie in N_t intersected with M_t-perp. Training B_t alone equals full fine-tuning projected onto row(A_t), Delta W = G A_t^T A_t, so Delta W annihilates old-task inputs. Notation is swapped relative to the paper, which calls the up-projection A_t and the down-projection B_t.",
+   "mergeable": "yes",
+   "mergeable_reason": "After each task the branch B_t A_t is merged into W_{t-1}, and inference uses a single weight matrix without task identity.",
+   "identity_at_init": "B_t = 0 (zero-initialized up-projection), so the function is unchanged at the start of each task. A_t is set before training by an SVD of the projected current-task activations.",
+   "key_idea": "Fine-tuning only the up-projection of a LoRA branch is exactly full fine-tuning restricted to the row space of the frozen down-projection. Choosing that row space inside the new task's input span but orthogonal to the old tasks' input space removes interference by construction.",
+   "results_note": "With an ImageNet-21K ViT-B/16, InfLoRA reaches final accuracies of 75.65% on 10-task ImageNet-R (77.52% with 5 tasks, 71.01% with 20), 86.51% on 10-task CIFAR-100 and 74.53% on 5-task DomainNet. It leads L2P, DualPrompt, CODA-P, C-LoRA and LAE on ImageNet-R and DomainNet. On CIFAR-100, CODA-P has a slightly higher final accuracy (86.62%), while InfLoRA has the best averaged accuracy (91.70% vs 91.08%).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "one LoRA-like branch per task, merged after training"
+    },
+    {
+     "target": "lora-fa",
+     "type": "special-case-of",
+     "note": "per task it is structurally LoRA-FA (frozen down-projection, trained up-projection), with a designed rather than random down-projection"
+    },
+    {
+     "target": "o-lora",
+     "type": "competes-with",
+     "note": "hard, data-designed subspace versus O-LoRA's soft orthogonality penalty"
+    },
+    {
+     "target": "sd-lora",
+     "type": "competes-with",
+     "note": "SD-LoRA reports 75.26% vs InfLoRA's 69.89% on 20-task ImageNet-R"
+    },
+    {
+     "target": "osf",
+     "type": "competes-with",
+     "note": "both restrict continual-learning updates to subspaces orthogonal to what earlier tasks use"
+    },
+    {
+     "target": "dualprompt",
+     "type": "competes-with",
+     "note": "prompt-based rehearsal-free class-incremental baseline"
+    },
+    {
+     "target": "l2p",
+     "type": "competes-with",
+     "note": "prompt-pool baseline"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.00228",
+    "https://arxiv.org/html/2404.00228",
+    "https://github.com/liangyanshuo/InfLoRA"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "results_note: the claim that InfLoRA is 'ahead of ... CODA-P' was false for CIFAR-100 final accuracy (CODA-P 86.62 vs InfLoRA 86.51 in Table 2); qualified the claim and added the 5- and 20-task ImageNet-R numbers."
+   ],
+   "verification_notes": "arXiv 2404.00228 (Liang & Li, 2024) matches. CVPR 2024 confirmed by the arXiv comment, the CVF open-access page and DOI 10.1109/CVPR52733.2024.02231. Formula checked against eqs. 1-8 and Proposition 1, with the paper's letters swapped into catalog notation (paper A_t = trained up-projection, initialized at 0; paper B_t = designed and frozen down-projection). Rows of the designed factor are principal directions of the projected inputs H-hat_t, which lie in M_t-perp, so (B_tA_t)M_t = 0. Placement in K and V and merging of old branches confirmed (expanded parameters 4ldr). The SD-LoRA numbers on 20-task ImageNet-R (75.26 vs 69.89) were confirmed in SD-LoRA Table 2. Not in HF PEFT."
+  },
+  {
+   "id": "textual-inversion",
+   "name": "Textual Inversion",
+   "full_name": "Textual Inversion (learned pseudo-word embedding)",
+   "paper_title": "An Image is Worth One Word: Personalizing Text-to-Image Generation using Textual Inversion",
+   "authors": "Gal et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2208.01618",
+   "url": "https://arxiv.org/abs/2208.01618",
+   "code_url": "https://github.com/rinongal/textual_inversion",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "v_*=\\arg\\min_{v\\in\\mathbb{R}^{d}}\\ \\mathbb{E}_{z\\sim\\mathcal{E}(x),\\,y,\\,\\epsilon\\sim\\mathcal{N}(0,I),\\,t}\\Big[\\big\\|\\epsilon-\\epsilon_\\theta\\big(z_t,t,c_\\theta(y)\\big)\\big\\|_2^2\\Big],\\quad y=\\text{neutral template (e.g. ``A photo of } S_*\\text{'') whose token } S_* \\text{ is embedded as } v;\\quad c_\\theta,\\ \\epsilon_\\theta,\\ \\mathcal{E}\\ \\text{and all existing token embeddings frozen}",
+   "trainable_params": "d\\ \\ \\text{(one token embedding; } k\\,d \\text{ for a } k\\text{-vector pseudo-word)}",
+   "locus": "token-embedding table of the frozen text encoder (one new row for the pseudo-word S_*); the pseudo-word can appear anywhere in a prompt",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Extends the frozen vocabulary with one learned point v_* in input-embedding space. The update is a single new row of the embedding matrix, used compositionally inside arbitrary natural-language prompts rather than as a fixed task prefix.",
+   "mergeable": "yes",
+   "mergeable_reason": "The learned vector is just a new vocabulary entry: inference runs the unchanged text encoder and diffusion model at the same cost, with one token standing in for a word.",
+   "identity_at_init": "The model itself is untouched. v is initialized to the embedding of a single-word coarse descriptor (e.g. 'cat', 'sculpture'), so prompts without S_* behave exactly as before and S_* starts out as that word.",
+   "key_idea": "Personalize a frozen text-to-image model by inverting 3-5 images into a new word in its text-embedding space, trained with the ordinary denoising loss. One word embedding is enough to capture an object or style, which can then be composed into new prompts.",
+   "results_note": "On LDM a single learned embedding reproduces object and style concepts from 3-5 images more faithfully than human-written captions or DALL-E 2 image prompts. CLIP-based and user-study evaluations place it at a favourable point on the reconstruction-editability trade-off, which the learning rate can shift.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "competes-with",
+     "note": "same frozen-model soft-token principle; a single reusable pseudo-word placed anywhere in a prompt instead of a fixed task prefix"
+    },
+    {
+     "target": "trainable-tokens",
+     "type": "special-case-of",
+     "note": "equivalent to training only the embedding row of one newly added token in the text encoder"
+    },
+    {
+     "target": "custom-diffusion",
+     "type": "competes-with",
+     "note": "Custom Diffusion also trains a new token (V*), together with the cross-attention K/V weights"
+    },
+    {
+     "target": "hyperdreambooth",
+     "type": "competes-with",
+     "note": "alternative personalization of text-to-image models"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2208.01618",
+    "https://arxiv.org/html/2208.01618",
+    "https://textual-inversion.github.io/",
+    "https://github.com/rinongal/textual_inversion",
+    "https://huggingface.co/docs/diffusers/training/text_inversion",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2208.01618?fields=title,year,venue"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2208.01618 (Gal et al., 2022) matches. ICLR 2023 confirmed in the ICLR 2023 virtual-site paper list. Objective checked against eq. 2 of the paper (the paper writes epsilon ~ N(0,1)). Initialization from a single-word coarse descriptor, 3-5 images and the CLIP-ImageNet templates checked against Sec. 3 and Sec. 4. Not in HF PEFT (diffusers provides textual_inversion.py and load_textual_inversion). PEFT TrainableTokensConfig on one newly added token index reproduces the parametrization, which justifies the special-case-of edge."
+  },
+  {
+   "id": "custom-diffusion",
+   "name": "Custom Diffusion",
+   "full_name": "Custom Diffusion (cross-attention K/V fine-tuning for multi-concept customization)",
+   "paper_title": "Multi-Concept Customization of Text-to-Image Diffusion",
+   "authors": "Kumari et al.",
+   "year": 2022,
+   "venue": "CVPR 2023",
+   "arxiv": "2212.04488",
+   "url": "https://arxiv.org/abs/2212.04488",
+   "code_url": "https://github.com/adobe-research/custom-diffusion",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "K=W^{k}c,\\ V=W^{v}c\\ \\text{in every U-Net cross-attention layer};\\quad W^{k}=W^{k}_0+\\Delta W^{k},\\ W^{v}=W^{v}_0+\\Delta W^{v}\\ \\text{(dense)},\\ \\text{plus a new modifier-token embedding } V^{*};\\ \\text{all other weights frozen; loss: denoising loss on the target images plus 200 retrieved real regularization images};\\quad \\text{merging } N \\text{ concepts: } \\hat W=\\arg\\min_W\\|WC_{\\text{reg}}^{\\top}-W_0C_{\\text{reg}}^{\\top}\\|_F\\ \\ \\text{s.t.}\\ \\ WC^{\\top}=V_{\\text{tgt}},\\ \\ \\hat W=W_0+\\mathbf{v}^{\\top}\\mathbf{d},\\ \\ \\mathbf{d}=C(C_{\\text{reg}}^{\\top}C_{\\text{reg}})^{-1},\\ \\ \\mathbf{v}^{\\top}=(V_{\\text{tgt}}-W_0C^{\\top})(\\mathbf{d}C^{\\top})^{-1}",
+   "trainable_params": "2\\,d_{out}\\,d_{text}\\ \\text{per cross-attention layer } (W^{k},W^{v}\\in\\mathbb{R}^{d_{out}\\times d_{text}}) \\;+\\; d_{text}\\ \\text{per modifier token}",
+   "locus": "key and value projections of the text features in all cross-attention layers of the diffusion U-Net (Stable Diffusion), plus the modifier-token embedding",
+   "modification_kind": "selective",
+   "structure": "Block mask over the parameter tensors: only the two matrices that read the text condition (W^k, W^v) are updated, densely. Multi-concept merging is a closed-form, equality-constrained least-squares projection: it maps each concept's target-word features to the fine-tuned values while staying close to W_0 on about 1000 regularization captions.",
+   "mergeable": "yes",
+   "mergeable_reason": "The fine-tuned W^k and W^v replace the originals and V^* is one extra vocabulary row, so inference runs the original architecture at the original cost; the closed-form merge folds several concepts into a single pair of matrices.",
+   "identity_at_init": "Training starts from the pretrained W^k, W^v (Delta W = 0), and V^* is initialized to a rarely occurring token's embedding, so the model is initially unchanged on ordinary prompts.",
+   "key_idea": "Fine-tuning moves the cross-attention weights much more than any others, so update only the K/V projections that map text into latent features, together with a learned modifier token and retrieved real images as regularization. The method is fast, small and resists language drift, and concepts can be combined by joint training or a closed-form constrained merge.",
+   "results_note": "On Stable Diffusion it beats Textual Inversion and matches or beats DreamBooth on text/image alignment and human preference, while training about 5x faster (~6 minutes) and storing 75MB instead of 3GB per concept. The closed-form multi-concept merge takes about 2 seconds.",
+   "relations": [
+    {
+     "target": "textual-inversion",
+     "type": "combines",
+     "note": "also trains a new token embedding V* jointly with W^k and W^v"
+    },
+    {
+     "target": "regmean",
+     "type": "competes-with",
+     "note": "both merge linear layers in closed form by least squares on input features; Custom Diffusion adds hard equality constraints on the concepts' target-word features"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "the paper reports that the K/V updates are effectively low-rank (5x SVD compression with similar quality), though training them as low-rank directly was worse"
+    },
+    {
+     "target": "svdiff",
+     "type": "competes-with",
+     "note": "compact diffusion personalization that also supports multi-concept generation"
+    },
+    {
+     "target": "mix-of-show",
+     "type": "competes-with",
+     "note": "multi-concept customization by merging per-concept adapters"
+    },
+    {
+     "target": "ziplora",
+     "type": "competes-with",
+     "note": "merging independently trained subject and style adapters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2212.04488",
+    "https://arxiv.org/html/2212.04488",
+    "https://www.cs.cmu.edu/~custom-diffusion/",
+    "https://github.com/adobe-research/custom-diffusion",
+    "https://github.com/huggingface/diffusers/tree/main/examples/custom_diffusion"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2212.04488 (Kumari et al., 2022) matches. CVPR 2023 confirmed on the CVF open-access page and by DOI 10.1109/CVPR52729.2023.00192. Only W^k and W^v of the cross-attention layers plus V* are trained (Sec. 3.1). 200 LAION regularization images were retrieved at CLIP-text similarity > 0.85. The constrained least-squares merge (eqs. 4-5, about 1000 regularization captions) was checked character by character. V* is initialized from a rare token (id 42170). Claims checked: 5x faster than DreamBooth and 75MB vs 3GB of storage (Sec. 4.1), a merge of about 2 seconds, 5x SVD compression at the top 60% of singular values, and low-rank training being sub-optimal (App. C). Not in HF PEFT (diffusers examples/custom_diffusion)."
+  },
+  {
+   "id": "esft",
+   "name": "ESFT",
+   "full_name": "Expert-Specialized Fine-Tuning",
+   "paper_title": "Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "EMNLP 2024",
+   "arxiv": "2407.01906",
+   "url": "https://aclanthology.org/2024.emnlp-main.46/",
+   "code_url": "https://github.com/deepseek-ai/ESFT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "g_i^{l}=\\frac{1}{N_s}\\sum_{j=1}^{N_s}\\frac{1}{L_j}\\sum_{k=1}^{L_j}g_{i,k}^{l}\\ \\ (\\text{ESFT-Gate})\\quad\\text{or}\\quad r_i^{l}=\\frac{1}{N_s}\\sum_{j=1}^{N_s}\\frac{1}{L_j}\\sum_{k=1}^{L_j}\\frac{\\mathbb{1}(g_{i,k}^{l}>0)}{K}\\ \\ (\\text{ESFT-Token});\\quad E_s^{l}=\\text{top-scored experts with }\\textstyle\\sum_{i\\in E_s^{l}}R_i^{l}\\ge p;\\quad \\theta_e\\ (e\\in E_s^{l})\\ \\text{trained; all other routed experts, shared experts, attention, router and embeddings frozen}",
+   "trainable_params": "\\sum_{l=1}^{L}|E_s^{l}|\\cdot 3\\,d\\,d_{ff}^{(e)}\\ \\ (\\text{gate/up/down projections of each selected routed expert; on average 2-15 of 66 experts per layer})",
+   "locus": "the routed (non-shared) FFN experts in each MoE layer that are most relevant to the task; attention, router, shared experts and embeddings stay frozen",
+   "modification_kind": "selective",
+   "structure": "Data-dependent block mask over experts. In each layer the selected set is the smallest group of top-scored routed experts whose cumulative relevance (average gate score or token-selection ratio on sampled task data) reaches p. Selected experts are updated densely, everything else is frozen, and routing stays free during training and inference.",
+   "mergeable": "yes",
+   "mergeable_reason": "The updated experts simply replace the originals, so the architecture, routing and inference cost are unchanged.",
+   "identity_at_init": "Training starts from the pretrained weights (Delta W = 0); expert selection is computed from router statistics on a task sample.",
+   "key_idea": "In fine-grained MoE LLMs, each task activates a concentrated and distinct set of experts, so fine-tune only the experts most relevant to the task. This nearly matches full fine-tuning on the target task, forgets less, and cuts storage by up to 90%.",
+   "results_note": "On DeepSeek-V2-Lite, ESFT-Gate averages 50.2 on downstream tasks (FFT 51.0, LoRA 44.9) while keeping more general ability (ESFT-Token 61.5 vs FFT 58.8 and LoRA 59.1), with 2.57-3.20 GB of trained parameters versus 28.6 GB for FFT.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "main PEFT baseline (rank 8); ESFT beats it on both task performance and general-ability retention"
+    },
+    {
+     "target": "surgical-fine-tuning",
+     "type": "competes-with",
+     "note": "block-level selective tuning placed where the task lives; ESFT chooses experts from router statistics instead of choosing layers"
+    },
+    {
+     "target": "lisa",
+     "type": "competes-with",
+     "note": "selective full-parameter tuning of a subset of blocks (layers rather than experts)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.01906",
+    "https://arxiv.org/html/2407.01906",
+    "https://aclanthology.org/2024.emnlp-main.46/",
+    "https://github.com/deepseek-ai/ESFT"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2407.01906 (Wang et al., 2024) matches. EMNLP 2024 main confirmed in ACL Anthology 2024.emnlp-main.46. The ESFT-Gate and ESFT-Token scores and the cumulative-threshold selection rule match eqs. 6-8, and the selected experts are trained with all other experts and modules frozen while routing stays free. DeepSeek-V2-Lite has 66 experts per layer, 2-15 of them selected on average (Sec. 6.1), with p = 0.1 for Gate and 0.2 for Token. Numbers checked: 50.2/49.4 vs FFT 51.0 and LoRA 44.9, general ability 61.5/60.6 vs 58.8/59.1, and 2.57/3.20 GB vs 28.6 GB. Not in HF PEFT."
+  },
+  {
+   "id": "intruder-dimension-reduction",
+   "name": "Intruder-dimension reduction",
+   "full_name": "Intruder Dimension Reduction (post-hoc spectral surgery on LoRA adapters)",
+   "paper_title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+   "authors": "Shuttleworth et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.21228",
+   "url": "https://arxiv.org/abs/2410.21228",
+   "code_url": "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/intruders.py",
+   "hf_peft": true,
+   "hf_peft_config": "from peft.tuners.lora.intruders import reduce_intruder_dimension; reduce_intruder_dimension(peft_model, old_adapter_name='default', new_adapter_name='intruder_reduced', top_k=10, threshold_epsilon=0.5, mitigation_lambda=0.75)  # adds and activates a new LoRA adapter",
+   "formula_latex": "W_0+\\Delta W=U\\Sigma V^{\\top},\\ \\ W_0=U^{0}\\Sigma^{0}V^{0\\top};\\quad \\mathcal{I}=\\{\\,j\\le k:\\ \\max_i|\\langle u_j,u^{0}_i\\rangle|<\\epsilon\\,\\};\\quad W'=W_0+\\Delta W+(\\lambda-1)\\sum_{j\\in\\mathcal{I}}\\sigma_j\\,u_jv_j^{\\top};\\quad (B',A')=\\text{rank-}r\\ \\text{truncated SVD of } (W'-W_0)/s,\\ \\ s=\\tfrac{\\alpha}{r}\\ (\\tfrac{\\alpha}{\\sqrt r}\\text{ with rsLoRA}),\\ \\ B'=U_r\\Sigma_r^{1/2},\\ A'=\\Sigma_r^{1/2}V_r^{\\top};\\quad \\text{no training: } W_0 \\text{ frozen, the trained } (B,A) \\text{ replaced by } (B',A')\\ \\ (\\text{paper: only the top-ranked } j\\in\\mathcal{I}\\text{ is scaled, no re-factorization})",
+   "trainable_params": "0\\ \\ (\\text{training-free; the output is again a rank-}r\\text{ adapter with } r(d_{in}+d_{out}) \\text{ parameters per matrix})",
+   "locus": "every LoRA-adapted linear (or embedding) layer of an already trained adapter",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Spectral endomorphism on the space of trained adapters. Among the top-k singular directions of the merged matrix, those nearly orthogonal to every pretrained left singular vector (the intruders) are shrunk by lambda, and the edited Delta W is projected back to rank r. The paper scales only the top intruder per matrix and does not re-project; HF PEFT scales every detected intruder and re-factorizes to rank r.",
+   "mergeable": "yes",
+   "mergeable_reason": "The result is an ordinary LoRA adapter (B', A') that merges into W_0 like any other LoRA.",
+   "identity_at_init": "Not applicable (post-hoc edit). lambda = 1 leaves the adapter unchanged up to rank-r truncation, lambda = 0 removes the intruder components, and lambda > 1 amplifies them.",
+   "key_idea": "LoRA creates high-ranking intruder singular vectors that are nearly orthogonal to the pretrained spectrum; full fine-tuning does not. These directions drive most of the forgetting, so shrinking them after training recovers pretrained behaviour at little cost in task accuracy.",
+   "results_note": "Scaling the top intruder dimension of each matrix with lambda = 0.7 (RoBERTa-base on QQP, LoRA r = 8) left test accuracy unchanged and cut fine-tuning-induced forgetting (pre-training loss) by 33.2%. For LLaMA2-7B on MetaMath (r = 256), lambda = 0.3 cost 0.1% accuracy and cut forgetting by 33.3%.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "post-hoc edit of a trained LoRA adapter, returning a LoRA adapter of the same rank"
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "a preventive alternative: train in the minor singular directions so the principal spectrum is not disturbed; intruder reduction is a post-hoc repair"
+    },
+    {
+     "target": "lora-null",
+     "type": "competes-with",
+     "note": "knowledge-preserving initialization versus post-hoc removal of the components that cause forgetting"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "the paper finds that PiSSA, which edits principal singular vectors, also produces many intruder dimensions"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.21228",
+    "https://arxiv.org/html/2410.21228",
+    "https://api2.openreview.net/notes/search?term=LoRA%20vs%20Full%20Fine-tuning%20Illusion%20of%20Equivalence",
+    "https://raw.githubusercontent.com/huggingface/peft/main/src/peft/tuners/lora/intruders.py",
+    "https://huggingface.co/docs/peft/main/en/developer_guides/lora",
+    "https://api.github.com/repos/huggingface/peft/releases/tags/v0.19.0"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex: the LoRA scaling divided out before re-factorization is PEFT's layer.scaling (alpha/r, or alpha/sqrt(r) with rsLoRA), not always alpha/r. Added the symmetric sqrt(Sigma) split used for B' and A', and the paper-vs-PEFT difference (the paper scales only the top intruder).",
+    "hf_peft_config: added the import path and the old_adapter_name/new_adapter_name arguments. The utility writes the edited factors into a new adapter (default 'intruder_reduced') and activates it, leaving the original adapter in place."
+   ],
+   "verification_notes": "arXiv 2410.21228 (Shuttleworth et al., 2024) matches. OpenReview shows NeurIPS 2025 poster (xp7B8rkh7L) after rejection at ICLR 2025. Definition 3.1 / Algorithm 1 and the scaling rule W = W0 + dW + (lambda-1) u_i sigma_i v_i^T (top intruder only) checked in Sec. 5; the paper uses cos without abs, PEFT uses |cos|. PEFT main src/peft/tuners/lora/intruders.py was read in full: abs cosine of the merged vs base left singular vectors over the top_k, all detected intruders scaled, then (W'-W0)/scaling re-factorized to rank r. The utility is documented in the PEFT LoRA developer guide and announced in the v0.19.0 release (2026-04-14). The PEFT docstring for mitigation_lambda says 'higher = more subtracted', but the code computes (lambda-1), so a higher lambda subtracts less; the formula follows the code. No author code is linked from the paper. Results (QQP 33.2%, MetaMath 33.3%) checked."
+  }
+ ],
+ "papers": [
+  {
+   "id": "gradient-projection-memory",
+   "title": "Gradient Projection Memory for Continual Learning",
+   "authors": "Saha et al.",
+   "year": 2021,
+   "venue": "ICLR 2021",
+   "arxiv": "2103.09762",
+   "url": "https://openreview.net/forum?id=3AOj0RCNC2",
+   "claim": "A layer's gradient updates lie in the span of its inputs. GPM stores per-layer orthonormal bases of the old tasks' representation subspaces, found by SVD of activations, and steps orthogonally to them, which causes little or no interference with past tasks and needs no replay.",
+   "relevance": "This input-space orthogonality is the mechanism InfLoRA builds into a LoRA down-projection (through DualGPM) and that O-LoRA approximates with LoRA subspaces. Categorically, each task's update is a morphism required to vanish on a sub-object (the old tasks' input subspace), which makes continual-learning PEFT a kernel condition.",
+   "sources": [
+    "https://arxiv.org/abs/2103.09762"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2103.09762 (Saha, Garg, Roy, 2021) matches. ICLR 2021 oral confirmed by the arXiv journal-ref/comment and OpenReview id 3AOj0RCNC2. The claim matches the abstract and the method section."
+  },
+  {
+   "id": "orthogonal-gradient-descent",
+   "title": "Orthogonal Gradient Descent for Continual Learning",
+   "authors": "Farajtabar et al.",
+   "year": 2019,
+   "venue": "AISTATS 2020",
+   "arxiv": "1910.07104",
+   "url": "https://proceedings.mlr.press/v108/farajtabar20a.html",
+   "claim": "Projecting new-task gradients onto the subspace in which the network's outputs on previous tasks stay unchanged mitigates catastrophic forgetting without storing data, but it does require storing gradient directions.",
+   "relevance": "Direct ancestor of O-LoRA, which replaces OGD's stored gradients with the LoRA subspaces of earlier tasks; in this sense O-LoRA is OGD transported into the low-rank adapter parameterization.",
+   "sources": [
+    "https://arxiv.org/abs/1910.07104",
+    "https://proceedings.mlr.press/v108/farajtabar20a.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 1910.07104 (Farajtabar et al., first version 2019) matches. AISTATS 2020 confirmed on PMLR v108 (farajtabar20a) and by DBLP conf/aistats/FarajtabarAML20. The claim that gradient directions must be stored, not data, is accurate."
+  },
+  {
+   "id": "distributed-alignment-search",
+   "title": "Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations",
+   "authors": "Geiger et al.",
+   "year": 2023,
+   "venue": "CLeaR 2024",
+   "arxiv": "2303.02536",
+   "url": "https://proceedings.mlr.press/v236/geiger24a.html",
+   "claim": "Distributed alignment search (DAS) learns, by gradient descent, an orthonormal (rotated) subspace of a hidden representation in which interchange interventions realize a high-level causal variable. This replaces brute-force alignment search and allows distributed, non-neuron-aligned representations.",
+   "relevance": "LoReFT is DAS's interchange intervention with the counterfactual source replaced by a learned affine map (R s -> W h + b). This links PEFT to causal abstraction: a ReFT is an endomorphism of the hidden-state space that acts only on one sub-object.",
+   "sources": [
+    "https://arxiv.org/abs/2303.02536",
+    "https://proceedings.mlr.press/v236/geiger24a.html"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2303.02536 (Geiger, Wu, Potts, Icard, Goodman, first version 2023) matches. CLeaR 2024 confirmed on PMLR v236 (geiger24a) and on OpenReview (dblp.org/conf/CLEAR2/2024). The LoReFT link follows ReFT eq. 2 (R s replaced by W h + b)."
+  },
+  {
+   "id": "axbench",
+   "title": "AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2501.17148",
+   "url": "https://arxiv.org/abs/2501.17148",
+   "claim": "On a large benchmark for concept steering and detection (Gemma-2-2B/9B), prompting outperforms every representation-based steering method, with finetuning second; difference-in-means is best for detection, and SAEs are not competitive on either task. A rank-1 representation finetuning (ReFT-r1) is competitive on both.",
+   "relevance": "Gives a sober empirical calibration of intervention-based (activation-editing) adaptation against prompts and weight finetuning, which is useful for placing the ReFT family next to input-augmentation and weight-update PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/2501.17148",
+    "https://raw.githubusercontent.com/stanfordnlp/axbench/main/README.md"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2501.17148 (Wu et al., 2025) matches. ICML 2025 spotlight poster confirmed on OpenReview (ICML.cc/2025/Conference). The claim matches the abstract: prompting is best for steering, finetuning is second, DiffMean is best for detection, SAEs are not competitive, and ReFT-r1 is competitive on both."
+  },
+  {
+   "id": "representation-engineering",
+   "title": "Representation Engineering: A Top-Down Approach to AI Transparency",
+   "authors": "Zou et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2310.01405",
+   "url": "https://arxiv.org/abs/2310.01405",
+   "claim": "Population-level representations, rather than individual neurons or circuits, can be read out and manipulated to monitor and control high-level behaviours of LLMs such as honesty and harmlessness, using simple training-free reading vectors and representation-control operators.",
+   "relevance": "Training-free activation steering is the zero-training limit of representation interventions, and ReFT is its learned, task-supervised counterpart; the ReFT paper explicitly recasts RepE's operators as parametrizations of its intervention function.",
+   "sources": [
+    "https://arxiv.org/abs/2310.01405",
+    "https://arxiv.org/html/2404.03592"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [],
+   "verification_notes": "arXiv 2310.01405 (Zou et al., 2023) matches. No peer-reviewed venue was found (Semantic Scholar lists arXiv only), so the venue is 'arXiv'. The ReFT paper's App. B indeed recasts RepE's linear, piecewise and projection operators as ReFT intervention functions; the projection operator is a special case of LoReFT."
+  }
+ ],
+ "notes": "All 8 seeds exist, are distinct from the classic methods already in the catalog, and were kept, one entry each, with no extra methods (this was a fixed-scope gap batch). Formulas were checked against each paper's method section in the arXiv HTML full text and, where relevant, against official code (pyreft interventions.py, the O-LoRA trainer, LongLoRA fine-tune.py, HF PEFT intruders.py). Placement suggestions: (1) loreft: modification_kind input-or-activation-augmentation, not mergeable, not identity at init. It fits a new 'representation / activation-editing' family together with red and road (multiplicative.json already points at the id 'loreft'). DiReFT is described inside the LoReFT entry rather than given its own entry. ReFT is not in HF PEFT as of v0.21.1 (2026-09-29); it ships in pyreft. (2) longlora: hybrid, family lora-core. The paper calls 'LoRA + trainable embeddings and norms' LoRA+, a name clash with LoRA+ (Hayou et al.). In HF PEFT it can be approximated with LoraConfig(target_modules=q,k,v,o, modules_to_save=[embed_tokens, norms]) plus an S2-Attn patch, but it is not a native method, so hf_peft = false. (3) o-lora and inflora: continual-learning LoRA (frontier/composition); hf-peft.json's osf already points at 'o-lora'. O-LoRA's paper writes the orthogonality penalty on the left (up-projection) factor with squared entries, while the official code penalizes PEFT lora_A (down-projection rows) with absolute values and adds an L2 term (lambda_2); the formula follows the code side and the discrepancy is noted in the entry. InfLoRA's paper uses swapped letter names (its A_t is the up-projection, its B_t the frozen down-projection); the entry is rewritten in catalog notation (A = down, B = up). (4) textual-inversion is in diffusers (textual_inversion.py, load_textual_inversion), not in HF PEFT; HF PEFT TrainableTokensConfig applied to a newly added text-encoder token reproduces it, hence the special-case-of edge. (5) custom-diffusion: selective, with a composition edge (closed-form constrained least-squares merge, related to regmean); in diffusers examples/custom_diffusion. (6) esft: selective at expert granularity for MoE LLMs and validated only on DeepSeek-V2-Lite (the paper names this limitation); per-expert parameter count 3 d d_ff^(e) assumes SwiGLU experts. (7) intruder-dimension-reduction: HF PEFT utility since v0.19.0 (2026-04-14), peft.tuners.lora.intruders.reduce_intruder_dimension. The HF version differs from the paper: it scales every detected intruder among the top-k rather than only the top one, then re-factorizes to rank r after removing the LoRA scaling. code_url points to the HF implementation because no author code was found. Classified as optimizer-or-training-procedure (post-hoc, training-free adapter surgery). The source paper appears in other files' papers lists under several ids (lora-vs-full-ft-intruders, lora-illusion-of-equivalence, lora-vs-full-ft-illusion); canonicalize those ids at merge time. It was not duplicated here. Venue verification: ReFT NeurIPS 2024 spotlight (NeurIPS virtual site and OpenReview); LongLoRA ICLR 2024 oral (OpenReview); Shuttleworth et al. NeurIPS 2025 poster (OpenReview; rejected at ICLR 2025); O-LoRA Findings of EMNLP 2023 (ACL Anthology 2023.findings-emnlp.715); ESFT EMNLP 2024 main (ACL Anthology 2024.emnlp-main.46); InfLoRA CVPR 2024 (arXiv comment). Textual Inversion ICLR 2023 and Custom Diffusion CVPR 2023 come from Semantic Scholar venue metadata, because OpenReview v1 and CVF pages could not be fetched (a bot challenge) and the web-search budget was exhausted. Both are well known, but they were not re-verified on the proceedings pages. Papers added: GPM and OGD (ancestors of InfLoRA and O-LoRA), DAS (the interpretability origin of LoReFT), AxBench (empirical calibration of representation-based steering versus prompting and finetuning), and RepE (training-free steering, arXiv only, medium confidence on uptake as a PEFT reference).",
+ "verification_summary": "Adversarial verification on 2026-10-01 of 8 methods and 5 papers; nothing dropped. All 13 arXiv ids exist and match their titles, first authors and first-version years (batch arXiv API query). Venues were confirmed from primary sources: OpenReview (ReFT NeurIPS 2024, LongLoRA ICLR 2024, Shuttleworth et al. NeurIPS 2025, AxBench ICML 2025, DAS CLeaR 2024), ACL Anthology (O-LoRA Findings of EMNLP 2023, ESFT EMNLP 2024), the CVF open-access pages and DOIs (InfLoRA CVPR 2024, Custom Diffusion CVPR 2023), the ICLR 2023 virtual-site list (Textual Inversion), PMLR (OGD AISTATS 2020, DAS) and the GPM journal-ref (ICLR 2021). Every formula was re-read in the arXiv full text. Fixes, 8 in total: (1) O-LoRA formula. The old version mixed the official code's factor with the paper's squared penalty; it now gives both, since the paper penalizes ||B_i^T B_t||_F^2 on the up-projection column spaces while the code penalizes |A_i A_t^T| entry-wise on lora_A and adds lambda_2 norms. The structure text was updated to match. (2) O-LoRA results. ProgPrompt, which needs task IDs, scores above LFPT5; this is now stated. (3) O-LoRA to sd-lora relation. The note was false (SD-LoRA never benchmarks O-LoRA) and was rewritten. (4) InfLoRA results. CODA-P beats InfLoRA on CIFAR-100 final accuracy, 86.62 vs 86.51. (5) LoReFT trainable_params. The note now states what 'untied' means. (6, 7) Intruder-reduction formula: PEFT divides by layer.scaling (rsLoRA-aware) and splits sqrt(Sigma) symmetrically between B' and A'; the hf_peft_config now has the import path and adapter names. HF PEFT flags were checked against huggingface/peft main (tuners list as of v0.21.1, 2026-09-29). Only intruder reduction is in PEFT, as peft.tuners.lora.intruders.reduce_intruder_dimension since v0.19.0. ReFT, LongLoRA, O-LoRA, InfLoRA, Textual Inversion, Custom Diffusion and ESFT are not native PEFT methods. All 30 relation targets are existing canonical slugs. Mergeability, identity-at-init and modification_kind were confirmed against each paper and the reference code (pyreft, LongLoRA fine-tune.py, the O-LoRA trainer, PEFT intruders.py)."
+}

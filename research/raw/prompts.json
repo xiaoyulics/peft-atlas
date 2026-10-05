@@ -1,0 +1,1465 @@
+{
+ "family": "prompts",
+ "family_title": "Prompts, prefixes and learned states (soft-context adaptation)",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "prompt-tuning",
+   "name": "Prompt Tuning",
+   "full_name": "Prompt Tuning (soft prompts)",
+   "paper_title": "The Power of Scale for Parameter-Efficient Prompt Tuning",
+   "authors": "Lester et al.",
+   "year": 2021,
+   "venue": "EMNLP 2021",
+   "arxiv": "2104.08691",
+   "url": "https://aclanthology.org/2021.emnlp-main.243/",
+   "code_url": "https://github.com/google-research/prompt-tuning",
+   "hf_peft": true,
+   "hf_peft_config": "PromptTuningConfig",
+   "formula_latex": "\\Pr_{\\theta;\\,\\theta_P}\\big(Y \\mid [P;\\,X_e]\\big),\\quad P\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{trained},\\quad X_e=\\mathrm{Embed}_{\\theta}(X)\\in\\mathbb{R}^{n\\times d};\\ \\ \\theta\\ (\\text{every } W_0)\\ \\text{frozen}",
+   "trainable_params": "\\ell d",
+   "locus": "input embedding sequence (layer 0 only)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "A free \\ell\\times d matrix of virtual-token embeddings concatenated in front of the input embedding sequence; the states of the prompt positions in deeper layers are not free but are computed by the frozen network from P (in a causal decoder they depend on P alone, so prompt tuning is prefix-tuning with the per-layer prefixes constrained to the frozen network's own image of P).",
+   "mergeable": "no",
+   "mergeable_reason": "The prompt lengthens every sequence by \\ell tokens and cannot be absorbed into W_0; at best its per-layer keys/values can be pre-computed and served as a cached prefix.",
+   "identity_at_init": "No exact identity: prepending any tokens redistributes attention. Initialization options are random, sampled vocabulary embeddings, or embeddings of the class-label (verbalizer) tokens; HF PEFT exposes TEXT / SAMPLE_VOCAB / RANDOM.",
+   "key_idea": "Replace the discrete prompt by ℓ continuous 'virtual token' embeddings that are the only trainable parameters; the gap to full fine-tuning closes as the frozen model grows, so a single frozen model can serve many tasks with tiny per-task prompts.",
+   "results_note": "With LM-adapted T5, prompt tuning becomes competitive with scale and at T5-XXL (11B) matches model tuning (including the multi-task baseline) on SuperGLUE, while transferring better zero-shot to domain shifts.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "special-case-of",
+     "note": "Li & Liang's 'embedding-only' ablation; only the layer-0 prefix is free, deeper prefixes are induced by the frozen network."
+    },
+    {
+     "target": "p-tuning",
+     "type": "special-case-of",
+     "note": "P-Tuning with identity prompt encoder and all virtual tokens placed at the front."
+    },
+    {
+     "target": "p-tuning-v2",
+     "type": "special-case-of",
+     "note": "Shallow (input-only) instance of deep prompt tuning."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Standard additive-weight baseline; prompt tuning uses orders of magnitude fewer parameters but needs scale."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2104.08691",
+    "https://arxiv.org/pdf/2104.08691",
+    "https://huggingface.co/docs/peft/main/en/conceptual_guides/prompting",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/prompt_tuning"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "prefix-tuning",
+   "name": "Prefix-Tuning",
+   "full_name": "Prefix-Tuning",
+   "paper_title": "Prefix-Tuning: Optimizing Continuous Prompts for Generation",
+   "authors": "Li & Liang",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2101.00190",
+   "url": "https://aclanthology.org/2021.acl-long.353/",
+   "code_url": "https://github.com/XiangLi1999/PrefixTuning",
+   "hf_peft": true,
+   "hf_peft_config": "PrefixTuningConfig",
+   "formula_latex": "h_i=\\begin{cases}P_\\theta[i,:] & i\\in P_{\\mathrm{idx}}\\\\ \\mathrm{LM}_\\phi(z_i,h_{<i}) & \\text{otherwise}\\end{cases}\\ \\Longleftrightarrow\\ \\mathrm{head}^{(l)}=\\mathrm{Attn}\\big(XW_q^{(l)},\\,[P_k^{(l)};XW_k^{(l)}],\\,[P_v^{(l)};XW_v^{(l)}]\\big),\\ \\ P_k^{(l)},P_v^{(l)}\\in\\mathbb{R}^{\\ell\\times d},\\ l=1,\\dots,L;\\ \\ \\text{training: } P_\\theta[i,:]=\\mathrm{MLP}_\\theta(P'_\\theta[i,:]),\\ P'_\\theta\\in\\mathbb{R}^{\\ell\\times k};\\ \\ \\phi\\ (W_0)\\ \\text{frozen}",
+   "trainable_params": "2L\\ell d\\ \\text{(stored)};\\ \\ \\ell k+|\\mathrm{MLP}_\\theta|\\ \\text{during training (MLP discarded afterwards)}",
+   "locus": "keys/values at every attention layer (decoder; encoder and decoder for enc-dec models in the paper)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Learned key/value vectors prepended at every layer, i.e. a learned initial KV-cache state of length \\ell. By He et al. (2022) this is equivalently a gated parallel attention-adapter: h \\leftarrow (1-\\lambda(x))\\,h+\\lambda(x)\\,\\mathrm{softmax}(xW_qP_k^\\top)P_v, with gate \\lambda(x) = attention mass on the prefix.",
+   "mergeable": "no",
+   "mergeable_reason": "The prefix adds \\ell extra key/value slots to every attention layer (extra attention cost per token); it can be served as a cached prefix but not folded into W_0.",
+   "identity_at_init": "No exact identity: any prefix diverts attention mass \\lambda(x)>0 away from the content. HF PEFT's init_weights='zero' zeroes keys and values, which still rescales attention outputs by 1-\\lambda(x). Li & Liang initialize the prefix with activations of real (preferably task-relevant) words, which substantially helps in low-data settings; direct optimization of P is unstable, hence the MLP reparametrization.",
+   "key_idea": "Optimize a short continuous 'context' that every token can attend to at every layer, steering a frozen LM like a prompt would but with far more expressive power than input embeddings alone (discrete prompt < embedding-only < prefix-tuning).",
+   "results_note": "With 0.1% of parameters, GPT-2 prefix-tuning is comparable to fine-tuning on table-to-text (E2E, WebNLG, DART), outperforms it in low-data settings and extrapolates better to unseen categories, but trails full fine-tuning on XSUM summarization with BART.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "generalizes",
+     "note": "Prompt tuning only frees the layer-0 slice of the prefix."
+    },
+    {
+     "target": "p-tuning-v2",
+     "type": "equivalent-to",
+     "note": "P-Tuning v2 is the same deep-prompt parameterization with an NLU-oriented recipe (optional reparametrization, classification head)."
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "dual-to",
+     "note": "He et al. (2022) rewrite prefix-tuning as a parallel adapter with W_1=W_qP_k^⊤, W_2=P_v, softmax nonlinearity and input-dependent gate λ(x)."
+    },
+    {
+     "target": "cartridges",
+     "type": "generalizes",
+     "note": "Cartridges are prefix-tuning without the MLP reparametrization, trained by context distillation."
+    },
+    {
+     "target": "initial-state-tuning",
+     "type": "equivalent-to",
+     "note": "On a linear SSM the effect of any prefix is exactly an initial-state update (Galim et al., Prop. 1); prefix = learned initial state of the recurrence."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2101.00190",
+    "https://arxiv.org/pdf/2101.00190",
+    "https://arxiv.org/abs/2110.04366",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/prefix_tuning",
+    "https://github.com/huggingface/peft/blob/main/docs/source/package_reference/prefix_tuning.md"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "p-tuning",
+   "name": "P-Tuning",
+   "full_name": "P-Tuning (continuous prompts with a prompt encoder)",
+   "paper_title": "GPT Understands, Too",
+   "authors": "Liu et al.",
+   "year": 2021,
+   "venue": "AI Open 2024",
+   "arxiv": "2103.10385",
+   "url": "https://arxiv.org/abs/2103.10385",
+   "code_url": "https://github.com/THUDM/P-tuning",
+   "hf_peft": true,
+   "hf_peft_config": "PromptEncoderConfig",
+   "formula_latex": "T=\\{[P_{0:i}],\\,x,\\,[P_{i+1:j}],\\,y,\\,[P_{j+1:k}]\\}\\ \\longmapsto\\ \\{h_0,\\dots,h_i,\\,e(x),\\,h_{i+1},\\dots,h_j,\\,e(y),\\,h_{j+1},\\dots,h_k\\},\\quad (h_0,\\dots,h_k)=f_\\psi(P_0,\\dots,P_k)\\ \\ (f_\\psi:\\ \\text{LSTM or MLP prompt encoder});\\ \\ P,\\psi\\ \\text{trained, LM frozen (or tuned)}",
+   "trainable_params": "\\ell d+|\\psi|\\ \\text{(encoder dropped after training, leaving } \\ell d\\text{)}",
+   "locus": "input embedding sequence, at arbitrary template positions interleaved with discrete anchor tokens",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Virtual-token embeddings produced by a shared reparametrization network h=f_\\psi(P) (bi-LSTM or MLP) that models dependencies between prompt tokens, inserted at template positions and concatenated with discrete prompt/anchor tokens.",
+   "mergeable": "no",
+   "mergeable_reason": "The continuous prompt tokens lengthen the input; only the encoder can be discarded (its outputs cached as embeddings).",
+   "identity_at_init": "No identity; the continuous prompts are combined with a manual discrete template (anchor tokens), so training starts near the hand-written prompt. The paper ablates LSTM vs MLP vs identity (EMB) encoders and finds EMB unstable.",
+   "key_idea": "Make prompts continuous and let a small encoder couple the prompt tokens, which stabilizes training against the large variance of discrete prompts and lets GPT-style models compete with BERT-style models on NLU.",
+   "results_note": "With a frozen LM on LAMA knowledge probing P-Tuning beats manual prompts by 20+ points and searched prompts by 9 points; with tuned LMs it beats PET on SuperGLUE in both fully supervised and few-shot settings.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "generalizes",
+     "note": "Prompt tuning = P-Tuning with identity encoder and all virtual tokens at the front."
+    },
+    {
+     "target": "residual-prompt-tuning",
+     "type": "competes-with",
+     "note": "Both reparametrize prompt embeddings through a shared network; Residual PT adds a skip connection."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2103.10385",
+    "https://arxiv.org/pdf/2103.10385",
+    "https://huggingface.co/docs/peft/main/en/conceptual_guides/prompting",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/p_tuning",
+    "https://api.crossref.org/works/10.1016/j.aiopen.2023.08.012"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "p-tuning-v2",
+   "name": "P-Tuning v2",
+   "full_name": "P-Tuning v2 (deep prompt tuning for NLU)",
+   "paper_title": "P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks",
+   "authors": "Liu et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2110.07602",
+   "url": "https://aclanthology.org/2022.acl-short.8/",
+   "code_url": "https://github.com/THUDM/P-tuning-v2",
+   "hf_peft": true,
+   "hf_peft_config": "PrefixTuningConfig (deep prompts via past_key_values; prefix_projection optional)",
+   "formula_latex": "\\mathrm{head}^{(l)}=\\mathrm{Attn}\\big(XW_q^{(l)},\\,[P_k^{(l)};XW_k^{(l)}],\\,[P_v^{(l)};XW_v^{(l)}]\\big)\\ \\ \\forall l\\le L,\\quad \\hat y=\\mathrm{softmax}(W_{\\mathrm{cls}}\\,h_{\\mathrm{tok}});\\ \\ P^{(l)}\\ (\\text{optionally } \\mathrm{MLP}\\text{-reparametrized}),\\ W_{\\mathrm{cls}}\\ \\text{trained};\\ W_0\\ \\text{frozen}",
+   "trainable_params": "2L\\ell d+d\\,|\\mathcal{Y}|\\ \\ (\\approx 0.1\\%\\text{--}3\\%\\ \\text{of the model})",
+   "locus": "keys/values at every layer (deep prompts) plus a randomly initialized linear head on token representations",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Learned key/value vectors prepended at every layer (identical parameter shape to prefix-tuning), with a linear classification head instead of a verbalizer, task-dependent prompt length (short for classification, ~100 for sequence labeling) and optional reparametrization / multitask initialization.",
+   "mergeable": "no",
+   "mergeable_reason": "Same as prefix-tuning: \\ell extra key/value slots per layer that cannot be folded into W_0.",
+   "identity_at_init": "No identity; random initialization, optionally a multitask-pretrained prompt as initialization.",
+   "key_idea": "Inserting prompts at every layer (not just the input) gives more capacity and more direct influence on predictions, making prompt tuning match fine-tuning even for 300M-scale models and for hard sequence-labeling tasks.",
+   "results_note": "Matches fine-tuning across model scales from 300M to 10B parameters and on hard sequence tagging (NER, extractive QA, SRL) while tuning 0.1%-3% of parameters.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "equivalent-to",
+     "note": "Self-described implementation of deep prompt tuning (Li & Liang 2021; Qin & Eisner 2021) adapted to NLU."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "generalizes",
+     "note": "Prompt tuning is the input-layer-only special case."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Common NLU baseline comparison."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.07602",
+    "https://arxiv.org/pdf/2110.07602",
+    "https://aclanthology.org/2022.acl-short.8/",
+    "https://raw.githubusercontent.com/huggingface/peft/v0.4.0/README.md"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "warp",
+   "name": "WARP",
+   "full_name": "Word-level Adversarial ReProgramming",
+   "paper_title": "WARP: Word-level Adversarial ReProgramming",
+   "authors": "Hambardzumyan et al.",
+   "year": 2021,
+   "venue": "ACL 2021",
+   "arxiv": "2101.00121",
+   "url": "https://aclanthology.org/2021.acl-long.381/",
+   "code_url": "https://github.com/YerevaNN/WARP",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "P_\\Theta(y\\mid x)=\\frac{\\exp\\big(\\Theta^{V}_{y}\\cdot f(T_{\\Theta^P}(x))\\big)}{\\sum_{i\\in C}\\exp\\big(\\Theta^{V}_{i}\\cdot f(T_{\\Theta^P}(x))\\big)},\\quad \\Theta^P\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{(prompt embeddings inserted by template } T\\text{ around a [MASK])},\\ \\Theta^V\\in\\mathbb{R}^{|C|\\times d}\\ \\text{(verbalizer embeddings)}\\ \\text{trained; MLM body frozen}",
+   "trainable_params": "(\\ell+|C|)\\,d",
+   "locus": "input embedding sequence (template positions around a [MASK] token) and the output verbalizer vectors of the MLM head",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Adversarial reprogramming in word-embedding space: learned input embeddings at template positions plus learned class vectors that replace output-embedding rows of the masked-LM head (an input-side and an output-side reprogramming map around a frozen body).",
+   "mergeable": "no",
+   "mergeable_reason": "Prompt embeddings lengthen the input; only the verbalizer vectors act like a (new) linear head.",
+   "identity_at_init": "No identity; prompt tokens initialized with the [MASK] embedding or embeddings similar to the vocabulary; verbalizers from the MLM head.",
+   "key_idea": "Treat task adaptation as adversarial reprogramming: search continuous prompt and verbalizer embeddings by SGD so a frozen masked LM's [MASK] prediction solves the task.",
+   "results_note": "With up to 25K trainable parameters per task on RoBERTa-large it reaches 81.6 on the GLUE test leaderboard, beating submissions with up to three orders of magnitude more trainable parameters; strong few-shot SuperGLUE results with ALBERT.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "competes-with",
+     "note": "Concurrent continuous-prompt method; adds learned output verbalizers."
+    },
+    {
+     "target": "visual-prompting",
+     "type": "dual-to",
+     "note": "Same adversarial-reprogramming principle in text embedding space vs. pixel space."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2101.00121",
+    "https://arxiv.org/pdf/2101.00121"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ppt",
+   "name": "PPT",
+   "full_name": "Pre-trained Prompt Tuning",
+   "paper_title": "PPT: Pre-trained Prompt Tuning for Few-shot Learning",
+   "authors": "Gu et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2109.04332",
+   "url": "https://aclanthology.org/2022.acl-long.576/",
+   "code_url": "https://github.com/thu-coai/PPT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "P^\\star=\\arg\\min_{P}\\ \\sum_{(X,Y)\\in\\mathcal{D}_{\\text{self-sup}}}-\\log\\Pr_\\theta\\big(Y\\mid[P;X]\\big)\\ \\text{(unified pre-training tasks built from unlabeled text)};\\ \\ \\text{then prompt tuning on the target task initialized at } P^\\star;\\ \\theta\\ \\text{frozen throughout}",
+   "trainable_params": "\\ell d",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Vanilla soft prompt whose initialization is obtained by pre-training the prompt alone on self-supervised tasks cast in the same formats as downstream tasks (sentence-pair, multiple-choice, single-sentence classification, or a unified multiple-choice format).",
+   "mergeable": "no",
+   "mergeable_reason": "At inference it is an ordinary soft prompt that lengthens the input.",
+   "identity_at_init": "No identity; the contribution is the initialization itself (a prompt pre-trained on the PLM's own pre-training-style objective).",
+   "key_idea": "Prompt tuning fails in few-shot regimes mainly because of poor initialization, so pre-train the soft prompt on large unlabeled corpora using task formats that mirror downstream classification.",
+   "results_note": "With T5-XXL and CPM-2 (~11B), tuning pre-trained prompts reaches or exceeds full-model fine-tuning in both full-data and few-shot settings, far above vanilla prompt tuning in few-shot.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Same parameterization; adds prompt pre-training as initialization."
+    },
+    {
+     "target": "spot",
+     "type": "competes-with",
+     "note": "Self-supervised prompt pre-training versus supervised source-task transfer."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2109.04332",
+    "https://arxiv.org/pdf/2109.04332"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "spot",
+   "name": "SPoT",
+   "full_name": "Soft Prompt Transfer",
+   "paper_title": "SPoT: Better Frozen Model Adaptation through Soft Prompt Transfer",
+   "authors": "Vu et al.",
+   "year": 2021,
+   "venue": "ACL 2022",
+   "arxiv": "2110.07904",
+   "url": "https://aclanthology.org/2022.acl-long.346/",
+   "code_url": "https://github.com/google-research/prompt-tuning/tree/main/prompt_tuning/spot",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "P_{s}=\\arg\\min_P\\mathcal{L}_{s}\\big([P;X]\\big),\\quad P_{t}^{(0)}\\leftarrow P_{s^\\star},\\quad P_t^\\star=\\arg\\min_P\\mathcal{L}_{t}\\big([P;X]\\big);\\ \\ s^\\star=\\arg\\max_s\\cos\\Big(\\tfrac1\\ell\\textstyle\\sum_i e^{s}_i,\\ \\tfrac1\\ell\\sum_j e^{t}_j\\Big)\\ \\text{(prompts as task embeddings)};\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\ell d",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Vanilla soft prompt initialized from a prompt trained on a source task (or multi-task mixture); early-checkpoint prompts double as task embeddings whose cosine similarity predicts transferability for source retrieval.",
+   "mergeable": "no",
+   "mergeable_reason": "At inference it is an ordinary soft prompt.",
+   "identity_at_init": "No identity; initialization from a source-task prompt is the method.",
+   "key_idea": "Soft prompts are transferable task representations: train them on source tasks, use them to initialize target prompts, and use prompt similarity as a cheap task-similarity metric to choose sources.",
+   "results_note": "Across all T5 sizes, SPoT matches or outperforms full model tuning on SuperGLUE while using up to 27,000x fewer task-specific parameters; a 26-task, 160-pair transfer study shows widespread positive transfer.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Same parameterization; adds source-to-target prompt initialization."
+    },
+    {
+     "target": "attempt",
+     "type": "competes-with",
+     "note": "ATTEMPT mixes many source prompts per instance instead of picking one for initialization."
+    },
+    {
+     "target": "multitask-prompt-tuning",
+     "type": "competes-with",
+     "note": "MPT distils many source prompts into one shared prompt."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2110.07904",
+    "https://arxiv.org/pdf/2110.07904"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "attempt",
+   "name": "ATTEMPT",
+   "full_name": "ATTEntional Mixtures of Prompt Tuning",
+   "paper_title": "ATTEMPT: Parameter-Efficient Multi-task Tuning via Attentional Mixtures of Soft Prompts",
+   "authors": "Asai et al.",
+   "year": 2022,
+   "venue": "EMNLP 2022",
+   "arxiv": "2205.11961",
+   "url": "https://aclanthology.org/2022.emnlp-main.446/",
+   "code_url": "https://github.com/AkariAsai/ATTEMPT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "P_{\\mathrm{inst}}(X)=P_{\\mathrm{tgt}}+\\sum_{j=1}^{t+1}a_j(X)\\,P_j,\\quad a_j=\\frac{\\exp(\\hat P_j^{\\top}H_{\\mathrm{out}}/T)}{\\sum_{k=1}^{t+1}\\exp(\\hat P_k^{\\top}H_{\\mathrm{out}}/T)},\\quad H_{\\mathrm{out}}=\\mathrm{LN}\\big(W_{up}^{\\top}\\,\\mathrm{SiLU}(W_{down}^{\\top}\\hat X)\\big),\\ P_{t+1}=P_{\\mathrm{tgt}};\\ \\ \\text{input }[P_{\\mathrm{inst}}(X);X];\\ \\text{train } P_{\\mathrm{tgt}},W_{down}\\in\\mathbb{R}^{d\\times r},W_{up}\\in\\mathbb{R}^{r\\times d};\\ \\text{source prompts } P_{1..t}\\ \\text{and LM frozen}",
+   "trainable_params": "d\\big(\\ell+2(r+1)/N\\big)\\ \\text{per task (attention module shared across } N \\text{ target tasks)}",
+   "locus": "input embedding sequence (instance-specific prompt)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Instance-wise softmax mixture (a point of the simplex) over a library of frozen source prompts plus the trainable target prompt, added to the target prompt; mixture weights come from a bottleneck network on the max-pooled input (\\hat X, \\hat P_j are max-pooled).",
+   "mergeable": "no",
+   "mergeable_reason": "The prompt depends on the input instance and lengthens the sequence; it can never be folded into W_0.",
+   "identity_at_init": "No identity; source prompts pre-trained by prompt tuning on large source tasks, target prompt newly initialized.",
+   "key_idea": "Treat pre-trained soft prompts as modular knowledge units and learn, per input, an attention-weighted interpolation of them with a new target prompt, sharing the router across tasks.",
+   "results_note": "On 21 datasets with T5-base, significantly outperforms prompt tuning and matches or beats full fine-tuning and other PEFT methods that use over 10x more parameters, while updating ~2,300x fewer parameters than fine-tuning.",
+   "relations": [
+    {
+     "target": "spot",
+     "type": "generalizes",
+     "note": "SPoT picks one source prompt for initialization; ATTEMPT mixes all sources per instance."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Source and target prompts are vanilla soft prompts."
+    },
+    {
+     "target": "multitask-prompt-tuning",
+     "type": "competes-with",
+     "note": "Alternative multitask prompt-transfer scheme."
+    },
+    {
+     "target": "l2p",
+     "type": "competes-with",
+     "note": "Both route inputs to prompts in a pool; L2P uses hard top-N key matching, ATTEMPT soft attention."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2205.11961",
+    "https://arxiv.org/pdf/2205.11961"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "multitask-prompt-tuning",
+   "name": "MPT",
+   "full_name": "Multitask Prompt Tuning",
+   "paper_title": "Multitask Prompt Tuning Enables Parameter-Efficient Transfer Learning",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2303.02861",
+   "url": "https://openreview.net/forum?id=Nk2pDtuhTq",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "MultitaskPromptTuningConfig",
+   "formula_latex": "\\hat P_k=P^{\\ast}\\circ\\big(u_k v_k^{\\top}\\big),\\quad P^{\\ast}\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{shared},\\ u_k\\in\\mathbb{R}^{\\ell},\\ v_k\\in\\mathbb{R}^{d};\\ \\ \\text{source stage: } \\min\\ \\mathcal{L}_{\\mathrm{PLM}}+\\lambda\\big(\\mathcal{L}_{\\mathrm{Logits}}+\\mathcal{L}_{\\mathrm{Hidden}}\\big)\\ \\text{(distil per-task teacher prompts)};\\ \\ \\text{target: train } P^{\\ast},u_t,v_t;\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\ell d+\\ell+d\\ \\ \\text{(collapses to } \\ell d \\text{ after training)}",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Hadamard product of a shared prompt matrix with a task-specific rank-one matrix (a multiplicative rank-1 modulation of a shared prompt), the shared factor learned by multitask knowledge distillation from per-task teacher prompts.",
+   "mergeable": "no",
+   "mergeable_reason": "After training P^\\ast\\circ(u v^\\top) collapses to one \\ell\\times d prompt, but it still lengthens the input.",
+   "identity_at_init": "No identity; the target prompt is initialized from the distilled shared prompt (HF options: AVERAGE_SOURCE_TASKS, EXACT_SOURCE_TASK, ONLY_SOURCE_SHARED, TEXT, RANDOM).",
+   "key_idea": "Decompose task prompts into shared 'slow' knowledge and a cheap task-specific rank-one multiplicative 'fast' factor, distil many source prompts into the shared part, then adapt only that to targets.",
+   "results_note": "On 23 NLP datasets, outperforms state-of-the-art PEFT methods, and full fine-tuning in some cases, while tuning only 0.035% as many task-specific parameters.",
+   "relations": [
+    {
+     "target": "spot",
+     "type": "builds-on",
+     "note": "Prompt transfer from source tasks, made multiplicative and multitask."
+    },
+    {
+     "target": "attempt",
+     "type": "competes-with",
+     "note": "Distils sources into one prompt instead of mixing them per instance."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Teacher prompts and inference format are vanilla prompt tuning."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.02861",
+    "https://arxiv.org/pdf/2303.02861",
+    "https://huggingface.co/docs/peft/main/en/conceptual_guides/prompting",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/multitask_prompt_tuning"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dept",
+   "name": "DePT",
+   "full_name": "Decomposed Prompt Tuning",
+   "paper_title": "DePT: Decomposed Prompt Tuning for Parameter-Efficient Fine-tuning",
+   "authors": "Shi & Lipani",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.05173",
+   "url": "https://arxiv.org/abs/2309.05173",
+   "code_url": "https://github.com/ZhengxiangShi/DePT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{input } \\big[P_s;\\ E_X+AB\\big],\\quad P_s\\in\\mathbb{R}^{\\ell'\\times d},\\ A\\in\\mathbb{R}^{s\\times r},\\ B\\in\\mathbb{R}^{r\\times d},\\ E_X\\in\\mathbb{R}^{s\\times d}\\ \\text{frozen word embeddings of the } s\\text{-token input};\\ \\ \\ell' d+(s+d)r=\\ell d;\\ \\ A\\sim\\mathcal{N},\\ B=0;\\ \\text{learning rates } \\alpha_1(P_s)\\gg\\alpha_2(A,B);\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\ell' d+(s+d)\\,r",
+   "locus": "input embedding sequence: a shorter soft prompt plus a position-wise offset to the input token embeddings",
+   "modification_kind": "hybrid",
+   "structure": "Short soft prompt (concatenation) plus a rank-r additive, position-indexed offset AB to the frozen s\\times d input-embedding matrix, i.e. a LoRA-style low-rank update applied to the input activation matrix rather than to a weight (the paper writes the product as BA; dimensionally it is the s\\times d matrix A B).",
+   "mergeable": "no",
+   "mergeable_reason": "The short prompt still lengthens the input; the positional offset AB could only be folded into absolute position embeddings, which T5-style relative-position models lack.",
+   "identity_at_init": "The low-rank offset is zero at init (B=0); the short prompt is not an identity.",
+   "key_idea": "Trade prompt length for a low-rank update of the input embeddings: same parameter budget, shorter sequences, so lower time/memory, trained with two learning rates.",
+   "results_note": "Across 23 NLP and vision-language tasks, outperforms vanilla prompt tuning and other PEFT methods (sometimes full fine-tuning) while saving over 20% training/inference time and memory relative to prompt tuning with T5-Base.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Splits the prompt budget between a shorter prompt and a low-rank embedding offset."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "Imports the BA low-rank, zero-initialized update, applied to the input embedding matrix."
+    },
+    {
+     "target": "multitask-prompt-tuning",
+     "type": "competes-with",
+     "note": "Both are low-rank prompt decompositions evaluated on the same 23-task suite."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.05173",
+    "https://arxiv.org/pdf/2309.05173"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "residual-prompt-tuning",
+   "name": "Residual Prompt Tuning",
+   "full_name": "Residual Prompt Tuning",
+   "paper_title": "Residual Prompt Tuning: Improving Prompt Tuning with Residual Reparameterization",
+   "authors": "Razdaibiedina et al.",
+   "year": 2023,
+   "venue": "Findings of ACL 2023",
+   "arxiv": "2305.03937",
+   "url": "https://aclanthology.org/2023.findings-acl.421/",
+   "code_url": "https://github.com/arazd/ResidualPrompts",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "P'_i=\\Phi(P_i)=\\mathrm{LN}\\big(W_{up}\\,\\mathrm{ReLU}(W_{down}P_i)\\big)+P_i,\\ \\ i=1,\\dots,\\ell;\\ \\ \\text{input }[P';X];\\ \\ \\text{train } P\\in\\mathbb{R}^{\\ell\\times d},\\ W_{down}\\in\\mathbb{R}^{m\\times d},\\ W_{up}\\in\\mathbb{R}^{d\\times m};\\ \\text{after training store only } P'=\\Phi(P);\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\ell d+2dm\\ \\text{(training)};\\ \\ \\ell d\\ \\text{(stored)}",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Soft prompt reparametrized through a shared bottleneck MLP with LayerNorm and a residual skip, applied token-wise; the reparametrization is discarded after training (an over-parameterization that only changes the optimization geometry).",
+   "mergeable": "no",
+   "mergeable_reason": "At inference only the projected prompt P' remains, which still lengthens the input.",
+   "identity_at_init": "No model-level identity; the residual skip lets each virtual token choose between its free embedding and the shared projection, improving robustness to learning rate and initialization.",
+   "key_idea": "Prompt tuning is unstable because prompt tokens are optimized independently; a shared residual MLP couples them and speeds and stabilizes training at no inference cost.",
+   "results_note": "Significantly outperforms prompt tuning on SuperGLUE with T5-Large, T5-Base and BERT-Base (e.g., +7 points with T5-Base), allows 10x shorter prompts without loss, and helps in few-shot settings.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Same inference-time object; different training parameterization."
+    },
+    {
+     "target": "p-tuning",
+     "type": "builds-on",
+     "note": "Prompt-encoder reparametrization, with an added skip connection."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Inherits the MLP-reparametrization trick used for prefixes."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2305.03937",
+    "https://arxiv.org/pdf/2305.03937",
+    "https://aclanthology.org/2023.findings-acl.421/"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "late-prompt-tuning",
+   "name": "LPT",
+   "full_name": "Late Prompt Tuning",
+   "paper_title": "Late Prompt Tuning: A Late Prompt Could Be Better Than Many Prompts",
+   "authors": "Liu et al.",
+   "year": 2022,
+   "venue": "Findings of EMNLP 2022",
+   "arxiv": "2210.11292",
+   "url": "https://aclanthology.org/2022.findings-emnlp.95/",
+   "code_url": "https://github.com/xyltt/LPT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h^{(l^\\ast)}\\leftarrow\\big[p(x);\\,h^{(l^\\ast)}\\big],\\quad p(x)=W_2\\,\\mathrm{ReLU}\\big(\\mathrm{Pool}_{n\\to\\ell}(W_1h^{(l^\\ast)}+b_1)\\big)+b_2\\ \\ (\\text{pooling generator}),\\ \\ \\text{or}\\ \\ p(x)=\\mathrm{Reshape}\\big(W_2\\,\\mathrm{ReLU}(W_1h_{[\\mathrm{CLS}]}+b_1)+b_2\\big)\\ (\\text{naive});\\ \\ W_1\\in\\mathbb{R}^{m\\times d};\\ \\text{single insertion layer } l^\\ast\\ (\\text{e.g. 13 of 24});\\ \\text{backbone frozen}",
+   "trainable_params": "\\approx 2dm+m+d\\ \\ \\text{(pooling generator)};\\ \\ \\approx dm+\\ell dm\\ \\ \\text{(naive generator)}",
+   "locus": "hidden-state sequence at a single intermediate layer",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Instance-dependent prompt generated by a bottleneck MLP (with optional pooling from input length n to prompt length ℓ) from the hidden states just below the insertion layer, inserted once at an intermediate layer.",
+   "mergeable": "no",
+   "mergeable_reason": "The prompt is input-dependent and adds tokens to the upper half of the network.",
+   "identity_at_init": "No identity.",
+   "key_idea": "There is a trade-off between how far the label signal must propagate back to the prompt and how much the prompt can influence outputs; a single 'late' prompt in a middle layer, generated from the instance's own hidden states, balances both and skips backprop through the lower layers.",
+   "results_note": "Competitive with full model tuning and other PEFT methods in full-data and few-shot settings (RoBERTa-large among backbones), with faster training and lower memory than prompt tuning.",
+   "relations": [
+    {
+     "target": "idpg",
+     "type": "builds-on",
+     "note": "Instance-dependent prompt generation, moved to an intermediate layer and fed by in-network hidden states."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "competes-with",
+     "note": "Same budget class; inserts later to shorten the gradient path."
+    },
+    {
+     "target": "p-tuning-v2",
+     "type": "competes-with",
+     "note": "One late prompt instead of prompts at every layer."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2210.11292",
+    "https://arxiv.org/pdf/2210.11292",
+    "https://aclanthology.org/2022.findings-emnlp.95/"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "idpg",
+   "name": "IDPG",
+   "full_name": "Instance-Dependent Prompt Generation",
+   "paper_title": "IDPG: An Instance-Dependent Prompt Generation Method",
+   "authors": "Wu et al.",
+   "year": 2022,
+   "venue": "NAACL 2022",
+   "arxiv": "2204.04497",
+   "url": "https://aclanthology.org/2022.naacl-main.403/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_p(T,x)=G\\big(M(x),T\\big)=W_2\\,\\sigma\\big(W_1M(x)+b_1\\big)+b_2\\in\\mathbb{R}^{\\ell\\times d},\\quad \\hat y=\\mathrm{softmax}(W h_{[\\mathrm{CLS}]}),\\ h_{[\\mathrm{CLS}]}=M\\big(\\mathrm{concat}[x,W_p(T,x)]\\big);\\ \\ W_{1,2}\\ \\text{PHM-factorised as } \\textstyle\\sum_{i=1}^{n}A_i\\otimes B_i;\\ M\\ \\text{frozen}",
+   "trainable_params": "m(d+1)+\\ell d(m+1)\\ \\text{(dense generator)};\\ \\ \\text{reduced by }\\approx n\\times\\text{ with PHM layers (e.g. 1.5M}\\to\\text{105K)}",
+   "locus": "input embedding sequence (optionally multiple layers, M-IDPG)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Two-layer bottleneck hypernetwork mapping a frozen sentence embedding M(x) to an ℓ-token prompt; its second-layer bias is exactly a task-level soft prompt, so the generated prompt = task prompt + instance-dependent part; weights parameterized as sums of Kronecker products (PHM).",
+   "mergeable": "no",
+   "mergeable_reason": "The prompt is input-dependent and requires an extra forward pass to compute M(x).",
+   "identity_at_init": "No identity.",
+   "key_idea": "Condition the soft prompt on each input sentence through a lightweight generator, recovering vanilla prompt tuning as the bias term.",
+   "results_note": "On ten NLU tasks with RoBERTa-large, consistently outperforms prompt-tuning baselines and is on par with Compacter while tuning far fewer parameters.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "generalizes",
+     "note": "The generator's second-layer bias is a task-specific prompt; zero first layer recovers prompt tuning."
+    },
+    {
+     "target": "compacter",
+     "type": "builds-on",
+     "note": "Uses PHM (Kronecker-sum) layers from Compacter to compress the generator."
+    },
+    {
+     "target": "late-prompt-tuning",
+     "type": "competes-with",
+     "note": "Both generate instance-dependent prompts."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2204.04497",
+    "https://arxiv.org/pdf/2204.04497"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "xprompt",
+   "name": "XPrompt",
+   "full_name": "XPrompt (extremely small prompts via hierarchical structured pruning)",
+   "paper_title": "XPrompt: Exploring the Extreme of Prompt Tuning",
+   "authors": "Ma et al.",
+   "year": 2022,
+   "venue": "EMNLP 2022",
+   "arxiv": "2210.04457",
+   "url": "https://aclanthology.org/2022.emnlp-main.758/",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat P=\\gamma\\cdot P,\\ \\gamma\\in\\{0,1\\}^{\\ell}\\ \\text{(token mask)};\\quad \\hat q=\\zeta\\cdot q,\\ \\zeta\\in\\{0,1\\}^{k}\\ \\text{(piece mask; each } p_i \\text{ split into } k \\text{ pieces)};\\quad I_{p_i}=\\mathbb{E}_{x}\\Big|\\tfrac{\\partial\\mathcal{L}(x)}{\\partial\\gamma_i}\\Big|,\\ I_{q_i}=\\mathbb{E}_{x}\\Big|\\tfrac{\\partial\\mathcal{L}(x)}{\\partial\\zeta_i}\\Big|;\\ \\text{prune low-importance units, rewind survivors to post-PT values, retrain};\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\rho\\,\\ell d,\\ \\ \\rho<1\\ \\text{(fraction of tokens/pieces kept)}",
+   "locus": "input embedding sequence",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Structured sparse mask on a soft prompt at two granularities (whole tokens, then equal-size pieces of each token embedding), found by gradient-sensitivity importance scores and lottery-ticket weight rewinding.",
+   "mergeable": "no",
+   "mergeable_reason": "The pruned prompt is still a prompt that lengthens the input.",
+   "identity_at_init": "No identity; starts from a fully trained vanilla prompt (stage 1), then prunes and rewinds.",
+   "key_idea": "Some trained prompt tokens hurt the task; finding a 'winning ticket' sub-prompt by hierarchical structured pruning gives a smaller and better prompt.",
+   "results_note": "On SuperGLUE with T5, largely closes the gap between prompt tuning and fine-tuning at moderate model scales (below 11B) while using fewer prompt parameters.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Prunes and retrains a vanilla soft prompt."
+    },
+    {
+     "target": "residual-prompt-tuning",
+     "type": "competes-with",
+     "note": "Alternative fix for weak prompt tuning at small scale."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2210.04457",
+    "https://arxiv.org/pdf/2210.04457"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "black-box-tuning",
+   "name": "BBT",
+   "full_name": "Black-Box Tuning",
+   "paper_title": "Black-Box Tuning for Language-Model-as-a-Service",
+   "authors": "Sun et al.",
+   "year": 2022,
+   "venue": "ICML 2022",
+   "arxiv": "2201.03514",
+   "url": "https://proceedings.mlr.press/v162/sun22e.html",
+   "code_url": "https://github.com/txsun1997/Black-Box-Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "p=Az+p_0,\\quad z^\\star=\\arg\\min_{z\\in\\mathbb{R}^{k}}\\ \\mathcal{L}\\big(f(Az+p_0;\\tilde X),\\tilde Y\\big),\\quad A\\in\\mathbb{R}^{\\ell d\\times k}\\ \\text{fixed random},\\ p_0\\in\\mathbb{R}^{\\ell d}\\ \\text{(random vocab embeddings or an MNLI-pretrained prompt)};\\ z\\ \\text{searched by CMA-ES with forward (API) queries only; model frozen, no gradients}",
+   "trainable_params": "k\\ \\ (\\text{e.g. } k=500)",
+   "locus": "input embedding sequence",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Soft prompt restricted to a random k-dimensional affine subspace p_0+\\mathrm{col}(A) (intrinsic-dimension reparametrization), optimized by derivative-free CMA-ES.",
+   "mergeable": "no",
+   "mergeable_reason": "The result is a soft prompt that lengthens the input.",
+   "identity_at_init": "No identity; z=0 gives the initial prompt p_0.",
+   "key_idea": "Because large PLMs have low intrinsic dimension, a soft prompt can be optimized in a small random subspace by gradient-free evolution strategies, using only inference API access (Language-Model-as-a-Service).",
+   "results_note": "With RoBERTa-large on few-shot classification, black-box tuning significantly outperforms manual prompts and GPT-3 in-context learning and surpasses gradient-based prompt tuning and full model tuning.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Same object (soft prompt), optimized gradient-free in a random subspace."
+    },
+    {
+     "target": "mezo",
+     "type": "competes-with",
+     "note": "Both are zeroth-order adaptation of frozen LMs; MeZO perturbs weights, BBT a low-dimensional prompt."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2201.03514",
+    "https://arxiv.org/pdf/2201.03514"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cpt",
+   "name": "CPT",
+   "full_name": "Context-aware Prompt Tuning",
+   "paper_title": "Context-aware Prompt Tuning: Advancing In-Context Learning with Adversarial Methods",
+   "authors": "Blau et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2410.17222",
+   "url": "https://arxiv.org/abs/2410.17222",
+   "code_url": "https://github.com/tsachiblau/Context-aware-Prompt-Tuning-Advancing-In-Context-Learning-with-Adversarial-Methods",
+   "hf_peft": true,
+   "hf_peft_config": "CPTConfig",
+   "formula_latex": "X_{\\mathrm{Train}_i}=\\big[X_{\\mathrm{Context}};\\,X_{\\mathrm{Emb}_i}\\big],\\ X_{\\mathrm{Context}}=[X_{\\mathrm{Emb}_1};\\dots;X_{\\mathrm{Emb}_N}]+\\delta;\\quad \\min_{\\delta}\\ \\sum_{k=1}^{N}\\gamma^{\\,N+1-k}\\,\\mathrm{CE}\\big(\\hat t^{(k)}_{O},t^{(k)}_{O}\\big)+\\mathrm{CE}\\big(\\hat t^{(N+1)}_{O},t^{(N+1)}_{O}\\big)\\ \\ \\text{s.t. } \\|\\delta_j\\|_2\\le\\epsilon\\ \\text{per token (projected GD)};\\ \\text{label tokens of the context not updated; LM frozen}",
+   "trainable_params": "\\ell d,\\ \\ \\ell=\\text{number of non-label context tokens}",
+   "locus": "input embedding sequence (the embedded in-context demonstrations)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "In-context demonstrations used as a soft prompt: the input/format token embeddings of the N few-shot examples are optimized inside per-token \\ell_2 balls of radius \\epsilon around their original embeddings (adversarial-style PGD, but minimizing loss), with all context labels in the loss and exponentially decayed weights toward the start of the context.",
+   "mergeable": "no",
+   "mergeable_reason": "The optimized context occupies the input window exactly like in-context examples.",
+   "identity_at_init": "Initialized at the exact embeddings of the user's demonstrations (\\delta=0), i.e. plain in-context learning; \\epsilon\\to0 recovers ICL.",
+   "key_idea": "Combine in-context learning with prompt tuning: refine the embeddings of the demonstrations themselves, but keep them close to the user's examples (projection) and supervise every in-context label, to avoid few-shot overfitting.",
+   "results_note": "In few-shot classification (SST-2, AG News, DBpedia, TREC and a new Set Classification task) with models such as GPT-J 6B, Llama-3 8B and BLOOM-1.7B, reports higher accuracy than ICL, prompt tuning, instruction prompt tuning and LoRA baselines.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Soft prompt initialized from real demonstrations and constrained to a neighbourhood of them."
+    },
+    {
+     "target": "warp",
+     "type": "builds-on",
+     "note": "Adversarial-reprogramming view of embedding optimization (here PGD with norm projection)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.17222",
+    "https://arxiv.org/pdf/2410.17222",
+    "https://huggingface.co/docs/peft/main/en/conceptual_guides/prompting",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/cpt",
+    "https://openreview.net/forum?id=J6Xgra2bE5"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "llama-adapter",
+   "name": "LLaMA-Adapter",
+   "full_name": "LLaMA-Adapter (adaption prompts with zero-init attention)",
+   "paper_title": "LLaMA-Adapter: Efficient Fine-tuning of Language Models with Zero-init Attention",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2303.16199",
+   "url": "https://arxiv.org/abs/2303.16199",
+   "code_url": "https://github.com/OpenGVLab/LLaMA-Adapter",
+   "hf_peft": true,
+   "hf_peft_config": "AdaptionPromptConfig",
+   "formula_latex": "S_l=\\frac{Q_lK_l^{\\top}}{\\sqrt{d}},\\ K_l=[P_l;T_l;t_l]W_k,\\ V_l=[P_l;T_l;t_l]W_v,\\quad S^{g}_l=\\big[\\mathrm{softmax}(S^{K}_l)\\cdot\\tanh(g_l);\\ \\mathrm{softmax}(S^{M+1}_l)\\big],\\quad t^{o}_l=W_o\\big(S^{g}_lV_l\\big);\\ \\ P_l\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{for the top } L' \\text{ layers and per-head gates } g_l\\ \\text{trained, } g_l=0\\ \\text{at init};\\ W\\ \\text{frozen}",
+   "trainable_params": "L'\\ell d+L'H\\ \\ (\\ell=10,\\ L'=30\\ \\Rightarrow\\ \\approx1.2\\text{M for LLaMA-7B})",
+   "locus": "keys/values of the topmost L' attention layers (adaption prompts) with a gated separate softmax",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Layer-wise learned prompts entering only through the frozen key/value projections, attended with their own softmax and scaled by a zero-initialized tanh gate; because the content softmax is kept separate, the result is the original attention plus an additive gated prefix branch \\tanh(g_l)\\,\\mathrm{softmax}(S^{K}_l)P_lW_v.",
+   "mergeable": "no",
+   "mergeable_reason": "The adaption prompts add attention slots in the top layers at inference.",
+   "identity_at_init": "Exact: g_l=0 gives \\tanh(g_l)=0, so the prompt branch contributes nothing and the separately normalized content attention is untouched.",
+   "key_idea": "Prefix-like prompts in the upper layers, gated by a learnable factor that starts at zero, inject instruction-following ability progressively without disturbing the pretrained model at the start of training.",
+   "results_note": "Fine-tunes frozen LLaMA-7B with 1.2M parameters in under one hour on 8 A100s (52K self-instruct data) to responses comparable with fully fine-tuned Alpaca-7B, and extends to image-conditioned reasoning (ScienceQA).",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Prefix in upper layers, but tied through frozen W_k, W_v and zero-gated."
+    },
+    {
+     "target": "vpt",
+     "type": "competes-with",
+     "note": "Both route prompts through the frozen key/value projections; LLaMA-Adapter adds a separate softmax and zero gate."
+    },
+    {
+     "target": "parallel-adapter",
+     "type": "dual-to",
+     "note": "With the separate softmax the prompt term is an ungated-content, zero-gated parallel attention branch, cf. He et al. (2022)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2303.16199",
+    "https://arxiv.org/pdf/2303.16199",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/adaption_prompt",
+    "https://github.com/huggingface/peft/blob/main/docs/source/package_reference/llama_adapter.md"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "vpt",
+   "name": "VPT",
+   "full_name": "Visual Prompt Tuning",
+   "paper_title": "Visual Prompt Tuning",
+   "authors": "Jia et al.",
+   "year": 2022,
+   "venue": "ECCV 2022",
+   "arxiv": "2203.12119",
+   "url": "https://arxiv.org/abs/2203.12119",
+   "code_url": "https://github.com/KMnP/vpt",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{Shallow: } [x_1,Z_1,E_1]=L_1([x_0,P,E_0]),\\ [x_i,Z_i,E_i]=L_i([x_{i-1},Z_{i-1},E_{i-1}]);\\quad \\text{Deep: } [x_i,\\_\\,,E_i]=L_i([x_{i-1},P_{i-1},E_{i-1}]),\\ i=1,\\dots,L;\\quad y=\\mathrm{Head}(x_L);\\ \\ P,P_i\\in\\mathbb{R}^{\\ell\\times d}\\ \\text{and Head trained; ViT frozen}",
+   "trainable_params": "\\ell d\\ \\text{(shallow)};\\ \\ L\\ell d\\ \\text{(deep)};\\ \\ +\\ \\text{head}",
+   "locus": "token sequence after the patch embedding (shallow) / input of every Transformer layer (deep)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Learned tokens inserted into the residual stream of a ViT. In VPT-Deep the prompt outputs are discarded after each layer, so their only effect on image tokens is as extra keys/values \\mathrm{LN}(P_{i-1})W_k,\\ \\mathrm{LN}(P_{i-1})W_v: a prefix tied through the frozen projections (derived from the equations here).",
+   "mergeable": "no",
+   "mergeable_reason": "Prompts add tokens at every layer (deep) or at the input (shallow).",
+   "identity_at_init": "No identity; prompts initialized with Xavier-uniform (class-prototype initialization was not better).",
+   "key_idea": "Transfer NLP prompt tuning to vision Transformers: a handful of learnable tokens per layer plus a head adapts a frozen ViT, often better than full fine-tuning.",
+   "results_note": "With ViT-B/16 (ImageNet-21k), VPT-Deep outperforms full fine-tuning on 20 of 24 tasks (FGVC + VTAB-1k) and all other PEFT protocols, while storing ~0.04%/0.5% extra parameters per task (shallow/deep).",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "VPT-Shallow is input-level prompt tuning transplanted to vision Transformers."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "special-case-of",
+     "note": "VPT-Deep equals a deep prefix whose keys/values are constrained to the image of the frozen LN+W_k, W_v projections."
+    },
+    {
+     "target": "p-tuning-v2",
+     "type": "competes-with",
+     "note": "Deep prompts at every layer, vision counterpart."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2203.12119",
+    "https://arxiv.org/pdf/2203.12119"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "visual-prompting",
+   "name": "Visual Prompting",
+   "full_name": "Pixel-space Visual Prompting",
+   "paper_title": "Exploring Visual Prompts for Adapting Large-Scale Models",
+   "authors": "Bahng et al.",
+   "year": 2022,
+   "venue": "arXiv",
+   "arxiv": "2203.17274",
+   "url": "https://arxiv.org/abs/2203.17274",
+   "code_url": "https://github.com/hjbahng/visual_prompting",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\max_{\\phi}\\ \\log P_{\\theta;\\phi}\\big(y\\mid x+v_\\phi\\big),\\quad v_\\phi\\ \\text{a single pixel-space perturbation shared by all images (padding frame of width } p\\text{, or a patch)};\\ \\ \\theta\\ \\text{frozen; labels via CLIP text prompts}",
+   "trainable_params": "2Cp(H+W-2p)\\ \\text{(padding)};\\ \\ Cp^{2}\\ \\text{(patch)}",
+   "locus": "input pixels",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "An additive translation of input space, x\\mapsto x+v_\\phi, supported on a border frame (or a patch).",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a ViT the patch embedding E is linear, so E(x+v)=Ex+Ev and the per-patch constant Ev folds exactly into the positional embeddings (derived here, not claimed in the paper); for CNN backbones it would need a per-position bias map after the first convolution, which is not a standard parameter.",
+   "identity_at_init": "Exact if v_\\phi=0; the paper's initialization is not emphasized (not verified).",
+   "key_idea": "Adapt a frozen vision model by learning a single input perturbation (adversarial reprogramming as prompting), with the output mapped to labels through text prompts for CLIP.",
+   "results_note": "Particularly effective for CLIP, where a padding prompt (p=30 best) is competitive with linear probing and robust to distribution shift.",
+   "relations": [
+    {
+     "target": "warp",
+     "type": "builds-on",
+     "note": "Adversarial reprogramming lineage, in pixel space."
+    },
+    {
+     "target": "vpt",
+     "type": "dual-to",
+     "note": "Pixel-space prompts vs. token-space prompts."
+    },
+    {
+     "target": "coop",
+     "type": "competes-with",
+     "note": "Image-side vs text-side prompting of CLIP."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2203.17274",
+    "https://arxiv.org/pdf/2203.17274"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "coop",
+   "name": "CoOp",
+   "full_name": "Context Optimization",
+   "paper_title": "Learning to Prompt for Vision-Language Models",
+   "authors": "Zhou et al.",
+   "year": 2021,
+   "venue": "IJCV 2022",
+   "arxiv": "2109.01134",
+   "url": "https://link.springer.com/article/10.1007/s11263-022-01653-1",
+   "code_url": "https://github.com/KaiyangZhou/CoOp",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "t_i=[V]_1[V]_2\\cdots[V]_{\\ell}[\\mathrm{CLASS}_i],\\qquad p(y=i\\mid x)=\\frac{\\exp\\big(\\cos(g(t_i),f(x))/\\tau\\big)}{\\sum_{j=1}^{K}\\exp\\big(\\cos(g(t_j),f(x))/\\tau\\big)};\\ \\ [V]_m\\in\\mathbb{R}^{d}\\ \\text{trained (unified or class-specific)};\\ \\text{CLIP encoders } f,g\\ \\text{frozen}",
+   "trainable_params": "\\ell d\\ \\text{(unified context)};\\ \\ K\\ell d\\ \\text{(class-specific context)}",
+   "locus": "input embedding sequence of the CLIP text encoder",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Soft prompt (shared or per-class context vectors) prepended to each class-name token sequence; the classifier weights are the frozen text encoder's images g(t_i) of the prompted class names.",
+   "mergeable": "yes",
+   "mergeable_reason": "After training the K class embeddings g(t_i) are fixed and can be precomputed, so inference is a zero-shot-CLIP classifier with cached weights at identical cost.",
+   "identity_at_init": "Can be initialized from the embedding of a hand-crafted context such as 'a photo of a' (starting at the zero-shot classifier) or randomly.",
+   "key_idea": "Replace hand-engineered CLIP prompts by learnable context vectors optimized end-to-end through the frozen text encoder.",
+   "results_note": "On 11 image-recognition datasets, one or two shots suffice to beat hand-crafted prompts, and with 16 shots the average gain is around 15%.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Prompt tuning applied to the text tower of a contrastive vision-language model."
+    },
+    {
+     "target": "cocoop",
+     "type": "special-case-of",
+     "note": "CoCoOp with the meta-net output fixed to zero."
+    },
+    {
+     "target": "maple",
+     "type": "special-case-of",
+     "note": "MaPLe with prompt depth J=1 and no vision prompts degenerates to CoOp."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2109.01134",
+    "https://arxiv.org/pdf/2109.01134",
+    "https://api.crossref.org/works/10.1007/s11263-022-01653-1"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cocoop",
+   "name": "CoCoOp",
+   "full_name": "Conditional Context Optimization",
+   "paper_title": "Conditional Prompt Learning for Vision-Language Models",
+   "authors": "Zhou et al.",
+   "year": 2022,
+   "venue": "CVPR 2022",
+   "arxiv": "2203.05557",
+   "url": "https://arxiv.org/abs/2203.05557",
+   "code_url": "https://github.com/KaiyangZhou/CoOp",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "v_m(x)=v_m+h_\\theta\\big(f(x)\\big),\\ \\ t_i(x)=\\{v_1(x),\\dots,v_\\ell(x),c_i\\},\\qquad p(y\\mid x)=\\frac{\\exp\\big(\\mathrm{sim}(f(x),g(t_y(x)))/\\tau\\big)}{\\sum_{i=1}^{K}\\exp\\big(\\mathrm{sim}(f(x),g(t_i(x)))/\\tau\\big)};\\ \\ h_\\theta=\\text{Linear-ReLU-Linear (16}\\times\\text{ bottleneck)};\\ \\text{train } v_{1..\\ell},\\theta;\\ \\text{CLIP frozen}",
+   "trainable_params": "\\ell d+\\tfrac{d_v}{16}\\,(d_v+d)\\ \\ (\\text{plus biases; } d_v=\\text{image-feature width})",
+   "locus": "input embedding sequence of the CLIP text encoder, conditioned on the image feature",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Context vectors shifted by one image-conditioned token π=h_θ(f(x)) produced by a lightweight meta-network (an input-dependent translation of the shared prompt).",
+   "mergeable": "no",
+   "mergeable_reason": "Class embeddings depend on the image, so the text encoder must be re-run for all K classes per image (much higher inference cost than CoOp).",
+   "identity_at_init": "No identity; reduces to CoOp when h_θ outputs zero.",
+   "key_idea": "Static learned prompts overfit to base classes; making the prompt conditional on each image improves generalization to unseen classes and domains.",
+   "results_note": "Generalizes much better than CoOp to unseen classes within a dataset, and improves cross-dataset transfer and domain generalization across 11 datasets.",
+   "relations": [
+    {
+     "target": "coop",
+     "type": "generalizes",
+     "note": "Adds an instance-conditional shift to CoOp's context vectors."
+    },
+    {
+     "target": "idpg",
+     "type": "competes-with",
+     "note": "Both generate instance-dependent prompts from a frozen encoder's feature."
+    },
+    {
+     "target": "maple",
+     "type": "competes-with",
+     "note": "MaPLe reports gains over CoCoOp on base-to-novel generalization."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2203.05557",
+    "https://arxiv.org/pdf/2203.05557"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "maple",
+   "name": "MaPLe",
+   "full_name": "Multi-modal Prompt Learning",
+   "paper_title": "MaPLe: Multi-modal Prompt Learning",
+   "authors": "Khattak et al.",
+   "year": 2022,
+   "venue": "CVPR 2023",
+   "arxiv": "2210.03117",
+   "url": "https://arxiv.org/abs/2210.03117",
+   "code_url": "https://github.com/muzairkhattak/multimodal-prompt-learning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "[\\_\\,,W_i]=L_i([P_{i-1},W_{i-1}]),\\quad [c_i,E_i,\\_\\,]=V_i\\big([c_{i-1},E_{i-1},F_{i-1}(P_{i-1})]\\big),\\ \\ i=1,\\dots,J;\\quad \\tilde P_k=F_k(P_k),\\ F_k:\\mathbb{R}^{d_l}\\to\\mathbb{R}^{d_v}\\ \\text{linear};\\ \\ \\text{train } \\{P_i\\},\\{F_i\\};\\ \\text{CLIP frozen}",
+   "trainable_params": "J\\ell d_l+J\\,(d_ld_v+d_v)",
+   "locus": "token sequences of both the text and image encoders up to depth J (deep prompts)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Deep prompts in the language branch, with vision-branch prompts obtained as linear images F_k(P_k) of the language prompts (one shared parameter pushed forward into both modalities, coupling their gradients).",
+   "mergeable": "no",
+   "mergeable_reason": "Vision-branch prompts add tokens to every image forward pass (the text side alone could be cached).",
+   "identity_at_init": "No identity.",
+   "key_idea": "Prompt both towers of CLIP and couple vision prompts to language prompts so the two representation spaces adapt jointly instead of independently.",
+   "results_note": "Over CoCoOp, gains of +3.45% on novel classes and +2.72% harmonic mean averaged over 11 datasets in base-to-novel generalization, also improving cross-dataset and domain-shift results.",
+   "relations": [
+    {
+     "target": "coop",
+     "type": "generalizes",
+     "note": "J=1 language-only prompting degenerates to CoOp."
+    },
+    {
+     "target": "vpt",
+     "type": "combines",
+     "note": "Deep vision prompts (VPT-style) coupled to deep language prompts."
+    },
+    {
+     "target": "cocoop",
+     "type": "competes-with",
+     "note": "Main baseline."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2210.03117",
+    "https://arxiv.org/pdf/2210.03117"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "l2p",
+   "name": "L2P",
+   "full_name": "Learning to Prompt (prompt pool for continual learning)",
+   "paper_title": "Learning to Prompt for Continual Learning",
+   "authors": "Wang et al.",
+   "year": 2021,
+   "venue": "CVPR 2022",
+   "arxiv": "2112.08654",
+   "url": "https://arxiv.org/abs/2112.08654",
+   "code_url": "https://github.com/google-research/l2p",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "K_x=\\arg\\min_{\\{s_i\\}_{i=1}^{N}\\subseteq[1,M]}\\ \\sum_{i=1}^{N}\\gamma\\big(q(x),k_{s_i}\\big),\\ \\ q(x)=f(x)[0]\\ \\text{(frozen ViT [CLS])};\\ \\ x_p=[P_{s_1};\\dots;P_{s_N};x_e];\\ \\ \\min_{P,K,\\phi}\\ \\mathcal{L}\\Big(g_\\phi\\big(\\mathrm{AvgPool}(f_r(x_p)[0{:}N\\ell])\\big),y\\Big)+\\lambda\\sum_{s_i\\in K_x}\\gamma\\big(q(x),k_{s_i}\\big)",
+   "trainable_params": "M(\\ell d+d_k)+\\text{head}",
+   "locus": "input token sequence of a frozen ViT (prompts selected from a pool)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Key-value prompt memory \\{(k_j,P_j)\\}_{j=1}^M: input-conditioned hard top-N retrieval by cosine matching between a frozen-model query and learnable keys; the selected prompts are concatenated.",
+   "mergeable": "no",
+   "mergeable_reason": "Prompts are selected per input and lengthen the token sequence; the query also costs an extra frozen forward pass.",
+   "identity_at_init": "No identity.",
+   "key_idea": "For rehearsal-free continual learning, keep the backbone frozen and store knowledge in a pool of prompts that are retrieved per instance, so tasks share or separate prompts automatically without task identity at test time.",
+   "results_note": "Consistently outperforms prior state of the art in class-incremental, domain-incremental and task-agnostic continual learning (e.g., Split CIFAR-100, 5-datasets) and is competitive with rehearsal-based methods without any buffer.",
+   "relations": [
+    {
+     "target": "prompt-tuning",
+     "type": "builds-on",
+     "note": "Each pool element is a soft prompt."
+    },
+    {
+     "target": "attempt",
+     "type": "competes-with",
+     "note": "Hard key-matching selection vs. soft attention mixing of prompts."
+    },
+    {
+     "target": "dualprompt",
+     "type": "competes-with",
+     "note": "DualPrompt (same group) refines L2P with a shared G-prompt and task-specific prefix E-prompts at chosen layers."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2112.08654",
+    "https://arxiv.org/pdf/2112.08654"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dualprompt",
+   "name": "DualPrompt",
+   "full_name": "DualPrompt (complementary general and expert prompts)",
+   "paper_title": "DualPrompt: Complementary Prompting for Rehearsal-free Continual Learning",
+   "authors": "Wang et al.",
+   "year": 2022,
+   "venue": "ECCV 2022",
+   "arxiv": "2204.04799",
+   "url": "https://arxiv.org/abs/2204.04799",
+   "code_url": "https://github.com/google-research/l2p",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_g^{(i)}=f_{\\mathrm{prompt}}\\big(g,h^{(i)}\\big),\\ \\ h_e^{(j)}=f_{\\mathrm{prompt}}\\big(e_t,h^{(j)}\\big),\\ \\ f^{\\mathrm{Pre\\text{-}T}}_{\\mathrm{prompt}}(p,h)=\\mathrm{MSA}\\big(h_Q,[p_k;h_K],[p_v;h_V]\\big);\\ \\ t^\\star=\\arg\\min_t\\gamma\\big(q(x),k_t\\big);\\ \\ \\min_{g,e_t,k_t,\\phi}\\ \\mathcal{L}\\big(f_\\phi(f_{g,e_t}(x)),y\\big)+\\lambda\\,\\gamma\\big(q(x),k_t\\big)",
+   "trainable_params": "n_g\\ell_g d+T\\,(n_e\\ell_e d+d)+\\text{head}\\ \\ (n_g,n_e=\\text{number of layers carrying G/E prompts})",
+   "locus": "keys/values (prefix form) of a few shallow (G-prompt) and middle (E-prompt) ViT layers",
+   "modification_kind": "composition-or-routing",
+   "structure": "A task-invariant prefix g shared by all tasks at shallow layers plus a pool of task-specific prefixes e_t at deeper layers, the latter retrieved by key matching against a frozen-model query.",
+   "mergeable": "no",
+   "mergeable_reason": "Extra prefix key/value slots and input-dependent selection at inference.",
+   "identity_at_init": "No identity.",
+   "key_idea": "Split continual-learning knowledge into a general prompt and expert prompts attached at different depths, using prefix-style (key/value) attachment, which works better than prompt-token insertion for this purpose.",
+   "results_note": "Sets state of the art for rehearsal-free class-incremental learning and even outperforms methods with sizable rehearsal buffers; introduces the Split ImageNet-R benchmark.",
+   "relations": [
+    {
+     "target": "l2p",
+     "type": "builds-on",
+     "note": "Adds a complementary shared G-prompt, prefix-style attachment and decoupled attachment depths to the L2P prompt-pool idea."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "builds-on",
+     "note": "Uses prefix-tuning (Pre-T) as the attachment function and compares it with prompt-token insertion (Pro-T)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2204.04799",
+    "https://arxiv.org/pdf/2204.04799"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cartridges",
+   "name": "Cartridges",
+   "full_name": "Cartridges (trained KV caches via Self-Study)",
+   "paper_title": "Cartridges: Lightweight and general-purpose long context representations via self-study",
+   "authors": "Eyuboglu et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2506.06266",
+   "url": "https://arxiv.org/abs/2506.06266",
+   "code_url": "https://github.com/HazyResearch/cartridges",
+   "hf_peft": true,
+   "hf_peft_config": "CartridgeConfig",
+   "formula_latex": "\\text{KV}^{(l)}=\\big[(z_k^{(l)}[1],z_v^{(l)}[1]),\\dots,(z_k^{(l)}[\\ell],z_v^{(l)}[\\ell]);\\ (k^{(l)}[q],v^{(l)}[q])\\big],\\ \\ Z\\in\\mathbb{R}^{L\\times\\ell\\times d\\times 2}\\ \\text{trained directly (no reparametrization)};\\quad \\min_{Z}\\ \\mathbb{E}\\ \\mathrm{KL}\\Big(F(\\cdot\\mid\\tilde c\\oplus q)\\ \\big\\|\\ F_Z(\\cdot\\mid q)\\Big)\\ \\text{on synthetic Self-Study conversations about corpus } \\mathcal{C};\\ \\text{LLM frozen}",
+   "trainable_params": "2L\\ell d\\ \\ (d=\\text{per-layer key/value width})",
+   "locus": "keys/values at every layer (a trained KV cache)",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "A learned initial KV-cache state: prefix-tuning without the MLP reparametrization, initialized from the true prefill KV of the first \\ell corpus tokens and trained by context distillation against the model with the (sub)corpus in context.",
+   "mergeable": "no",
+   "mergeable_reason": "It is served as an \\ell-token cached prefix (no custom kernels needed) but cannot be folded into the weights.",
+   "identity_at_init": "No exact identity; initialized to the KV cache of the first \\ell tokens of the corpus (a truncated-context model), with the first token frozen as an attention sink for stability (HF num_frozen_tokens=1).",
+   "key_idea": "Instead of placing a long corpus in context, train a small KV cache offline per corpus with a self-generated, context-distillation objective; amortize the cost over all queries.",
+   "results_note": "On long-context benchmarks, matches ICL quality while using 38.6x less memory and enabling 26.4x higher throughput, extends effective context (128k to 484k tokens on MTOB), and independently trained cartridges compose at inference.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "special-case-of",
+     "note": "Self-described simplified prefix-tuning (direct KV parameterization); new objective and initialization."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "The paper finds KV-cache parameterization beats a LoRA parameterization for this use."
+    },
+    {
+     "target": "initial-state-tuning",
+     "type": "dual-to",
+     "note": "Transformer counterpart of learning the recurrence's initial state."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.06266",
+    "https://arxiv.org/pdf/2506.06266",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners/cartridge",
+    "https://github.com/huggingface/peft/blob/main/docs/source/package_reference/cartridges.md",
+    "https://iclr.cc/virtual/2026/poster/10011902"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "initial-state-tuning",
+   "name": "Initial State Tuning",
+   "full_name": "Initial State Tuning (for state space models)",
+   "paper_title": "Parameter-Efficient Fine-Tuning of State Space Models",
+   "authors": "Galim et al.",
+   "year": 2024,
+   "venue": "ICML 2025",
+   "arxiv": "2410.09016",
+   "url": "https://arxiv.org/abs/2410.09016",
+   "code_url": "https://github.com/furiosa-ai/ssm-peft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_t=\\bar A_t h_{t-1}+\\bar B_t x_t,\\ \\ y_t=C_th_t\\ \\ \\text{run from } h_0=h'\\ \\text{instead of } 0\\ \\Longleftrightarrow\\ \\hat y_t=y_t+C_t\\Big(\\prod_{i=1}^{t}\\bar A_i\\Big)h',\\quad h'\\in\\mathbb{R}^{H}\\ \\text{per channel trained; all SSM weights frozen}",
+   "trainable_params": "DH\\ \\text{per SSM layer}",
+   "locus": "initial hidden state of each SSM (e.g. Mamba S6) layer",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "Learned initial state of a linear recurrence. On S4, any prefix of virtual tokens acts only through h_{\\mathrm{prefix}}=\\sum_{i=0}^{\\ell-1}\\bar A^{i}\\bar Bx_{-i}, so prefix-tuning is exactly an initial-state update (Prop. 1); conversely every initial state is realizable by a prefix iff \\ell\\ge H (under a genericity condition).",
+   "mergeable": "conditional",
+   "mergeable_reason": "No weight is changed and per-token cost is unchanged: the learned state is loaded as the recurrence's initial state, which SSM scan kernels accept natively, but it is not folded into the weights.",
+   "identity_at_init": "h'=0 recovers the base model exactly.",
+   "key_idea": "For SSMs, the whole effect of prompt/prefix tuning is captured by the initial hidden state, so tune that state directly: an upper bound on prefix-tuning's expressivity at the same cost.",
+   "results_note": "On Mamba with <0.5% trainable parameters, initial state tuning outperforms prefix-tuning and prompt tuning on five of seven tasks, but LoRA consistently outperforms it.",
+   "relations": [
+    {
+     "target": "prefix-tuning",
+     "type": "equivalent-to",
+     "note": "Galim et al. Prop. 1: on S4, prefix-tuning is an initial-state update and the converse holds for prefix length >= H."
+    },
+    {
+     "target": "state-offset-tuning",
+     "type": "competes-with",
+     "note": "State-offset tuning removes the decaying coefficient ∏ A_i."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "LoRA outperforms state-based tuning in Galim et al.'s benchmarks."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.09016",
+    "https://arxiv.org/pdf/2410.09016",
+    "https://arxiv.org/abs/2503.03499"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "state-offset-tuning",
+   "name": "State-offset Tuning",
+   "full_name": "State-offset Tuning",
+   "paper_title": "State-offset Tuning: State-based Parameter-Efficient Fine-Tuning for State Space Models",
+   "authors": "Kang et al.",
+   "year": 2025,
+   "venue": "ACL 2025",
+   "arxiv": "2503.03499",
+   "url": "https://arxiv.org/abs/2503.03499",
+   "code_url": "https://github.com/furiosa-ai/ssm-state-tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\hat y_t=y_t+C_t\\,h'\\ \\ \\text{(State-offset (h))},\\qquad \\hat y_t=y_t+y'\\ \\ \\text{(State-offset (y))},\\qquad h'\\in\\mathbb{R}^{H}\\ \\text{per channel},\\ y'\\in\\mathbb{R}^{D};\\ \\text{SSM weights frozen}",
+   "trainable_params": "DH\\ \\text{(h variant)};\\ \\ D\\ \\text{(y variant) per SSM layer}",
+   "locus": "state readout at every timestep of each SSM (Mamba S6) layer",
+   "modification_kind": "input-or-activation-augmentation",
+   "structure": "A constant learned offset added to the hidden state before readout at every step (Initial State Tuning with the time-varying factor \\prod_i\\bar A_i removed). In S6, C_th'=(W_Cx_t)^\\top h', so the h-variant is a rank-\\le H linear term in x_t; the y-variant is a bias on the SSM output.",
+   "mergeable": "no",
+   "mergeable_reason": "The offset enters before Mamba's multiplicative output gate (and as a linear term in x_t for the h-variant), so it cannot be absorbed into the existing diagonal skip or biases, although its cost is negligible.",
+   "identity_at_init": "h'=0 (or y'=0) recovers the frozen model exactly; the paper's specific initialization was not verified.",
+   "key_idea": "State-based PEFT for SSMs: instead of injecting external virtual tokens, add a learnable constant to the internal state at every timestep, giving a uniform rather than decaying effect.",
+   "results_note": "On Mamba-family models, State-offset Tuning (h) outperforms prompt-, prefix- and initial-state tuning and BitFit, and surpasses LoRA on most datasets; the (y) variant beats initial state tuning with 0.01% vs 0.23% of parameters.",
+   "relations": [
+    {
+     "target": "initial-state-tuning",
+     "type": "builds-on",
+     "note": "Removes the time-varying coefficient of the initial-state term."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "competes-with",
+     "note": "Prompt-based methods underperform state-based ones on SSMs."
+    },
+    {
+     "target": "bitfit",
+     "type": "competes-with",
+     "note": "The y-variant is bias-like; reported to outperform BitFit."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Surpasses LoRA on most reported datasets."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.03499",
+    "https://arxiv.org/pdf/2503.03499",
+    "https://github.com/furiosa-ai/ssm-state-tuning"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "papers": [
+  {
+   "id": "he-2022-unified-view",
+   "title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "claim": "Prefix-tuning is exactly rewritten as h \\leftarrow (1-\\lambda(x))h+\\lambda(x)\\,\\mathrm{softmax}(xW_qP_k^\\top)P_v, a gated parallel adapter; adapters, prefix-tuning and LoRA become instances of one template (modified representation, insertion form, functional form, composition function).",
+   "relevance": "Supplies the key morphism between the prompt family and the adapter family: a prefix is a parallel adapter with softmax nonlinearity, input-dependent gate and K/V-shaped weights; the composition functions (gated, plain, scaled addition) are natural candidates for categorical structure.",
+   "sources": [
+    "https://arxiv.org/abs/2110.04366",
+    "https://arxiv.org/pdf/2110.04366"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "petrov-2024-prefix-limitations",
+   "title": "When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations",
+   "authors": "Petrov et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.19698",
+   "url": "https://arxiv.org/abs/2310.19698",
+   "claim": "Soft prompting and prefix-tuning can be strictly less expressive than full fine-tuning with the same parameter count: they cannot change the relative attention pattern over the content and can only bias attention-layer outputs in a fixed direction, so they elicit existing skills rather than learn tasks needing new attention patterns.",
+   "relevance": "Characterizes the image of the prompt family inside the space of model modifications (an expressivity limit), essential for placing prompts in a hierarchy against weight-space methods.",
+   "sources": [
+    "https://arxiv.org/abs/2310.19698"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "wang-2023-prompt-universality",
+   "title": "Universality and Limitations of Prompt Tuning",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.18787",
+   "url": "https://arxiv.org/abs/2305.18787",
+   "claim": "There exists a transformer for which prompts approximate any Lipschitz sequence-to-sequence function, but for finite-depth fixed-weight transformers there are datasets no prompt of any length can memorize; gives lower bounds on prompt parameters versus LoRA in a single-layer setting.",
+   "relevance": "Gives both a universality (density) statement and an obstruction for prompt tuning, and a direct parameter-count comparison with low-rank weight updates.",
+   "sources": [
+    "https://arxiv.org/abs/2305.18787"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "petrov-2024-prefix-universal",
+   "title": "Prompting a Pretrained Transformer Can Be a Universal Approximator",
+   "authors": "Petrov et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.14753",
+   "url": "https://arxiv.org/abs/2402.14753",
+   "claim": "Prefix-tuning a single attention head suffices to approximate any continuous function, and any sequence-to-sequence function can be approximated by prefixing a transformer of depth linear in the sequence length, with Jackson-type bounds on the required prefix length.",
+   "relevance": "Complements the limitation results: the prompt family is universal for suitably chosen (even small) pretrained models, so its expressivity depends on the frozen backbone, a functorial dependence worth formalizing.",
+   "sources": [
+    "https://arxiv.org/abs/2402.14753"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "oymak-2023-attention-prompt-tuning",
+   "title": "On the Role of Attention in Prompt-tuning",
+   "authors": "Oymak et al.",
+   "year": 2023,
+   "venue": "ICML 2023",
+   "arxiv": "2306.03435",
+   "url": "https://arxiv.org/abs/2306.03435",
+   "claim": "In one-layer attention models on contextual mixture data, softmax prompt-attention is provably more expressive than softmax self-attention and linear prompt-attention; gradient descent learns the prompt with near-optimal sample complexity and the prompt attends to sparse context-relevant tokens.",
+   "relevance": "Isolates the attention mechanism as the channel through which prompts act, with learning-theoretic guarantees.",
+   "sources": [
+    "https://arxiv.org/abs/2306.03435"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "galim-2025-ssm-prefix-equivalence",
+   "title": "Parameter-Efficient Fine-Tuning of State Space Models",
+   "authors": "Galim et al.",
+   "year": 2024,
+   "venue": "ICML 2025",
+   "arxiv": "2410.09016",
+   "url": "https://arxiv.org/abs/2410.09016",
+   "claim": "For S4, prefix-tuning is exactly equivalent to tuning the initial hidden state (and any initial state is reachable by a prefix iff its length is at least the state size H); prompt-based methods are therefore weak on SSMs, LoRA works best on linear projections, and Sparse Dimension Tuning (SDT) is proposed for SSM modules.",
+   "relevance": "A clean theorem identifying the prompt family with the 'learned initial state' family, i.e. prompts are points of the state space the architecture's recurrence starts from.",
+   "sources": [
+    "https://arxiv.org/abs/2410.09016",
+    "https://arxiv.org/pdf/2410.09016"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "le-2025-revisiting-prefix",
+   "title": "Revisiting Prefix-tuning: Statistical Benefits of Reparameterization among Prompts",
+   "authors": "Le et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2410.02200",
+   "url": "https://arxiv.org/abs/2410.02200",
+   "claim": "The MLP reparametrization in prefix-tuning implicitly shares structure between prefix keys and values; via the prefix-tuning/mixture-of-experts connection this shared structure provably improves sample efficiency of parameter estimation, with similar benefits for prompt tuning.",
+   "relevance": "Explains why training-time reparametrizations (prefix MLP, P-Tuning encoder, Residual PT) matter even though they vanish at inference: they change the statistical geometry, not the hypothesis class.",
+   "sources": [
+    "https://arxiv.org/abs/2410.02200"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "qin-2021-intrinsic-task-subspace",
+   "title": "Exploring Universal Intrinsic Task Subspace via Prompt Tuning",
+   "authors": "Qin et al.",
+   "year": 2021,
+   "venue": "arXiv",
+   "arxiv": "2110.07867",
+   "url": "https://arxiv.org/abs/2110.07867",
+   "claim": "Soft prompts of 100 NLP tasks can be decomposed into a shared 250-dimensional nonlinear subspace; tuning only 250 free parameters recovers 97% (seen tasks) and 83% (20 unseen tasks) of full prompt-tuning performance.",
+   "relevance": "Empirical evidence that the 'space of task adaptations' reachable by prompts is low-dimensional and shared, motivating a moduli-space view of PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/2110.07867"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "su-2022-prompt-transferability",
+   "title": "On Transferability of Prompt Tuning for Natural Language Processing",
+   "authors": "Su et al.",
+   "year": 2021,
+   "venue": "NAACL 2022",
+   "arxiv": "2111.06719",
+   "url": "https://aclanthology.org/2022.naacl-main.290/",
+   "claim": "Soft prompts transfer zero-shot to similar tasks on the same PLM and, through a trained cross-model projector, to other PLMs; as initialization they accelerate and improve prompt tuning; the overlap rate of activated neurons predicts transferability better than embedding similarity.",
+   "relevance": "Treats prompts as transportable objects between tasks and between models (a projector is literally a map between prompt spaces of different backbones).",
+   "sources": [
+    "https://arxiv.org/abs/2111.06719"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "khashabi-2022-prompt-waywardness",
+   "title": "Prompt Waywardness: The Curious Case of Discretized Interpretation of Continuous Prompts",
+   "authors": "Khashabi et al.",
+   "year": 2021,
+   "venue": "NAACL 2022",
+   "arxiv": "2112.08348",
+   "url": "https://aclanthology.org/2022.naacl-main.266/",
+   "claim": "Continuous prompts can solve a task while their nearest-neighbour discrete projection is arbitrary text (even a contradictory task definition), within ~2% of the best prompt's accuracy; the effect grows with model size.",
+   "relevance": "Shows that the map from continuous prompts back to discrete text is far from faithful: soft prompts live outside the image of the vocabulary embedding, so 'discrete prompting' is a thin subobject of the prompt space.",
+   "sources": [
+    "https://arxiv.org/abs/2112.08348"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "ding-2023-delta-tuning",
+   "title": "Parameter-efficient fine-tuning of large-scale pre-trained language models",
+   "authors": "Ding et al.",
+   "year": 2022,
+   "venue": "Nature Machine Intelligence 2023",
+   "arxiv": "2203.06904",
+   "url": "https://www.nature.com/articles/s42256-023-00626-4",
+   "claim": "Surveys 'delta tuning' and proposes a three-way taxonomy (addition-based, including prompts and prefixes; specification-based; reparameterization-based), with optimization and optimal-control perspectives and a large empirical study.",
+   "relevance": "The canonical prior taxonomy that a categorical reconstruction should refine; prompt methods sit in its addition-based class.",
+   "sources": [
+    "https://arxiv.org/abs/2203.06904",
+    "https://api.crossref.org/works/10.1038/s42256-023-00626-4"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "liu-2023-pretrain-prompt-predict",
+   "title": "Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing",
+   "authors": "Liu et al.",
+   "year": 2021,
+   "venue": "ACM Computing Surveys 2023",
+   "arxiv": "2107.13586",
+   "url": "https://arxiv.org/abs/2107.13586",
+   "claim": "Systematizes prompt-based learning (templates, answer spaces, discrete and continuous prompts, tuning strategies such as fixed-LM prompt tuning and prompt+LM tuning).",
+   "relevance": "Standard reference for the discrete/continuous prompt landscape and its notation.",
+   "sources": [
+    "https://arxiv.org/abs/2107.13586"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "chen-2022-inducer-tuning",
+   "title": "Inducer-tuning: Connecting Prefix-tuning and Adapter-tuning",
+   "authors": "Chen et al.",
+   "year": 2022,
+   "venue": "EMNLP 2022",
+   "arxiv": "2210.14469",
+   "url": "https://aclanthology.org/2022.emnlp-main.50/",
+   "claim": "Interprets prefixes as inducing variables of a kernel estimator in attention and proposes inducer-tuning, which keeps prefix-tuning's mechanism but uses an adapter-style residual form to fix prefix initialization.",
+   "relevance": "A second, kernel-theoretic bridge between the prompt and adapter families (low citation count, kept for its structural content).",
+   "sources": [
+    "https://arxiv.org/abs/2210.14469"
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "notes": "Scope: soft prompts, prefixes / deep prompts, prompt transfer, decomposition and multitask prompts, instance-conditional prompts, vision and vision-language prompt learning, prompt pools for continual learning, and the learned-state family (trained KV caches, SSM initial-state and state-offset tuning). All seed methods were confirmed and kept. Formulas were checked against each paper's method section (PDF full text); notation adapted to \\ell (prompt length), d, L. Structural facts useful for a categorical treatment: (1) Li & Liang's expressivity chain discrete prompt < embedding-only (prompt tuning) < prefix-tuning; (2) He et al. 2022: prefix-tuning = gated parallel adapter; (3) VPT-Deep and LLaMA-Adapter are prefixes tied through the frozen LN/W_k/W_v (VPT tie derived here from the paper's equations); (4) P-Tuning v2 is the same parameter object as prefix-tuning; Cartridges are prefix-tuning without reparametrization; (5) on SSMs prefix-tuning is exactly initial-state tuning (Galim et al. Prop. 1); (6) training-time reparametrizations (prefix MLP, P-Tuning LSTM/MLP, Residual PT, BBT random subspace) change optimization/statistics but not the inference-time object (Le et al. 2025). Derived (not in source papers, flagged in fields): mergeability of pixel-space visual prompting into ViT positional embeddings; S6 state-offset as a linear term in x_t; CoOp class embeddings cacheable. Uncertainties: CPT has no formal venue (ICLR 2025 and TMLR rejections, ARR 2025 submission on OpenReview; a web search claim of ICLR 2025 acceptance was wrong), recorded as arXiv. Initial State Tuning is attributed to Galim et al. (2024; ICML 2025) as stated by the State-offset paper; the idea of a learned initial RNN state is older. MPT has no official code release found (HF PEFT MultitaskPromptTuningConfig is the reference implementation). IDPG/XPrompt code not found. HF PEFT (v0.21.1, 2026-09-29) prompt-type tuners: PromptTuningConfig, PrefixTuningConfig, PromptEncoderConfig, MultitaskPromptTuningConfig, AdaptionPromptConfig, CPTConfig, CartridgeConfig; note HF applies prefix-tuning only to the decoder for seq2seq models, and its init_weights='zero' is not an exact identity. Omitted (lower uptake or better placed elsewhere): HF TrainableTokens (selective family), ReFT/RED-style representation interventions (activation-editing family), CODA-Prompt, PromptSRC, KgCoOp, ProGrad, E2VPT, HyperPrompt (tunes the whole model), SMoP, Adaptive Prefix Tuning, Prefix-Propagation, Gisting (fine-tunes the LM), Instruction Prompt Tuning, LLaMA-Adapter V2."
+}

@@ -1,0 +1,595 @@
+{
+ "family": "addendum2026b-0",
+ "family_title": "2026 sweep pass 2, batch 0",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "riemannion",
+   "name": "Riemannion",
+   "full_name": "Riemannion (RiemannLoRA): Muon on the fixed-rank manifold, with a locally optimal Riemannian-gradient initialisation (LOI)",
+   "paper_title": "LoRA meets Riemannion: Muon Optimizer for Parametrization-independent Low-Rank Adapters",
+   "authors": "Bogachev et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2507.12142",
+   "url": "https://arxiv.org/abs/2507.12142",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "X:=\\Delta W\\in\\mathcal{M}_r=\\{X\\in\\mathbb{R}^{d_{out}\\times d_{in}}:\\operatorname{rank}X=r\\},\\ X=UGV^{\\top}\\ (U^{\\top}U=V^{\\top}V=I_r);\\ \\ P_X(Z)=UU^{\\top}Z+(I-UU^{\\top})ZVV^{\\top};\\ \\ G_t=P_{X_t}\\big(\\nabla_W\\mathcal{L}(W'+X_t)\\big)\\ \\text{(one backward pass of a rank-}2r\\text{ LoRA: }\\ \\partial_{Z_1,Z_2}\\mathcal{L}(W'+Z_1V^{\\top}+UZ_2^{\\top})\\text{)};\\ \\ M_t=\\beta\\,P_{X_t}(M_{t-1})+G_t;\\ \\ \\widetilde M_t=P_{X_t}\\big(\\mathrm{Ortho}_{2r}(M_t)\\big),\\ \\mathrm{Ortho}_{2r}(M)=U_MV_M^{\\top}\\ \\text{(singular values of the rank-}\\le 2r\\ M\\text{ set to 1)};\\ \\ X_{t+1}=\\mathrm{SVD}_r\\big(X_t-\\eta\\,\\widetilde M_t\\big);\\ \\ \\text{LOI: } X_0\\in\\arg\\max_{X\\in\\mathcal{M}_r}\\|P_X\\nabla_W\\mathcal{L}(W_0)\\|_F^2,\\ \\text{used: } X_0=\\alpha\\,U_{1:r}V_{r+1:2r}^{\\top}\\ (\\nabla_W\\mathcal{L}(W_0)=U\\Sigma V^{\\top}),\\ W'=W_0-X_0;\\ \\ h=(W'+X_t)\\,x;\\ \\ \\text{frozen: } W_0\\ (\\text{shifted to } W');\\ \\text{trained: the point } X\\in\\mathcal{M}_r\\text{, stored as thin factors}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{stored per adapted matrix (intrinsic dimension } r(d_{in}+d_{out}-r)\\text{ of }\\mathcal{M}_r\\text{)};\\ \\text{heavy-ball momentum kept as a rank-}\\le 2r\\text{ tangent vector, } 2r(d_{in}+d_{out})",
+   "locus": "LoRA target matrices: attention and MLP projections of Llama-3-8B (commonsense reasoning); q, k, v and output projections of every attention layer of Stable Diffusion 2 (subject-driven generation)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "The function class is LoRA's (an additive rank-\\(r\\) update \\(\\Delta W=X\\)), but the optimisation variable is the point \\(X\\) on the fixed-rank manifold \\(\\mathcal{M}_r\\), which is the quotient \\((\\mathbb{R}^{d_{out}\\times r}_*\\times\\mathbb{R}^{d_{in}\\times r}_*)/GL(r)\\) of full-rank factor pairs under \\((B,A)\\sim(BS,S^{-1}A)\\); every step is therefore independent of the factorisation gauge. The Riemannian gradient \\(P_X(\\nabla_W\\mathcal{L})\\) has rank \\(\\le 2r\\) and is obtained without forming \\(\\nabla_W\\mathcal{L}\\), by differentiating \\(\\mathcal{L}(W'+Z_1V^{\\top}+UZ_2^{\\top})\\) at \\(Z_1=0\\) (a rank-\\(2r\\) LoRA forward and backward pass). The Muon step is the linear-minimisation-oracle direction over the spectral-norm ball restricted to the tangent space, approximated by \\(P_X(\\mathrm{Ortho}_{2r}(M_t))\\); the singular values of this direction stayed in \\((0.9,1.1)\\) in their runs. Momentum is moved by projection transport and the retraction is a thin truncated SVD (Algorithm 4 also applies a decoupled weight decay \\(\\gamma\\) inside the retraction step), so a step costs \\(O((d_{in}+d_{out})r^2+r^3)\\) plus one backward pass, as for factor-wise Muon. LOI chooses the starting point whose tangent space captures most of the full gradient. Theorem 5.1 parametrises all maximisers by \\(S\\in GL_{2r}\\) acting on the top-\\(2r\\) gradient singular pairs (assuming \\(\\sigma_{2r}\\neq\\sigma_{2r+1}\\)); the experiments use \\(S=\\operatorname{diag}(\\alpha I_r,I_r)\\), i.e. \\(X_0=\\alpha U_{1:r}V_{r+1:2r}^{\\top}\\), computed by a randomised SVD with \\(2(q+1)\\) extra backward passes (about 0.25% of fine-tuning time). The paper writes the orthogonalisation as \\(\\mathrm{Ortho}_r\\) although it sets the first \\(2r\\) singular values to 1; the formula here calls it \\(\\mathrm{Ortho}_{2r}\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "The trained update is a rank-\\(r\\) matrix in thin factored form, so \\(W=W'+X_T\\) (with \\(W'=W_0-X_0\\) under LOI) folds into one dense weight exactly as LoRA does.",
+   "identity_at_init": "Under LOI the frozen weight is shifted, \\(W'=W_0-X_0\\), so \\(W'+X_0=W_0\\) and the model is unchanged at step 0. \\(\\alpha\\) is kept small, which is safe because no Gram matrix is inverted. A variant with LoRA-style zero initialisation is also reported.",
+   "key_idea": "Optimise the LoRA update as a point on the fixed-rank manifold \\(\\mathcal{M}_r\\) rather than as two factors, so the step cannot depend on the \\(GL(r)\\) gauge \\((B,A)\\sim(BS,S^{-1}A)\\), and take Muon's orthogonalised (spectral-norm steepest-descent) step inside the tangent space. A matching initialisation picks the rank-\\(r\\) point whose tangent space is best aligned with the full fine-tuning gradient.",
+   "results_note": "On eight commonsense-reasoning tasks with Llama-3-8B at rank 16, Riemannion averages 88.1% versus 87.1% for AdamW-trained LoRA, 86.8% for Riemannian-preconditioned AdamW, 86.6% for DoRA, 84.5% for LoRA-RITE and 83.0% for factor-wise Muon.",
+   "relations": [
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "competes-with",
+     "note": "Main geometry-aware baseline (RPrecAdamW, 86.8 vs 88.1). Zhang and Pilanci precondition each factor with the other factor's \\(r\\times r\\) Gram inverse inside an Adam-style update, which keeps a dependence on the parametrisation; Riemannion works on the fixed-rank manifold itself and inverts no Gram matrix."
+    },
+    {
+     "target": "lora-rite",
+     "type": "competes-with",
+     "note": "Both aim at transformation-invariant LoRA updates. LoRA-RITE equilibrates an adaptive update in factor space; Riemannion gets invariance by construction on the manifold. In the paper's Llama-3-8B table LoRA-RITE scores 84.5 vs 88.1."
+    },
+    {
+     "target": "lora-ga",
+     "type": "generalizes",
+     "note": "LOI maximises tangent-space alignment with the full gradient, and the paper states the link to LoRA-GA. Substituting a block-anti-diagonal \\(S\\) into Theorem 5.1 gives \\(U_{r,2r}\\Sigma_{r,2r}S_{21}S_{12}^{-1}\\Sigma_{1,r}V_{1,r}^{\\top}\\), which is LoRA-GA's product initialisation (proportional to \\(U_{r+1:2r}V_{1:r}^{\\top}\\)) when \\(S_{21}S_{12}^{-1}\\propto(\\Sigma_{r,2r}\\Sigma_{1,r})^{-1}\\); the paper itself uses the mirrored member \\(\\alpha U_{1:r}V_{r+1:2r}^{\\top}\\). Both shift \\(W_0\\) by the initial update."
+    },
+    {
+     "target": "fixed-rank-riemannian-quotient",
+     "type": "builds-on",
+     "note": "The geometry of rank-\\(r\\) matrices, here as the \\(GL(r)\\) quotient of factor pairs. Riemannion does not cite this paper; it runs Muon with the embedded-manifold version of the same geometry (tangent projection, truncated-SVD retraction, projection transport; Vandereycken 2013, Absil and Oseledets 2015)."
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "Baseline: 86.6 vs 88.1 average on Llama-3-8B commonsense reasoning at rank 16."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Keeps LoRA's additive rank-\\(r\\) update and forward pass; only the optimiser, the representation of the iterate and the initialisation change."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2507.12142",
+    "https://arxiv.org/html/2507.12142",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://iclr.cc/virtual/2026/poster/10009014",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2507.12142",
+    "https://arxiv.org/abs/2507.12142v1",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners",
+    "https://github.com/huggingface/peft/tree/main/src/peft/optimizers"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "fixed-rank-riemannian-quotient relation note: the paper does not cite Mishra et al. (arXiv 1209.0430); it uses the embedded fixed-rank toolkit (Vandereycken 2013; Absil and Oseledets 2015). The note now says so; the builds-on type is kept as a conceptual link.",
+    "structure: added the decoupled weight decay \\(\\gamma\\) in Algorithm 4's retraction step and the notation remark that the paper's \\(\\mathrm{Ortho}_r\\) replaces the first \\(2r\\) singular values (called \\(\\mathrm{Ortho}_{2r}\\) in formula_latex).",
+    "lora-ga relation note: made the anti-diagonal substitution explicit (\\(U_{r,2r}\\Sigma_{r,2r}S_{21}S_{12}^{-1}\\Sigma_{1,r}V_{1,r}^{\\top}\\)) and wrapped the math in \\( \\).",
+    "riemannian-preconditioned-lora and lora relation notes: wrapped \\(r\\times r\\) and rank-\\(r\\) in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2507.12142, v1 2025-07-16 (titled 'RiemannLoRA: A Unified Riemannian Framework for Ambiguity-Free LoRA Optimization'; retitled in v2, 2025-10-01), first author Vladimir Bogachev, 7 authors ending with Maxim Rakhuba; year 2025 is correct. Venue: iclr-2026-orals-posters.json lists it as 'Accept (Poster)' (poster 10009014, OpenReview WtbXgc9GVA). Formula checked against Secs. 3.2 and 4 to 6 (Eqs. 6 to 18), Theorem 5.1 and Algorithms 1 to 4: Riemannian gradient via the rank-\\(2r\\) single-backward trick (Eq. 18), heavy-ball momentum with projection transport (Eq. 10), \\(P_{T}(\\mathrm{Ortho}(M_t))\\) (Eq. 12), truncated-SVD retraction (Eq. 8), LOI (Eq. 16) with \\(S=\\mathrm{diag}(\\alpha I_r,I_r)\\), which gives \\(\\alpha U_{1,r}V_{r,2r}^{\\top}\\), and \\(W'=W-\\Delta W\\) (Eq. 15). \\(\\alpha=-0.01/\\sqrt r\\) for the LLM runs and \\(-1/\\sqrt r\\) for SD2 (App. F, G). trainable_params re-derived: \\(A_L\\in\\mathbb{R}^{d_{out}\\times r}\\) and \\(B\\in\\mathbb{R}^{d_{in}\\times r}\\) give \\(r(d_{in}+d_{out})\\); the momentum pair \\(([\\dot A,A_L],[B_R,\\dot B])\\) gives \\(2r(d_{in}+d_{out})\\). Table 1 (Llama-3-8B, \\(r=16\\)): 88.1 / 87.1 (Adam) / 86.8 (RPrecAdamW) / 86.6 (DoRA) / 84.5 (LoRA-RITE) / 83.0 (Muon), as stated. The singular values in \\((0.9,1.1)\\), the \\(2(q+1)\\) extra backward passes and the 0.25% overhead are all in Secs. 4 and 6. mergeable, identity_at_init (\\(W'+X_0=W_0\\)) and modification_kind are consistent with the method. No code link in the paper, abstract page or a web search. hf_peft false: no tuner at main, and optimizers/ holds only lorafa, loraplus and riemannian, the last being Riemannian-preconditioned LoRA (PR #3382, v0.21.0). All 6 relation targets are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "poet-x",
+   "name": "POET-X",
+   "full_name": "POET-X: scalable reparameterized training by orthogonal equivalence transformation (memory-efficient POET)",
+   "paper_title": "POET-X: Memory-efficient LLM Training by Scaling Orthogonal Transformation",
+   "authors": "Qiu et al.",
+   "year": 2026,
+   "venue": "ICML 2026 (spotlight, oral presentation)",
+   "arxiv": "2603.05500",
+   "url": "https://arxiv.org/abs/2603.05500",
+   "code_url": "https://github.com/Sphere-AI-Lab/poet",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_{RP}=R\\,W_0\\,P,\\ \\ W_0\\in\\mathbb{R}^{m\\times n}\\ (m=d_{in},\\ n=d_{out};\\ \\text{fixed random initialisation, e.g. normalised Gaussian}),\\ \\ R\\in O(m),\\ P\\in O(n);\\ \\ y=W_{RP}^{\\top}x=P^{\\top}W_0^{\\top}R^{\\top}x\\ \\ (\\text{so in the }h=Wx\\text{ convention }W=P^{\\top}W_0^{\\top}R^{\\top}:\\ R\\text{ acts on the input side, }P\\text{ on the output side});\\ \\ \\text{round }k:\\ R_k=\\Psi_k^{\\top}\\operatorname{Diag}\\big(\\tilde G_k^{1},\\dots,\\tilde G_k^{\\lceil m/b\\rceil}\\big)\\Psi_k,\\ P_k=\\Phi_k^{\\top}\\operatorname{Diag}\\big(\\tilde H_k^{1},\\dots,\\tilde H_k^{\\lceil n/b\\rceil}\\big)\\Phi_k\\ \\ (\\Psi_k,\\Phi_k\\text{ random permutations});\\ \\ \\tilde G=(I+Q)(I+Q+Q^{2}+Q^{3})=I+2Q+2Q^{2}+2Q^{3}+Q^{4}\\approx(I+Q)(I-Q)^{-1},\\ Q=-Q^{\\top}\\in\\mathbb{R}^{b\\times b}\\ \\text{(Cayley--Neumann, }k=3\\text{; only the strict upper triangle of }Q\\text{ stored)};\\ \\ y=P_k^{\\top}\\big(W_{k-1}^{\\top}(R_k^{\\top}x)\\big)\\ \\text{(input-centric: three matrix--vector products)};\\ \\ \\text{every 400 steps (`POET reset gap'): }W_k=R_kW_{k-1}P_k,\\ Q\\leftarrow0,\\ \\text{new permutations};\\ \\ \\text{frozen within a round: }W_{k-1};\\ \\text{trained: the skew blocks of }R_k,P_k\\ (\\text{embeddings, LM head and norms are trained directly})",
+   "trainable_params": "\\big(\\lceil d_{in}/b\\rceil+\\lceil d_{out}/b\\rceil\\big)\\tfrac{b(b-1)}{2}=\\tfrac{(b-1)(d_{in}+d_{out})}{2}\\ \\text{per adapted matrix per round when }b\\mid d_{in},d_{out};\\ \\text{Llama-3B }(d=2560,\\ d_{ff}=7168,\\ 32\\text{ layers},\\ \\textstyle\\sum(d_{in}+d_{out})=1{,}589{,}248):\\ 127.5\\times1{,}589{,}248=202.6\\text{M }(b=256)\\text{ or }255.5\\times1{,}589{,}248=406.1\\text{M }(b=512)\\text{ POET parameters};\\ \\text{adding the }164.0\\text{M embedding, LM-head and norm parameters reproduces the reported }366.64\\text{M and }570.06\\text{M of }2764.47\\text{M};\\ \\text{the merged }W\\text{ is a full matrix}",
+   "locus": "Linear layers of Llama-architecture LLMs trained from scratch on C4: Llama-3B for the perplexity tables (60B tokens; 10B for POET-XQ), Llama-8B for the wall-clock curves, and 8B and 13B in the memory and throughput benchmarks. \\(W_0\\) is a random initialisation, not a pretrained weight. The original POET was also used to fine-tune BART-large (its App. L).",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Two-sided orthogonal equivalence: in the paper's convention \\(W_0\\in\\mathbb{R}^{d_{in}\\times d_{out}}\\) and \\(y=(RW_0P)^{\\top}x\\), so \\(R\\in O(d_{in})\\) acts on the input side and \\(P\\in O(d_{out})\\) on the output side, and the weight moves on the orbit \\(\\{RW_0P\\}\\) of the \\(O(d_{in})\\times O(d_{out})\\) action, so with exact orthogonality its singular values equal those of \\(W_0\\) throughout training (the Cayley--Neumann truncation makes this approximate). OFT is the one-sided case \\(P=I\\). Large orthogonal matrices are reached by stochastic primitive optimisation: each round trains only permutation-conjugated block-diagonal factors \\(\\Psi^{\\top}\\operatorname{Diag}(\\tilde G^{j})\\Psi\\) with \\(b\\times b\\) blocks, merges them into the weight after a fixed number of steps (merge-then-reinitialise; 400 steps in the reported runs) and redraws the permutations, so the accumulated transform \\((R_K\\cdots R_1)W_0(P_1\\cdots P_K)\\) can range over the full groups. POET-X keeps this algorithm and changes how it is computed: an input-centric order \\(P^{\\top}(W^{\\top}(R^{\\top}x))\\), so no transformed weight is stored for backpropagation; batched per-block products instead of materialised block-diagonal matrices; permutations as index maps, with two of the four folded into the frozen weight once per round; skew blocks stored as \\(b(b-1)/2\\) parameters; fused Triton kernels for the Cayley--Neumann forward and backward; and a recomputation variant (POET-X\\(_{\\text{mem}}\\)) that also allows low-bit frozen weights (POET-XQ).",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(R_kW_{k-1}P_k\\) is a dense matrix of the original shape. Merging into the weight happens periodically by design and at the end of training, so inference uses one ordinary matrix with no overhead.",
+   "identity_at_init": "\\(Q=0\\) gives \\(\\tilde G=I\\), hence \\(R_k=P_k=I\\) and \\(W=W_{k-1}\\) at the start of every round (and \\(W=W_0\\) at the start of training).",
+   "key_idea": "Learn each weight as an orthogonal equivalence transform \\(W=RW_0P\\) of a fixed matrix, which pins its spectrum, and make this trainable at LLM scale by optimising only permuted block-diagonal orthogonal factors that are periodically merged. POET-X's contribution is the implementation: an input-centric, kernel-fused computation that brings POET's memory down to LoRA-like levels and its speed close to AdamW.",
+   "results_note": "Pretraining Llama-3B on 60B C4 tokens, POET-X with \\(b=512\\) (570M trainable parameters) reaches validation perplexity 12.05 versus 12.69 for AdamW and 11.45 for Muon, using 68.5 GB of GPU memory versus 81.0 GB and 70.9 GB.",
+   "relations": [
+    {
+     "target": "oft",
+     "type": "generalizes",
+     "note": "OFT's \\(W=RW_0\\) is the one-sided case \\(P=I\\) on a pretrained \\(W_0\\). POET acts from both sides on a random \\(W_0\\) and merges periodically; both preserve the singular values of \\(W_0\\) (OFT preserves hyperspherical energy as well)."
+    },
+    {
+     "target": "boft",
+     "type": "builds-on",
+     "note": "BOFT builds \\(R\\) from butterfly products of permuted block-diagonal orthogonal factors. POET-X uses one permuted block-diagonal factor per side per round and gets coverage from redrawn permutations across merge rounds. The POET-X paper cites BOFT only as related sparse-training work."
+    },
+    {
+     "target": "oftv2",
+     "type": "builds-on",
+     "note": "Same group. POET-X carries OFTv2's input-centric (matrix-free) computation into the two-sided case, where the gradient for the second orthogonal factor otherwise needs the full weight. The Cayley--Neumann parameterisation comes from the original POET (arXiv 2506.08001) and is shared with OFTv2."
+    },
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "Both pretrain with a parameter-efficient update that is merged into the weight and re-initialised periodically. ReLoRA's update is additive and low-rank; POET-X's is multiplicative, orthogonal and spectrum-preserving."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Memory-efficient pretraining baseline: 14.88 vs 12.05 validation perplexity on Llama-3B (60B tokens)."
+    },
+    {
+     "target": "apollo",
+     "type": "competes-with",
+     "note": "Baseline: 12.97 vs 12.05 on Llama-3B; in the 8-bit setting Q-APOLLO reaches 20.49 vs 14.78 for POET-XQ."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2603.05500",
+    "https://arxiv.org/html/2603.05500",
+    "https://spherelab.ai/poetx/",
+    "https://github.com/Sphere-AI-Lab/poet",
+    "https://arxiv.org/abs/2506.08001",
+    "https://arxiv.org/html/2506.08001",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/oral/71112",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2603.05500",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "formula_latex and structure: the sides were swapped relative to the paper. POET writes \\(W_0\\in\\mathbb{R}^{m\\times n}\\) with \\(y=(RW_0P)^{\\top}x\\) (Eq. 1; \\(x\\in\\mathbb{R}^m\\)), so \\(R\\in O(d_{in})\\) acts on the input side and \\(P\\in O(d_{out})\\) on the output side, and the input-centric product is \\(P^{\\top}(W^{\\top}(R^{\\top}x))\\) (Eq. 3). The raw entry had \\(R\\in O(d_{out})\\), \\(P\\in O(d_{in})\\) and \\(R(W(Px))\\). Rewritten in the paper's notation, with block counts \\(\\lceil m/b\\rceil\\), \\(\\lceil n/b\\rceil\\).",
+    "trainable_params: the quoted 367M and 570M totals are not the per-matrix formula alone. Re-derived for Llama-3B (\\(d=2560\\), \\(d_{ff}=7168\\), 32 layers, Table 11): the orthogonal blocks give 202.6M (\\(b=256\\)) and 406.1M (\\(b=512\\)), and the remaining 164.0M are the embedding, LM-head and norm parameters, which reproduces Table 6 exactly (366.64M, 570.06M of 2764.47M).",
+    "formula_latex and structure: added the merge interval of 400 steps ('POET reset gap', Tables 12 and 13).",
+    "oftv2 relation note: the Cayley--Neumann parameterisation was introduced in POET (Qiu et al. 2025a, arXiv 2506.08001), not taken from OFTv2; the note no longer says POET-X takes it from OFTv2.",
+    "boft relation note: recorded that POET-X cites BOFT only as related sparse-training work.",
+    "locus: 8B is also trained (wall-clock perplexity curves, Fig. 5); 13B appears only in memory and throughput benchmarks. Wrapped \\(W_0\\).",
+    "results_note and oft note: wrapped \\(b=512\\), \\(W=RW_0\\), \\(P=I\\) and \\(W_0\\) in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2603.05500, v1 2026-03-05, first author Zeju Qiu (with Liu, Weller, Shi, Weiyang Liu), comment 'ICML 2026 Oral'; year 2026. Venue: icml-2026-orals-posters.json has decision 'Accept (spotlight)' with an Oral 4A event (oral 71112, poster 62626, OpenReview et8jpWLUuD). Formula checked against Secs. 2 and 3 (Eqs. 1 to 10): block-stochastic \\(R_i=\\Psi_i^{\\top}\\mathrm{Diag}(\\tilde G_i^j)\\Psi_i\\), merge \\(W_i=R_iW_{i-1}P_i\\), CNP with \\(k=3\\) (Eq. 8), upper-triangle storage of \\(Q\\), two of the four permutations folded into \\(W\\) (Eq. 6), POET-X\\(_{\\text{fast}}\\) and POET-X\\(_{\\text{mem}}\\) (Sec. 3.5), POET-XQ (Sec. 3.6). Results: Table 6 (12.05 / 12.69 / 11.45 PPL; 68.52 / 81.03 / 70.94 GB; GaLore 14.88, APOLLO 12.97) and Table 7 (Q-APOLLO 20.49 vs POET-XQ\\(_{b=512}\\) 14.78), as stated. Original POET (arXiv 2506.08001, NeurIPS 2025) confirmed for the random \\(W_0\\), the normalised-Gaussian option and BART-large fine-tuning (App. L). Code: github.com/Sphere-AI-Lab/poet ('Implementation for POET and POET-X', last push 2026-06-09). mergeable yes and identity_at_init (\\(Q=0\\Rightarrow R_k=P_k=I\\)) are consistent; multiplicative-weight is the catalogue kind of OFT and BOFT. hf_peft false: PEFT has oft and boft tuners but no POET. All 6 relation targets are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "lora-mixer",
+   "name": "LoRA-Mixer",
+   "full_name": "LoRA-Mixer: mixture of LoRA experts routed into the attention/SSM projections, with a Routing Specialization Balance Loss (RSL)",
+   "paper_title": "LoRA-Mixer: Coordinate Modular LoRA Experts Through Serial Attention Routing",
+   "authors": "Li et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2507.00029",
+   "url": "https://arxiv.org/abs/2507.00029",
+   "code_url": "https://github.com/hustcselwb/LoRA-Mixer",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\sum_{e\\in\\operatorname{TopK}(p(x))}p_e(x)\\,B_eA_ex,\\ \\ p(x)=\\operatorname{softmax}\\big(G(x)\\big)\\in\\Delta^{E-1},\\ B_e\\in\\mathbb{R}^{d_{out}\\times r},\\ A_e\\in\\mathbb{R}^{r\\times d_{in}}\\ \\ (\\text{soft fusion over all } E\\text{ experts while training the router; sparse top-}K\\text{ at inference});\\ \\ \\mathcal{L}_{total}=\\mathcal{L}_{task}+\\alpha\\,\\mathcal{L}_{RSL}+\\beta\\sum_{i\\in\\mathcal{C}}\\|\\theta_i-\\theta_i^{(0)}\\|^{2},\\ \\ \\mathcal{L}_{RSL}=\\alpha\\sum_{i}\\bar p_i\\bar f_i-\\lambda\\,\\mathbb{E}_x\\big[\\mathcal{H}(p(x))\\big];\\ \\ \\text{frozen: } W_0\\text{ (and public or pre-trained experts in the plug-and-play regime); trained: the router } G\\text{ (and optionally the experts)}",
+   "trainable_params": "E\\,r(d_{in}+d_{out})\\ \\text{experts}+\\text{a router per adapted projection (about }0.04\\%\\text{ of LLaMA3-8B in total)};\\ 3.88\\%\\text{ of LLaMA3-8B with six trained experts; router only when frozen public LoRAs are composed}",
+   "locus": "Linear projections that feed and read out the token mixer: the q/k/v/o attention projections of LLaMA3-8B and Mistral-7B, and the projection layers of the Falcon-Mamba-7B mixer (App. A.11 describes the in-, out-, x- and dt-projections without saying exactly which are adapted). Plug-and-play routing over public LoRAHub LoRAs is shown on Flan-T5, and the LoRA-LEGO comparison uses LLaMA2-7B. The abstract contrasts this with methods that 'primarily' target FFN blocks.",
+   "modification_kind": "composition-or-routing",
+   "structure": "Token-level mixture of \\(E\\) low-rank deltas on a frozen projection, \\(\\Delta W(x)=\\sum_ep_e(x)B_eA_e\\), placed on the attention (or SSM) input and output projections, so the routed update passes through the token mixer in series instead of acting as a parallel branch or an FFN switch. Experts come from three sources: public LoRAs (e.g. LoRAHub modules) kept frozen, independently trained LoRAs, or experts trained jointly with deterministic hard routing by domain label. The router is then trained on a small mixed set (about 2k examples) with soft fusion; inference uses sparse top-\\(K\\) fusion, and accuracy rises from \\(K=1\\) to \\(K=3\\) and then falls in their ablation. RSL adds an entropy term to the Switch-style load-balancing loss. As printed, \\(\\mathcal{L}_{RSL}\\) subtracts \\(\\lambda\\mathbb{E}[\\mathcal{H}(p)]\\), which rewards high routing entropy and matches the paper's strong-convexity argument, while other passages describe the term as lowering entropy to sharpen routing. A quadratic anchor keeps selected experts near their first-stage weights. The router architecture is not specified beyond its size. The paper writes each expert as \\(\\Delta W^{(e)}=A^{(e)}B^{(e)}\\) with \\(A^{(e)}\\in\\mathbb{R}^{d_{out}\\times r}\\); formula_latex uses \\(B_eA_e\\) with \\(B_e\\in\\mathbb{R}^{d_{out}\\times r}\\), the same product with the letters swapped.",
+   "mergeable": "no",
+   "mergeable_reason": "The routing weights \\(p(x)\\) change with every token, so \\(\\sum_ep_e(x)B_eA_e\\) has no single static form to fold into \\(W_0\\); only a fixed, input-independent expert choice could be merged.",
+   "identity_at_init": "Not identity when composing trained LoRAs: the frozen experts act from the first step and only the router is learned. The paper does not state the initialisation of experts trained from scratch, and the official repository contains only a README.",
+   "key_idea": "Put a routed mixture of LoRA experts into the projections that feed and read out attention or the SSM, so expert outputs pass through the token mixer, and train the router with a load-balance-plus-entropy loss that needs little data. Off-the-shelf LoRAs can then be composed plug-and-play, on Transformers and Mamba alike.",
+   "results_note": "On LLaMA3-8B with six experts (3.88% trainable parameters, 48% of MixLoRA's 8.08%), LoRA-Mixer beats MixLoRA on all seven tasks of the main table, for example 65.53 vs 64.44 on GSM8K and 57.32 vs 55.49 on HumanEval.",
+   "relations": [
+    {
+     "target": "mixlora",
+     "type": "competes-with",
+     "note": "Main LoRA-MoE baseline: top-k LoRA experts inside the FFN. LoRA-Mixer routes on attention/SSM projections with about half the trainable parameters."
+    },
+    {
+     "target": "mole",
+     "type": "competes-with",
+     "note": "Baseline. MoLE learns gating over frozen trained LoRA layers; the paper describes it as close in inference cost but coarser-grained and weaker."
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "Gradient-free few-shot composition of LoRAHub modules (baseline). LoRA-Mixer reuses the same kind of public modules but learns token-level routing."
+    },
+    {
+     "target": "lora-lego",
+     "type": "competes-with",
+     "note": "Baseline on CoLA, SST-2, MRPC and RTE with LLaMA2-7B; LoRA-Mixer is better on three of the four."
+    },
+    {
+     "target": "phatgoose",
+     "type": "competes-with",
+     "note": "Post-hoc routing over independently trained adapters; compared in and out of distribution (QQP, RTE, MRPC)."
+    },
+    {
+     "target": "x-lora",
+     "type": "competes-with",
+     "note": "Not cited. X-LoRA also learns token-level mixing over frozen trained LoRAs, but scales every adapter of a layer from the hidden state instead of top-K routing on the mixer projections."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2507.00029",
+    "https://arxiv.org/html/2507.00029",
+    "https://github.com/hustcselwb/LoRA-Mixer",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://iclr.cc/virtual/2026/poster/10010501",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2507.00029",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "corrections": [
+    "locus: the paper does not say which Falcon-Mamba projections carry the experts (App. A.11 lists in-, out-, x- and dt-projections), so 'in/out projection layers' was softened; added Flan-T5 (Table 3, frozen LoRAHub LoRAs plus 2k routing examples) and LLaMA2-7B (Table 4, LoRA-LEGO comparison), and noted that the abstract says the method avoids 'primarily' targeting FFN blocks.",
+    "structure: recorded the paper's letter convention \\(\\Delta W^{(e)}=A^{(e)}B^{(e)}\\), \\(A^{(e)}\\in\\mathbb{R}^{d_{out}\\times r}\\) (the formula's \\(B_eA_e\\) is the same product)."
+   ],
+   "verification_notes": "arXiv API: 2507.00029, v1 2025-06-17, first author Wenbing Li (6 authors); year 2025. Venue: iclr-2026-orals-posters.json, 'Accept (Poster)' (poster 10010501, OpenReview GMP1S4R6Ke). Formula checked against Sec. 3 (Eqs. 1 to 12): softmax router and TopK fusion (Eqs. 1 and 2), \\(y=Wx+\\mathcal{F}_{\\text{route}}(\\{\\alpha_e(x)\\Delta W^{(e)}x\\})\\) (Eq. 4), RSL with \\(-\\lambda\\,\\mathbb{E}[\\mathcal{H}(p)]\\) (Eq. 5), the preservation term (Eq. 11) and \\(\\mathcal{L}_{total}\\) (Eq. 12, which repeats \\(\\alpha\\) inside and outside \\(\\mathcal{L}_{RSL}\\), as transcribed). The entropy-sign tension is real: Eq. 5 rewards entropy, matching the strong-convexity argument, while the text says minimising \\(\\mathcal{H}\\) promotes specialisation. trainable_params: App. A.4 gives 3.88% (six experts plus routing) versus MixLoRA's 8.08% (48%), routing about 0.04%; the router architecture is not described. Top-\\(K\\) ablation (App. A.3): accuracy rises from \\(K=1\\) to 3, then falls. 2k mixed routing examples (Secs. 4.3 and 4.4). Table 2 LLaMA3-8B row: LoRA-Mixer beats MixLoRA on all seven tasks (65.53 vs 64.44 GSM8K, 57.32 vs 55.49 HumanEval). Relations: MoLE, MixLoRA, LoraHub, LoRA-LEGO and PHATGOOSE are baselines (PHATGOOSE OOD on QQP/RTE/MRPC in Table 6, in-distribution in App. A.14); App. A.7 calls MoLE nearly identical in inference cost but coarse-grained; X-LoRA is not cited (no match in the text). Code: github.com/hustcselwb/LoRA-Mixer holds only LICENSE and README (last push 2026-04-16). mergeable no and composition-or-routing are correct. hf_peft false: PEFT has xlora but no LoRA-Mixer. All 6 relation targets are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "in-place-ttt",
+   "name": "In-Place TTT",
+   "full_name": "In-Place Test-Time Training: the MLP down-projection as chunk-wise fast weights with an LM-aligned target",
+   "paper_title": "In-Place Test-Time Training",
+   "authors": "Feng et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (oral)",
+   "arxiv": "2604.06169",
+   "url": "https://arxiv.org/abs/2604.06169",
+   "code_url": "https://github.com/ByteDance-Seed/In-Place-TTT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "Z=\\phi(HW_{gate}^{\\top})\\odot(HW_{up}^{\\top})\\in\\mathbb{R}^{n\\times d_{ff}},\\ \\text{split into chunks } Z_{[i]}\\in\\mathbb{R}^{C\\times d_{ff}};\\ \\ O_{[i]}=Z_{[i]}\\big(W_{down}^{(i)}\\big)^{\\top};\\ \\ \\hat V=\\operatorname{Conv1D}(X_0)\\,W_{target}\\in\\mathbb{R}^{n\\times d};\\ \\ W_{down}^{(i+1)}=W_{down}^{(i)}+\\eta\\,\\hat V_{[i]}^{\\top}Z_{[i]}\\ \\ \\big(\\text{one gradient step on } -\\langle Z_{[i]}W^{\\top},\\hat V_{[i]}\\rangle_F\\big);\\ \\ W_{down}^{(0)}=W_0\\in\\mathbb{R}^{d\\times d_{ff}}\\ \\text{(pretrained), reset at document boundaries};\\ \\ \\text{equivalently } W_{down}^{(i)}=W_0+\\eta\\textstyle\\sum_{j<i}\\hat V_{[j]}^{\\top}Z_{[j]}\\ \\text{(a prefix sum, so chunks run in parallel)};\\ \\ \\text{slow weights (all, plus new } W_{target}\\in\\mathbb{R}^{d\\times d}\\text{ and a depthwise kernel-5 Conv1D) trained by continual LM training; fast weights updated in closed form at inference}",
+   "trainable_params": "\\text{outer loop: the whole model (continual training, AdamW, lr } 5\\times10^{-6}\\text{) plus } d^{2}+5d\\text{ new parameters per TTT layer } (W_{target},\\ \\text{depthwise Conv1D});\\ \\text{inner loop: a fast-weight state } d\\times d_{ff}\\text{ per TTT layer, changed by rank-}\\le C\\text{ increments, with no gradients stored}",
+   "locus": "Down-projection \\(W_{down}\\) of the gated MLP in a subset of layers (every sixth layer, \\([0,6,\\dots,36]\\), in the released long-context Qwen3 config): Qwen3-4B-Base, LLaMA-3.1-8B and Qwen3-14B-Base as a drop-in, and 0.5B to 4B models trained from scratch.",
+   "modification_kind": "selective",
+   "structure": "At inference the only parameters that change are the MLP down-projections of the TTT layers. Each change is the closed-form gradient step of a linear (negative inner-product) loss, so the delta added after chunk \\(i\\) is the rank-\\(\\le C\\) outer-product sum \\(\\eta\\hat V_{[i]}^{\\top}Z_{[i]}\\) between the MLP's intermediate activations and an LM-aligned target. The target mixes nearby future-token embeddings through a short convolution and a learned \\(d\\times d\\) map, so the fast weight stores associations from keys to the tokens that follow them; an induction-head argument shows that the next-token target raises the correct logit while a reconstruction target does not. Apply-then-update keeps the scheme causal: chunk \\(i\\) is processed with \\(W_0+\\eta\\sum_{j<i}\\Delta_j\\), so the convolution may look ahead inside a chunk. The released code uses a centred depthwise kernel of size 5 confined to each chunk and, by default, the normalised MLP input rather than the token embedding as the target source. Large chunks give parallelism (\\(C=512\\) to \\(1024\\) is best in the ablation, 4096 in the released config, whose inner rate is \\(\\eta=3\\)), and inference clips each \\(\\|\\Delta_i\\|_F\\) to \\(\\tau\\) (\\(\\tau=10^{-5}\\) for all reported Qwen3-4B evaluations). The slow weights, including the new target modules, are learned by ordinary continual pretraining through the unrolled updates.",
+   "mergeable": "no",
+   "mergeable_reason": "The fast-weight delta \\(\\eta\\sum_{j<i}\\hat V_{[j]}^{\\top}Z_{[j]}\\) depends on the current context and is reset at every document boundary, so there is nothing static to fold; the small target modules stay as extra parameters at inference.",
+   "identity_at_init": "The Conv1D kernel is zero-initialised (and \\(W_{target}\\) is a small random diagonal), so \\(\\hat V=0\\) and every fast-weight delta vanishes when continual training starts: the warm-started model computes exactly the pretrained function. At test time each document starts from \\(W_{down}^{(0)}=W_0\\).",
+   "key_idea": "Turn an existing MLP's down-projection into test-time-training fast weights instead of adding a new recurrent layer, update it once per large chunk with a closed-form step, and point the update at next-token information rather than a reconstruction of the current token. Test-time weight adaptation then becomes a drop-in upgrade of a pretrained LLM that is compatible with context parallelism.",
+   "results_note": "After identical continual training of Qwen3-4B-Base, In-Place TTT raises RULER accuracy at 64k, 128k and 256k from 74.3, 74.8 and 41.7 to 78.7, 77.0 and 43.9, with near-equal scores at 4k to 32k.",
+   "relations": [
+    {
+     "target": "seal",
+     "type": "competes-with",
+     "note": "Both let an LLM change its own weights from new information. SEAL writes self-edits and applies LoRA SFT steps inside an RL outer loop; In-Place TTT applies a closed-form update to MLP down-projections inside the forward pass, chunk by chunk, with no backpropagation at inference."
+    },
+    {
+     "target": "sparse-memory-finetuning",
+     "type": "competes-with",
+     "note": "Selective-locus counterpart. Sparse Memory Finetuning updates only the memory-layer slots that a batch activates and keeps the change; In-Place TTT updates a fixed locus (\\(W_{down}\\) of chosen layers) transiently per context and then resets it."
+    },
+    {
+     "target": "doc-to-lora",
+     "type": "competes-with",
+     "note": "Both internalise a context into weights. Doc-to-LoRA generates a persistent LoRA from a document with a hypernetwork; In-Place TTT accumulates an additive update to \\(W_{down}\\) online, of rank at most \\(C\\) per chunk, over contexts up to 128k tokens and beyond."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.06169",
+    "https://arxiv.org/html/2604.06169",
+    "https://github.com/ByteDance-Seed/In-Place-TTT",
+    "https://raw.githubusercontent.com/ByteDance-Seed/In-Place-TTT/HEAD/hf_models/hf_qwen3/modeling_qwen3.py",
+    "https://raw.githubusercontent.com/ByteDance-Seed/In-Place-TTT/HEAD/configs/pretrain/qwen3_longct.yaml",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://iclr.cc/virtual/2026/oral/10008405",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2604.06169",
+    "https://iclr.cc/Conferences/2026/Dates",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "structure: added the released inner learning rate (\\(\\eta=\\) ttt_lr \\(=3\\) in configs/pretrain/qwen3_longct.yaml; code default 0.3) and the clipping threshold \\(\\tau=10^{-5}\\) (App. 9.2).",
+    "locus and the sparse-memory-finetuning and doc-to-lora relation notes: wrapped \\(W_{down}\\), \\(C\\) and the layer list in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2604.06169, v1 2026-04-07, first author Guhao Feng (7 authors, Tianle Cai last), comment 'ICLR 2026 Oral Presentation'. Venue: iclr-2026-orals-posters.json, 'Accept (Oral)' (Oral Session 3C, oral 10008405; poster 10008404, OpenReview dTWfCLSoyl). Year 2025 is kept because the paper was an ICLR 2026 submission: the deadline was 2025-09-24 and reviews were released on OpenReview on 2025-11-11 (iclr.cc dates page), the same basis on which sibling verified batches date ICLR 2026 submissions to 2025 (public from 2025-10-08). The exact OpenReview creation date could not be read (API challenge, not bypassed); Semantic Scholar lists 2026 from arXiv. Formula checked against Secs. 3.1 to 3.4 and App. 9, and against hf_models/hf_qwen3/modeling_qwen3.py: \\(O_{[i]}=Z_{[i]}(W_{down}^{(i)})^{\\top}\\), \\(\\hat V=\\mathrm{Conv1D}(X_0)W_{target}\\), \\(W^{(i)}=W^{(i-1)}+\\eta\\hat V_{[i]}^{\\top}Z_{[i]}\\) (Eq. 1), prefix-sum form (Sec. 3.4), reset at document boundaries. The code uses a depthwise Conv1d (kernel 5, padding 2, no bias) applied per chunk, a bias-free \\(d\\times d\\) ttt_proj, a cumulative sum that drops the last chunk's delta, ttt_target 'hidden_states' (the post-attention-layernorm MLP input) by default, zero-initialised conv and a diagonal \\(\\mathcal{N}(0,0.02^2)\\) ttt_proj. trainable_params: \\(d^2+5d\\) new parameters per TTT layer; the training config freezes nothing (AdamW, lr \\(5\\times10^{-6}\\)). RULER Table 1: 74.3 / 74.8 / 41.7 to 78.7 / 77.0 / 43.9 at 64k / 128k / 256k, with 96.6 vs 96.1 at 4k. mergeable no and identity_at_init are consistent with the code. hf_peft false. All 3 relation targets are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "fzoo",
+   "name": "FZOO",
+   "full_name": "FZOO: Fast Zeroth-Order Optimizer (batched one-sided Rademacher estimates with a loss-std-normalised step)",
+   "paper_title": "FZOO: Fast Zeroth-Order Optimizer for Fine-Tuning Large Language Models towards Adam-Scale Speed",
+   "authors": "Dang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2506.09034",
+   "url": "https://arxiv.org/abs/2506.09034",
+   "code_url": "https://github.com/DKmiyan/FZOO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "l_0=\\mathcal{L}(\\theta_t;\\mathcal{B}_t),\\ \\ l_i=\\mathcal{L}(\\theta_t+\\epsilon u_i;\\mathcal{B}_t),\\ u_i\\overset{iid}{\\sim}\\operatorname{Unif}\\{\\pm1\\}^{D}\\ (i=1,\\dots,N);\\ \\ g_t=\\frac{1}{\\epsilon N}\\sum_{i=1}^{N}(l_i-l_0)\\,u_i;\\ \\ \\sigma_t^{2}=\\frac{1}{N-1}\\sum_{i=1}^{N}\\Big(l_i-\\frac1N\\sum_{j}l_j\\Big)^{2};\\ \\ \\theta_{t+1}=\\theta_t-\\eta_t\\,\\frac{g_t}{\\sigma_t};\\ \\ \\mathbb{E}\\sigma_t^{2}=\\epsilon^{2}\\|\\nabla\\mathcal{L}\\|^{2}+O(\\epsilon^{3}),\\ \\mathbb{E}\\|g_t\\|^{2}=\\tfrac{N+D-1}{N}\\|\\nabla\\mathcal{L}\\|^{2}+O(\\epsilon)\\ \\Rightarrow\\ g_t/\\sigma_t\\approx c\\,g_t/\\|g_t\\|;\\ \\ N+1\\text{ forward passes per step, no backpropagation; } \\theta\\text{ = all } D\\text{ weights or a PEFT subset}",
+   "trainable_params": "\\text{all } D\\text{ parameters (full fine-tuning) or a PEFT subset (prefix-tuning in the paper); inference-level memory, as for MeZO}",
+   "locus": "All parameters (full-parameter) or the parameters of a PEFT module (prefix-tuning) of RoBERTa-large, the OPT family (125M to 66B; the abstract says 350M to 66B, and OPT-125M is used for the F1 and speed experiments), Phi-2 and Llama-3 (8B)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A zeroth-order gradient estimate built from \\(N\\) one-sided finite differences that share one unperturbed loss; to first order it is the rank-\\(N\\) random projection \\(\\frac1N\\sum_iu_iu_i^{\\top}\\nabla\\mathcal{L}\\). The step is divided by the empirical standard deviation of the \\(N\\) perturbed losses, which estimates \\(\\epsilon\\|\\nabla\\mathcal{L}\\|\\), so the update is a zeroth-order normalised-SGD step: large in flat regions, small in steep ones. Rademacher signs turn the perturbed matrix products into additions and subtractions, so the \\(N\\) perturbed forward passes are fused into one batched kernel (\\(1.92\\times\\) faster on OPT-125M with \\(N=8\\)). The FZOO-R variant reuses half of the previous batch's losses when estimating \\(\\sigma_t\\).",
+   "mergeable": "conditional",
+   "mergeable_reason": "FZOO only changes how updates are computed. In full-parameter mode it edits the model's own weights in place, so there is nothing to merge; in FZOO (prefix) the trained parameters are a prefix, which stays in the input and cannot be folded into the weights.",
+   "identity_at_init": "Trivial: there is no reparameterisation and training starts from \\(\\theta_0\\).",
+   "key_idea": "Make MeZO-style fine-tuning converge in far fewer forward passes by averaging several one-sided Rademacher probes per step and dividing the step by the spread of their losses, which turns the update into a normalised-SGD step at inference-level memory.",
+   "results_note": "Across RoBERTa-large, OPT (350M to 66B), Phi-2 and Llama-3 on 11 tasks, the abstract reports that FZOO beats MeZO by +3% in accuracy with 3x fewer forward passes, and by +5.6% with 18x fewer forward passes on RoBERTa-large (the unit is not stated; in Table 1, \\(k=16\\), the averages are 71.4 vs 67.4).",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "builds-on",
+     "note": "Direct successor and main baseline. FZOO replaces MeZO's single two-sided Gaussian SPSA probe and fixed step with \\(N\\) one-sided Rademacher probes and a step normalised by the loss standard deviation."
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "combines",
+     "note": "FZOO (prefix) runs the zeroth-order update on prefix parameters only, for further memory savings."
+    },
+    {
+     "target": "agzo",
+     "type": "competes-with",
+     "note": "Later MeZO successor in the catalogue; not compared in the FZOO paper."
+    },
+    {
+     "target": "zo-muon",
+     "type": "competes-with",
+     "note": "Later zeroth-order optimiser (February 2026); not compared in the FZOO paper."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.09034",
+    "https://arxiv.org/html/2506.09034",
+    "https://github.com/DKmiyan/FZOO",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://iclr.cc/virtual/2026/poster/10009867",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2506.09034",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "mergeable: yes changed to conditional. Full-parameter FZOO edits the weights in place, but FZOO (prefix), which the paper evaluates (Tables 1 and 7, Fig. 5), trains a prefix that cannot be merged into the weights.",
+    "results_note: the abstract's '+3%' and '+5.6%' were rendered as points; the paper does not give the unit, and Table 1 (RoBERTa-large, \\(k=16\\)) averages are 71.4 vs 67.4. Reworded to quote the abstract.",
+    "locus: OPT-125M is also used (Table 4 F1 objective, the 1.92x batching speed-up, Table 5).",
+    "mezo relation note: wrapped \\(N\\) in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2506.09034, v1 2025-06-10, first author Sizhe Dang (7 authors); year 2025. Venue: iclr-2026-orals-posters.json, 'Accept (Poster)' (poster 10009867, OpenReview NMlF3YjS8E). Formula checked against Secs. 3.1 to 3.5: \\(l_0\\), \\(l_i=\\mathcal{L}(\\theta+\\epsilon u_i)\\) with Rademacher \\(u_i\\), \\(g_t=\\frac{1}{\\epsilon N}\\sum_i(l_i-l_0)u_i\\) (Eq. 2), \\(\\sigma_t^2\\) as the sample variance of the \\(l_i\\) (Eq. 3), \\(\\theta_{t+1}=\\theta_t-\\eta_tg_t/\\sigma_t\\) (Eq. 4), and Proposition 3.2 (\\(\\mathbb{E}\\|g_t\\|^2=\\frac{N+d-1}{N}\\|\\nabla\\mathcal{L}\\|^2+O(\\epsilon)\\), \\(\\mathbb{E}\\sigma_t^2=\\epsilon^2\\|\\nabla\\mathcal{L}\\|^2+O(\\epsilon^3)\\)). FZOO-R, the batched sign-flip forward pass and the 1.92x OPT-125M speed-up (Sec. 3.3) are as stated. trainable_params: no extra parameters; inference-level memory (Sec. 4.4). Code: github.com/DKmiyan/FZOO exists (last push 2026-02-13). hf_peft false. Relations: mezo builds-on and prefix-tuning combines are supported by the paper; agzo (arXiv 2601.17261) and zo-muon (arXiv 2602.17155) are later and not compared, as the notes say. All 4 targets are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "ld-mole",
+   "name": "LD-MoLE",
+   "full_name": "LD-MoLE: Learnable Dynamic routing for Mixture of LoRA Experts (Sparsegen router with a predicted, token-wise sparsity factor)",
+   "paper_title": "LD-MoLE: Learnable Dynamic Routing for Mixture of LoRA Experts",
+   "authors": "Zhuang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2509.25684",
+   "url": "https://arxiv.org/abs/2509.25684",
+   "code_url": "https://github.com/eshentw/LD-MoLE",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h_t=W_0x_t+\\frac{\\alpha}{r}\\sum_{i=1}^{E}p_{t,i}\\,B_iA_ix_t\\ \\ (\\alpha/r=16/8=2\\text{ in the released code; the paper's Eq. 7 has no scale}),\\ \\ B_i\\in\\mathbb{R}^{d_{out}\\times r},\\ A_i\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ u_t=W_{gate}x_t\\in\\mathbb{R}^{E};\\ \\ \\lambda_t=f(x_t)<1\\ \\text{(an MLP shared by all modules with the same } d_{in}\\text{; in the code } f(x)=\\mathrm{LogSigmoid}(\\mathrm{MLP}(x))+1-\\epsilon,\\ \\epsilon=10^{-2})\\text{;}\\ \\ p_t=\\arg\\min_{p\\in\\Delta^{E-1}}\\|p-u_t\\|_2^{2}-\\lambda_t\\|p\\|_2^{2}\\ \\Rightarrow\\ p_{t,i}=\\Big[\\frac{u_{t,i}-\\tau_t}{1-\\lambda_t}\\Big]_+,\\ \\tau_t=\\frac{U_k-1+\\lambda_t}{k},\\ k=\\max\\{k:1-\\lambda_t+k\\,u_{(k)}>U_k\\},\\ U_k=\\textstyle\\sum_{j\\le k}u_{(j)};\\ \\ \\mathcal{L}=\\mathcal{L}_{LM}+\\alpha_{lb}\\,E\\sum_i\\mathcal{F}_i\\mathcal{P}_i+\\beta\\,\\mathrm{ReLU}\\big(\\lambda_{lower}(k^{\\star})-\\lambda_t\\big),\\ \\lambda_{lower}(k)=1-\\big(U_k-k\\,u_{(k+1)}\\big);\\ \\ \\text{frozen: } W_0;\\ \\text{trained: the experts, } W_{gate}\\text{ and } f",
+   "trainable_params": "E\\,r(d_{in}+d_{out})+E\\,d_{in}\\ \\text{per adapted matrix } (E=8,\\ r=8)+\\text{one shared }\\lambda\\text{-MLP per distinct } d_{in}\\ (64\\,d_{in}+129\\text{ in the released code});\\ 2.33\\%\\text{ to }4.23\\%\\text{ of the base model in the paper}",
+   "locus": "Every linear projection (q, k, v, o, gate, up, down) of Qwen3-1.7B, Llama-3.2-3B and an 8B Llama-3 model",
+   "modification_kind": "composition-or-routing",
+   "structure": "A mixture of \\(E\\) LoRA deltas per projection with token-wise sparse weights, \\(\\Delta W(x_t)=\\frac{\\alpha}{r}\\sum_ip_{t,i}B_iA_i\\). TopK is replaced by Sparsegen: the Euclidean projection of the gate logits onto the simplex with a quadratic bonus \\(\\lambda\\|p\\|^2\\), equivalently sparsemax applied to \\(u/(1-\\lambda)\\). It is piecewise linear, differentiable almost everywhere, and always keeps at least one expert, unlike ReLU routing. A small MLP predicts \\(\\lambda_t\\) from the token, so the number of active experts varies by token and by layer. Because \\(\\lambda\\) fixes the support analytically, a target count \\(k\\) becomes the closed-form \\(\\lambda\\)-interval of Proposition 2, enforced by a hinge on \\(\\lambda\\) (the main results use \\(\\beta=0\\)). In the released code \\(f\\) is a two-layer MLP (hidden width 64, output bias initialised to \\(-2.5\\)) ending in a LogSigmoid, to which \\(1-\\epsilon\\) with \\(\\epsilon=10^{-2}\\) is added, so \\(\\lambda_t\\in(-\\infty,0.99)\\), and the denominator \\(1-\\lambda_t\\) is clamped at \\(\\epsilon\\); the gate has no bias; all experts are evaluated densely and then weighted; and every \\(B_i\\) starts at zero. The paper writes each expert as \\(\\Delta W_i=A_iB_i\\) with \\(A_i\\in\\mathbb{R}^{d_{out}\\times r}\\); formula_latex uses \\(B_iA_i\\) with the letters swapped.",
+   "mergeable": "no",
+   "mergeable_reason": "\\(p_t\\) changes from token to token, so the mixture cannot be folded into a static \\(W_0\\).",
+   "identity_at_init": "Not discussed in the paper. The released code zero-initialises every \\(B_i\\), so \\(\\Delta W(x)=0\\) and the model starts at the frozen base.",
+   "key_idea": "Replace TopK routing in mixture-of-LoRA fine-tuning with a closed-form, differentiable Sparsegen projection whose sparsity \\(\\lambda\\) is predicted per token by a shared MLP, so the number of experts per token and per layer is learned rather than fixed. The closed form also yields an analytic \\(\\lambda\\)-interval for exactly \\(k\\) active experts, used as a sparsity loss.",
+   "results_note": "On Llama-3.2-3B, LD-MoLE averages 82.05 over nine benchmarks versus 81.42 for ReLU-routed ReMoLE and 78.72 for the best TopK MoLA configuration, with eight rank-8 experts on every projection (3.28% trainable parameters).",
+   "relations": [
+    {
+     "target": "mole",
+     "type": "builds-on",
+     "note": "LD-MoLE cites MoLE (Wu et al.) as the origin of the mixture-of-LoRA-experts framework it works in."
+    },
+    {
+     "target": "mixlora",
+     "type": "competes-with",
+     "note": "TopK LoRA experts with a load-balancing loss; LD-MoLE removes the fixed k (cited, not compared directly)."
+    },
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "Cited mixture-of-LoRA variant; not compared."
+    },
+    {
+     "target": "lora-mixer",
+     "type": "competes-with",
+     "note": "Concurrent ICLR 2026 mixture-of-LoRA router, not compared. LoRA-Mixer keeps a fixed top-K on attention/SSM projections and shapes routing with an entropy-augmented balance loss; LD-MoLE learns a per-token, per-layer expert count on all projections."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.25684",
+    "https://arxiv.org/html/2509.25684",
+    "https://github.com/eshentw/LD-MoLE",
+    "https://raw.githubusercontent.com/eshentw/LD-MoLE/HEAD/peft/utils/sparsegen.py",
+    "https://raw.githubusercontent.com/eshentw/LD-MoLE/HEAD/peft/tuners/lora.py",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json",
+    "https://iclr.cc/virtual/2026/poster/10011554",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2509.25684",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "structure: the released code does not give \\(\\lambda_t\\in(-\\infty,0)\\). GlobalSparsegen computes \\(\\lambda=\\mathrm{LogSigmoid}(\\mathrm{MLP}(x))+(1-\\epsilon)\\) with \\(\\epsilon=10^{-2}\\), so \\(\\lambda_t\\in(-\\infty,0.99)\\), and it clamps \\(1-\\lambda\\) at \\(\\epsilon\\). Also recorded the MLP's output-bias initialisation (\\(-2.5\\)).",
+    "formula_latex: the \\(\\alpha/r\\) factor comes from the code and the hyper-parameters (\\(r=8\\), \\(\\alpha=16\\)); the paper's Eq. 7 has no scale. Annotated, together with the code form of \\(f\\).",
+    "structure: recorded the paper's letter convention \\(\\Delta W_i=A_iB_i\\), \\(A_i\\in\\mathbb{R}^{d_{out}\\times r}\\)."
+   ],
+   "verification_notes": "arXiv API: 2509.25684, v1 2025-09-30, first author Yuan Zhuang (7 authors), comment 'ICLR 2026'; year 2025. Venue: iclr-2026-orals-posters.json, 'Accept (Poster)' (poster 10011554, OpenReview 4ST2YyTjI7). Formula checked against Sec. 3 (Eqs. 1 to 15), Propositions 1 and 2 and App. D: Sparsegen objective (Eq. 2), closed form \\(p_i=[(u_i-\\tau)/(1-\\lambda)]_+\\), \\(\\tau=(U_k-1+\\lambda)/k\\) (Eqs. 4 and 5), \\(\\mathcal{L}_{lb}=E\\sum_i\\mathcal{F}_i\\mathcal{P}_i\\) (Eq. 9), \\(\\lambda_{lower}(k)=1-(U_k-ku_{(k+1)})\\) (Eq. 12), hinge sparsity loss (Eq. 14), total loss (Eq. 15), with \\(\\alpha=1\\), \\(\\beta=0\\) in the main table. App. D: \\(r=8\\), \\(\\alpha=16\\), 8 experts, all of Q, K, V, O, Up, Gate and Down. Code (peft/utils/sparsegen.py, peft/tuners/lora.py): UniversalMLP Linear(\\(d_{in}\\),64)-ReLU-Linear(64,1)-LogSigmoid, i.e. \\(64d_{in}+129\\) parameters per distinct \\(d_{in}\\); bias-free lora_route (\\(Ed_{in}\\)); dense evaluation of all experts; lora_B zero-initialised; scaling lora_alpha/r. trainable_params re-derived as \\(Er(d_{in}+d_{out})+Ed_{in}\\) per matrix plus the shared MLPs; Table 1 TP 2.33% to 4.23%. Results: Llama-3.2-3B 82.05 vs ReMoLE 81.42 vs MoLA(2468) 78.72 at 3.28% TP, as stated. The 8B model is labelled Llama3.1-8B in Table 1 and Llama-3.2-8b in the text, so the locus wording '8B Llama-3 model' is kept. mergeable no is correct. hf_peft false: the repository vendors a modified PEFT, but huggingface/peft has no LD-MoLE tuner. Relations: MoLE (Wu et al. 2024 = catalogue id mole, arXiv 2404.13628) is cited as the origin of the framework; MixLoRA and LoRAMoE are cited, not compared. All 4 targets are in existing_index.json or this file; the id is unique."
+  }
+ ],
+ "papers": [
+  {
+   "id": "lora-gd-convergence-rate",
+   "title": "On the Convergence Rate of LoRA Gradient Descent",
+   "authors": "Mu et al.",
+   "year": 2025,
+   "venue": "ICML 2026 (spotlight, oral presentation)",
+   "arxiv": "2512.18248",
+   "url": "https://arxiv.org/abs/2512.18248",
+   "claim": "For vanilla LoRA gradient descent (\\(A\\) and \\(B\\) updated simultaneously on \\(\\mathcal{L}(BA)\\)), assuming only that the loss is \\(L\\)-smooth and bounded below in the full weight \\(W\\), \\(\\min_{t<T}\\|\\nabla\\mathcal{J}(V_t)\\|^2=O(1/\\log T)\\), improving to \\(O(1/T)\\) if the iterates stay bounded. The factor-space loss is not smooth and the iterates are not assumed bounded. The proof stacks \\(V=[B;A^{\\top}]\\), writes \\(BA=E_1VV^{\\top}E_2\\) (a symmetric Burer--Monteiro form), proves a descent lemma with extra terms up to fourth order in the step, and uses the adaptive step \\(\\eta_t=\\min\\{1/(4\\sqrt2L(\\|V_t\\|^2+\\|\\nabla\\mathcal{L}(B_tA_t)\\|)),1\\}\\) together with the worst-case growth \\(\\|V_t\\|^2=O(t)\\). The rate has no explicit dependence on the rank \\(r\\) (only through \\(\\|V_0\\|\\)), extends to many adapted matrices by block extraction, and \\(V=0\\) is always a stationary point of the reparametrised loss.",
+   "relevance": "The first non-asymptotic guarantee for plain LoRA gradient descent without boundedness assumptions, complementing the landscape result in lora-converges-or-fails-loudly. It locates the difficulty in the reparametrisation: the factor-space loss is only 'Lipschitz-like', with a constant growing like \\(\\|V\\|^2\\), so the usable step shrinks as the factors grow. This is the conditioning issue that the gauge-aware optimisers in the catalogue target (riemannian-preconditioned-lora, lora-rite, riemannion, balanced-lora). The stationary point at \\(V=0\\) exists whatever the loss of \\(W_0\\), one concrete way LoRA and full fine-tuning can end in different places.",
+   "sources": [
+    "https://arxiv.org/abs/2512.18248",
+    "https://arxiv.org/html/2512.18248",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/poster/65870",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2512.18248",
+    "https://icml.cc/virtual/2026/oral/71053"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "venue: 'ICML 2026 (spotlight)' extended to 'ICML 2026 (spotlight, oral presentation)'; the decision is 'Accept (spotlight)' and the paper also has an Oral 1G event (71053), the same convention as POET-X.",
+    "claim and relevance: plain-text math rewritten as LaTeX in \\( \\) (no change of content)."
+   ],
+   "verification_notes": "arXiv API: 2512.18248, v1 2025-12-20, authors Siqiao Mu and Diego Klabjan, comment 'ICML 2026'; year 2025. Venue: icml-2026-orals-posters.json, 'Accept (spotlight)', poster 65870 plus oral 71053 (Oral 1G), OpenReview 9GRlBVAXq8. Claim checked against Sec. 3: Assumptions 3.1 and 3.2 (smooth, lower-bounded \\(\\mathcal{L}\\) in \\(W\\)), stacking and \\(E_1VV^{\\top}E_2\\) (Step 1), \\(\\nabla\\mathcal{J}(V)=2\\,\\mathrm{Sym}(E_1^{\\top}\\nabla\\mathcal{L}E_2^{\\top})V\\) and the stationary point at \\(V=0\\) (Eq. 7), Lemma 3.3 (terms up to \\(\\|V_2-V_1\\|^4\\)), the step size of Lemma 3.4 (Eq. 8), Theorem 3.5 (\\(O(1/\\log T)\\), and \\(O(1/T)\\) under bounded iterates), the multi-matrix extension (Lemma 3.6) and the Burer--Monteiro remark (Sec. 3.3). The rank-independence statement is in the introduction. All 5 catalogue ids named in the relevance are in existing_index.json or this file; the id is unique."
+  },
+  {
+   "id": "lora-forgetting-mean-field-attention",
+   "title": "Understanding Catastrophic Forgetting In LoRA via Mean-Field Attention Dynamics",
+   "authors": "Koubbi et al.",
+   "year": 2024,
+   "venue": "ICML 2026 (poster)",
+   "arxiv": "2402.15415",
+   "url": "https://arxiv.org/abs/2402.15415",
+   "claim": "In a tied-weight, continuous-depth self-attention model where tokens evolve as interacting particles (on the sphere under Post-LayerNorm) and LoRA is a low-rank perturbation of \\((Q,K,V)\\), forgetting is measured as drift of the emergent cluster geometry, which the authors correlate with base-task perplexity. (i) A finite-time Wasserstein bound: \\(W_2(\\mu_t,\\nu_t)\\le c\\,\\varepsilon\\,e^{c\\,e^{ct}}\\) for perturbations of operator norm \\(\\varepsilon\\) (Prop. 3.1). (ii) For \\(A=K^{\\top}Q=V\\succeq0\\) with a spectral gap and a symmetric update \\(\\Delta V=\\Delta A\\), if \\(\\mathrm{gap}+a>2\\|b\\|+\\|E\\|_{op}\\), with \\(a=u_1^{\\top}\\Delta Vu_1\\), \\(b=P_{\\perp}\\Delta Vu_1\\) and \\(E=P_{\\perp}\\Delta VP_{\\perp}\\), the limiting cluster moves from \\(u_1\\) to \\(\\tilde u_1\\) with \\(\\|u_1-\\tilde u_1\\|\\lesssim(2\\|b\\|+\\|E\\|_{op})/(\\mathrm{gap}+a)\\) (Prop. 3.3). (iii) For i.i.d. random rank-\\(r\\) value adapters scaled by \\(\\eta_L\\) at depth \\(L\\) there is a norm transition: \\(\\eta_L\\ll\\sqrt L\\) keeps the mean-square distance to the pretrained cluster at \\(O(1/L)\\), while \\(\\eta_L=\\sqrt L\\) gives a diffusive regime with \\(\\sum_i\\mathbb{E}\\|x_i^{\\ell}-u_1\\|^2\\simeq n\\sum_{i\\ge2}\\kappa/(2(\\lambda_1-\\lambda_i)+d\\kappa)\\) (Thm. 4.2). (iv) A depth transition: perturbed tokens track the base dynamics up to a critical depth \\(T^*\\) and then move to a new clustering (Thm. 4.6). Experiments on Qwen3-0.6B show a loss transition in the perturbation norm; rank matters during LoRA training but not for isotropic random adapters, learned updates align with the top direction \\(u_1\\), and an empirical bifurcation depth moves earlier during fine-tuning. Llama-2-7B is used only to check clustering and the spectral assumptions, which few of its layers satisfy. The May 2026 v2 replaces the 2024 results.",
+   "relevance": "A dynamical-systems account of why LoRA forgets less but not nothing (cf. lora-learns-less-forgets-less): forgetting is governed by the update norm relative to a \\(\\sqrt L\\) depth scale and by alignment with small-gap eigendirections of the pretrained attention. This gives a toy-model rationale for orthogonal-subspace and norm-controlled variants (o-lora, which the paper cites, and inflora) and opens a forgetting axis in the theory index, which so far covers optimisation and expressivity.",
+   "sources": [
+    "https://arxiv.org/abs/2402.15415",
+    "https://arxiv.org/html/2402.15415",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/poster/64536",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2402.15415"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "claim: 'Experiments on Qwen3-0.6B and Llama 2 show a loss transition in perturbation norm' was wrong for Llama 2. The loss-versus-norm experiments (Figs. 2 and 3), the alignment study (Fig. 4) and the bifurcation-depth study (Fig. 6) use Qwen3-0.6B; Llama-2-7B appears only in App. E.4 and E.5 (spectral assumptions, met by few layers, and clustering with doubled depth).",
+    "claim (iii): 'keeps tokens within \\(O(1/L)\\)' corrected to a mean-square distance \\(\\mathbb{E}\\|x_i^{\\ell}-u_1\\|^2\\lesssim O(1/L)\\) (Eq. 20).",
+    "claim (ii): added the assumptions \\(A=K^{\\top}Q=V\\succeq0\\) and \\(\\Delta V=\\Delta A\\), and that the drift bound is up to constants (\\(\\lesssim\\)).",
+    "relevance: recorded that the paper cites O-LoRA (Wang et al. 2023) but not InfLoRA. Plain-text math rewritten in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2402.15415, v1 2024-02-23, v2 2026-05-13, authors Hugo Koubbi, Louis Hernandez, Matthieu Boussard; the comment says the new version, accepted at ICML 2026, has new results and drops the previous ones. Year 2024 follows the first public version per catalogue rule, although the content is v2's. Venue: icml-2026-orals-posters.json, 'Accept (regular)', poster 64536 (OpenReview MXvuMNd3oI). Claim checked against Prop. 3.1 (Eq. 14 and the \\(c\\varepsilon e^{ce^{ct}}\\) corollary), Assumption 3.2 and Prop. 3.3 (Eqs. 15 and 16), Assumption 4.1 and Thm. 4.2 (Eqs. 19 to 21, \\(\\kappa=d^{-2}\\sum_as_a^2\\)), Thm. 4.6, Figs. 2 to 6 and App. E. The catalogue ids in the relevance (lora-learns-less-forgets-less, o-lora, inflora) are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "model-merging-scaling-laws",
+   "title": "Model Merging Scaling Laws in Large Language Models",
+   "authors": "Wang et al.",
+   "year": 2025,
+   "venue": "ICML 2026 (poster)",
+   "arxiv": "2509.24244",
+   "url": "https://arxiv.org/abs/2509.24244",
+   "claim": "The expected cross-entropy of merging \\(k\\) experts into a base of size \\(N\\) follows a floor-plus-tail law \\(\\mathbb{E}[L\\mid N,k]=L_*+BN^{-\\beta}+A_0N^{-\\gamma}/(k+b)\\), fitted in-domain and cross-domain over 10,866 merged models (Qwen2.5 0.5B to 72B, nine math, science and code domains, \\(k=1,\\dots,9\\)) for Average, Task Arithmetic, TIES and DARE (\\(R^2>0.98\\)). Larger bases lower the floor and shrink the tail; most gains arrive early (\\(k=5\\) and \\(k=6\\) cross 85% and 90% of the nine-expert improvement); the variance across expert subsets shrinks like \\(1/k\\); and differences between methods compress at scale. A second-order Taylor argument for equal-weight merging (\\(\\alpha_{i,k}=c/k\\)) gives \\(\\mathbb{E}[L]=L_\\infty(N)+A(N)/k+O(k^{-3/2})\\), with \\(L_\\infty=L(\\theta_0)+c\\,g^{\\top}\\mu+\\tfrac{c^2}{2}\\mu^{\\top}H\\mu\\) and \\(A=\\tfrac{c^2}{2}\\mathrm{Tr}(H\\Sigma)\\), where \\(\\mu\\) and \\(\\Sigma\\) are the mean and covariance of the task vectors. Three early points (\\(k\\in\\{1,2,4\\}\\)) are enough to forecast the whole \\(k\\)-curve.",
+   "relevance": "Gives the post-hoc (P) kind a quantitative law: the return from merging is a curvature-weighted variance term \\(\\mathrm{Tr}(H\\Sigma)/k\\) on top of a mean-direction floor, the mean/covariance split that ties-merging, dare and merging-at-scale use informally. The controlled experts are full-parameter fine-tunes (App. D: lr \\(10^{-5}\\), ZeRO-3; the released OpenRLHF training script passes no LoRA option), not LoRAs; the authors note that LoRA rank and expert capacity would shift the fitted floor and tail, so transfer to adapter merging is plausible but untested.",
+   "sources": [
+    "https://arxiv.org/abs/2509.24244",
+    "https://arxiv.org/html/2509.24244",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/poster/63590",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2509.24244",
+    "https://github.com/InfiXAI/Merging-Scaling-Law"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "claim: added \\(R^2>0.98\\), the equal-weight normalisation \\(\\alpha_{i,k}=c/k\\) of Thm. 3.1 and the three fitting points \\(k\\in\\{1,2,4\\}\\) (Sec. 4.2); plain-text math rewritten in \\( \\).",
+    "relevance: the paper does not state 'full-parameter' in words; the claim rests on App. D (lr \\(10^{-5}\\), Adam with offloading, ZeRO-3) and on the released scripts/train_inner.sh, which runs openrlhf.cli.train_sft with no LoRA flag. Recorded as such."
+   ],
+   "verification_notes": "arXiv API: 2509.24244, v1 2025-09-29, first author Yuanyi Wang (9 authors), comment 'ICML 2026'; year 2025. Venue: icml-2026-orals-posters.json, 'Accept (regular)', poster 63590 (OpenReview VkTfx8FJoq). Claim checked against Eq. 1, Sec. 2 (grid \\(N\\in\\{0.5,\\dots,72\\}\\)B, 10,866 models, nine domains), Thm. 3.1 (Eq. 5), the variance result (\\(\\Theta(1/k)\\)), Sec. 3.3.3 (85% at \\(k=5\\), 90% at \\(k=6\\)), Sec. 3.3.4 (method gaps of at most about 2% by \\(k\\approx8\\)), Sec. 4.2 and Apps. B to D. The catalogue ids named (ties-merging, dare, merging-at-scale) are in existing_index.json; the id is unique."
+  },
+  {
+   "id": "zo-edge-of-stability",
+   "title": "Zeroth-Order Optimization at the Edge of Stability",
+   "authors": "Song et al.",
+   "year": 2026,
+   "venue": "ICML 2026 (poster)",
+   "arxiv": "2604.14669",
+   "url": "https://arxiv.org/abs/2604.14669",
+   "claim": "With the standard Gaussian two-point estimator, the mean dynamics of ZO-GD, ZO-GDM and frozen ZO-Adam near a minimum match their first-order counterparts (critical step \\(2/\\lambda_{\\max}\\) for GD), but mean-square linear stability depends on the whole Hessian spectrum. For ZO-GD the critical step \\(\\eta^*\\) solves \\(\\sum_i\\eta\\lambda_i/(2(1-\\eta\\lambda_i))=1\\) (with \\(\\eta\\lambda_{\\max}<1\\)) and satisfies \\(2/(\\mathrm{Tr}H+2\\lambda_{\\max})\\le\\eta^*\\le2/\\mathrm{Tr}H\\), with analogous bounds for momentum (factor \\(1-\\beta\\)) and for frozen ZO-Adam with the preconditioned Hessian \\(P^{-1}H\\) (assuming \\(PH=HP\\)). Full-batch ZO-GD, ZO-GDM and ZO-Adam on CIFAR-10 CNN, ResNet and ViT models (and LSTM and Mamba sorting tasks) settle at this mean-square edge of stability, with catapults after step-size increases. Large ZO steps therefore implicitly regularise the Hessian trace, whereas first-order steps regularise the top eigenvalue; large smoothing \\(\\mu\\) and mini-batching push training into flatter regimes.",
+   "relevance": "The implicit bias of the backward-lens (B) zeroth-order kind behind mezo, agzo, zo-muon and fzoo: ZO fine-tuning is limited by \\(\\mathrm{Tr}(H)\\) rather than \\(\\lambda_{\\max}\\), consistent with MeZO's low-effective-rank explanation and with zo-learning-dynamics-kernel. The experiments use small vision and sequence models, not LLM fine-tuning, and the main theory uses MeZO's symmetric Gaussian estimator. Appendix B extends the covariance-operator framework one ingredient at a time: forward differences (with Gaussian directions), non-Gaussian directions (for the symmetric estimator) and multiple Gaussian queries. FZOO's combination of one-sided Rademacher probes with a shared baseline and a loss-std-normalised step is therefore not covered as such, and none of these variants was tested.",
+   "sources": [
+    "https://arxiv.org/abs/2604.14669",
+    "https://arxiv.org/html/2604.14669",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json",
+    "https://icml.cc/virtual/2026/poster/61252",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2604.14669"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "relevance: 'Appendix B ... covers FZOO-style one-sided Rademacher probes in form' overstated the appendix. B.1 treats forward differences with Gaussian directions, B.2 non-Gaussian directions for the symmetric two-point estimator, and B.3 multiple Gaussian queries; one-sided Rademacher probes with a shared baseline and FZOO's \\(\\sigma_t\\)-normalised step are not analysed together.",
+    "claim: added the side condition \\(\\eta\\lambda_{\\max}<1\\) of Theorem 1 and the commuting assumption \\(PH=HP\\); plain-text math rewritten in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2604.14669, v1 2026-04-16, first author Minhak Song (6 authors), comment 'ICML 2026'; year 2026. Venue: icml-2026-orals-posters.json, 'Accept (regular)', poster 61252 (OpenReview s87tQaKAER). Claim checked against Theorems 1 to 3 (Eqs. 16 to 19 and the ZO-Adam bounds), Remark 2, Sec. 5 (CNN, ResNet20, ViT on a CIFAR-10 subset with squared loss, \\(\\mu=10^{-3}\\)), the catapult experiment (Fig. 3), smoothing (Fig. 4), mini-batch ZO-SGD (Fig. 5), LSTM and Mamba sorting (App. D.1) and App. B (B.1 to B.3). The catalogue ids named (mezo, agzo, zo-muon, fzoo, zo-learning-dynamics-kernel) are in existing_index.json or this file; the id is unique."
+  },
+  {
+   "id": "gs-orthogonal-riemannian-structure",
+   "title": "Riemannian Structure and Optimization for a Class of Low-Parametric Orthogonal Matrices",
+   "authors": "Aliev et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2609.27982",
+   "url": "https://arxiv.org/abs/2609.27982",
+   "claim": "For Group-and-Shuffle (GS) matrices \\(A=B_mP_{m-1}B_{m-1}\\cdots P_1B_1\\) (block-diagonal factors interleaved with fixed permutations; Monarch and block-butterfly matrices are special cases), explicit counterexamples show that with rectangular or general square blocks the two-factor class is a product of bounded-rank sets and not a smooth manifold. With orthogonal blocks the two-factor class is an orbit of the compact Lie-group action \\((B_2,B_1)\\cdot x=B_2xB_1^{\\top}\\) and hence a closed embedded submanifold (recalled from OrthoFuse). For this case the paper derives the tangent-space projection, retractions (exponential, Cayley and polar; the experiments use polar with five Newton--Schulz steps) and vector transport. It computes Riemannian gradients by automatic differentiation without forming dense matrices, covering overlapping block supports and parameter sharing, and gives geodesics under extra block assumptions. It also proves \\(\\mathcal{A}_3^{\\mathrm{orth}}=\\mathcal{A}_3\\cap O(N)\\) and links the three-factor perfect-shuffle case to the CS decomposition. Riemannian SGD on GS-orthogonal adapters (\\(b=8\\), 1.38M parameters) for RoBERTa-base on GLUE beats Euclidean SGD (84.85 vs 83.12 average) but stays below AdamW (86.04), at 5 to 7% overhead.",
+   "relevance": "Says when the structured orthogonal groups of the OFT family (oft, boft, GSOFT) are smooth. The two-factor block-diagonal-with-permutation class is a manifold when its blocks are orthogonal (or unitary), which licenses Riemannian optimisation and base-point arguments for GSOFT-style two-factor adapters. The manifold property is proved only for \\(m=2\\) (for \\(m=3\\) the paper shows \\(\\mathcal{A}_3^{\\mathrm{orth}}=\\mathcal{A}_3\\cap O(N)\\)), so BOFT's longer butterfly products are not covered, and unconstrained block factorisations such as Monarch (monarch) are not manifolds in general. From the Rakhuba group (GSOFT, OrthoFuse, riemannion). Neither GSOFT (arXiv 2406.10019, NeurIPS 2024) nor OrthoFuse (arXiv 2604.05183, CVPR 2026) is in the catalogue yet.",
+   "sources": [
+    "https://arxiv.org/abs/2609.27982",
+    "https://arxiv.org/html/2609.27982",
+    "https://export.arxiv.org/api/query?search_query=ti:%22Group%20and%20Shuffle%22",
+    "https://export.arxiv.org/api/query?search_query=ti:OrthoFuse",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2609.27982",
+    "https://openaccess.thecvf.com/CVPR2026?day=all",
+    "https://papers.nips.cc/paper_files/paper/2024"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "claim: 'a polar retraction (via Newton-Schulz)' corrected; the paper provides exponential, Cayley and polar retractions, and only its GLUE experiments use polar with five Newton--Schulz iterations.",
+    "relevance: limited the manifold statement to two factors (\\(m=2\\)), as the paper proves it; BOFT's \\(m>2\\) butterfly products are not covered.",
+    "claim and relevance: plain-text math rewritten in \\( \\)."
+   ],
+   "verification_notes": "arXiv API: 2609.27982, v1 2026-09-23, authors Ali Aliev and Maxim Rakhuba; year 2026. Not in the ICLR, ICML or NeurIPS 2026 orals-posters JSON, so venue arXiv is correct. Claim checked against Definition 1, Sec. 2 (counterexamples, Eq. 2), Sec. 2.2 (orbit of \\(\\mathcal{B}_2\\times\\mathcal{B}_1\\), citing OrthoFuse [2]), Secs. 3.1 to 3.7, Sec. 4 (Table 1: 84.85 / 83.12 / 86.04 with 1.38M parameters, \\(b_i=8\\), \\(k_i=96\\); 5 to 7% overhead) and Apps. A and E. GSOFT is confirmed in the NeurIPS 2024 proceedings and OrthoFuse in CVPR 2026 open access; neither arXiv id is in existing_index.json or another raw or verified batch. The catalogue ids named (oft, boft, monarch, riemannion) are in existing_index.json or this file; the id is unique."
+  },
+  {
+   "id": "prefix-compile-lora-tests",
+   "title": "When Can Prefixes Compile LoRA? Exact Resource-Capped Tests for Frozen Attention",
+   "authors": "Mondal et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2609.36766",
+   "url": "https://arxiv.org/abs/2609.36766",
+   "claim": "At one frozen causal softmax head with fixed content states, and a prefix of independent keys and values shared across inputs, the prefix sees the content only through \\(\\Sigma(X)=(q,Z_X,N_X)\\) (query, partition function, value numerator), and \\(\\Sigma\\) is a complete intervention statistic. Any adapter target that differs on two inputs with equal \\(\\Sigma\\) therefore has an error floor at every prefix length, and with norm caps \\(\\|\\kappa_t\\|\\le K\\), \\(\\|\\nu_t\\|\\le V\\) the floor extends, independently of length, to nearly equal summaries. At a common query \\(q_0\\) every prefix reduces to two aggregates \\((a,b)=(Z_S(q_0),N_S(q_0))\\). With \\(m\\) capped slots the attainable set is \\(\\{me^{-L}\\le a\\le me^{L},\\ \\|b\\|\\le Va\\}\\) with \\(L=K\\|q_0\\|/\\sqrt{d_k}\\), the optimal (projected) error is an attained second-order-cone program, and \\(m\\) identical slots realise the optimum; with a constant partition, the closure of prefix outputs is exactly \\(t\\,h_X+c\\) with \\(0\\le t\\le1\\). Two equal-norm rank-one value updates can fall on opposite sides of compilability, extra capped slots can raise the optimal error, and both query-side and value-side updates can fail. Under affine query exposure, \\(2r\\) signed slots approximate a rank-\\(r\\) value update, with values growing as \\(O(\\epsilon^{-3/2})\\); all 400 tolerance checks pass in float64 but only 38 in bfloat16. On three first-layer GPT-2 heads with a fixed readout token, the capped optimum (four slots) leaves 18.4% to 74.2% of a trained adapter's projected effect uncompiled. All claims are local to one head.",
+   "relevance": "A target-by-target comparison of the prefix (E0) and LoRA (R) kinds that sharpens the indexed prefix theory. It builds on the prefix decomposition of prefix-tuning-capabilities-limitations (Petrov et al. 2024b) and cites petrov-2024-prefix-universal; le-2025-revisiting-prefix and chen-2022-inducer-tuning are catalogue neighbours that it does not cite. A prefix can only mix the frozen head output with a query-dependent vector, so adapters that amplify the frozen output, or that separate inputs with equal \\((q,Z,N)\\), cannot be compiled. The same authors' 'Certification Frontiers for Gaussian LoRA' (arXiv 2609.32271, PAC-Bayes with KL minimised over the \\(GL(r)\\) gauge) was posted three days earlier (26 vs 29 September 2026) and was not added.",
+   "sources": [
+    "https://arxiv.org/abs/2609.36766",
+    "https://arxiv.org/html/2609.36766",
+    "https://arxiv.org/abs/2609.32271",
+    "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "https://export.arxiv.org/api/query?id_list=2609.36766,2609.32271"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "corrections": [
+    "claim: added the definition \\(L=K\\|q_0\\|/\\sqrt{d_k}\\) used in the attainable set (Theorem 6), that the \\(t\\,h_X+c\\) description is the closure of prefix outputs (Eq. 11), and the four-slot setting of the GPT-2 test (Sec. 7.4); plain-text math rewritten in \\( \\).",
+    "relevance: recorded which catalogue ids the paper actually builds on or cites (Petrov et al. 2024b and 2024a) and that le-2025-revisiting-prefix and chen-2022-inducer-tuning are not cited."
+   ],
+   "verification_notes": "arXiv API: 2609.36766, v1 2026-09-29, authors Joyanta Jyoti Mondal and Ibne Farabi Shihab; year 2026; venue arXiv (not in any 2026 orals-posters JSON). Claim checked against the abstract, Sec. 3 (Eqs. 1 to 4), Lemma 1 (prefix decomposition, Petrov et al. 2024b), Sec. 4, Eqs. 10 to 12, Theorem 6 (Eqs. 13 to 15), Corollary 7, Theorem 9, the counterexample after it, Tables 1 and 5 (the amplifying optimum rises from 0.5180 to 1.0396 with more capped slots), Fig. 2 and Sec. 7.4 (18.4% to 74.2%). The sibling paper 2609.32271 (v1 2026-09-26, same authors) is confirmed by the arXiv API, and its abstract minimises KL over the full \\(GL(r)\\) symmetry. All 4 catalogue ids named are in existing_index.json; the id is unique."
+  }
+ ],
+ "notes": "All six requested methods exist and none duplicates a catalogued id (checked against existing_index.json, catalog.json, raw/, verified/, sweep2026/ and the sibling addendum2026b-1..5 files); Riemannion appeared only in theory-family notes. Every method and paper was read from its arXiv HTML; formulas were checked against the method sections, and for In-Place TTT and LD-MoLE also against the released code. Venues were verified in the official ICLR/ICML 2026 orals-posters JSON: Riemannion, LoRA-Mixer, FZOO and LD-MoLE are ICLR 2026 posters; In-Place TTT is an ICLR 2026 oral. POET-X has decision 'Accept (spotlight)' with an Oral 4A session (its arXiv comment says ICML 2026 Oral). The convergence-rate paper is a spotlight with an Oral 1G session; the mean-field, merging-law and ZO edge-of-stability papers are ICML 2026 regular posters. OpenReview returned a browser challenge, which was not bypassed. Year follows the first public version. In-Place TTT is dated 2025 because it was an ICLR 2026 OpenReview submission (forum dTWfCLSoyl; deadline 2025-09-24, reviews public 2025-11-11), although arXiv v1 is 2026-04-07 and the exact OpenReview date could not be read. The mean-field forgetting paper keeps 2024 (v1, Feb 2024), although v2 (May 2026) replaces its results. Scope caveats: POET-X is a pretraining reparameterisation on a random \\(W_0\\). It is included as the two-sided, spectrum-preserving generalisation of OFT with LoRA-level memory, and the original POET (arXiv 2506.08001, NeurIPS 2025) was also used for fine-tuning. In-Place TTT learns its slow weights by full continual training; it is included as test-time selective adaptation of \\(W_{down}\\), next to SEAL and Sparse Memory Finetuning. No code link was found for Riemannion. The LoRA-Mixer repository holds only a README promising code in mid-May 2026 (last push 2026-04-16), and its router architecture is unspecified; its RSL formula subtracts \\(\\lambda\\,\\mathbb{E}[\\mathcal{H}(p)]\\) (rewarding entropy) while other passages speak of lowering entropy, as recorded in structure. Riemannion's Muon/Stiefel LoRA-optimiser neighbours were verified on arXiv but are not catalogued, so they are not used as relation targets: LoRA-Muon 2606.12921, PoLoRA 2607.17620, LoRA-TSD 2609.02734, ISO-LoRA 2609.12123 ('Rank-Efficient LoRA via Joint Tangent-Space Optimization under Isotropic Curvature'), Stiefel-AdamW 2609.21039, RoM 2609.34264 ('Rotated Manifold Optimization for Low-Rank Adaptation'), and Intrinsic Muon (iMuon) 2605.09238. Corrections to the brief: (1) the convergence-rate paper does assume \\(L\\)-smoothness of the loss in \\(W\\); what it avoids is smoothness in the factors and bounded iterates. (2) The merging-law experts are full fine-tunes, not LoRAs. (3) The ZO edge-of-stability experiments are on CIFAR-10 and toy sequence models, not LLMs. (4) 2609.32271 was posted three days before 2609.36766, not after. Other catalogue gaps seen: POET 2506.08001 (NeurIPS 2025), Pion 2605.12492 (an arXiv technical report cited by POET-X; it is not in the NeurIPS 2026 orals-posters JSON as of 2026-10-02), GSOFT 2406.10019 (NeurIPS 2024) and OrthoFuse 2604.05183 (CVPR 2026). Semantic Scholar counts on 2026-10-02 (citations/influential): Riemannion 13/3, POET-X 3/0, LoRA-Mixer 20/1, In-Place TTT 15/4, FZOO 15/3, LD-MoLE 14/1; papers 10, 7, 12, 0, 0, 0. hf_peft is false for all six: PEFT v0.21.x added Riemannian-preconditioned LoRA, not Riemannion.",
+ "verification_summary": "Adversarial check on 2026-10-02 of 6 methods and 6 papers; all 12 verified, none dropped. Metadata: one arXiv export-API query confirmed every id, title, first author and v1 date (from 2402.15415 on 2024-02-23 to 2609.36766 on 2026-09-29), and every year follows the first public version. In-Place TTT keeps 2025 because it was a public ICLR 2026 submission (deadline 2025-09-24; reviews public 2025-11-11); the OpenReview API returned a challenge, which was not bypassed. Venues were confirmed in iclr-2026-orals-posters.json (Riemannion, LoRA-Mixer, FZOO and LD-MoLE as posters; In-Place TTT as an oral) and icml-2026-orals-posters.json (POET-X and the convergence-rate paper 'Accept (spotlight)' with oral events; the mean-field, merging-law and ZO papers 'Accept (regular)'). The two September 2026 papers are in none of the 2026 lists and stay arXiv. Formulas were checked against the arXiv HTML method sections and, for In-Place TTT and LD-MoLE, against the released code; the POET-X and LoRA-Mixer repositories and the merging-law training script were also inspected. Main fixes. (1) POET-X had its two orthogonal factors on the wrong sides. The paper writes \\(y=(RW_0P)^{\\top}x\\) with \\(W_0\\in\\mathbb{R}^{d_{in}\\times d_{out}}\\), so \\(R\\) acts on the input side and \\(P\\) on the output side; the formula was rewritten in the paper's notation, with the 400-step merge gap. (2) POET-X's 367M/570M were re-derived exactly: 202.6M/406.1M of orthogonal-block parameters plus 164.0M of directly trained embedding, LM-head and norm parameters. (3) LD-MoLE's released \\(\\lambda\\) lies in \\((-\\infty,0.99)\\), not \\((-\\infty,0)\\), because the code adds \\(1-\\epsilon\\) to the LogSigmoid, and its \\(\\alpha/r\\) comes from the code, not Eq. 7. (4) FZOO's mergeable changed to conditional, since the prefix variant cannot be merged, and its '+3%/+5.6%' are now quoted, not called points. (5) The mean-field paper's loss-versus-norm experiments are on Qwen3-0.6B only (Llama 2 is used just for spectral and clustering checks), and its \\(O(1/L)\\) is a mean-square bound. (6) The ZO paper's Appendix B does not cover FZOO-style probes as a whole. (7) The GS paper proves the manifold property only for two factors and offers three retractions. (8) LoRA-Mixer's Falcon-Mamba projections are unspecified; Flan-T5 and LLaMA2-7B were added to its locus. (9) In the notes, Pion is not in the NeurIPS 2026 list. trainable_params were re-derived for all six methods (Riemannion \\(r(d_{in}+d_{out})\\); LD-MoLE \\(Er(d_{in}+d_{out})+Ed_{in}\\) plus \\(64d_{in}+129\\) per shared MLP; In-Place TTT \\(d^2+5d\\) per layer). hf_peft is false for all six (no tuner at huggingface/peft main, v0.21.2; optimizers/ holds only lorafa, loraplus and Riemannian-preconditioned LoRA). All 29 relation targets are ids in existing_index.json or this file; no id or arXiv number collides with existing_index.json or the sibling addendum2026b batches. Inline math in all prose fields is wrapped in \\( \\). Semantic Scholar counts were refreshed and match the notes."
+}

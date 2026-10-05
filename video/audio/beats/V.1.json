@@ -1,0 +1,35 @@
+{
+ "hash": "353bbf95a9762025",
+ "seconds": 29.6,
+ "pauses": [
+  [
+   0.0,
+   0.296
+  ],
+  [
+   3.367,
+   3.846
+  ],
+  [
+   5.532,
+   6.102
+  ],
+  [
+   11.333,
+   12.024
+  ],
+  [
+   20.877,
+   21.273
+  ],
+  [
+   23.61,
+   24.113
+  ],
+  [
+   29.263,
+   29.6
+  ]
+ ],
+ "text": "So far theta-zero has stayed put. But plenty of things move it. <short pause> Quantise the model to four bits, and the frozen weights snap to a grid. Q-LoRA is ordinary LoRA pointed at the snapped weights, not the real ones. So it starts off target by the quantisation error, which is generically full rank, and it can only get back to the original point if that error has rank at most r."
+}

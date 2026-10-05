@@ -1,0 +1,59 @@
+{
+ "hash": "b56889c7795a7d92",
+ "seconds": 31.32,
+ "pauses": [
+  [
+   2.782,
+   3.234
+  ],
+  [
+   4.807,
+   5.212
+  ],
+  [
+   8.426,
+   8.889
+  ],
+  [
+   10.864,
+   11.332
+  ],
+  [
+   13.389,
+   13.754
+  ],
+  [
+   14.143,
+   14.614
+  ],
+  [
+   15.999,
+   16.489
+  ],
+  [
+   20.527,
+   21.154
+  ],
+  [
+   22.566,
+   25.747
+  ],
+  [
+   26.773,
+   27.744
+  ],
+  [
+   28.433,
+   28.94
+  ],
+  [
+   29.672,
+   29.974
+  ],
+  [
+   31.009,
+   31.32
+  ]
+ ],
+ "text": "Here are two fine-tuning runs. <short pause> One is LoRA-plus, which trains its two factors at different learning rates. The other is plain LoRA, with its scale, alpha, turned up. <short pause> Train both with Adam, with epsilon, weight decay and clipping switched off, and watch their weights. <long pause> They're identical. Not close. Identical, step after step."
+}

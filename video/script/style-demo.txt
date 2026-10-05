@@ -1,0 +1,1 @@
+Fine-tuning moves a point. <short pause> Call it theta-zero: the pretrained model. <short pause> A method is a way of moving it. <short pause> LoRA can reach a cone, with its apex at theta-zero. <short pause> OFT turns it along an orbit. <short pause> And I-A-cubed slides it along a line.

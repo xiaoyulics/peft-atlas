@@ -1,0 +1,1286 @@
+{
+ "batch": 0,
+ "methods": [
+  {
+   "id": "peanut",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Weight-space reparametrisation: \\(W=W_0+\\Theta_2^\\top\\sigma(\\Theta_1^\\top W_0)\\) (the catalog's \\(f^\\top=\\sigma(W_0^\\top\\Theta_1)\\Theta_2\\) transposed), run in the original architecture; the update is \\(\\theta_0\\)-dependent, so the method is not additive in the sense of Def I.2.",
+    "shape": "The update is linear in \\(\\Theta_2\\), so the image is a cone with vertex \\(\\theta_0\\) inside \\(W_0+\\mathcal M_{\\le r}\\). With GELU/SiLU and \\(W_0\\) of full column rank it is all of \\(W_0+\\mathcal M_{\\le r}\\) (the range of \\(\\sigma\\) contains a neighbourhood of \\(0\\)); when \\(d_{out}+r\\le d_{in}\\) it is a proper sub-cone of dimension \\(2mr\\). With ReLU and \\(W_0\\) of full column rank its \\(A\\)-part \\(\\sigma(\\Theta_1^\\top W_0)\\) ranges over entrywise nonnegative factors.",
+    "base_point": "\\(\\Theta_2=0\\) is a zero gate (Lemma II.4): \\(S_1=\\{X\\sigma(\\Theta_{1,0}^\\top W_0)\\}\\) has dim \\(mr<d\\) (checked numerically), a \\(\\mathrm T_A\\)-type apex whose frame is read off \\(W_0\\).",
+    "gauge": "\\(GL_r\\) acts only through \\(\\sigma^{-1}\\), plus translations of \\(\\Theta_1\\) along the left kernel of \\(W_0\\). For full-rank \\(W_0\\) and smooth \\(\\sigma\\) the generic fibre has dimension \\(r\\max(0,m+r-n)\\), i.e. \\(d=\\min(2mr,\\,r(m+n-r))\\): \\(r^2+r(m-\\operatorname{rk}W_0)\\) when \\(d_{out}\\ge d_{in}\\), trivial when \\(d_{out}+r\\le d_{in}\\) (Jacobian rank, GELU and SiLU: fibres 8, 4, 0, 2 at \\((m,n,r)=(8,6,2),(6,6,2),(5,9,2),(6,7,2)\\)). With ReLU the gauge is linear \\(GL_r\\) only on the chamber \\(\\Theta_1^\\top W_0>0\\).",
+    "covariance": "Output side \\(GL_m\\), absorbed by \\(\\Theta_1\\). Input side: scalars (also absorbed by \\(\\Theta_1\\)) times the monomials that commute with the entrywise \\(\\sigma\\) (Lemma VI.2): positive monomials for ReLU, permutations for GELU/SiLU. So \\(GL\\times\\mathrm{Mon}\\), the mirror of the Mon×GL key. Numerically (GELU, \\((m,n,r)=(3,7,1)\\)), input permutations, input homotheties and output \\(GL_3\\) map the image onto the image to \\(10^{-15}\\), while a generic input \\(GL_7\\) leaves a residual of 3.3.",
+    "merge": "\\(f(W_0;\\theta)\\) is computed once after training and added to \\(W_0\\): the non-linearity is on the parameter side.",
+    "rebasing": "The shape is recomputed from the merged base (as for HiRA). It is closed under real scaling through \\(\\Theta_2\\), so cycles converge to the span, which is all of \\(\\Theta\\) when \\(\\sigma(\\mathrm{row}\\,W_0)\\) spans \\(\\mathbb R^{n}\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "PEANuT is a \\(\\theta_0\\)-dependent object over LoRA: \\(\\rho=\\theta_0+\\Theta_2^\\top\\sigma(\\Theta_1^\\top\\theta_0)\\) factors through LoRA by \\(h=(\\Theta_2^\\top,\\sigma(\\Theta_1^\\top W_0))\\), so it is LoRA's cone with a non-linear chart whose \\(A\\)-frame is computed from the base point (the whole cone when \\(d_{out}\\ge d_{in}\\), a sub-cone when \\(d_{out}+r\\le d_{in}\\)). Conversely, with \\(W_0\\) of full column rank, LoRA\\(_r\\) embeds in PEANuT\\(_{2r}\\) through \\(\\sigma(x)-\\sigma(-x)=x\\), which holds for ReLU, GELU and SiLU alike.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(\\Theta_1,\\Theta_2)=(\\Theta_2^\\top,\\ \\sigma(\\Theta_1^\\top W_0))",
+     "note": "Pointed at LoRA's \\(\\mathrm T_A\\) point \\((0,\\sigma(\\Theta_{1,0}^\\top W_0))\\). Smooth for GELU/SiLU; for ReLU, smooth near any \\(q_0\\) where \\(\\Theta_{1,0}^\\top W_0\\) has no zero entry."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "hira",
+     "test": "O1",
+     "reason": "Every point of Im HiRA vanishes wherever \\(W_0\\) does (Prop II.9(e)), while PEANuT's update \\(\\Theta_2^\\top\\sigma(\\Theta_1^\\top W_0)\\) is dense, so Im PEANuT is not inside Im HiRA when \\(W_0\\) has zeros. For \\(W_0\\) without zeros, Im HiRA \\(=W_0+W_0\\odot\\mathcal M_{\\le r}\\), and a generic rank-one update \\(uv^\\top\\) would need \\(uv^\\top\\oslash W_0\\in\\mathcal M_{\\le r}\\), which generically has full rank; so the inclusion fails for \\(r<\\min(m,n)\\) as well, although both methods condition on \\(W_0\\)."
+    }
+   ],
+   "check_notes": "Re-derived all seven coordinates; agree. numpy (GELU, SiLU): d = min(2mr, r(m+n-r)) and S_1 = mr at Theta_2 = 0 (apex) at four shapes; image covariance under input permutations/homotheties and output GL to 1e-15, broken (3.3) by a generic input GL. Changes: (1) gauge note now gives the general fibre r max(0, m+r-n); (2) shape note: image is all of W_0 + M_{<=r} for GELU/SiLU with full column rank, a 2mr-dim sub-cone when d_out + r <= d_in; (3) covariance note adds input homotheties (absorbed by Theta_1) and the numerical check; (4) categorical reading: 'sub-object' -> 'object over LoRA', and the LoRA_r -> PEANuT_2r embedding holds for GELU/SiLU too (sigma(x)-sigma(-x)=x, checked); (5) HiRA obstruction: replaced 'zero pattern is an absolute invariant' (only zeros of W_0 persist) and added the zero-free W_0 case. LoRA arrow (A3) verified, pointed at the T_A point (0, sigma(Theta_{1,0}^T W_0)).",
+   "verified": true
+  },
+  {
+   "id": "alora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "F_T",
+    "shape": "Fun",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "A \\(T\\)-point over token positions: \\(a(t)=q\\) for \\(t\\ge t_{inv}\\) and \\(a(t)=q_0\\) before, so \\(\\rho\\circ a\\) takes only the values \\(\\theta_0\\) and \\(W_0+BA\\). It is a hard positional router between the frozen model and one LoRA.",
+    "shape": "No single weight-space image: different positions see different weights, so the method is compared through the realisation \\(\\Phi\\).",
+    "base_point": "\\(B=0\\) gives the frozen function at every position. At activated positions the first-order image is LoRA's \\(\\{XA_0\\}\\) (function-level zero gate, Lemma II.4).",
+    "gauge": "LoRA's \\(GL_r\\) on the single adapter.",
+    "covariance": "At each activated position the update is LoRA's basis-free cone.",
+    "merge": "Thm VI.3(a): a position-gated edit has no position-independent weight to absorb it, so it is M∞. Keeping the prefix KV cache equal to the base model's is the design goal.",
+    "rebasing": "n/a: nothing can be merged into the base, so merge-and-restart is undefined."
+   },
+   "table_row": "F_T",
+   "table_col": "Fun",
+   "categorical_reading": "Activated LoRA is LoRA pulled back along a position gate: a family \\(T\\to Q\\) that sits at \\(q_0\\) before the invocation token, so its realisation \\(\\Phi\\circ\\rho\\circ a\\) is not \\(\\Phi_f(\\theta)\\) for any single \\(\\theta\\). Being pointed before \\(t_{inv}\\) is what makes the base KV cache reusable, and it is also what blocks merging.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "At function level the realised map (\\(W_0\\) on the prefix, \\(W_0+BA\\) after \\(t_{inv}\\)) lies outside \\(\\Phi_f(\\mathrm{Im}\\,\\mathrm{LoRA})\\) for generic prompts, so no weight-space LoRA lifts it (M∞). At each single position the update is still a LoRA update."
+    }
+   ],
+   "check_notes": "Re-derived: F_T over token positions (hard positional gate between theta_0 and one LoRA), Fun, apex (B = 0 frozen at every position; first-order image {XA_0} at activated positions), GL_r, GLxGL, Minf (Thm VI.3(a) names Activated LoRA explicitly), rebasing n/a. The O1 obstruction to LoRA is valid generically. No changes. Consolidation (2026-10-01): rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json).",
+   "verified": true
+  },
+  {
+   "id": "monteclora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "At inference the sampler is off and \\(\\rho=W_0+sB\\mu\\). The Gaussian-mixture, Wishart and Dirichlet sampler on \\(A\\) changes only the training signal, so this is a stochastic trained method on LoRA.",
+    "gauge": "LoRA's \\(GL_r\\) on \\((B,\\mu)\\). The variational parameters do not enter \\(\\rho\\) at inference, so they lie entirely in the generic fibre.",
+    "base_point": "\\(B=0\\) as in LoRA: the \\(\\mathrm T_A\\) apex at \\(A_0=\\mu_0\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "MonteCLoRA is LoRA times an inert factor: LoRA \\(\\to\\) MonteCLoRA \\(\\to\\) LoRA (freeze the variational coordinates, then project them out), so the two simulate each other without being isomorphic. Everything it adds is trained-method data: a stochastic cotangent signal for \\(A\\) plus KL penalties.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,\\mu,\\xi)=(B,\\ \\mu)",
+     "note": "Projection forgetting the variational parameters \\(\\xi\\). The reverse inclusion is A2 (freeze \\(\\xi\\) at \\(\\xi_0\\))."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Re-derived: inference map W_0 + sB mu is LoRA's, the variational parameters lie in the fibre, so R / Cone / apex (T_A at A_0 = mu_0) / GL / GLxGL / M1 / span. The projection arrow h(B, mu, xi) = (B, mu) satisfies rho_LoRA o h = rho and is pointed; the reverse A2 freezing arrow also holds. No changes.",
+   "verified": true
+  },
+  {
+   "id": "velora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The forward map is LoRA's. Only the cotangent side changes: \\(\\nabla_A\\) is computed from rank-1 sub-token reconstructions \\(\\hat x\\), which modifies \\(\\mathsf R[\\rho]\\) and not \\(\\rho\\). It is not kind B, whose forward map is \\(\\mathrm{id}_\\Theta\\). With \\(v\\) fixed, \\(\\hat x=\\Pi x\\) for the fixed projector \\(\\Pi=I_{n/M}\\otimes vv^\\top/\\lVert v\\rVert^2\\) of rank \\(n/M\\), so \\(\\nabla_A=sB^\\top G\\Pi\\). Under (momentum) SGD \\(A\\) therefore stays in \\(A_0+\\mathbb R^{r\\times n}\\Pi\\), a sub-cone of LoRA's reach; Adam's coordinatewise normalisation leaves that subspace, so the restriction is optimizer-dependent and the object stays LoRA.",
+    "gauge": "LoRA's \\(GL_r\\). But \\(B\\) and \\(A\\) now receive different cotangents (\\(G\\) and \\(\\hat G=\\delta\\hat x^\\top\\)), so the update is not of the form \\(\\Lambda D\\rho^\\top\\gamma\\), and the charge \\(\\Phi\\) of Thm III.5 is not conserved.",
+    "covariance": "The image is LoRA's (GL×GL). The backward compression groups consecutive input features into sub-tokens and projects them on a fixed \\(v\\), which is only \\(\\Pi\\)-covariant (a block partition of input coordinates)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "VeLoRA keeps LoRA's object and replaces its backward lens by an approximate one: the \\(A\\)-block is fed \\(\\hat G\\) while \\(B\\) is fed the true \\(G\\). By Thm III.5 this block-dependent cotangent breaks LoRA's Noether charge, which is the dynamical cost of the activation-memory saving.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object; only the trained-method data (the cotangent signal for \\(A\\)) differ."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Re-derived; coordinates agree (the object is LoRA; only the A-cotangent is compressed). The Phi non-conservation claim checked: dPhi/dt = s(B^T(G^-G)A^T + A(G^-G)^T B) is generically nonzero. Change: kind note now records that with fixed v the reconstruction is a fixed rank-(n/M) projector, so under SGD the A-trajectory is confined to A_0 + R^{r x n} Pi (not under Adam). Arrow h = id to LoRA verified.",
+   "verified": true
+  },
+  {
+   "id": "genknowsub",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "P",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": null,
+    "covariance": "OxO",
+    "merge": "Minf",
+    "rebasing": null
+   },
+   "coord_notes": {
+    "kind": "Post hoc on trained factor tuples: \\((B_i,A_i)\\mapsto(B_i-\\bar B^{gen},A_i-\\bar A^{gen})\\), followed by Arrow's token routing (an \\(F_X\\) family) over the residual experts.",
+    "shape": "The deployed object is Arrow's input-dependent mixture, so it lives at function level. The subtraction itself has no image germ.",
+    "base_point": "No parameter value reproduces \\(f\\): the subtracted experts are routed by Arrow at every input, so the realised function differs from \\(f\\) for generic inputs. Parameterless post-hoc operations are classified unpointed throughout (Model Soups, AdapterSoup, LoRA Switch / LoRA Composite).",
+    "gauge": "n/a for a P operation. The factor-wise subtraction is not \\(\\prod GL_r\\)-invariant (Prop V.4(a)), so a residual expert is not a function of the trained adapters \\(B_iA_i\\).",
+    "covariance": "The factor-wise subtraction alone commutes with \\(B\\mapsto gB\\), \\(A\\mapsto Ah^{-1}\\) (GL×GL-equivariant on factor tuples, while still gauge-dependent). But the deployed object routes each token by \\(|v_i^\\top h|\\), with \\(v_i\\) the top right singular vector of the residual expert (Arrow). That frame is natural only under conformal output and orthogonal input changes of basis, so the composite is \\(CO(m)\\times O(n)\\subseteq\\) CO×CO: the spectral-frame key.",
+    "merge": "Arrow routes per token and per layer (input-dependent gates): M∞.",
+    "rebasing": "n/a: no training, so nothing is restarted."
+   },
+   "table_row": "P",
+   "table_col": "Fun",
+   "categorical_reading": "GenKnowSub is a post-hoc map on factor tuples composed with Arrow's \\(F_X\\) router. It subtracts factors rather than products, and \\((B_i-\\bar B)(A_i-\\bar A)=B_iA_i-B_i\\bar A-\\bar BA_i+\\bar B\\bar A\\) depends on the gauge representatives. By Prop V.4 it is well defined only after a joint gauge fixing, such as a shared frozen \\(A\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "task-arithmetic",
+     "test": "O1",
+     "reason": "The residual expert \\((B_i-\\bar B)(A_i-\\bar A)\\) differs from the task-vector difference \\(B_iA_i-\\tfrac1G\\sum_gB^{gen}_gA^{gen}_g\\) by cross terms, and it changes under \\((B_i,A_i)\\mapsto(B_ig^{-1},gA_i)\\). So it does not factor through product-level arithmetic."
+    }
+   ],
+   "check_notes": "Re-derived kind (P, followed by Arrow's F_X routing), shape Fun, base point and gauge n/a (no trainable Q), merge Minf, rebasing n/a. Change: covariance GLxGL -> OxO. GLxGL holds only for the subtraction on factor tuples; the deployed pipeline routes by the top right singular vector of each residual expert, which is CO(m) x O(n)-natural only, and shape/merge were already read on the deployed object. O1 obstruction to task arithmetic verified: the cross terms B_i Abar, Bbar A_i lie outside span{B_jA_j}. Consolidation (2026-10-01): base_point 'n/a' -> 'unpointed' (axis definition; as for the other parameterless P operations); gauge 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json); rebasing 'n/a' -> null (axis undefined; '–' of VIII.B; 'n/a' is not a value in axes.json).",
+   "verified": true
+  },
+  {
+   "id": "layer-replication",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "E0",
+    "shape": "Fun",
+    "base_point": "unpointed",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Extends \\(f\\) to a deeper network \\(\\tilde f=\\ell_{\\pi(L')}\\circ\\cdots\\circ\\ell_{\\pi(1)}\\) with tied base weights and one LoRA per replica. At \\(B=0\\) this is the stacked network, not \\(f\\), and low-rank LoRAs cannot turn a replicated block into the identity, so there is no neutral point.",
+    "shape": "The extended network is compared with \\(f\\) only through realisations.",
+    "base_point": "Unpointed relative to \\((\\Theta,\\theta_0)\\): \\(\\tilde f(\\theta_0,q_0,-)\\ne f(\\theta_0,-)\\). It is pointed only relative to the replicated model.",
+    "gauge": "\\(\\prod_jGL_r\\): one LoRA gauge per replica.",
+    "covariance": "Each replica's update is a basis-free LoRA cone, and replication is basis-free.",
+    "merge": "Each replica's LoRA fuses into a materialised copy of its block. The replicas share \\(W_{0,\\pi(j)}\\), and Thm VI.3 requires an unshared target box, so the fuse is possible only after untying (one dense copy per replica). It never returns to the depth-\\(L\\) architecture.",
+    "rebasing": "Per replica, merge-and-restart reaches the full block weight (LoRA's span), at the cost of untying the replicas."
+   },
+   "table_row": "E0",
+   "table_col": "Fun",
+   "categorical_reading": "Layer replication is an unpointed extension: the depth-upscaled network lives over a larger \\(\\Theta\\times\\Theta'\\) with tied weights, and no parameter value recovers \\(f(\\theta_0,-)\\), so it is not an object of \\(\\mathsf{Meth}(\\Theta,\\theta_0)\\). The per-replica LoRAs are ordinary pointed objects over the replicated base point.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "The realised functions of the depth-\\(L'\\) network are generically not \\(\\Phi_f(\\theta)\\) for any \\(\\theta\\) of the depth-\\(L\\) architecture, so no lift into LoRA, or into any object of \\(\\mathsf{Meth}(\\Theta,\\theta_0)\\), exists."
+    }
+   ],
+   "check_notes": "Re-derived: E0 (no parameter value recovers f, since a low-rank update cannot zero a full-rank W_o or W_down), Fun, unpointed, prod GL_r, GLxGL, M1, span per replica. The O1 obstruction to LoRA is valid generically. Change: merge note now states that M1 holds only after untying the shared replicas (Thm VI.3's unshared-box side condition).",
+   "verified": true
+  },
+  {
+   "id": "kappatune",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Selective fine-tuning: the trainable set is a fixed collection \\(\\mathcal S\\) of whole tensors with the lowest condition numbers. KappaTune-LoRA attaches LoRA to \\(\\mathcal S\\) instead and then has LoRA's coordinates.",
+    "shape": "\\(\\theta_0+\\bigoplus_{W\\in\\mathcal S}\\mathbb R^{m_W\\times n_W}\\), a coordinate-block subspace.",
+    "covariance": "Inside a selected tensor the image is all of \\(\\mathbb R^{m\\times n}\\) (GL×GL). The selection statistic \\(\\kappa=\\sigma_{\\max}/\\sigma_{\\min}\\) is invariant only under \\(CO(m)\\times CO(n)\\), so a general change of basis can move a tensor into or out of \\(\\mathcal S\\).",
+    "rebasing": "With the mask fixed, cycles gain nothing. Recomputing \\(\\kappa\\) after merging could change \\(\\mathcal S\\)."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "categorical_reading": "KappaTune is the coordinate sub-object of full fine-tuning spanned by a spectrally chosen block of tensors, i.e. full FT with the complement frozen. Its only dependence on \\(\\theta_0\\) is through the CO×CO-invariant \\(\\kappa\\): a spectral selection at the granularity of whole tensors.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A selected tensor moves in all \\(mn\\) directions, with rank up to \\(\\min(m,n)\\). Both \\(d\\) and the maximal rank exceed LoRA\\(_r\\)'s, so LoRA\\(_r\\) on the same tensor cannot simulate it."
+    }
+   ],
+   "check_notes": "Re-derived (paper's whole-tensor variant): R / Lin / regular / none / OxO (kappa = sigma_max/sigma_min is CO x CO-invariant; non-conformal changes of basis can change the selection) / M1 / idempotent with the mask fixed. The O2 obstruction to LoRA_r holds by the max-rank criterion. KappaTune-LoRA (the HF helper's output) has LoRA's coordinates, as noted. No changes.",
+   "verified": true
+  },
+  {
+   "id": "lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(W_0+\\mathcal M_{\\le r}\\), of dimension \\(r(m+n-r)\\) and maximal rank \\(r\\).",
+    "base_point": "\\(\\mathrm T_A\\) stratum (\\(B_0=0\\), \\(\\operatorname{rank}A_0=r\\)): \\(S_1=\\{XA_0\\}\\), deficit \\(r(n-r)\\) (Thm II.2). HF's embedding default is \\(\\mathrm T_B\\); `init_lora_weights=\\\"orthogonal\\\"` lies outside the three strata.",
+    "gauge": "\\(GL_r\\) acting by \\((Bg^{-1},gA)\\): the \\(\\mathfrak{so}_r\\) half gives isometries, the \\(\\mathrm{Sym}_r\\) half the charges \\(\\Phi\\).",
+    "rebasing": "\\(R_K=W_0+\\mathcal M_{\\le\\min(Kr,m,n)}\\); all of \\(\\Theta\\) at \\(K=\\lceil\\min(m,n)/r\\rceil\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA is the determinantal cone \\(\\theta_0+\\mathcal M_{\\le r}\\) pointed at its apex: the reference object of the slice, with gauge \\(GL_r\\) on the internal wire and merging as the canonical map \\(\\rho\\) to the terminal object. Its \\(\\mathrm T_A\\) pointings are classified by \\(\\mathrm{row}\\,A_0\\in\\mathrm{Gr}(r,n)\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B\\ 0],\\,[A;\\,a_0])",
+     "note": "LoRA\\(_r\\hookrightarrow\\) LoRA\\(_{r+1}\\) (the rank filtration); \\(\\mathrm T_A\\)-pointed when \\(a_0\\notin\\mathrm{row}\\,A_0\\)."
+    },
+    {
+     "target": "dora",
+     "rule": "A3",
+     "h": "h(B,A)=\\big((\\lVert(W_0+sBA)_{i,:}\\rVert)_i,\\ B,\\ A\\big)",
+     "note": "DoRA with the magnitude set to the current row norms reproduces LoRA. Pointed (\\(\\mu_0\\) = row norms of \\(W_0\\)); smooth wherever no row of \\(W_0+sBA\\) vanishes."
+    },
+    {
+     "target": "relora",
+     "rule": "A5",
+     "h": "q\\mapsto(q,\\,q_0^{(2)},\\dots,q_0^{(K)})",
+     "note": "One stage embeds into \\(K\\) stages of the rebasing scheme."
+    },
+    {
+     "target": "peanut",
+     "rule": "A3",
+     "h": "h(B,A)=\\big([M,\\,-M],\\ [B^\\top;\\,-B^\\top]\\big),\\quad M=(W_0^{+})^\\top A^\\top",
+     "note": "LoRA\\(_r\\to\\) PEANuT\\(_{2r}\\) via \\(\\sigma(x)-\\sigma(-x)=x\\), which holds for ReLU, GELU and SiLU (so the arrow is smooth for the latter two); needs \\(W_0\\) of full column rank (\\(M^\\top W_0=A\\)). Pointed at \\(\\Theta_1=[M_0,-M_0]\\), \\(\\Theta_2=0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O3",
+     "reason": "Type I apex against Type II smooth point: the images \\(\\theta_0+\\mathcal M_{\\le r}\\) and \\((\\theta_0-P)+\\mathcal M_{\\le r}\\) are incomparable (Thm II.2(d))."
+    },
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "The images agree (\\(W_0+\\mathcal M_{\\le r}\\)), but \\(S_1(\\mathrm{LoRA})=\\{XA_0\\}\\) has dimension \\(mr\\) and \\(S_1(\\mathrm{AdaLoRA})=\\mathrm{span}\\{p_iq_i^\\top\\}\\) has dimension \\(r\\). LoRA is a special case of AdaLoRA only as an unpointed object."
+    },
+    {
+     "target": "lora-fa",
+     "test": "O2",
+     "reason": "\\(d(\\mathrm{LoRA}_r)=r(m+n-r)>mr=d(\\text{LoRA-FA})\\)."
+    }
+   ],
+   "check_notes": "All coordinates match VIII.B (Cone r(m+n-r), T_A apex with deficit r(n-r), GL_r, GLxGL, M1, span). Arrows checked: rank filtration (T_A iff a_0 not in row A_0), DoRA with magnitude = current row norms (pointed at mu_0 = row norms of W_0), ReLoRA stage embedding, PEANuT_{2r} (M^T W_0 = A under full column rank). Obstructions to PiSSA (O3), AdaLoRA (O3, dim S_1 = r < mr) and LoRA-FA (O2) verified. Change: PEANuT arrow note: the identity sigma(x)-sigma(-x)=x also holds for GELU and SiLU (checked to 1e-15), not only ReLU.",
+   "verified": true
+  },
+  {
+   "id": "rslora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "\\(\\rho_{\\rm rs}(B,A)=\\rho_{\\rm LoRA}(\\sqrt r\\,B,A)\\): the same object (Cor III.11(c)). The rank-stability prescription concerns how \\(\\alpha\\) should scale with \\(r\\), i.e. a path through the hyperparameter torus across ranks."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "rsLoRA is LoRA itself: the scale change is the isomorphism \\(h=(\\sqrt r\\,B,A)\\) of the slice, or equivalently a point of the hyperparameter torus (Thm III.10). Its content is a choice of trajectory \\(r\\mapsto(\\alpha,\\eta)\\) across ranks, not a new object.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=(\\sqrt r\\,B,\\ A)",
+     "note": "Isomorphism over \\(\\Theta\\) (inverse \\(B\\mapsto B/\\sqrt r\\)); pointed because \\(B_0=0\\)."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Isomorphism h(B,A) = (sqrt(r) B, A) verified: (alpha/r) sqrt(r) BA = (alpha/sqrt r) BA, pointed since B_0 = 0. All coordinates as LoRA. No changes.",
+   "verified": true
+  },
+  {
+   "id": "lora-ga",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "The frozen residual \\(W_0-\\eta B_0A_0\\) moves the cone's vertex to \\(W_0-P\\), with \\(P=\\eta B_0A_0\\) of rank \\(r\\) (the S stratum).",
+    "base_point": "\\(\\theta_0\\) is a smooth point: \\(\\dim S_1=r(m+n-r)\\).",
+    "covariance": "The frames come from the SVD of a sampled gradient \\(G=\\nabla_WL(W_0)\\), so the image transforms covariantly in distribution over the data under \\(O(m)\\times O(n)\\). Homotheties are not included: with the stable scale \\(\\sqrt[4]{d_{out}}/\\sqrt\\gamma\\), \\(P\\propto U_{G,[r+1:2r]}V_{G,[1:r]}^\\top\\) does not depend on the size of \\(W_0\\) or \\(G\\), so \\(W_0\\mapsto cW_0\\) moves the vertex to \\(cW_0-P\\ne c(W_0-P)\\). The closest key is the spectral-frame OxO."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "LoRA-GA is a Type II object: it picks the point \\(P\\propto U_{G,[r+1:2r]}V_{G,[1:r]}^\\top\\) of the stratum \\(\\mathcal M_r\\) and moves the cone's vertex to \\(\\theta_0-P\\), combining smoothness, gradient alignment of \\(\\mathrm{row}\\,A_0\\) and a stable scale (Prop II.3). It is incomparable with zero-init LoRA.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Thm II.1 conversion into LoRA\\(_{2r}\\) on the untouched \\(W_0\\), pointed at the degenerate pointing \\(([B_0,-B_0],[A_0;A_0])\\) (product \\(0\\), outside the three strata)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "Different points of the S stratum (gradient-SVD \\(P\\) against weight-SVD \\(P\\)) give translated cones with different vertices, hence incomparable images (Thm II.2(a),(d))."
+    },
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "A smooth Type II point against an apex: at equal rank the images are incomparable."
+    }
+   ],
+   "check_notes": "Re-derived: S stratum (Cone*, regular, GL, OxO, M1, span). Arrow into LoRA_{2r} at the (r, r, 0) pointing verified (product B_0A_0 - B_0A_0 = 0). O1 to PiSSA (different vertices) and O3 to LoRA verified. Change: covariance note refined to O(m) x O(n): the stable-scale split has a fixed magnitude, so homotheties break covariance (unlike PiSSA's CO x CO); key OxO kept.",
+   "verified": true
+  },
+  {
+   "id": "lora-plus",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Same \\(\\rho\\) as LoRA; only the rate operator \\(\\mathrm{diag}(\\eta_AI,\\lambda\\eta_AI)\\) changes. Under Adam (\\(\\varepsilon=0\\), no decay, no clipping, shared schedule) and from \\(B_0=0\\), LoRA+ with ratio \\(\\lambda\\) is exactly LoRA with \\(\\alpha\\) multiplied by \\(\\lambda\\) (Cor III.11(b)).",
+    "base_point": "An apex in either zero-product initialisation: the paper's Init[2] (\\(A=0\\), \\(B\\) random) is the \\(\\mathrm T_B\\) stratum, HF's default the \\(\\mathrm T_A\\) stratum.",
+    "gauge": "The object's gauge is \\(GL_r\\). Under SGD the rate ratio is the scalar gauge choice \\(g=\\lambda^{1/4}I\\) together with an overall rate (Thm III.3)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA+ is not a new object but a point of LoRA's hyperparameter torus: under Adam, from zero-initialised \\(B\\), its ratio \\(\\lambda\\) is absorbed into \\(\\alpha\\), so any gain must come from torus-breaking ingredients (global clipping, a shared \\(\\varepsilon\\) or decay). Under gradient flow it moves the crossover scale \\(\\sigma^*\\) by \\(\\sqrt\\lambda\\), and LoRA-FA is the endpoint \\(\\lambda\\to\\infty\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object. The trajectory equivalence is the torus map \\(c_B=1/\\lambda\\) (Adam) or \\(\\lambda^{-1/2}\\) (SGD), which rescales \\(s\\); it is not an arrow."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora-fa",
+     "test": "O2",
+     "reason": "LoRA-FA is the \\(\\lambda\\to\\infty\\) endpoint of the LoRA+ dynamics, yet \\(d=r(m+n-r)>mr\\): the limit is dynamical, not a simulation."
+    }
+   ],
+   "check_notes": "Same object as LoRA (h = id), only the rate operator changes; T_A (HF) or T_B (paper Init[2]) apex; Cor III.11(b) torus reading checked. O2 obstruction to LoRA-FA (r(m+n-r) > mr) valid. No changes. Sync with the refereed paper (2026-10-03): the Cor III.11(b) equivalence is stated from B_0 = 0, the corollary's hypothesis (the paper's Init[2] starts from B != 0).",
+   "verified": true
+  },
+  {
+   "id": "lora-fa",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\{W_0+sBA_0\\}=W_0+\\mathbb R^m\\otimes\\mathrm{row}\\,A_0\\), linear of dimension \\(mr\\).",
+    "covariance": "The frozen \\(A_0\\) is random, so covariance holds only in law (GL × frame).",
+    "rebasing": "With \\(A_0\\) fixed it is idempotent; resampling \\(A_0\\) every cycle gives Flora."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "LoRA-FA is the sub-object \\(\\mathrm{FA}(A_0)\\hookrightarrow\\mathrm{LoRA}_{(0,A_0)}\\) obtained by freezing \\(A\\) (A2): a linear method with the same first-order image as zero-init LoRA. Its corrected gradient gives the frame-only cometric \\(K(G)=\\eta\\,GP_V\\), which depends only on \\(\\mathrm{row}\\,A_0\\) under SGD, but on \\(A_0\\) modulo \\(B_r\\) under the published AdamW.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(B)=(B,\\ A_0)",
+     "note": "Freezing \\(A\\) at its base value: a pointed monomorphism into LoRA pointed at \\((0,A_0)\\)."
+    },
+    {
+     "target": "asylora",
+     "rule": "A3",
+     "h": "h(B)=B\\,A_0Q^\\top",
+     "note": "Isomorphism \\(\\mathrm{FA}(A_0)\\cong\\mathrm{FA}(Q)\\) when \\(\\mathrm{row}\\,A_0=\\mathrm{row}\\,Q\\) (e.g. \\(Q\\) the orthonormalised \\(A_0\\)); for independent random frames the two agree only in law."
+    },
+    {
+     "target": "flora-opt",
+     "rule": "A5",
+     "h": "B\\mapsto(B,\\,0,\\dots,0)",
+     "note": "LoRA-FA is the first period of Flora when Flora's first projection is \\(A_0\\) (shared seed): one stage embeds into the rebasing scheme."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "mica",
+     "test": "O1",
+     "reason": "\\(\\mathrm{FA}(A_0)\\) has image \\(\\{XA_0\\}\\) (fixed row space), MiCA's \\(\\mathrm{FB}(U_{\\min})\\) has \\(\\{U_{\\min}Y\\}\\) (fixed column space); neither contains the other."
+    },
+    {
+     "target": "vera",
+     "test": "O2",
+     "reason": "VeRA \\(\\to\\) LoRA-FA\\((A)\\) exists, but not the reverse: \\(d(\\text{LoRA-FA})=mr>m+r-1=d(\\text{VeRA})\\)."
+    }
+   ],
+   "check_notes": "Re-derived: Lin {XA_0} of dim mr, regular, none, frame (GL x fr), M1, idempotent with A_0 fixed. Arrows checked: A2 into LoRA at (0, A_0); h(B) = B A_0 Q^T into AsyLoRA needs row A_0 = row Q with QQ^T = I (then B A_0 Q^T Q = B A_0); A5 into Flora's first period. O1 to MiCA and O2 to VeRA (mr > m+r-1 for r >= 2) valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "riemannian-preconditioned-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Same \\(\\rho\\) as LoRA; the optimizer replaces the cometric by \\(\\eta s^2(P_UG+GP_V)\\) (undamped scaled GD, Prop III.4(a)).",
+    "gauge": "The object's gauge is \\(GL_r\\). The undamped step is \\(GL_r\\)-equivariant and descends to \\(W_0+\\mathcal M_r\\), but the damped \\((AA^\\top+\\delta I)^{-1}\\) needed at \\(B_0=0\\) is only \\(O(r)\\)-equivariant, and the practical scaled AdamW only \\(B_r\\)-equivariant (Thm III.12)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Riemannian preconditioning keeps LoRA's object and chooses a cometric that is a function of \\(W\\) on the full-rank locus, i.e. a metric descended to the quotient \\(\\mathcal M_r=Q^{\\rm full}/GL_r\\). The damping and the Adam wrapper used in practice shrink the respected gauge from \\(GL_r\\) to \\(O(r)\\) and then to \\(B_r\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object, different trained-method data (the cometric)."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Same object (h = id); cometric eta s^2(P_U G + G P_V) and the GL_r -> O(r) -> B_r hierarchy for damped / Adam-wrapped variants match Prop III.4(a) and Thm III.12. No changes.",
+   "verified": true
+  },
+  {
+   "id": "lora-one",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "The image is \\(W_0+\\mathcal M_{\\le r}\\) (no residual subtraction): LoRA's cone with vertex \\(\\theta_0\\).",
+    "base_point": "\\(\\rho(q_0)=W_0+\\tfrac{\\alpha}{\\sqrt r}B_0A_0\\ne\\theta_0\\): by design the defect \\(e\\) is a rank-\\(r\\) truncated full-batch gradient step. The start is a smooth (rank-\\(r\\)) point of the cone, so in the slice at \\(\\theta_0'=\\theta_0+e\\) it is a Type II object with residual \\(\\theta_0\\).",
+    "covariance": "Def II.14 reads covariance on the image, and the image \\(W_0+\\mathcal M_{\\le r}\\) is basis-free (GL×GL), as for EVA. Only the starting point (the defect \\(\\tfrac{\\alpha}{\\sqrt r}B_0A_0=\\tfrac{\\alpha\\gamma}{\\sqrt r}U_{G,r}\\bar S_rV_{G,r}^\\top\\), built from the SVD of the full-batch gradient and normalised by \\(\\sigma_1\\)) is data-dependent, and it is covariant in law only under \\(O(m)\\times O(n)\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA-One enters LoRA's own cone at a smooth point instead of the apex: a base change \\(\\theta_0\\mapsto\\theta_0+[-\\eta G]_r\\) (one truncated full-FT step), followed by a split pointing whose residual is the original \\(\\theta_0\\). In \\(\\mathsf{Meth}(\\Theta,\\theta_0)\\) it is only an unpointed object, related to LoRA by \\(h=\\mathrm{id}\\) without preservation of base points.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Same image, but \\(\\rho(q_0)\\ne\\theta_0\\): \\(h=\\mathrm{id}\\) is only a weak morphism, and the start is a smooth point rather than the apex."
+    },
+    {
+     "target": "lora-ga",
+     "test": "O1",
+     "reason": "LoRA-GA subtracts its initial adapter (vertex \\(W_0-P_{\\rm GA}\\)), LoRA-One does not (vertex \\(W_0\\)); the two cones are incomparable, as in Thm II.2(d)."
+    }
+   ],
+   "check_notes": "Re-derived: R / Cone (vertex theta_0, no residual) / defect by design (rank-r gradient step) / GL / M1 / span. Change: covariance OxO -> GLxGL. The image W_0 + M_{<=r} does not depend on the gradient frame (same convention as EVA, 'GLxGL (image; its init frame is only CO(n))'); the frame enters only the defect, which is O(m) x O(n)-covariant in law (sigma_1-normalised, so not homothety-covariant). Obstructions: O3 to LoRA (different base point, h = id only weak) and O1 to LoRA-GA (vertices W_0 vs W_0 - P_GA) verified.",
+   "verified": true
+  },
+  {
+   "id": "lora-rite",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Optimizer-only change on LoRA's \\(\\rho\\).",
+    "gauge": "The object's gauge is \\(GL_r\\). RITE states only \\(W\\)-level invariance under \\((BR,R^{-1}A)\\) (its Definition 1), but its update is \\(GL_r\\)-equivariant at the parameter level on the full-rank locus, so it descends to \\(W\\) (Thm III.12, published variants)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA-RITE is a trained-method structure on LoRA whose \\(W\\)-update factors through the quotient by \\(GL_r\\): adaptive matrix-preconditioned moments are expressed in orthonormal bases of the factors and transported between bases. It thus achieves descent of the update, which Adam's \\(B_r\\) shadow of the gauge lacks.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object; only the update rule differs."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Same object (h = id); W-level invariance (descent of the update) rather than parameter-level GL_r-equivariance, as in Thm III.12 'published variants'. No changes. Sync with the refereed paper (2026-10-03): gauge note follows Thm III.12 as now proved from Algorithm 1: parameter-level GL_r-equivariance on the full-rank locus, of which the W-level invariance is a consequence.",
+   "verified": true
+  },
+  {
+   "id": "lora-pro",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Optimizer-only: equivalent gradient \\(\\tilde g=P_UG+(I-P_U)GP_V=\\Pi_{T\\mathcal M_r}G\\) (Prop III.4(b)).",
+    "gauge": "The object's gauge is \\(GL_r\\). The SGD variant is Riemannian gradient flow on \\(W_0+\\mathcal M_r\\); the published step with the Sylvester-optimal \\(X\\) is only \\(O(r)\\)-equivariant at the parameter level."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA-Pro chooses the cometric \\(K=\\eta\\,\\Pi_{T_{W-W_0}\\mathcal M_r}\\), the Frobenius-orthogonal projection of the full gradient onto the tangent space of the rank-\\(r\\) stratum, i.e. Riemannian gradient flow on LoRA's image. Its residual \\(r\\times r\\) freedom \\(X\\) is a choice of lift through the gauge fibre.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "Both approximate the full gradient, but a GaLore period has image \\(\\{P_tX\\}\\) of dimension \\(rn<r(m+n-r)\\), so it cannot simulate LoRA-Pro's (LoRA's) image."
+    }
+   ],
+   "check_notes": "Same object (h = id); equivalent gradient P_U G + (I-P_U) G P_V = Pi_{T M_r} G (Prop III.4(b)) re-derived. O2 obstruction to one GaLore period (rn < r(m+n-r) for m > r) valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "relora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "B",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "A merge-and-restart scheme of LoRA\\(_r\\) stages: \\(B_k\\leftarrow0\\), \\(A_k\\) re-initialised, optimizer state pruned, learning rate re-warmed.",
+    "shape": "Each stage is the cone \\(W_k+\\mathcal M_{\\le r}\\) at the merged weight.",
+    "base_point": "Each stage starts at the apex of its cone.",
+    "rebasing": "\\(R_K=W_0+\\mathcal M_{\\le\\min(Kr,m,n)}\\) (Thm V.3, Cor 1): full FT at \\(K^*=\\lceil\\min(m,n)/r\\rceil\\)."
+   },
+   "table_row": "B",
+   "table_col": "Cone",
+   "categorical_reading": "ReLoRA is \\(\\mathrm{LoRA}_r^{\\oplus K}\\) unrolled in time: each restart re-points the cone at the merged weight, and the reach is the \\(K\\)-fold Minkowski sum of the cone, the rank-\\(Kr\\) variety. It is the additive twin of re-HRA.",
+   "arrows": [
+    {
+     "target": "relora",
+     "rule": "A5",
+     "h": "(q_1,\\dots,q_K)\\mapsto(q_1,\\dots,q_K,\\,q_0^{(K+1)})",
+     "note": "ReLoRA\\(^K\\hookrightarrow\\) ReLoRA\\(^{K+1}\\), padding with the next stage's base value."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h((B_k,A_k)_k)=([B_1\\cdots B_K],\\,[A_1;\\dots;A_K])",
+     "note": "\\(K\\) stages factor through LoRA\\(_{Kr}\\) (Obs I.7); pointed when the stacked \\(A_0\\)'s have independent rows."
+    },
+    {
+     "target": "cola",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}\\ \\text{(stagewise)}",
+     "note": "Stagewise identical objects at equal link ranks; COLA differs only in its full optimizer reset and schedule."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "A ReLoRA stage is a two-sided cone of dimension \\(r(m+n-r)\\); a GaLore period is the one-sided linear \\(\\{P_tX\\}\\) of dimension \\(rn\\)."
+    },
+    {
+     "target": "delta-lora",
+     "test": "O2",
+     "reason": "For \\(K\\ge3\\), ReLoRA\\(^K\\) reaches rank \\(\\min(Kr,m,n)\\), while Delta-LoRA's total update has rank at most \\(2r\\) (its partial merges telescope)."
+    }
+   ],
+   "check_notes": "Re-derived: B (schedule), Cone per stage, apex per stage, GL, GLxGL, M1, schedule; R_K = W_0 + M_{<=min(Kr,m,n)}. Arrows: A5 stage padding, LoRA_{Kr} by concatenation (Obs I.7; standard iff stacked A_0 rows independent), stagewise identity with COLA. O2 to GaLore (per period) and to Delta-LoRA (rank <= 2r, confirmed numerically below) valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "delta-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "A schedule: after step \\(K\\) the base \\(W\\) is rewritten at every step by \\(\\lambda\\) times the increment of \\(sBA\\). These partial merges telescope, \\(W^{(t)}=W_0+\\lambda s(B_tA_t-B_KA_K)\\), so the effective map is \\(W_0-\\lambda sB_KA_K+(1+\\lambda)sBA\\): a single re-pointing at step \\(K\\), with scale \\((1+\\lambda)s\\) and a detached backward.",
+    "shape": "A cone per stage; the overall reach is \\(W_0+\\mathcal M_{\\le2r}\\).",
+    "base_point": "Zero-init LoRA for \\(t\\le K\\) (apex at \\(\\theta_0\\)). The second stage starts at a smooth point of the translated cone with vertex \\(W_0-\\lambda sB_KA_K\\).",
+    "gauge": "\\(GL_r\\) on \\((B,A)\\) in each stage.",
+    "merge": "The final weight \\(W^{(T)}+sBA\\) is dense, but by telescoping the total update \\((1+\\lambda)sBA-\\lambda sB_KA_K\\) is a rank-\\(\\le2r\\) LoRA, so it can be shipped as a detachable adapter (contrary to the catalog's reason).",
+    "rebasing": "A rebasing scheme with period 1, but the base increments are tied to the adapter's own increments, so the reach is only \\(W_0+\\mathcal M_{\\le2r}\\), ReLoRA's \\(R_2\\), not \\(\\Theta\\)."
+   },
+   "table_row": "B",
+   "table_col": "Cone",
+   "categorical_reading": "Delta-LoRA's per-step partial merges telescope, so it is a two-stage rebasing scheme of LoRA\\(_r\\): a zero-init stage, then one re-pointing at step \\(K\\) to \\((W_0-\\lambda sB_KA_K)+(1+\\lambda)s\\,\\mathcal M_{\\le r}\\), with a gradient detached by the factor \\(1/(1+\\lambda)\\). By Thm II.1 its total update has rank at most \\(2r\\), so the high-rank claim fails in exact arithmetic (checked numerically under AdamW).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=\\big([(1+\\lambda)B,\\ -\\lambda B_K],\\ [A;\\ A_K]\\big)",
+     "note": "After step \\(K\\) the effective map factors through LoRA\\(_{2r}\\) on \\(W_0\\) (scale \\(s\\)), pointed at \\(([(1+\\lambda)B_K,-\\lambda B_K],[A_K;A_K])\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "At equal rank \\(r\\): the total update \\((1+\\lambda)sBA-\\lambda sB_KA_K\\) has rank up to \\(2r>r\\)."
+    }
+   ],
+   "check_notes": "Re-derived and confirmed: the partial merges telescope to W_0 - lambda s B_K A_K + (1+lambda) s BA. numpy, AdamW with weight decay (m,n,r)=(12,10,2), lambda=2, K=5: telescoping error 2e-15, total update rank 4 = 2r. LoRA_{2r} arrow (pointed at the step-K weight) and O2 to LoRA verified. No changes.",
+   "verified": true
+  },
+  {
+   "id": "cola",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "A Frank–Wolfe-style chain: tune LoRA\\(_{r_i}\\), merge, re-initialise (\\(B=0\\), Gaussian \\(A\\)), reset the optimizer.",
+    "base_point": "Each link starts at the apex of its cone.",
+    "rebasing": "\\(R_M=W_0+\\mathcal M_{\\le\\min(\\sum_ir_i,m,n)}\\), the Minkowski sum of the links' cones."
+   },
+   "table_row": "B",
+   "table_col": "Cone",
+   "categorical_reading": "COLA is the rebasing scheme \\(\\mathrm{LoRA}_{r_1}\\oplus\\cdots\\oplus\\mathrm{LoRA}_{r_M}\\) unrolled in time with full optimizer resets. As an object it coincides with ReLoRA at equal ranks; its Frank–Wolfe reading concerns the trained-method data (which atom each stage picks), not expressivity.",
+   "arrows": [
+    {
+     "target": "relora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}\\ \\text{(stagewise)}",
+     "note": "At equal link ranks; with decreasing ranks, pad each link by LoRA\\(_{r_i}\\hookrightarrow\\) LoRA\\(_{r_1}\\)."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h((B_i,A_i)_i)=([B_1\\cdots B_M],\\,[A_1;\\dots;A_M])",
+     "note": "The chain factors through LoRA\\(_{\\sum r_i}\\) (Obs I.7)."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Re-derived: B / Cone per link / apex per link / GL / GLxGL / M1 / schedule, R_M = W_0 + M_{<=min(sum r_i, m, n)}. Stagewise identity arrow to ReLoRA (with padding for decreasing ranks) and concatenation arrow into LoRA_{sum r_i} verified. No changes.",
+   "verified": true
+  },
+  {
+   "id": "periodic-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Periodic unload-and-restart of LoRA, with an optional momentum \\(m\\) that unloads only part of the adapter.",
+    "base_point": "The first stage is zero-init LoRA (apex at \\(\\theta_0\\)). With \\(m>0\\) each restart starts at \\((mB,mA)\\), a rank-\\(r\\) point of the cone, and the literal unload (merge \\((1-m)sBA\\), keep \\(m^2sBA\\)) has pointing defect \\(-m(1-m)sBA\\) per restart.",
+    "rebasing": "Reach \\(W_0+\\mathcal M_{\\le\\min(Tr,m,n)}\\), as for ReLoRA: the defects have rank \\(\\le r\\) and stay inside the Minkowski sum."
+   },
+   "table_row": "B",
+   "table_col": "Cone",
+   "categorical_reading": "PeriodicLoRA is ReLoRA's rebasing scheme with a different restart map. At \\(m=0\\) it is ReLoRA; momentum unloading replaces the apex restart by a re-pointing at a smooth point of the cone, which as written does not preserve the function. Its reach is unchanged: the rank-\\(Tr\\) variety.",
+   "arrows": [
+    {
+     "target": "relora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}\\ \\text{(stagewise)}",
+     "note": "At momentum \\(m=0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "relora",
+     "test": "O3",
+     "reason": "For \\(m>0\\) a restart starts at a rank-\\(r\\) point, not the apex, and carries the defect \\(-m(1-m)sBA\\); the stage objects lie in a different stratum and are not pointed at the merged weight."
+    }
+   ],
+   "check_notes": "Re-derived; the literal momentum unload leaves m^2 sBA, so the restart defect is (m^2 - m) sBA = -m(1-m) sBA, as stated. Reach W_0 + M_{<=min(Tr,m,n)}. The m = 0 arrow to ReLoRA and the m > 0 O3 obstruction concern different hyperparameter regimes and are both valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "lora-dropout",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The object is LoRA. During training, Bernoulli masks \\(\\hat B=\\mathrm{diag}(m_B)B\\) and \\(\\hat A=A\\,\\mathrm{diag}(m_A)\\) act on the outer (neuron) indices: a stochastic training signal.",
+    "gauge": "The masks act on outer indices and commute with \\((Bg^{-1},gA)\\), so the expected loss keeps LoRA's \\(GL_r\\) gauge.",
+    "covariance": "The image is GL×GL; the regulariser itself is only Mon×Mon-natural (coordinate masks).",
+    "merge": "The trained \\(BA\\) fuses (M1). The proposed test-time ensemble \\(\\tfrac1N\\sum_nf(W_0+s\\hat B^{(n)}\\hat A^{(n)},x)\\) averages outputs and is M∞."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA Dropout keeps LoRA's object and changes the trained-method data: the loss is averaged over a family of coordinate masks, which preserves the \\(GL_r\\) gauge but breaks the rotational naturality of training. Its test-time ensemble is a family over mask space realised at function level, hence not mergeable.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object at inference without ensembling."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O1",
+     "reason": "Ensemble deployment only (the arrow above covers single-weight deployment): the test-time ensemble's realised function \\(\\tfrac1N\\sum_nf(\\theta_n,x)\\) is generically not \\(f(\\theta,x)\\) for any single \\(\\theta\\) (\\(f\\) is non-linear), so it lies outside LoRA's realised image."
+    }
+   ],
+   "check_notes": "Re-derived: LoRA object; masks on outer indices commute with (Bg^{-1}, gA), so the expected loss keeps GL_r. Change: the O1 obstruction reason now says it applies only to the ensemble deployment, so it does not contradict the h = id arrow for single-weight deployment.",
+   "verified": true
+  },
+  {
+   "id": "asylora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(W_0+\\mathbb R^m\\otimes\\mathrm{row}\\,Q\\), of dimension \\(mr\\).",
+    "covariance": "\\(Q\\) is Haar-random on the Stiefel manifold, so \\(\\mathrm{row}\\,Q\\) is Haar on \\(\\mathrm{Gr}(r,n)\\) and covariance holds in law.",
+    "rebasing": "\\(Q\\) is frozen, so cycles gain nothing."
+   },
+   "table_row": "R-additive",
+   "table_col": "Lin",
+   "categorical_reading": "AsyLoRA is the one-sided object \\(\\mathrm{FA}(Q)\\hookrightarrow\\mathrm{LoRA}_{(0,Q)}\\) with a Haar-random orthonormal frame: the same object as LoRA-FA up to the law of \\(\\mathrm{row}\\,A_0\\). Orthonormality makes its plain-SGD cometric \\(s^2\\eta\\,GQ^\\top Q=s^2\\eta\\,GP_V\\), which is already LoRA-FA's corrected (least-squares) cometric.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "h(B)=(B,\\ Q)",
+     "note": "Freezing \\(A=Q\\): a pointed monomorphism into LoRA at \\((0,Q)\\)."
+    },
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "h(B)=B\\,QA_0^{+}",
+     "note": "Isomorphism when \\(\\mathrm{row}\\,Q=\\mathrm{row}\\,A_0\\) (\\(A_0^+\\) the right pseudo-inverse); for independent draws the two agree only in law."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "vera",
+     "test": "O2",
+     "reason": "Both freeze random projections, but \\(d=mr>m+r-1=d(\\text{VeRA})\\)."
+    },
+    {
+     "target": "mica",
+     "test": "O1",
+     "reason": "Freezing \\(A\\) against freezing \\(B\\): \\(\\{XQ\\}\\) and \\(\\{U_{\\min}Y\\}\\) are incomparable, matching the paper's asymmetry."
+    }
+   ],
+   "check_notes": "Re-derived: Lin {XQ} of dim mr, regular, none, frame (Haar Stiefel), M1, idempotent. Arrows: A2 into LoRA at (0, Q); h(B) = B Q A_0^+ into LoRA-FA when row Q = row A_0 (then B Q A_0^+ A_0 = B Q). O2 to VeRA and O1 to MiCA valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "lora-without-regret",
+   "entry_type": "analysis",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "An analysis and recipe for plain LoRA (all layers, \\(\\alpha=32\\), one learning rate for \\(A\\) and \\(B\\), about 10× the FullFT rate); the object is LoRA.",
+    "gauge": "Its observation that two of the four hyperparameters are redundant is the pair of torus invariants \\((s\\eta_A\\eta_B,\\ \\sigma_A/\\eta_A)\\) of Thm III.10."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoRA Without Regret studies LoRA's trained-method data rather than a new object: its hyperparameter redundancy is the 2-torus action of Thm III.10, and its capacity claims are statements about when the cone \\(\\theta_0+\\mathcal M_{\\le r}\\) contains the needed update.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Plain LoRA."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Plain LoRA (h = id); the two effective hyperparameters are the torus invariants (s eta_A eta_B, sigma_A/eta_A) of Cor III.11(a). entry_type 'analysis' is appropriate. No changes.",
+   "verified": true
+  },
+  {
+   "id": "flat-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "The object is LoRA. The objective averages \\(L\\) over full-space Gaussian perturbations of \\(W'=\\rho(B,A)\\), with variance scaled by the row norms of \\(W'\\).",
+    "gauge": "The perturbed loss depends on \\((B,A)\\) only through \\(W'\\), so LoRA's \\(GL_r\\) gauge is exact, unlike flatness measured in \\((A,B)\\) coordinates, which is gauge-dependent.",
+    "covariance": "The image is GL×GL. The noise law (rows isotropic in \\(\\mathbb R^n\\), scaled by row norms) is \\(O(n)\\)-invariant on the input side and monomial-covariant on the output side."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "Flat-LoRA moves the sharpness regulariser from the chart \\(Q\\) to weight space. A loss that factors through \\(\\rho\\) is constant on gauge fibres, so its flatness is a property of the point of \\(\\mathrm{Im}\\,\\mathrm{LoRA}\\), not of the representative \\((B,A)\\). The object stays LoRA.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object, regularised loss."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Same object; the perturbed loss factors through rho, so GL_r is exact; noise law O(n) x Mon-natural as stated. No changes.",
+   "verified": true
+  },
+  {
+   "id": "altlora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Optimizer-only: alternating half-steps \\(\\delta W=-\\eta P_BG\\) (\\(A\\)-step) and \\(\\delta W=-\\eta GP_A\\) (\\(B\\)-step).",
+    "gauge": "Each undamped half-step is \\(GL_r\\)-equivariant (they are the one-sided halves of scaled GD); damping reduces this to \\(O(r)\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "AltLoRA alternates between the linear sub-objects \\(\\mathrm{FB}(B_t)\\hookrightarrow\\mathrm{LoRA}\\) and \\(\\mathrm{FA}(A_t)\\hookrightarrow\\mathrm{LoRA}\\), taking an exact least-squares step in each. By the degree-one collapse each half-step is a backward lens with anchor \\(P_B\\) or \\(P_A\\), so AltLoRA is a period-1 rebasing schedule of one-sided linear methods, with momentum transported between frames.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object."
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object; each half-step uses one of the two Riemannian preconditioners."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Same object; half-steps dW = -eta P_B G and -eta G P_A re-derived from the stated (B^T B)^{-1}, (AA^T)^{-1} preconditioners, and each undamped half-step is GL_r-equivariant (checked by substitution). No changes.",
+   "verified": true
+  },
+  {
+   "id": "loft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Optimizer-only: alternating scaled-gradient steps plus recalibrated, projected AdamW moments; it reduces exactly to AdamW at full rank.",
+    "gauge": "The object's gauge is \\(GL_r\\). Moments are transported between successive frames by \\(C_k=(A_{k-1}A_k^\\top)(A_kA_k^\\top)^{-1}\\), a change of gauge representative."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "LoFT keeps LoRA's object and lifts the full-space AdamW update into the moving tangent frames of the cone, transporting optimizer state along the gauge (unlike GaLore, which carries state over without transport). The cone is already \\(\\Theta\\) at \\(r=\\min(m,n)\\), but the update reduces exactly to AdamW on full FT (the terminal object) only at \\(r=\\max(m,n)\\), where both projections \\(P_A\\) and \\(P_B\\) (with pseudo-inverses) are the identity.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h=\\mathrm{id}_Q",
+     "note": "Same object."
+    }
+   ],
+   "obstructions": [],
+   "check_notes": "Coordinates agree (same object, h = id). Change: categorical reading said the construction collapses to AdamW at r = min(m,n); at r = min one of P_A, P_B is still a proper projector, so the exact reduction (catalog, paper) is at r = max(m,n).",
+   "verified": true
+  },
+  {
+   "id": "polar",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\{X\\Theta Y^\\top\\}=\\mathcal M_{\\le r}\\), since every rank-\\(\\le r\\) matrix has an SVD-type form; the image is LoRA's cone, of dimension \\(r(m+n-r)\\).",
+    "base_point": "\\(\\Theta_0=0\\) is a zero gate: \\(S_1=\\{X_0RY_0^\\top\\}\\) has dimension \\(r^2\\) (checked), a deeper apex than LoRA's (\\(mr\\)). To first order PoLAR is a generalised LoRA-XS in random frames.",
+    "gauge": "\\(O(r)\\times O(r)\\) acting by \\((XO_1,O_1^\\top\\Theta O_2,YO_2)\\), fibre \\(r(r-1)\\) (checked): the compact form of LoRA's bond gauge. The Stiefel constraints remove the non-compact \\(\\mathrm{Sym}_r\\) half, so there are no balancedness charges.",
+    "covariance": "The image is basis-free (GL×GL); the initial frames are Haar-random (in law)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "PoLAR reparametrises LoRA's cone through \\(\\mathrm{St}(m,r)\\times\\mathbb R^{r\\times r}\\times\\mathrm{St}(n,r)\\), a partial gauge fixing that cuts \\(GL_r\\) down to \\(O(r)\\times O(r)\\) and so removes the non-compact directions that carry the charges \\(\\Phi\\). It factors through LoRA by \\(h=(X\\Theta,Y^\\top)\\), but starts at a deeper apex whose first-order image is the LoRA-XS-type tangent \\(\\{X_0RY_0^\\top\\}\\).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(X,\\Theta,Y)=(X\\Theta,\\ Y^\\top)",
+     "note": "Pointed at LoRA's \\(\\mathrm T_A\\) point \\((0,Y_0^\\top)\\), which has orthonormal rows."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "adalora",
+     "test": "O3",
+     "reason": "Both are SVD-shaped, but \\(S_1(\\mathrm{PoLAR})=\\{X_0RY_0^\\top\\}\\) (dimension \\(r^2\\)) is not inside \\(S_1(\\mathrm{AdaLoRA})=\\mathrm{span}\\{p_iq_i^\\top\\}\\) (dimension \\(r\\))."
+    }
+   ],
+   "check_notes": "Re-derived; numpy on Stiefel tangent spaces at (m,n,r) = (7,6,3), (8,5,2): generic rank 30, 22 = r(m+n-r) with fibre 6, 2 = r(r-1) (O(r) x O(r)); rank 9, 4 = r^2 at Theta = 0 (apex). GL key kept: the fibre is an orbit of a linear (compact) group on the two bonds. Arrow h = (X Theta, Y^T) into LoRA pointed at (0, Y_0^T), and O3 to AdaLoRA (r^2 > r) verified. No changes.",
+   "verified": true
+  },
+  {
+   "id": "adalora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "nonlinear",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(W_0+\\{P\\Lambda Q\\}=W_0+\\mathcal M_{\\le r}\\) per matrix. The budget mask makes the trained object a union of cones of ranks \\(r_k\\) with \\(\\sum_kr_k=b^{(T)}\\).",
+    "base_point": "\\(\\Lambda_0=0\\) is a zero gate: \\(S_1=\\mathrm{span}\\{p_iq_i^\\top\\}\\) has dimension \\(r\\) (checked), so the deficit is \\(r(m+n-r)-r\\).",
+    "gauge": "The generic fibre has dimension \\(r(r+1)\\) (checked): two linear torus edges plus absorption of \\(\\Lambda\\), i.e. a non-linear action of \\(GL_r\\times T_r\\) (\\(P\\mapsto P\\Lambda g^{-1}\\Lambda^{-1}\\), \\(Q\\mapsto gQ\\), plus \\(\\Lambda\\)-scalings). This is the table's \\\"torus (+ absorption)\\\"; the torus alone is not locally transitive on fibres for \\(r\\ge2\\).",
+    "rebasing": "Converges to \\(\\Theta\\) like LoRA, with the mask re-applied in each cycle."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "AdaLoRA charts LoRA's cone by an SVD-shaped triple whose diagonal \\(\\Lambda\\) is a zero gate, so it starts at an apex with only \\(r\\) first-order directions, and its budget mask moves between nested sub-cones (a union over rank allocations). It is simulated by LoRA via \\(h=(P\\Lambda,Q)\\), but as pointed objects LoRA does not map into it.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(P,\\Lambda,Q)=(P\\Lambda,\\ Q)",
+     "note": "Pointed at LoRA's \\(\\mathrm T_A\\) point \\((0,Q_0)\\)."
+    },
+    {
+     "target": "polar",
+     "rule": "A3",
+     "h": "h(P,\\Lambda,Q)=\\big(P(P^\\top P)^{-1/2},\\ (P^\\top P)^{1/2}\\Lambda(QQ^\\top)^{1/2},\\ Q^\\top(QQ^\\top)^{-1/2}\\big)",
+     "note": "Polar factors of \\(P\\) and \\(Q^\\top\\); smooth where \\(P\\) and \\(Q\\) have full rank; pointed at PoLAR with \\(\\Theta_0=0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "Both are SVD-shaped, but AdaLoRA's cone has vertex \\(\\theta_0\\) (\\(\\Lambda_0=0\\)) while PiSSA's is translated to \\(W_0-[W_0]_r\\): the images are incomparable (Type I against Type II)."
+    }
+   ],
+   "check_notes": "Re-derived; numpy at (7,6,3), (9,8,2): fibre 12, 6 = r(r+1), dim S_1 = r at Lambda = 0. nonlinear gauge confirmed (largest linear symmetry group, two torus edges, has dim 2r < r(r+1) for r >= 2). Arrows: (P Lambda, Q) into LoRA at (0, Q_0); polar-factor arrow into PoLAR (X Theta Y^T = P Lambda Q, pointed at the polar frames of (P_0, Q_0^T)). O1 to PiSSA valid. No changes.",
+   "verified": true
+  },
+  {
+   "id": "adamss",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\bigoplus_k\\{E_{\\mathcal S_k}C_kB_k\\tilde A_k\\}\\): a product of determinantal cones (rank \\(\\le r_k\\) on \\(|\\mathcal S_k|\\times R_k\\)) transported by the frozen frames \\(\\tilde A_k\\), of dimension \\(\\sum_kr_k(|\\mathcal S_k|+R_k-r_k)\\) (checked).",
+    "base_point": "\\(C_k=0\\) is a zero gate: \\(S_1=\\bigoplus_k\\{E_{\\mathcal S_k}XB_{k,0}\\tilde A_k\\}\\) has dimension \\(\\sum_k|\\mathcal S_k|r_k\\) (checked). An apex, with no residual split.",
+    "gauge": "\\(\\prod_kGL_{r_k}\\) acting by \\((C_kg_k^{-1},g_kB_k)\\).",
+    "covariance": "The input frames come from the truncated SVD of \\(W_0\\) (\\(CO(n)\\)). The clustering of output units reduces the output side to scalars times signed permutations, a subgroup of CO×CO.",
+    "rebasing": "With the frames \\(\\tilde A_k\\) and the clusters frozen, cycles converge to the linear span \\(\\bigoplus_k\\mathbb R^{\\mathcal S_k}\\otimes\\mathrm{row}\\,\\tilde A_k\\) (dimension \\(\\sum_k|\\mathcal S_k|R_k\\)), not to \\(\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "categorical_reading": "AdaMSS is a \\(\\oplus\\)-word of \\(K\\) small LoRAs, each living on an output block \\(\\mathcal S_k\\) and transported into a frozen principal-subspace frame of \\(W_0\\), with an AdaLoRA-style mask over whole summands. Although it starts from PiSSA's SVD, it keeps \\(\\theta_0\\) as the residual and starts at an apex (Type I), so it is incomparable with PiSSA.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h((C_k,B_k)_k)=\\big([E_{\\mathcal S_1}C_1\\cdots E_{\\mathcal S_K}C_K],\\ [B_1\\tilde A_1;\\dots;B_K\\tilde A_K]\\big)",
+     "note": "Factors through LoRA\\(_{\\sum r_k}\\) on \\(W_0\\), pointed at \\((0,[B_{1,0}\\tilde A_1;\\dots;B_{K,0}\\tilde A_K])\\). This is a \\(\\mathrm T_A\\) point when the stacked rows are independent; with HF's single shared \\(R\\times d_{in}\\) frame that needs \\(\\sum_kr_k\\le R\\). Otherwise it is a degenerate \\(B_0=0\\) pointing outside the three strata (Thm II.2(e)); the arrow is still pointed."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O3",
+     "reason": "Same SVD frames, but AdaMSS is zero-init (apex, vertex \\(\\theta_0\\)) while PiSSA is a split (smooth point, vertex \\(W_0-[W_0]_r\\)): different strata."
+    }
+   ],
+   "check_notes": "Re-derived; numpy with two output clusters (shared and per-cluster frames): d = sum r_k(|S_k|+R_k-r_k) (26, 24) and S_1 = sum |S_k| r_k (18), as stated. OxO kept (group (R^x B_m) x CO(n), as for KnOTS). Change: LoRA arrow note: the target pointing is T_A only when the stacked rows B_{k,0} A~_k are independent (with HF's shared frame, sum r_k <= R); otherwise it is a degenerate pointing. O3 to PiSSA valid.",
+   "verified": true
+  },
+  {
+   "id": "pissa",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\((W_0-[W_0]_r)+\\mathcal M_{\\le r}\\): the cone translated to the residual.",
+    "base_point": "S stratum, so \\(\\theta_0\\) is smooth: \\(\\dim S_1=r(m+n-r)\\).",
+    "gauge": "\\(GL_r\\); balanced (\\(\\Phi_0=0\\)) iff \\(\\eta_A=\\eta_B\\).",
+    "covariance": "The truncated SVD of \\(W_0\\) gives \\(CO(m)\\times CO(n)\\) (Prop II.16)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "PiSSA is the Type II point \\(P=[W_0]_r\\) of the stratum \\(\\mathcal M_r\\): the vertex moves to \\(W_0-[W_0]_r\\), \\(\\theta_0\\) becomes a smooth point with full first-order reach, and the pointing is balanced at equal rates (Prop III.8). Measured from \\(\\theta_0\\), its updates \\(Y-P\\) reach rank \\(2r\\), which is the PiSSA \\(\\to\\) LoRA\\(_{2r}\\) conversion.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Thm II.1: PiSSA\\(_r\\) into LoRA\\(_{2r}\\) on \\(W_0\\) (HF's conversion), pointed at the degenerate pointing with product \\(0\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "A Type II smooth point against a Type I apex at equal rank: the images are incomparable (Thm II.2(d))."
+    },
+    {
+     "target": "milora",
+     "test": "O1",
+     "reason": "Top-\\(r\\) against bottom-\\(r\\) split: different vertices, \\(W_0\\) minus its top or its bottom rank-\\(r\\) part, so the images are incomparable."
+    }
+   ],
+   "check_notes": "Re-derived (S stratum, Cone*, regular, GL, OxO by Prop II.16(b), M1, span). LoRA_{2r} conversion arrow and the O3 (LoRA) / O1 (MiLoRA) obstructions verified. No changes.",
+   "verified": true
+  },
+  {
+   "id": "olora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "regular",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "The vertex is \\(W_0-sQ_rR_r\\): \\(W_0\\) minus its projection onto the span of its first \\(r\\) columns.",
+    "base_point": "S stratum, smooth (exact in HF; the paper's forward is exact only for \\(s=1\\)).",
+    "covariance": "\\(CO(m)\\times\\mathrm{Borel}_n\\) (the table's \\\"CO×Borel\\\"): \\(P=Q_rQ_r^\\top W_0\\) depends on the order of input coordinates, so input permutations change it. That is the \\(\\Pi\\) test, so the key is Pi."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "OLoRA is another point of the Type II stratum, \\(P=Q_rR_r\\), chosen by a QR flag rather than a spectral frame. The flag privileges the first \\(r\\) input coordinates, so unlike PiSSA its pointing is not permutation-natural, and its charge \\(\\Phi_0=I/\\eta_B-R_rR_r^\\top/\\eta_A\\) is generally unbalanced.",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_0],\\,[A;\\,A_0])",
+     "note": "Into LoRA\\(_{2r}\\) on \\(W_0\\) (Thm II.1), at a degenerate pointing."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "Different points \\(P\\) (QR against SVD) of the S stratum: the translated cones are incomparable."
+    }
+   ],
+   "check_notes": "Re-derived: P = Q_r Q_r^T W_0 is covariant under CO(m) x Borel_n (upper-triangular h preserves the span of the first r columns) but not under input permutations, so the Pi key fits the 'CO x Borel' table entry. LoRA_{2r} arrow and O1 to PiSSA verified. No changes.",
+   "verified": true
+  },
+  {
+   "id": "loftq",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(Q_T+\\mathcal M_{\\le r}\\), started at \\(B_TA_T=\\mathrm{SVD}_r(W_0-Q_T)\\): an approximate split over a quantised residual.",
+    "base_point": "\\(\\rho(q_0)=Q_T+B_TA_T\\approx\\theta_0\\). With the default `loftq_iter=1` the defect is \\(e-s\\,\\mathrm{SVD}_r(e)\\), because HF's initialiser ignores the LoRA scale \\(s=\\alpha/r\\). It is the rank-\\(r\\) tail \\(e-\\mathrm{SVD}_r(e)\\) of the quantisation error only at \\(s=1\\), and smaller than QLoRA's defect \\(e\\) only for \\(0<s<2\\) (Prop V.2(b)).",
+    "covariance": "The quantisation grid (blockwise NF4 scales) lives in the standard basis: Mon×Mon.",
+    "merge": "An exact merge of the high-precision \\(BA\\) leaves the \\(N\\)-bit grid; requantising is lossy.",
+    "rebasing": "Converges to \\(\\Theta\\) in exact arithmetic; each merge requantises."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "categorical_reading": "LoftQ is base change along the quantiser followed by an approximate section: it chooses \\((Q,q_0)\\) with \\(\\rho(q_0)\\) close to \\(\\theta_0\\), landing at a smooth point of the cone over \\(Q_T\\). With one iteration it is QLoRA's own map \\(\\kappa\\theta_0+\\mathcal M_{\\le r}\\), re-pointed from the apex to \\(s\\,\\mathrm{SVD}_r(\\theta_0-\\kappa\\theta_0)=-s\\,\\mathrm{SVD}_r(e)\\), with \\(s=\\alpha/r\\) the LoRA scale that HF's initialiser ignores (Prop V.2(b)).",
+   "arrows": [
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "h(B,A)=([B,\\,-B_T],\\,[A;\\,A_T])",
+     "note": "In the slice at the attained start \\(\\theta_0'=Q_T+B_TA_T\\): LoftQ\\(_r\\) into LoRA\\(_{2r}\\) over \\(\\theta_0'\\), at a degenerate pointing (as for PiSSA)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "qlora",
+     "test": "O3",
+     "reason": "With `loftq_iter=1` both have the map \\(q_N(W_0)+sBA\\) and only the start differs (a rank-\\(r\\) point against the apex), so \\(h=\\mathrm{id}\\) is a weak morphism, not a pointed one."
+    }
+   ],
+   "check_notes": "Re-derived: Cone*, defect e - SVD_r(e) at loftq_iter = 1, GL, MonxMon, Mq, span, as in VIII.B. LoRA_{2r} arrow in the slice at Q_T + B_T A_T and O3 to QLoRA verified. Change: categorical reading sign: the restart point is SVD_r(theta_0 - kappa theta_0) = -SVD_r(e), since delta_0 = -SVD_r(e) with e = kappa theta_0 - theta_0. Sync with the refereed paper (2026-10-03): the defect and restart point now carry the LoRA scale s (HF's LoftQ init ignores it), so LoftQ is built to shrink the defect and beats QLoRA only for 0 < s < 2 (Prop V.2(b)).",
+   "verified": true
+  }
+ ]
+}

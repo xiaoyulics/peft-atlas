@@ -1,0 +1,749 @@
+% Appendix B. Auxiliary results: every external theorem the proofs of Appendix C use, in the form in which it is used.
+% Sources: theory/framework.md and theory/propositions.json (proofs, repaired proofs), theory/round2_verdicts.json
+% (suggested fixes naming the constant-rank theorem, transversality, Frobenius, Segre, Eckart--Young, zero sets),
+% site/sections/13-appendix.html (Parts C and D) and site/sections/04-erlangen.html (the LOFT example).
+% Numbering B.1--B.39; each entry ends with the results that use it. Bibliography: bib/extra/B-auxiliary.bib.
+\providecommand{\fbBusedin}[1]{\par\smallskip\noindent{\small\color{inkgray}{\sffamily\bfseries\color{tide}Used in.}\enspace #1\par}\medskip}
+
+\section{Auxiliary results}\label{app:auxiliary}
+
+This appendix quotes the results from outside the paper that the proofs in Appendix~\ref{app:proofs} use. Each is
+stated in the form in which it is applied, with a precise source, and is followed by the places that use it. Several are
+textbook facts that a specialist applies without comment. They are listed so that every step of Appendix~\ref{app:proofs}
+can be traced to a statement with hypotheses. For a few elementary facts we give the one-line reason instead of a
+reference. Background definitions (manifolds, germs, group actions, lenses) are in Appendix~\ref{app:background}, and
+where an entry has a companion there we name it.
+
+Three results of the main text are external results restated in the paper's conventions and proved there:
+\thmref{Theorem}{II.10} (the min-cut bound, here \auxref{B.14}), \thmref{Theorem}{III.5} (Noether charges,
+\auxref{B.29}) and \thmref{Proposition}{III.7}(a) (the Kempf--Ness slice, \auxref{B.26}). The entries below give their
+source forms.
+
+The entries are grouped by subject: smooth maps and limits (B.1--B.4), real algebraic and tame geometry (B.5--B.10),
+matrix analysis (B.11--B.21), Lie groups and invariant theory (B.22--B.27), dynamics, optimisation and differentiation
+(B.28--B.35), three elementary facts (B.36), and spectral projectors, Riemannian submanifolds and floating-point
+scaling (B.37--B.39). Notation follows the exposés: $\Mr$ is the set of $m\times n$ matrices of
+rank at most $r$, $\MM_r$ those of rank exactly $r$, $P_U$ the orthogonal projector onto a subspace $U$, and
+$\lVert\cdot\rVert$ the Frobenius norm unless marked otherwise. Entries of Appendix~\ref{app:background} are cited as
+``Background A.1'' to ``Background D.34''; the numbers of its Part~B are unrelated to the numbers B.1--B.39 used here.
+
+% ================================================================================================
+\subsubsection{Smooth maps, fibre products and limits}
+
+\begin{auxresult}{B.1}{rank, the rank theorem and submersions}{\citep[Prop.~4.1, Thm~4.12, Prop.~4.28,
+Thm~5.12]{xlee2013introduction}}
+Let $F:Q\to\Theta$ be a smooth map between manifolds of dimensions $N$ and $D$.
+\begin{enumerate}[label=(\alph*)]
+  \item For every $k$, the set $\{q:\rk dF_q\ge k\}$ is open. In particular the set where $\rk dF_q$ takes its maximal
+    value is open and nonempty, and if $\rk dF_p=D$ then $F$ is a submersion on a neighbourhood of $p$.
+  \item (Rank theorem.) If $\rk dF_q=k$ for all $q$ in a neighbourhood of $p$, there are charts centred at $p$ and at
+    $F(p)$ in which $F$ reads $(x_1,\dots,x_N)\mapsto(x_1,\dots,x_k,0,\dots,0)$. Hence $p$ has a neighbourhood $V$ such
+    that $F(V)$ is an embedded submanifold of dimension $k$ and $F^{-1}(F(p))\cap V$ is an embedded submanifold of
+    dimension $N-k$.
+  \item A submersion is an open map. In particular, if $\rk dF=D$ on a neighbourhood $U$ of $p$, then $F(U)$ contains
+    an open neighbourhood of $F(p)$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (a).} In coordinates, $\rk dF_q\ge k$ says that some $k\times k$ minor of the Jacobian is
+nonzero at $q$, an open condition; Lee's Prop.~4.1 is the case $k=D$. Companion: \bgref{C.5}.
+\fbBusedin{\thmref{Observation}{I.4}(b), where the lifts of both axes force $\rk d\iota_{p^*}=2$, the rank stays $2$
+near $p^*$, and the image of a neighbourhood of $p^*$ contains an open subset of $\R^2$; \thmref{Definition}{I.5}
+(with \auxref{B.9}); \thmref{Proposition}{II.12}(a) (fibre dimension $\lvert M\rvert-d(M)$ near points of maximal
+rank); \thmref{Proposition}{III.4}(d) (rank $r$ is an open condition on the slice). The proofs of \thmref{Proposition}{I.8}, \thmref{Theorem}{II.7} and \thmref{Proposition}{IV.3} in Appendix~\ref{app:proofs} also cite it.}
+
+\begin{auxresult}{B.2}{transversality and fibre products}{\citep[Cor.~5.30 and Thm~6.30]{xlee2013introduction};
+\citep[\S1.5]{xguillemin1974differential}}
+Let $\rho_M:Q_M\to\Theta$ and $\rho_N:Q_N\to\Theta$ be smooth, with $\dim Q_M=\lvert M\rvert$ and
+$\dim Q_N=\lvert N\rvert$, and let $P=\{(q,q'):\rho_M(q)=\rho_N(q')\}\subseteq Q_M\times Q_N$.
+\begin{enumerate}[label=(\alph*)]
+  \item If $d\rho_M(T_qQ_M)+d\rho_N(T_{q'}Q_N)=T_\theta\Theta$ at every $(q,q')\in P$, then $P$ is an embedded
+    submanifold of $Q_M\times Q_N$ of dimension $\lvert M\rvert+\lvert N\rvert-\dim\Theta$.
+  \item Transversality at a single point of $P$ forces $\lvert M\rvert+\lvert N\rvert\ge\dim\Theta$.
+  \item If $S\subseteq X$ is an embedded submanifold, every smooth map $T\to X$ with image in $S$ is smooth as a map
+    into $S$. Consequently, whenever $P$ is an embedded submanifold of $Q_M\times Q_N$ (under (a), or when $\rho_M$ and
+    $\rho_N$ are affine, so that $P$ is an affine subspace), $P$ with its two projections is the pullback of $\rho_M$ and
+    $\rho_N$ in $\Diff$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason.} $P=(\rho_M\times\rho_N)^{-1}(\Delta_\Theta)$, and $\rho_M\times\rho_N$ is transverse to the
+diagonal $\Delta_\Theta$, of codimension $\dim\Theta$, exactly when the condition in (a) holds; Lee's Thm~6.30(a) gives
+(a). Part (b) is a dimension count, since the left side of the condition has dimension at most
+$\lvert M\rvert+\lvert N\rvert$. Companion: \bgref{C.7}.
+\fbBusedin{\thmref{Observation}{I.4}(b), \thmref{Proposition}{I.8}(a), \thmref{Theorem}{II.7}(d). The proof of \thmref{Proposition}{III.4} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.3}{limits in slices and coslices; right adjoints}{\citep[\S III.4, \S V.1 Exercise~1, \S V.5
+Thm~1]{xmaclane1998categories}}
+Let $\mathcal C$ be a category.
+\begin{enumerate}[label=(\alph*)]
+  \item In the slice $\mathcal C/X$, a product of $a:A\to X$ and $b:B\to X$ is a pullback $A\times_XB$ of $a$ and $b$
+    in $\mathcal C$, with its map to $X$; one exists exactly when the other does.
+  \item For an object $X$, the projection from the coslice $X/\mathcal C$ (the comma category $(X\downarrow\mathcal C)$)
+    to $\mathcal C$ creates limits: every limit cone in $\mathcal C$ of the underlying diagram lifts to exactly one cone
+    in $X/\mathcal C$ over the given diagram, and that cone is a limit.
+  \item A functor that has a left adjoint preserves all limits that exist in its domain. The forgetful functors
+    $\Set_*\to\Set$ and $\Diff_*\to\Diff$ have the left adjoint $X\mapsto X\sqcup\mathrm{pt}$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} A product in the pointed slice $\Meth(\Theta,\theta_0)=\Diff_*/(\Theta,\theta_0)$ is a
+pullback over $(\Theta,\theta_0)$ in $\Diff_*$ by (a). By (b) a pullback in $\Diff$ of the underlying maps lifts to
+$\Diff_*$ with base point $(q_0,q_0')$, and by (c) any pullback in $\Diff_*$ is a pullback in $\Diff$, so it may be
+tested with unpointed curves. Companions: \bgref{A.11}, \bgref{A.12}, \bgref{A.13}.
+\fbBusedin{\thmref{Observation}{I.4}(b) (products in $\Meth$ as pullbacks, tested with unpointed curves). The proof of \thmref{Proposition}{I.8} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.4}{smooth descent along submersions; quotient manifold theorem}{\citep[Thms~4.29, 4.30,
+21.10]{xlee2013introduction}}
+\begin{enumerate}[label=(\alph*)]
+  \item Let $\pi:X\to Y$ be a surjective smooth submersion. A map $\bar f:Y\to Z$ is smooth iff $\bar f\circ\pi$ is
+    smooth, and every smooth $f:X\to Z$ that is constant on the fibres of $\pi$ factors uniquely as $f=\bar f\circ\pi$
+    with $\bar f$ smooth.
+  \item If a Lie group $G$ acts smoothly, freely and properly on a manifold $X$, then $X/G$ has a unique smooth structure
+    for which $\pi:X\to X/G$ is a submersion, and $\dim X/G=\dim X-\dim G$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Instance.} On pairs $(B,A)$ of full rank, $(B,A)\mapsto BA$ is a surjective submersion onto $\MM_r$ whose
+fibres are the $\GL_r$-orbits $\{(Bg^{-1},gA)\}$ (\auxref{B.5}(b)), so a function of the factors that is constant on
+these orbits is a smooth function of $W$ on the full-rank locus. Companion: \bgref{D.22}.
+\fbBusedin{\thmref{Proposition}{III.4}(d) (cometrics that are functions of $W$), \thmref{Proposition}{V.4}(a)
+(descent of combination rules on the full-rank locus).}
+
+% ================================================================================================
+\subsubsection{Real algebraic and tame geometry}
+
+\begin{auxresult}{B.5}{determinantal varieties}{\citep[Lectures~9, 12 and 14]{xharris1992algebraic};
+\citep[Thm~3.2]{xschneider2015convergence}}
+Let $1\le r<\min(m,n)$.
+\begin{enumerate}[label=(\alph*)]
+  \item $\Mr\subseteq\R^{m\times n}$ is the common zero set of the $(r+1)\times(r+1)$ minors. It is closed and closed
+    under all real scalings, so it is a closed cone with vertex $0$, of dimension $r(m+n-r)$.
+  \item $\MM_r$ is open and dense in $\Mr$ and is an embedded submanifold of dimension $r(m+n-r)$. If $X\in\MM_r$ has
+    column space $U$ and row space $V$, and $X=BA$ with $B\in\R^{m\times r}$, $A\in\R^{r\times n}$, then
+    \begin{equation*}
+      T_X\MM_r=\{\dot BA+B\dot A\}=\{D:P_{U^\perp}DP_{V^\perp}=0\},
+    \end{equation*}
+    and $(B,A)\mapsto BA$ is a submersion from the pairs of full rank onto $\MM_r$ whose fibres are the orbits
+    $\{(Bg^{-1},gA):g\in\GL_r\}$.
+  \item At a point $X$ of rank $s<r$, with column space $U$ and row space $V$, the tangent cone of $\Mr$ is
+    $\{D:\rk(P_{U^\perp}DP_{V^\perp})\le r-s\}$, which is not a linear space. Hence $\Mr$ is not a $C^1$ submanifold near
+    $X$, and $\mathrm{Sing}\,\Mr=\MM_{\le r-1}$, algebraically and in the $C^1$ sense.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for the last claim of (c).} $P_{U^\perp}DP_{V^\perp}$ ranges over all $(m-s)\times(n-s)$
+matrices, and since $r-s<\min(m-s,n-s)$ two of rank $r-s$ can sum to a matrix of larger rank. The tangent cone of a
+$C^1$ submanifold is its tangent space, a linear space. Companion: \bgref{C.12}.
+\fbBusedin{\thmref{Theorem}{II.1}(c), \thmref{Theorem}{II.2}(a), (b), (c), (e) (the image determines its vertex),
+\thmref{Proposition}{II.3}, \thmref{Proposition}{II.8} (tangent space at $(I,X)$), \thmref{Proposition}{II.12},
+\thmref{Proposition}{II.16} (the translation stabiliser of $\Mr$ is $\{0\}$), \thmref{Proposition}{III.4}(b), (d),
+\thmref{Proposition}{V.4}(a). The proofs of \thmref{Theorem}{II.7} and \thmref{Proposition}{II.9} in Appendix~\ref{app:proofs} also cite it.}
+
+\begin{auxresult}{B.6}{cones that are $C^1$ at their vertex}{elementary}
+Let $C\subseteq\R^N$ be a closed set with $0\in C$ and $tC\subseteq C$ for every $t>0$. If $C$ is a $C^1$ embedded
+submanifold near $0$, then $C$ equals the linear subspace $T_0C$. Consequently, the vertex of a closed cone that is not a
+linear subspace is a singular point.
+\end{auxresult}
+\noindent\emph{Reason.} The tangent cone of $C$ at $0$, the set of limits of $t_kx_k$ with $x_k\in C$, $x_k\to0$ and
+$t_k>0$, equals $C$ because $C$ is a closed cone, and the tangent cone of a $C^1$ submanifold at a point is its tangent
+space. Companions: \bgref{C.9}, \bgref{C.10}.
+\fbBusedin{\thmref{Definition}{I.5}, \thmref{Theorem}{II.2}(a), (c), \thmref{Theorem}{II.7}(c),
+\thmref{Theorem}{II.11}(e) (the closed cone $\mathcal K_{\le k}$).}
+
+\begin{auxresult}{B.7}{real normal forms; the skew-determinantal cone}{\citep[Ch.~2]{xhorn2013matrix}}
+\begin{enumerate}[label=(\alph*)]
+  \item Every $\Omega\in\so(n)$ is orthogonally similar to a block-diagonal matrix with $2\times2$ blocks
+    $\mu_k\left(\begin{smallmatrix}0&-1\\1&0\end{smallmatrix}\right)$, $\mu_1\ge\mu_2\ge\dots>0$, and zeros. Hence
+    $\rk\Omega$ is even, the nonzero eigenvalues are $\pm i\mu_k$, the singular values are $\mu_1,\mu_1,\mu_2,\mu_2,\dots$,
+    and $\Omega^4$ is symmetric positive semidefinite with eigenvalues $\mu_k^4$. A skew matrix of odd size has $0$ as an
+    eigenvalue.
+  \item Every $R\in\SO(n)$ is orthogonally similar to a block-diagonal matrix with $2\times2$ rotation blocks of angles
+    $\varphi_k\in(0,\pi]$ and ones. Then $\rk(R-I)$ is twice the number of blocks, $\mathrm{im}(R-I)$ is the sum of the
+    rotation planes, and $R=e^X$ for a skew $X$ whose eigenvalues are $\pm i\varphi_k$ and $0$.
+  \item For even $r$ with $2\le r\le n-2$, the set $\Sigma_r=\{\Omega\in\so(n):\rk\Omega\le r\}$ is a closed cone of
+    dimension $r(n-r)+r(r-1)/2=rn-r(r+1)/2$. Its points of rank exactly $r$ form an open dense submanifold of that
+    dimension, and $\Sigma_r$ is not a linear space.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (c).} A skew matrix of rank $r$ is a range $V\in\Gr(r,n)$ together with a nondegenerate skew
+form on $V$, an open subset of $\so(r)$; and skew matrices of ranks $r$ and $2$ can sum to rank $r+2\le n$. Companion:
+\bgref{C.13}.
+\fbBusedin{\thmref{Corollary}{II.6} (the Cayley--Neumann factor), \thmref{Theorem}{II.7}(a), (c), (d) (the dimension count
+and the density argument), \thmref{Theorem}{V.3}, corollary~4, the LOFT example of Exposé~II.B.}
+
+\begin{auxresult}{B.8}{Segre cones}{\citep[Lecture~2]{xharris1992algebraic}}
+The Segre cone $\MM_{\le1}(p\times q)=\{ab\T:a\in\R^p,b\in\R^q\}$ is a closed cone of dimension $p+q-1$, it is not a
+linear space when $p,q\ge2$, and it spans $\R^{p\times q}$. Hence $k$ generic rank-one matrices span a space of
+dimension $\min(k,pq)$: the parameters $(a_1,b_1,\dots,a_k,b_k)$ for which $a_1b_1\T,\dots,a_kb_k\T$ span less form a
+proper algebraic subset of $(\R^p\times\R^q)^k$.
+\end{auxresult}
+\noindent\emph{Reason for the last claim.} Spanning dimension at least $d$ is the nonvanishing of some $d\times d$
+minor of the coefficient matrix, a polynomial in the parameters, and distinct matrix units $E_{ij}$ show that it is not
+identically zero for $d=\min(k,pq)$. Companion: \bgref{C.14}.
+\fbBusedin{\thmref{Proposition}{II.8} (the $m$ points $(E\T e_i)\otimes(F\T w_{0,i})$ give the generic value of
+$d(\mathrm{DoRA}_r)$), \thmref{Proposition}{II.12} (the KronA image), the VeRA card of Exposé~VII.}
+
+\begin{auxresult}{B.9}{semialgebraic and definable sets; dimension}{\citep[Ch.~2 and 9]{xbochnak1998real};
+\citep[Ch.~4, 6 and 7]{xvandendries1998tame}; \citep{xwilkie1996model}}
+\begin{enumerate}[label=(\alph*)]
+  \item (Tarski--Seidenberg.) The image of a semialgebraic set under a semialgebraic map is semialgebraic.
+    (Wilkie.) The expansion $\R_{\exp}$ of the real field by the exponential function is o-minimal, so sets and maps
+    defined by first-order formulas from polynomials and $\exp$ (softmax included) are definable, and images of
+    definable sets under definable maps are definable.
+  \item Every definable set $X$ is a finite disjoint union of $C^1$ embedded submanifolds (cells), and $\dim X$, the
+    largest of their dimensions, does not depend on the decomposition. If $X\subseteq Y$ then $\dim X\le\dim Y$, and
+    $\dim f(X)\le\dim X$ for every definable map $f$.
+  \item (Definable choice and generic smoothness.) A definable surjection has a definable section, and a definable map
+    is $C^1$ outside a definable subset of its domain of smaller dimension.
+  \item Consequently, for a definable $C^1$ map $\rho$ on an open definable set $Q\subseteq\R^k$,
+    \begin{equation*}
+      \dim\rho(Q)=\max_{q\in Q}\rk d\rho_q .
+    \end{equation*}
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (d).} At a point of maximal rank, the rank theorem (\auxref{B.1}(b)) puts a sheet of that
+dimension inside $\rho(Q)$. Conversely, by (c) a definable section $s$ of $\rho$ is $C^1$ on an open subset $S$ of a
+top-dimensional cell of $\rho(Q)$, and $\rho\circ s=\id_S$ gives $\rk d\rho_{s(y)}\ge\dim S=\dim\rho(Q)$. Companions:
+\bgref{C.17}, \bgref{C.18}.
+\fbBusedin{\thmref{Definition}{I.5} ($d(M)=\dim\Im M=\max_q\rk d\rho_q$), the obstruction $d(M)>d(N)$ of
+Exposé~VIII.C, \thmref{Proposition}{II.12}(a). The proofs of \thmref{Theorem}{II.7}, \thmref{Proposition}{II.8}, \thmref{Proposition}{II.9}, \thmref{Proposition}{II.13} and \thmref{Theorem}{V.3} in Appendix~\ref{app:proofs} also cite it.}
+
+\begin{auxresult}{B.10}{genericity; zero sets; the identity theorem}{\citep{xmityagin2020zero};
+\citep[Ch.~1 and 2]{xkrantz2002primer}}
+\begin{enumerate}[label=(\alph*)]
+  \item Let $U\subseteq\R^N$ be open and connected and $f:U\to\R$ real-analytic, for instance a polynomial. If $f$
+    vanishes on a nonempty open subset of $U$, then $f\equiv0$. If $f\not\equiv0$, its zero set is closed, nowhere dense
+    and of Lebesgue measure zero.
+  \item Hence a property that fails only on the common zero set of finitely many real-analytic functions on a connected
+    domain, not all identically zero, holds on an open dense set of full measure, and with probability one under every
+    law with a density. To prove such genericity it suffices to write failure as the vanishing of these functions and to
+    exhibit one point where one of them does not vanish. A countable union of such exceptional sets still has measure
+    zero.
+  \item A function equal to a convergent power series $\sum_ka_kt^k$ near $0$ determines its coefficients. In
+    particular, if $\sigma(ct)=c\,\sigma(t)$ near $0$ for some $c\ne0$, then $ca_k=c^ka_k$ for every $k$.
+\end{enumerate}
+\end{auxresult}
+\noindent Companions: \bgref{C.21}, \bgref{C.22}.
+\fbBusedin{\thmref{Theorem}{II.2}(d) (a generic rank-one update), \thmref{Proposition}{II.8}, \thmref{Theorem}{II.11}(c)
+(generic Schmidt ranks), \thmref{Proposition}{II.12} (the generic rank of GraLoRA), \thmref{Proposition}{V.2}(a) ($e$
+has full rank for almost every $W$, cell by cell of the quantiser), \thmref{Lemma}{VI.2}(c), \thmref{Theorem}{VI.3}
+(the GELU obstruction), \thmref{Theorem}{VI.5}(f) (prefixes with affine output form a nowhere-dense analytic subset). The proofs of \thmref{Proposition}{I.8}, \thmref{Theorem}{II.1}, \thmref{Corollary}{II.6}, \thmref{Theorem}{II.7}, \thmref{Proposition}{II.13}, \thmref{Proposition}{IV.3} and \thmref{Theorem}{V.3} in Appendix~\ref{app:proofs} also cite it.}
+
+% ================================================================================================
+\subsubsection{Matrix analysis}
+
+\begin{auxresult}{B.11}{singular value decomposition; Eckart--Young--Mirsky}{\citep{xeckart1936approximation,
+xmirsky1960symmetric}; \citep[Ch.~2 and 7]{xhorn2013matrix}}
+\begin{enumerate}[label=(\alph*)]
+  \item Every $X\in\R^{m\times n}$ of rank $k$ has a singular value decomposition $X=\sum_{i\le k}\sigma_iu_iv_i\T$ with
+    $\sigma_1\ge\dots\ge\sigma_k>0$ and orthonormal families $(u_i)$, $(v_i)$; two matrices lie in one orbit of
+    $(P,R)\mapsto PXR$, $P\in\Ort(m)$, $R\in\Ort(n)$, iff they have the same singular values. Applied to the
+    $m_1\times m_2$ reshape of $u\in\R^{m_1}\otimes\R^{m_2}$ ($x\otimes y\mapsto xy\T$), the decomposition is the Schmidt
+    decomposition $u=\sum_i\sigma_ix_i\otimes y_i$, whose number of terms, the Schmidt rank, is the rank of the reshape.
+    Every matrix of rank at most $r$ factors as $QV$ with $Q\in\R^{m\times r}$ having orthonormal columns.
+  \item (Eckart--Young--Mirsky.) For $0\le s<k$ the truncation $[X]_s=\sum_{i\le s}\sigma_iu_iv_i\T$ minimises
+    $\lVert X-Y\rVert$ over $\rk Y\le s$, with minimum $\big(\sum_{i>s}\sigma_i^2\big)^{1/2}$, and the minimiser is unique
+    iff $\sigma_s>\sigma_{s+1}$. The matrices $[X]_s$ and $X-[X]_s$ are Frobenius-orthogonal, so for every real $c$
+    \begin{equation*}
+      \lVert X-c[X]_s\rVert^2=\lVert X-[X]_s\rVert^2+(1-c)^2\lVert[X]_s\rVert^2 .
+    \end{equation*}
+  \item (Reduced-rank regression.) For $L\in\GL_n$, $\arg\min_{\rk Y\le s}\lVert(X-Y)L\rVert=[XL]_sL^{-1}$, unique iff
+    $\sigma_s(XL)>\sigma_{s+1}(XL)$; and $[XL]_s=\Pi_sXL$, where $\Pi_s$ is the orthogonal projector onto the top-$s$
+    eigenspace of $XLL\T X\T$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (c).} Substitute $Z=YL$, which has the same rank as $Y$, and apply (b) to $XL$; the left
+singular vectors of $XL$ are the eigenvectors of $XLL\T X\T$.
+\fbBusedin{\thmref{Proposition}{I.8}(a) (the SVD frames of LoRA-XS), \thmref{Theorem}{II.1}(c) (splitting an SVD),
+\thmref{Theorem}{II.5}(3), \thmref{Theorem}{II.11}(c) (Schmidt decompositions), \thmref{Proposition}{II.16}(a) and the
+lemma in (b), \thmref{Proposition}{III.7}(a) (the balanced representative), \thmref{Theorem}{III.9} (compact SVD),
+\thmref{Proposition}{V.2}(b), (c) (LoftQ's rank-$r$ step and its defect), \thmref{Proposition}{VI.4}(c) (the factorisation
+$R\T V$), Prediction~X.5 (the distance to $k$-term Kronecker sums). The proofs of \thmref{Proposition}{II.8} and \thmref{Theorem}{V.3} in Appendix~\ref{app:proofs} also cite it.}
+
+\begin{auxresult}{B.12}{rank inequalities; the Hadamard rank bound}{\citep[Ch.~4 and 5]{xhorn1991topics}}
+For matrices of compatible sizes:
+\begin{enumerate}[label=(\alph*)]
+  \item $\rk(X+Y)\le\rk X+\rk Y$ and $\rk(XY)\le\min(\rk X,\rk Y)$;
+  \item $\rk(C\otimes D)=\rk C\cdot\rk D$;
+  \item (Hadamard rank bound) $\rk(X\odot Y)\le\rk X\cdot\rk Y$. Explicitly, if $X=B_1A_1$ and $Y=B_2A_2$ with inner
+    dimensions $r_1$ and $r_2$, then
+    \begin{equation*}
+      X\odot Y=(B_1\bullet B_2)\,(A_1\T\bullet A_2\T)\T ,
+    \end{equation*}
+    where row $i$ of the face-splitting product $B_1\bullet B_2\in\R^{m\times r_1r_2}$ is the Kronecker product of the
+    rows $i$ of $B_1$ and $B_2$. In particular $W_0\odot(BA)=\sum_{k\le r}\diag(b_k)\,W_0\,\diag(a_k)$, summed over the
+    columns $b_k$ of $B$ and the rows $a_k$ of $A$, has rank at most $r\rk W_0$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (c).} $X\odot Y$ is the submatrix of $X\otimes Y$ on the rows $(i,i)$ and the columns
+$(j,j)$, so (b) applies. Companion: \bgref{B.13}.
+\fbBusedin{\thmref{Theorem}{II.1}(c), \thmref{Proposition}{II.9}(a) (HiRA), \thmref{Theorem}{II.10} (subadditivity),
+\thmref{Theorem}{II.11}(b), \thmref{Proposition}{II.12} (LoHa, GraLoRA), \thmref{Proposition}{II.13} (two HiRA cycles),
+\thmref{Theorem}{V.3}, corollaries~1 and~5, the face-splitting arrow of rule A3 (Exposé~VIII.C).}
+
+\begin{auxresult}{B.13}{the Van Loan--Pitsianis rearrangement; operator-Schmidt decomposition}{\citep{loan1993approximation};
+\citep{xvanloan2000ubiquitous}}
+Let $m=m_1m_2$ and $n=n_1n_2$, cut $\Delta\in\R^{m\times n}$ into an $m_1\times n_1$ grid of $m_2\times n_2$ blocks
+$\Delta_{ij}$, and let $\mathcal R(\Delta)\in\R^{m_1n_1\times m_2n_2}$ have the rows $\vect(\Delta_{ij})\T$, ordered with
+$i$ running fastest.
+\begin{enumerate}[label=(\alph*)]
+  \item $\mathcal R$ is a linear bijection that permutes entries, hence a Frobenius isometry, and
+    $\mathcal R(C\otimes D)=\vect C\,\vect D\T$ for $C\in\R^{m_1\times n_1}$ and $D\in\R^{m_2\times n_2}$.
+  \item Hence $\Delta=\sum_{i\le k}C_i\otimes D_i$ for some $C_i,D_i$ iff $\rk\mathcal R(\Delta)\le k$. The Kronecker
+    rank $\rk_\otimes\Delta$ equals $\rk\mathcal R(\Delta)\le\min(m_1n_1,m_2n_2)$, and the nearest sum of $k$ Kronecker
+    products in Frobenius norm is $\mathcal R^{-1}\big([\mathcal R(\Delta)]_k\big)$ (\auxref{B.11}(b)).
+  \item The SVD of $\mathcal R(\Delta)$ gives the operator-Schmidt decomposition $\Delta=\sum_{k\le K}s_kC_k\otimes D_k$
+    with $s_k>0$, Frobenius-orthonormal families $(C_k)$, $(D_k)$ and $K=\rk_\otimes\Delta$. Conversely, any expansion of
+    this form with positive coefficients and Frobenius-orthonormal families is one, so its number of terms is
+    $\rk_\otimes\Delta$.
+\end{enumerate}
+\end{auxresult}
+\noindent Companions: \bgref{B.11}, \bgref{B.12}.
+\fbBusedin{\thmref{Theorem}{II.11}(a)--(e), \thmref{Proposition}{II.13} (the Kronecker family as
+$\mathcal R^{-1}_*\mathrm{LoRA}_k$), Prediction~X.5. The proof of \thmref{Proposition}{II.12} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.14}{the min-cut bound for tensor networks}{\citep{xcui2016quantum}}
+Let $\Gamma$ be a tensor network evaluated in $(\FinVect,\otimes)$, every wire attached to a box, and let
+$\mathcal I\sqcup\mathcal O$ be a partition of its boxes. Contracting each side separately factors the value
+$\llbracket\Gamma\rrbracket$ through the tensor product of the wires that cross the partition and of the open legs
+attached on the wrong side, so $\rk\llbracket\Gamma\rrbracket$ is at most the product $w$ of their dimensions, and at most $\min w$ over all
+partitions. For fixed bond dimensions the largest rank over all choices of tensors can be strictly smaller than the
+minimal cut weight; equality holds, for instance, when every bond dimension is a power of one integer.
+\end{auxresult}
+\noindent\emph{Form used.} \thmref{Theorem}{II.10} states the bound with the paper's conventions (bare strands, copy
+spiders counted once, formal sums) and proves it; only the upper bound is used. Companion: \bgref{B.8}.
+\fbBusedin{\thmref{Theorem}{II.10} and its consequences, \thmref{Proposition}{II.12} (maximum ranks), the
+``high-rank PEFT'' remark of Exposé~II.C.}
+
+\begin{auxresult}{B.15}{manifolds of fixed Tucker and tensor-train rank}{\citep{xkoch2010dynamical}
+(Tucker); \citep{xholtz2012manifolds} (TT); \citep{xuschmajew2013geometry} (hierarchical Tucker)}
+\begin{enumerate}[label=(\alph*)]
+  \item (Tucker.) For an admissible multilinear rank $(r_1,\dots,r_d)$ of tensors in $\R^{n_1\times\dots\times n_d}$,
+    the tensors of exactly that rank form an embedded submanifold of dimension $\prod_kr_k+\sum_kr_k(n_k-r_k)$. In the
+    parametrisation by a core in $\R^{r_1\times\dots\times r_d}$ and factor matrices of full column rank, with
+    $\prod_kr_k+\sum_kn_kr_k$ parameters, the fibres are the orbits of $\prod_k\GL_{r_k}$, so the dimension is the
+    parameter count minus $\sum_kr_k^2$.
+  \item (Tensor train.) For an admissible TT rank $(r_1,\dots,r_{d-1})$, with $r_0=r_d=1$, the tensors of exactly that
+    rank form an embedded submanifold of dimension $\sum_{k=1}^dr_{k-1}n_kr_k-\sum_{k=1}^{d-1}r_k^2$, the number of core
+    entries minus the dimension of the bond gauge $\prod_{k=1}^{d-1}\GL_{r_k}$.
+\end{enumerate}
+\end{auxresult}
+\noindent Here admissible means realised by some tensor; at minimal ranks the bond gauge acts freely. Companion:
+\bgref{B.9}.
+\fbBusedin{\thmref{Proposition}{II.12}(b), row ``TT / Tucker''.}
+
+\begin{auxresult}{B.16}{circulant matrices and the discrete Fourier transform}{\citep[Thm~3.1]{xgray2006toeplitz}}
+\begin{enumerate}[label=(\alph*)]
+  \item A circulant matrix with first column $w\in\R^b$ satisfies $\mathrm{circ}(w)=F^{-1}\diag(Fw)\,F$, with $F$ the
+    discrete Fourier matrix. The powers $P^0,\dots,P^{b-1}$ of the cyclic shift are a basis of the circulants, with Gram
+    matrix $bI$ in the Frobenius inner product.
+  \item Over $\R$, since the eigenvalues of a real circulant at conjugate frequencies are conjugate, $\mathrm{circ}(w)$ is
+    orthogonally similar to a block-diagonal matrix of $2\times2$ rotation--scaling blocks and $1\times1$ blocks at the
+    self-conjugate frequencies.
+  \item For a real coefficient $c$ and a frequency $(u,v)$, the real part of the inverse two-dimensional transform of
+    $c\,e_{(u,v)}$ is the cosine pattern
+    \begin{equation*}
+      \mathrm{Re}\,\mathrm{ifft2}(c\,e_{(u,v)})_{j,l}=\tfrac{c}{mn}\cos\big(2\pi(uj/m+vl/n)\big).
+    \end{equation*}
+    It is the same for $(u,v)$ and $(-u,-v)$, and it is even under $(j,l)\mapsto(-j,-l)$, indices taken modulo $m$
+    and $n$.
+\end{enumerate}
+\end{auxresult}
+\fbBusedin{\thmref{Proposition}{II.12} (the FourierFT gauge from conjugate pairs), \thmref{Proposition}{II.13} (FourierFT
+and C3A as masks in transported frames). The proof of \thmref{Theorem}{II.10} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.17}{Ky Fan's maximum principle; interlacing}{\citep{xfan1949theorem}; \citep[Ch.~III]{xbhatia1997matrix};
+\citep[Ch.~3]{xhorn1991topics}}
+\begin{enumerate}[label=(\alph*)]
+  \item (Ky Fan.) Let $S\in\R^{n\times n}$ be symmetric with eigenvalues $\lambda_1\ge\dots\ge\lambda_n$ and let
+    $1\le k\le n$. Then
+    \begin{equation*}
+      \max\{\tr(PSP\T):P\in\R^{k\times n},\ PP\T=I_k\}=\lambda_1+\dots+\lambda_k ,
+    \end{equation*}
+    attained when the rows of $P$ span a top-$k$ eigenspace. For $S=X\T X$ this reads
+    \begin{equation*}
+      \max_P\lVert XP\T\rVert^2=\sigma_1(X)^2+\dots+\sigma_k(X)^2 .
+    \end{equation*}
+  \item (Interlacing for compressions.) If $P\in\R^{k\times n}$ and $Q\in\R^{l\times m}$ have orthonormal rows, then
+    $\sigma_j(QXP\T)\le\sigma_j(X)$ for every $j$ and every $X\in\R^{m\times n}$; for symmetric $S$,
+    $\lambda_j(PSP\T)\le\lambda_j(S)$.
+  \item Consequently, if $S\in\so(n)$ has eigenvalues $\pm i\mu_1,\pm i\mu_2,\dots$ with $\mu_1\ge\mu_2\ge\dots$, then
+    for every $P\in\R^{k\times n}$ with orthonormal rows
+    \begin{equation*}
+      \lVert PSP\T\rVert^2\le2\sum_{j\le\lfloor k/2\rfloor}\mu_j^2 ,
+    \end{equation*}
+    with equality when the row space of $P$ contains the invariant subspace of the top $\lfloor k/2\rfloor$ rotation
+    pairs of $S$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (c).} $PSP\T$ is skew of size $k$, so by \auxref{B.7}(a) its singular values are
+$\nu_1,\nu_1,\nu_2,\nu_2,\dots$, with an extra $0$ when $k$ is odd. By (b), $\nu_j=\sigma_{2j-1}(PSP\T)\le
+\sigma_{2j-1}(S)=\mu_j$, and $\lVert PSP\T\rVert^2=2\sum_{j\le\lfloor k/2\rfloor}\nu_j^2$. If the row space contains an
+invariant subspace $W$ of the top pairs, then $W^\perp$ is invariant too, and the compression is $S|_W$ plus zeros.
+Companion: \bgref{D.32}.
+\fbBusedin{\thmref{Proposition}{II.3} (alignment: among $A_0$ with $A_0A_0\T=cI$ the rate $\lVert GA_0\T\rVert^2$ is
+largest on the top-$r$ right singular space of $G$), the LOFT example of Exposé~II.B, part (d).}
+
+\begin{auxresult}{B.18}{singular values of products; the Loewner order}{\citep[Ch.~3]{xhorn1991topics};
+\citep[Ch.~III]{xbhatia1997matrix}; \citep[Ch.~7]{xhorn2013matrix}}
+\begin{enumerate}[label=(\alph*)]
+  \item (Horn.) $\sigma_{i+j-1}(XY)\le\sigma_i(X)\,\sigma_j(Y)$. In particular
+    \begin{equation*}
+      \sigma_i(XY)\le\sigma_i(X)\,\lVert Y\rVert_{\rm op},\qquad\sigma_i(XY)\le\lVert X\rVert_{\rm op}\,\sigma_i(Y),
+    \end{equation*}
+    and a product of contractions (matrices with $\lVert\cdot\rVert_{\rm op}\le1$) is a contraction.
+  \item If $\lVert Y\rVert_{\rm op}\le1$, then $Y\T Y\preceq I$, and $WY\T YW\T\preceq WW\T$ for every $W$.
+  \item (Weyl monotonicity.) If $S\preceq T$ are symmetric, then $\lambda_i(S)\le\lambda_i(T)$ for every $i$. With (b),
+    $\sigma_i(WY\T)\le\sigma_i(W)$ whenever $\lVert Y\rVert_{\rm op}\le1$.
+\end{enumerate}
+\end{auxresult}
+\fbBusedin{\thmref{Corollary}{II.6} (the Cayley--Neumann factor contracts for small $Q$), \thmref{Theorem}{V.3},
+corollary~4 (each default-OFT merge decreases $K_{\rm out}$ in the Loewner order and lowers every singular value).}
+
+\begin{auxresult}{B.19}{polar, Cartan and $KAK$ decompositions}{\citep[Ch.~2 and 7]{xhorn2013matrix}}
+\begin{enumerate}[label=(\alph*)]
+  \item (Polar.) Every $g\in\GL_r$ is uniquely $g=k\,e^S$ with $k\in\Ort(r)$ and $S\in\Sym_r$, and
+    $(k,S)\mapsto k\,e^S$ is a diffeomorphism $\Ort(r)\times\Sym_r\to\GL_r$. Hence $g\mapsto g\T g=e^{2S}$ identifies the
+    cosets $\Ort(r)g$ with the positive definite matrices, $\Ort(r)\backslash\GL_r\cong\Sym^+_r$.
+  \item (Cartan.) $\gl_r=\so(r)\oplus\Sym_r$ through $\xi=\tfrac12(\xi-\xi\T)+\tfrac12(\xi+\xi\T)$, with
+    $[\so,\so]\subseteq\so$, $[\so,\Sym]\subseteq\Sym$ and $[\Sym,\Sym]\subseteq\so$.
+  \item ($KAK$.) Every $g\in\GL^+(b)$ is $k_1\diag(d)\,k_2$ with $k_1,k_2\in\SO(b)$ and $d\in\R^b_{>0}$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason.} (a) combines the polar form $g=kP$, $P$ positive definite and unique, with the fact that
+$\exp:\Sym_r\to\Sym_r^+$ is a diffeomorphism (spectral theorem). (c) is the SVD with signs absorbed: if both singular
+frames have determinant $-1$, flip the first column of each. Companion: \bgref{D.27}.
+\fbBusedin{\thmref{Theorem}{III.3} (gradient descent on LoRA as a family indexed by $\Ort(r)\backslash\GL_r$),
+\thmref{Theorem}{III.5}(iii), \thmref{Proposition}{III.7}(a) (reduction to $h(t)=f(e^{t\xi}\cdot x)$ with $\xi$ symmetric),
+\thmref{Theorem}{V.3}, corollary~4 (the monoid generated by Cayley--Neumann factors).}
+
+\begin{auxresult}{B.20}{Sylvester equations}{\citep{xbhatia1997how}; \citep[Ch.~4]{xhorn1991topics}}
+For $S\in\R^{p\times p}$ and $T\in\R^{q\times q}$, the map $X\mapsto SX+XT$ on $\R^{p\times q}$ has the eigenvalues
+$\lambda_i(S)+\lambda_j(T)$. So $SX+XT=C$ has a unique solution for every $C$ iff $S$ and $-T$ have no common
+eigenvalue. If $S$ and $T$ are symmetric positive definite, the solution is $X=\int_0^\infty e^{-tS}Ce^{-tT}\,dt$.
+\end{auxresult}
+\noindent Companion: \bgref{D.33}.
+\fbBusedin{\thmref{Proposition}{III.4} (practice: LoRA-Pro's Sylvester-optimal free matrix exists and is unique on the
+full-rank locus), \thmref{Theorem}{III.12} (published variants). The proof of \thmref{Proposition}{IV.3} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.21}{the nuclear norm as a factorisation norm}{\citep[Lemma~1]{xsrebro2004maximum};
+see also \citet{xrecht2010guaranteed}}
+For $X\in\R^{m\times n}$ and every $r\ge\rk X$,
+\begin{equation*}
+  \lVert X\rVert_*=\min\Big\{\tfrac12\big(\lVert B\rVert^2+\lVert A\rVert^2\big):B\in\R^{m\times r},\ A\in\R^{r\times n},
+  \ BA=X\Big\}=\min_{BA=X}\lVert B\rVert\,\lVert A\rVert ,
+\end{equation*}
+attained at $B=U\Sigma^{1/2}O$, $A=O\T\Sigma^{1/2}V\T$ for an SVD $X=U\Sigma V\T$ padded to inner size $r$ and any
+$O\in\Ort(r)$.
+\end{auxresult}
+\fbBusedin{\thmref{Proposition}{III.7}(a) (the minimum value $2\lVert BA\rVert_*$ on a full-rank orbit) and its commentary
+(weight decay on the factors as a nuclear-norm penalty).}
+
+% ================================================================================================
+\subsubsection{Lie groups and invariant theory}
+
+\begin{auxresult}{B.22}{the Cartan--Dieudonné theorem in Scherk's sharp form}{\citep{xscherk1950decomposition};
+\citep[Ch.~III]{xartin1957geometric}}
+For $u\ne0$ let $H_u=I-2uu\T/\lVert u\rVert^2$, the reflection that fixes $u^\perp$; $\det H_u=-1$. A product of $j$
+reflections fixes an intersection of $j$ hyperplanes, so it satisfies $\rk(R-I)\le j$. Every $R\in\Ort(n)$ is a product
+of at most $n$ reflections (Cartan--Dieudonné). For the Euclidean form the bound is sharp (Scherk): if
+$k=\rk(R-I)$, then $R$ is a product of exactly $k$ reflections and of no fewer. Hence $\det R=(-1)^{\rk(R-I)}$, and every
+$R\in\SO(n)$ is a product of $\rk(R-I)$ reflections, an even number.
+\end{auxresult}
+\noindent\emph{Form used.} Scherk's theorem for a nondegenerate quadratic space adds two reflections when the moved space
+$\mathrm{im}(R-I)$ is totally isotropic; a definite form has no nonzero isotropic vectors, so this case does not occur.
+Companion: \bgref{D.11}.
+\fbBusedin{\thmref{Theorem}{II.7}(a) ($\supseteq$, and the parity of $r$), \thmref{Theorem}{V.3}, corollary~5 (re-HRA).}
+
+\begin{auxresult}{B.23}{the Cayley map}{\citep{xcayley1846quelques}; \citep{lezcanocasado2019cheap}}
+Let $\Omega\in\so(n)$.
+\begin{enumerate}[label=(\alph*)]
+  \item $I-\Omega$ is invertible, since the eigenvalues of $\Omega$ are imaginary, and $C(\Omega)=(I+\Omega)(I-\Omega)^{-1}$
+    lies in $\SO(n)$ and commutes with every polynomial in $\Omega$.
+  \item $C(\Omega)-I=2\Omega(I-\Omega)^{-1}$, so $\rk(C(\Omega)-I)=\rk\Omega$; and $C(\Omega)=I+2\Omega+2\Omega^2+\dots$, so
+    $dC_0=2\,\id$.
+  \item $C$ is a diffeomorphism from $\so(n)$ onto the open dense subset $\{R\in\SO(n):-1\notin\mathrm{spec}\,R\}$, with
+    inverse $R\mapsto(R-I)(R+I)^{-1}$. In particular it misses $\diag(-1,-1,1,\dots,1)$.
+  \item Every element of $\SO(n)$ is a product of two elements of the image of $C$.
+  \item (Neumann truncation.) $(I-Q)(I+Q+Q^2+Q^3)=I-Q^4$, so for skew $Q$
+    \begin{equation*}
+      R:=I+2Q+2Q^2+2Q^3+Q^4=C(Q)\,(I-Q^4),\qquad R\T R=(I-Q^4)^2 ,
+    \end{equation*}
+    because $Q^4$ is symmetric and commutes with the orthogonal matrix $C(Q)$; the singular values of $R$ are
+    $\lvert1-\mu_k^4\rvert$, where $\pm i\mu_k$ are the eigenvalues of $Q$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (d).} By \auxref{B.7}(b), $R=e^X$ with $X$ skew and eigenvalues $\pm i\varphi$,
+$\varphi\in[0,\pi]$. Then $e^{X/2}$ has eigenvalues $e^{\pm i\varphi/2}\ne-1$, and $R=(e^{X/2})^2$. Companion:
+\bgref{D.7}.
+\fbBusedin{\thmref{Corollary}{II.6} (HF PEFT's default OFT), \thmref{Theorem}{II.7}(c) (the germ of the image at $W_0$)
+and (d) (exact Cayley OFT never produces eigenvalue $-1$), \thmref{Theorem}{V.3}, corollaries~2 and~4, the LOFT example
+of Exposé~II.B. The proof of \thmref{Proposition}{V.2} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.24}{Lie subgroups, generation, and Yamabe's theorem}{\citep[Prop.~7.14, Thms~19.25,
+19.26]{xlee2013introduction}; \citep{xyamabe1950arcwise}; \citep{xgoto1969arcwise}}
+\begin{enumerate}[label=(\alph*)]
+  \item In a connected Lie group every neighbourhood of the identity generates the group. A symmetric neighbourhood
+    $U=U^{-1}$ therefore generates it as a monoid.
+  \item For every Lie subalgebra $\mathfrak h$ of the Lie algebra of $G$ there is a unique connected Lie subgroup of $G$
+    with Lie algebra $\mathfrak h$, namely the subgroup generated by $\exp\mathfrak h$. Lie subgroups are weakly
+    embedded, so an inclusion $H\subseteq H'$ of Lie subgroups is smooth and gives $\mathrm{Lie}(H)\subseteq\mathrm{Lie}(H')$.
+  \item (Yamabe.) Every arcwise connected subgroup of a Lie group is a Lie subgroup.
+  \item Consequently, the subgroup generated by connected Lie subgroups $H_1,\dots,H_p$ of $G$ is the connected Lie
+    subgroup $H$ with $\mathrm{Lie}(H)=\mathrm{Lie}\langle\mathfrak h_1,\dots,\mathfrak h_p\rangle$, the smallest Lie
+    subalgebra containing every $\mathfrak h_i$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (d).} The generated subgroup is arcwise connected, so it is a connected Lie subgroup $H$ by (c),
+and $\mathrm{Lie}(H)\supseteq\mathfrak h_i$ for every $i$ by (b). The connected Lie subgroup $H'$ with Lie algebra
+$\mathrm{Lie}\langle\mathfrak h_i\rangle$ contains every $H_i$, so $H\subseteq H'$, hence
+$\mathrm{Lie}(H)=\mathrm{Lie}(H')$ and $H=H'$ by uniqueness. Companions: \bgref{D.4}, \bgref{D.8}, \bgref{D.9}.
+\fbBusedin{\thmref{Theorem}{V.3}(b), (c) and corollary~4; the LOFT example of Exposé~II.B (supports revisited
+across restarts).}
+
+\begin{auxresult}{B.25}{first fundamental theorem for $\Ort(n)$; Witt's extension theorem}{\citep[Ch.~II]{xweyl1939classical};
+\citep[Ch.~5]{xgoodman2009symmetry}; \citep[Ch.~III]{xartin1957geometric}}
+\begin{enumerate}[label=(\alph*)]
+  \item Every polynomial in the rows $w_1,\dots,w_m\in\R^n$ of $W$ that is invariant under $W\mapsto WR$, $R\in\Ort(n)$,
+    is a polynomial in the inner products $\langle w_i,w_j\rangle$. Since the invariant polynomials of a compact group
+    acting linearly separate its orbits, $WW\T$ is a complete invariant of the right $\Ort(n)$-action.
+  \item (Witt, Euclidean case.) A linear isometry between two subspaces of $\R^n$ extends to an element of $\Ort(n)$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} Part (b) gives the orbit statement of (a) directly: if $WW\T=W'W'^{\top}$, the map
+$\sum_ic_iw_i\mapsto\sum_ic_iw_i'$ is a well-defined isometry of the row spaces, and its extension is $R\T$ with $W'=WR$.
+Companion: \bgref{D.16}.
+\fbBusedin{\thmref{Theorem}{II.5}(1), (2), \thmref{Corollary}{II.6}, \thmref{Corollary}{III.13} (left $\Ort(r)$-orbits of
+full-rank $A_0$ are classified by $A_0\T A_0$).}
+
+\begin{auxresult}{B.26}{the Kempf--Ness theorem in the real form used}{\citep{xkempf1979length};
+\citep{xrichardson1990minimum}; \citep{xbirkes1971orbits}}
+Let $V$ be a real inner-product space, $G\subseteq\GL(V)$ a real algebraic group that is closed under transpose,
+$K=G\cap\Ort(V)$, and $\mathfrak p$ the symmetric elements of its Lie algebra. Define the moment map $\mu:V\to\mathfrak p$
+by $\langle\mu(v),\xi\rangle=\tfrac12\tfrac{d}{dt}\big|_{t=0}\lVert e^{t\xi}v\rVert^2=\langle\xi v,v\rangle$. Then:
+\begin{enumerate}[label=(\roman*)]
+  \item $g=e$ is a critical point of $g\mapsto\lVert g\cdot v\rVert^2$ iff $\mu(v)=0$, and then $\lVert v\rVert\le
+    \lVert g\cdot v\rVert$ for every $g\in G$;
+  \item $G\cdot v$ is closed iff it meets $\mu^{-1}(0)$;
+  \item if $G\cdot v$ is closed, $G\cdot v\cap\mu^{-1}(0)$ is a single $K$-orbit;
+  \item the closure of every orbit contains exactly one closed orbit.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} For $\GL_r$ acting on $V=\R^{m\times r}\times\R^{r\times n}$ by $(Bg^{-1},gA)$ with the
+Frobenius inner product, the image is closed under transpose (the adjoint of the action of $g$ is the action of
+$g\T$), $K=\Ort(r)$, and $\tfrac12\tfrac{d}{dt}\big|_0(\lVert Be^{-t\xi}\rVert^2+\lVert e^{t\xi}A\rVert^2)=
+\langle\xi,AA\T-B\T B\rangle$. So the moment map is $-\mu$ with $\mu=B\T B-AA\T$ as in \thmref{Proposition}{III.7}, its
+zero set is the balanced slice, a full-rank orbit is closed (it is a whole fibre of $(B,A)\mapsto BA$), and by
+\auxref{B.21} the least value of $\lVert B\rVert^2+\lVert A\rVert^2$ on it is $2\lVert BA\rVert_*$. Companions:
+\bgref{D.29}, \bgref{D.30}.
+\fbBusedin{\thmref{Proposition}{III.7}(a), \thmref{Corollary}{III.6} (decay as a Kempf--Ness potential),
+\thmref{Proposition}{V.4}(a) (part (iv)).}
+
+\begin{auxresult}{B.27}{closed orbits in the fibres of $(B,A)\mapsto BA$}{\citep[Ch.~5]{xgoodman2009symmetry};
+\citep[Ch.~1]{xmumford1994geometric}; part (c) elementary}
+\begin{enumerate}[label=(\alph*)]
+  \item (First fundamental theorem for $\GL_r$.) The polynomial invariants of $\GL_r(\mathbb C)$ acting on
+    $\mathbb C^{m\times r}\times\mathbb C^{r\times n}$ by $(Bg^{-1},gA)$ are generated by the entries of $BA$, the
+    contractions of the rows of $B$ with the columns of $A$.
+  \item (Reductive quotients.) For a complex reductive group acting on an affine variety, every fibre of the quotient
+    map contains exactly one closed orbit, and it lies in the closure of every orbit in that fibre.
+  \item (Real form used.) Fix $W\in\R^{m\times n}$ of rank $k\le r$. Among the real pairs with $BA=W$, those with
+    $\rk B=\rk A=k$ form a single $\GL_r$-orbit $O_W$. It is closed and lies in the closure of every orbit in the fibre
+    $\{BA=W\}$. Hence a continuous $\GL_r$-invariant function of $(B,A)$ is constant on each fibre of $(B,A)\mapsto BA$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reason for (c).} If $BA=W$ with $\rk B=\rk A=k$, then $\mathrm{col}\,B=\mathrm{col}\,W$ and
+$\mathrm{row}\,A=\mathrm{row}\,W$; a gauge brings $B$ to $[U_0\ 0]$ for a fixed basis $U_0$ of $\mathrm{col}\,W$, which
+fixes the first $k$ rows of $A$, and the stabiliser of $[U_0\ 0]$ clears the remaining rows, which lie in
+$\mathrm{row}\,W$. The set $O_W=\{BA=W,\ \rk B\le k,\ \rk A\le k\}$ is closed. For a general pair in the fibre, split
+$\R^r=C_1\oplus C_2\oplus C_3\oplus C_4$ with $\mathrm{im}\,A=C_1\oplus C_2$, $\ker B=C_2\oplus C_3$ and $\dim C_1=k$,
+and let $g_t$ act by $1$, $t$, $1$, $t^{-1}$ on the four summands. As $t\to0$, $(Bg_t^{-1},g_tA)$ converges to a pair in
+the fibre whose factors have rank at most $k$, so to a point of $O_W$. Companion: \bgref{D.31}.
+\fbBusedin{\thmref{Proposition}{V.4}(a) (a continuous combination rule that is invariant under each adapter's $\GL_r$ is a
+function of the adapters, also off the full-rank locus).}
+
+% ================================================================================================
+\subsubsection{Dynamics, optimisation and differentiation}
+
+\begin{auxresult}{B.28}{existence and uniqueness under Carathéodory conditions}{\citep[Ch.~I, Thms~5.1 and
+5.3]{xhale1980ordinary}}
+Let $D\subseteq\R^{N+1}$ be open and let $F:D\to\R^N$ be measurable in $t$ for each fixed $x$ and continuous in $x$ for
+each fixed $t$, with $\lvert F(t,x)\rvert\le m_U(t)$ on each compact $U\subseteq D$ for an integrable $m_U$. Then through
+every $(t_0,x_0)\in D$ there is an absolutely continuous solution of $\dot x=F(t,x)$, holding for almost every $t$. If
+moreover $\lvert F(t,x)-F(t,y)\rvert\le k_U(t)\lvert x-y\rvert$ on each compact $U$ for an integrable $k_U$, the solution
+through each point is unique.
+\end{auxresult}
+\noindent\emph{Form used.} If $\gamma$ is measurable in $t$ and locally Lipschitz in $\theta$, with locally integrable
+bounds and Lipschitz constants, and $\rho$ is of class $C^{1,1}_{\rm loc}$, then $F(t,q)=-\Lambda\,D\rho_q\T\gamma(t,\rho(q))$
+satisfies these conditions, so the trajectory from $kq_0$ is unique.
+\fbBusedin{\thmref{Theorem}{III.5}(ii) (the trajectory statement).}
+
+\begin{auxresult}{B.29}{Noether's theorem for gradient flows}{\citep{kunin2020neural}; \citep[Prop.~5.1]{zhao2022symmetries};
+\citep{marcotte2023abide}; \citep{du2018algorithmic}}
+Let a Lie group act linearly on $Q=\R^N$ with $\rho(k\cdot q)=\rho(q)$, and let $\Lambda\succ0$ be constant. Along every
+solution of $\dot q=-\Lambda\,D\rho_q\T\gamma(t)$, where $\gamma(t)$ is any cotangent signal, gradient or not, and for every
+generator $\xi$ of the action with $\Lambda^{-1}\xi$ symmetric, the charge
+\begin{equation*}
+  J_\xi(q)=\tfrac12\langle q,\Lambda^{-1}\xi q\rangle
+\end{equation*}
+is constant. For LoRA with block rates $\eta_B,\eta_A$ and generators $\xi_X(B,A)=(BX,-XA)$, $X$ symmetric, the charges
+are the entries of $\Phi=B\T B/\eta_B-AA\T/\eta_A$.
+\end{auxresult}
+\noindent\emph{Form used.} The cited sources treat gradient flows, \citet{zhao2022symmetries} with $\Lambda=I$; their
+proof uses only $D\rho_q(\xi q)=0$, so it covers arbitrary signals $\gamma$ and constant $\Lambda$, which is how
+\thmref{Theorem}{III.5}(i) states and proves it. Companions: \bgref{D.26}, \bgref{D.28}.
+\fbBusedin{\thmref{Theorem}{III.5}(i), \thmref{Corollary}{III.6}, \thmref{Proposition}{III.7}(b),
+\thmref{Theorem}{III.9} (the charge stays at $-\kappa I$).}
+
+\begin{auxresult}{B.30}{Riemannian gradients on embedded submanifolds}{\citep[\S3.6]{xabsil2008optimization}}
+Let $N\subseteq\R^D$ be an embedded submanifold with the metric induced by the Euclidean (Frobenius) inner product, and
+$f$ smooth near $N$. The Riemannian gradient of $f|_N$ at $x$ is $P_{T_xN}\nabla f(x)$, the orthogonal projection of the
+Euclidean gradient onto the tangent space, and the Riemannian gradient flow is $\dot x=-P_{T_xN}\nabla f(x)$.
+\end{auxresult}
+\noindent\emph{Form used.} For $N=W_0+\MM_r$ at $W=W_0+X$, with $U=\mathrm{col}\,X$ and $V=\mathrm{row}\,X$,
+\auxref{B.5}(b) gives the projection $G\mapsto P_UG+GP_V-P_UGP_V$. Companion: \bgref{D.24}.
+\fbBusedin{\thmref{Proposition}{III.4}(b) (LoRA-Pro's equivalent gradient).}
+
+\begin{auxresult}{B.31}{Frobenius' theorem}{\citep[Prop.~19.3, Thms~19.12 and 19.21]{xlee2013introduction}}
+Let $D$ be a smooth distribution of constant rank $k$ on an open set $U$.
+\begin{enumerate}[label=(\alph*)]
+  \item If $N$ is an integral manifold of $D$ ($T_\theta N=D_\theta$ for $\theta\in N$) and $X,Y$ are sections of $D$,
+    then $[X,Y]_\theta\in D_\theta$ for every $\theta\in N$. Hence an integrable distribution is involutive.
+  \item (Frobenius.) Every involutive distribution is completely integrable: each point has a chart in which $D$ is
+    spanned by the first $k$ coordinate fields. In such a chart a curve with $\dot\theta(t)\in D_{\theta(t)}$ keeps its last
+    coordinates constant, so it stays in one integral manifold.
+  \item (Global Frobenius.) The maximal connected integral manifolds of an involutive distribution form a foliation of
+    $U$.
+\end{enumerate}
+\end{auxresult}
+\noindent Companion: \bgref{D.25}.
+\fbBusedin{\thmref{Proposition}{IV.3}.}
+
+\begin{auxresult}{B.32}{flatness and the Bures--Wasserstein metric}{\citep[Ch.~7]{xlee2018introduction};
+\citep{xtakatsu2011wasserstein}; \citep{xbhatia2019bures}}
+\begin{enumerate}[label=(\alph*)]
+  \item Riemannian curvature is preserved by local isometries, and a Riemannian manifold is flat iff it is locally
+    isometric to an open subset of a Euclidean space.
+  \item On the positive definite $n\times n$ matrices, the Bures--Wasserstein metric is the quotient of the Euclidean
+    (Frobenius) metric under $B\mapsto BB\T$, whose fibres are the orbits $B\mapsto BR$, $R\in\Ort(n)$; up to a constant
+    factor fixed by normalisation, $B\mapsto BB\T$ is a Riemannian submersion onto it. Its sectional curvature is
+    nonnegative, and for $n\ge2$ it is positive on some planes, so the metric is not flat.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} By (a), an immersion $\rho$ with $\dim Q=\rk D$ that is a local isometry from the flat
+$(Q,\Lambda^{-1})$ onto a leaf forces the leaf metric to be flat. The map $\rho(B)=BB\T$ has positive-dimensional fibres,
+so it is no immersion; its cometric $D\rho\,D\rho\T(G)=2(G\theta+\theta G)$ at $\theta=BB\T$ does not depend on the point
+of the fibre, and by (b) it is the cometric of the curved Bures--Wasserstein metric.
+\fbBusedin{\thmref{Proposition}{IV.3} (dynamic equivalence with a forward lens forces a flat leaf metric when
+$\dim Q=\rk D$).}
+
+\begin{auxresult}{B.33}{the cost of forward and reverse automatic differentiation}{\citep[Ch.~3 and
+4]{xgriewank2008evaluating}}
+Let $L:\R^N\to\R$ be evaluated by a straight-line program.
+\begin{enumerate}[label=(\alph*)]
+  \item Forward mode evaluates $L(\theta)$ together with one directional derivative, $DL(\theta)[p]$, which equals
+    $\langle\nabla L(\theta),p\rangle$, at a cost bounded by a small constant multiple of the cost of evaluating $L$. It
+    carries each tangent alongside its value and stores no trace.
+  \item Reverse mode evaluates $\nabla L(\theta)$ at a cost bounded by a small constant multiple of the cost of evaluating
+    $L$, independent of $N$, but needs the intermediate values of the evaluation, stored or recomputed, during the
+    reverse sweep.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} The $k$ coordinates $\langle p_i,\nabla L(\theta)\rangle$ of $P\T\nabla L$ cost $k$ forward
+passes and no reverse pass; $\nabla L$ itself by forward mode would cost $N$ of them.
+\fbBusedin{\thmref{Observation}{IV.4}.}
+
+\begin{auxresult}{B.34}{central differences and Gaussian smoothing}{\citep{xnesterov2017random}; part (a) by Taylor's
+theorem}
+Let $L:\R^N\to\R$ be twice differentiable with an $\ell_2$-Lipschitz Hessian (constant $L_2$), $\varepsilon>0$ and
+$z\in\R^N$.
+\begin{enumerate}[label=(\alph*)]
+  \item $\Big\lvert\dfrac{L(\theta+\varepsilon z)-L(\theta-\varepsilon z)}{2\varepsilon}-\langle\nabla L(\theta),z\rangle
+    \Big\rvert\le\dfrac{L_2}{6}\,\varepsilon^2\lVert z\rVert^3$.
+  \item For $z\sim\mathcal N(0,I_N)$, $\mathbb E\big[\langle\nabla L(\theta),z\rangle z\big]=\nabla L(\theta)$, and for
+    Lipschitz $L$, $\mathbb E\big[\tfrac{1}{2\varepsilon}(L(\theta+\varepsilon z)-L(\theta-\varepsilon z))\,z\big]=\nabla
+    L_\varepsilon(\theta)$, the gradient of the Gaussian smoothing $L_\varepsilon(\theta)=\mathbb E_uL(\theta+\varepsilon
+    u)$.
+  \item Hence the central two-point estimator is unbiased for $\nabla L_\varepsilon$, and by (a) its bias relative to
+    $\nabla L$ is at most $\tfrac{L_2}{6}\varepsilon^2\,\mathbb E\lVert z\rVert^4=\tfrac{L_2}{6}\varepsilon^2N(N+2)$.
+\end{enumerate}
+\end{auxresult}
+\fbBusedin{\thmref{Observation}{IV.4} (MeZO's estimator), \thmref{Proposition}{IV.3} (instances: each MeZO step is a step
+of a linear method up to its estimator). The proof of \thmref{Definition}{IV.1} in Appendix~\ref{app:proofs} also cites it.}
+
+\begin{auxresult}{B.35}{extreme eigenvalues of Wishart-type matrices}{\citep{xmarchenko1967distribution};
+\citep{xyin1988limit}; \citep{xbai1993limit}}
+Let $A\in\R^{r\times n}$ have independent, identically distributed entries with mean $0$, variance $c/n$ and finite
+fourth moment. As $r,n\to\infty$ with $r/n\to y\in(0,1]$, the empirical eigenvalue
+distribution of $AA\T$ converges to the Marčenko--Pastur law supported on $[c(1-\sqrt y)^2,c(1+\sqrt y)^2]$, and the
+largest and smallest eigenvalues converge almost surely to $c(1+\sqrt y)^2$ and $c(1-\sqrt y)^2$.
+\end{auxresult}
+\noindent\emph{Form used.} HF PEFT's Kaiming-uniform $A_0$ has entries $U(-n^{-1/2},n^{-1/2})$, so $c=1/3$, and the
+eigenvalues of $A_0A_0\T$ fill a band of relative width $O(\sqrt{r/n})$ around $c$. No proof depends on this entry.
+\fbBusedin{the commentary on \thmref{Theorem}{III.9} (exactness for Kaiming initialisations), Prediction~X.7.}
+
+% ================================================================================================
+\subsubsection{Elementary facts}
+
+\begin{auxresult}{B.36}{three elementary facts}{elementary; part (c) in \citealp[Ch.~1]{xhorn2013matrix}}
+\begin{enumerate}[label=(\alph*)]
+  \item If $\sigma:\R\to\R$ is differentiable at $0$ and $\sigma(\ell t)=\ell\,\sigma(t)$ for all $\ell\ge0$ and
+    $t\in\R$, then $\sigma$ is linear.
+  \item A real vector space is not a finite union of proper subspaces. In particular, a hyperplane of $\R^d$ that is
+    contained in a finite union of coordinate hyperplanes is one of them.
+  \item For $X\in\R^{p\times q}$ and $Y\in\R^{q\times p}$, $XY$ and $YX$ have the same nonzero eigenvalues, with
+    multiplicities.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Reasons.} (a) Taking $\ell=0$ gives $\sigma(0)=0$, and $\sigma(t)=t\,\sigma(1)$ for $t>0$ and
+$\sigma(t)=-t\,\sigma(-1)$ for $t<0$; the one-sided derivatives at $0$ are $\sigma(1)$ and $-\sigma(-1)$, so
+differentiability forces $\sigma(t)=t\,\sigma(1)$. ReLU and leaky ReLU satisfy the identity without being linear. (b)
+If $V=V_1\cup\dots\cup V_k$ with $k$ minimal, pick $x\in V_1$ outside the other $V_i$ and $y\notin V_1$. No point $y+tx$
+lies in $V_1$, so two of them, $t\ne t'$, lie in one $V_i$ with $i\ge2$, and then $x\in V_i$, a contradiction. The second
+claim applies the first to $H=\bigcup_j(H\cap\{x_j=0\})$.
+\fbBusedin{\thmref{Theorem}{VI.3} (rule R3: positively homogeneous activations), \thmref{Lemma}{VI.2}(b) (the kink
+argument for ReLU), \thmref{Theorem}{III.9} (the nonzero eigenvalues of $T=\beta\beta\T$ are those of $\beta\T\beta$). The proof of \thmref{Corollary}{III.13} in Appendix~\ref{app:proofs} also cites it.}
+
+% ================================================================================================
+\subsubsection{Spectral projectors, Riemannian submanifolds and floating point}
+
+\begin{auxresult}{B.37}{smooth spectral projectors}{\citep[Ch.~I, \S5 and Ch.~II, \S1]{xkato1995perturbation};
+\citep[Ch.~III]{xbhatia1997matrix}}
+Let $S:V\to\Sym(m)$ be smooth on an open set $V$ of a real vector space, with eigenvalues
+$\lambda_1(W)\ge\dots\ge\lambda_m(W)$, and let $\lambda_r(W_*)>\lambda_{r+1}(W_*)$ at some $W_*\in V$. Then the gap
+$\lambda_r>\lambda_{r+1}$ persists on a neighbourhood $V_*$ of $W_*$, and on $V_*$ the orthogonal projector $\Pi(W)$ onto the
+sum of the eigenspaces of $\lambda_1(W),\dots,\lambda_r(W)$ is the Riesz projector
+\[\Pi(W)=\frac1{2\pi i}\oint_\Gamma\big(z-S(W)\big)^{-1}\,dz\]
+for a fixed contour $\Gamma$ in $\mathbb C$ that encloses $\lambda_1(W_*),\dots,\lambda_r(W_*)$ and no other eigenvalue of
+$S(W_*)$. In particular $\Pi$ is smooth on $V_*$.
+\end{auxresult}
+\noindent\emph{Reason.} By Weyl's perturbation inequality the eigenvalues are $1$-Lipschitz in the operator norm, so
+near $W_*$ the contour still separates the top $r$ eigenvalues and $z-S(W)$ is invertible on $\Gamma$. Matrix inversion
+is smooth, so the integral is smooth in $W$, and at each $W$ it is the orthogonal projector onto the enclosed eigenspaces.
+\fbBusedin{\thmref{Proposition}{IV.3} (step 9: the GaLore field $\Pi(W)$ is smooth where a singular-value gap exists).}
+
+\begin{auxresult}{B.38}{isometries, totally geodesic submanifolds and the Gauss equation}{\citep[Ch.~4, 5 and
+8]{xlee2018introduction}; \citep{xkobayashi1958fixed}}
+Let $(M,g)$ be a Riemannian manifold.
+\begin{enumerate}[label=(\alph*)]
+  \item A geodesic is determined by its initial point and initial velocity, and an isometry of $(M,g)$ maps geodesics to
+    geodesics.
+  \item Let $F\subseteq M$ be an embedded submanifold with the induced metric. If every geodesic of $M$ with initial
+    velocity tangent to $F$ stays in $F$ for small times ($F$ is \emph{totally geodesic}), the second fundamental form of
+    $F$ vanishes, and by the Gauss equation the sectional curvature of $F$ on every $2$-plane $\Pi\subseteq T_xF$ equals
+    the sectional curvature of $M$ on $\Pi$.
+\end{enumerate}
+\end{auxresult}
+\noindent\emph{Form used.} Let $\tau$ be an isometry and $F$ an embedded submanifold, open in its fixed-point set, with
+$d\tau=\id$ on $TF$. By (a) a geodesic $\gamma$ tangent to $F$ and $\tau\circ\gamma$ have the same initial data, so
+$\tau\circ\gamma=\gamma$ and $\gamma$ stays in $F$ for small times. So $F$ is totally geodesic, and (b) applies.
+\fbBusedin{\thmref{Proposition}{IV.3} (step 6: balanced full-rank LoRA induces a curved leaf metric).}
+
+\begin{auxresult}{B.39}{exact scaling by powers of two in floating point}{\citep[Ch.~2]{xhigham2002accuracy}}
+In binary floating-point arithmetic with correctly rounded operations (IEEE~754, rounding to nearest), let $c=2^k$ with
+$k\in\mathbb Z$. If all operands, exact results and rounded results below stay in the normal range (no overflow and no
+underflow), then $\mathrm{fl}(cx)=cx$, and for floating-point numbers $x,y$,
+\[\mathrm{fl}(cx\pm cy)=c\,\mathrm{fl}(x\pm y),\quad\mathrm{fl}(cx\cdot y)=c\,\mathrm{fl}(xy),\quad
+\mathrm{fl}(cx/y)=c\,\mathrm{fl}(x/y),\quad\mathrm{fl}\big(\sqrt{c^2x}\big)=c\,\mathrm{fl}\big(\sqrt x\big).\]
+\end{auxresult}
+\noindent\emph{Reason.} In the normal range, multiplication by $2^k$ only shifts the exponent, so it maps the set of
+floating-point numbers onto itself and scales all distances between them by $c$. Rounding to the nearest floating-point
+number, with its tie-breaking rule, therefore commutes with it, and each identity follows from
+$\mathrm{fl}(cz)=c\,\mathrm{fl}(z)$ applied to the exact result $z$.
+\fbBusedin{\thmref{Theorem}{III.10} (bit-exact trajectories when every block factor is a power of two).}

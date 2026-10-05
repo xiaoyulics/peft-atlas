@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use the atlas, its catalogue or its code, please cite it as below."
+title: "A Categorical Atlas of Parameter-Efficient Fine-Tuning: Cones, Orbits, and Gauges"
+type: software
+authors:
+  - family-names: "Li"
+    given-names: "Xiaoyu"
+    affiliation: "University of New South Wales"
+  - family-names: "Sha"
+    given-names: "Zhizhou"
+    affiliation: "University of Texas at Austin"
+  - family-names: "Yang"
+    given-names: "Chiwun"
+    affiliation: "City University of Hong Kong"
+  - family-names: "Shi"
+    given-names: "Dai"
+    affiliation: "University of Cambridge"
+version: "1"
+date-released: "2026-10-06"
+url: "https://xiaoyulics.com/peft-atlas/"
+repository-code: "https://github.com/xiaoyulics/peft-atlas"
+license:
+  - MIT
+  - CC-BY-4.0
+keywords:
+  - parameter-efficient fine-tuning
+  - LoRA
+  - category theory
+  - deep learning theory
+preferred-citation:
+  type: report
+  title: "A Categorical Atlas of Parameter-Efficient Fine-Tuning: Cones, Orbits, and Gauges"
+  authors:
+    - family-names: "Li"
+      given-names: "Xiaoyu"
+      affiliation: "University of New South Wales"
+    - family-names: "Sha"
+      given-names: "Zhizhou"
+      affiliation: "University of Texas at Austin"
+    - family-names: "Yang"
+      given-names: "Chiwun"
+      affiliation: "City University of Hong Kong"
+    - family-names: "Shi"
+      given-names: "Dai"
+      affiliation: "University of Cambridge"
+  year: 2026
+  month: 10
+  url: "https://xiaoyulics.com/peft-atlas/"
+  notes: "Technical report"

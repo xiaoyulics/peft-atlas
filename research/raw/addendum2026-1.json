@@ -1,0 +1,388 @@
+{
+ "family": "addendum2026-1",
+ "family_title": "2026 sweep batch 1",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "fedrot-lora",
+   "name": "FedRot-LoRA",
+   "full_name": "Federated LoRA with rotational alignment of client factors",
+   "paper_title": "FedRot-LoRA: Mitigating Rotational Misalignment in Federated LoRA",
+   "authors": "Zhang et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2602.23638",
+   "url": "https://arxiv.org/abs/2602.23638",
+   "code_url": "https://github.com/haoran-zh/FedRot-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=(W_0+\\bar B^{t}\\bar A^{t})x,\\ \\ \\bar B^{t}\\in\\mathbb{R}^{d_{out}\\times r},\\ \\bar A^{t}\\in\\mathbb{R}^{r\\times d_{in}};\\quad \\text{client } i \\text{ trains } (B_i^t,A_i^t) \\text{ starting from } (\\bar B^{t-1},\\bar A^{t-1});\\quad R_i^{t,*}=\\arg\\min_{R^\\top R=I_r,\\ \\det R>0}\\begin{cases}\\|R^\\top A_i^t-\\bar A^{t-1}\\|_F^2, & t\\ \\text{odd}\\\\ \\|B_i^tR-\\bar B^{t-1}\\|_F^2, & t\\ \\text{even}\\end{cases}\\ \\ (\\text{orthogonal Procrustes, closed form via the SVD of an } r\\times r \\text{ correlation matrix});\\quad R_{i,\\mathrm{soft}}^t=\\Pi_{SO(r)}\\big((1-\\lambda)I_r+\\lambda R_i^{t,*}\\big);\\quad \\tilde A_i^t=R_{i,\\mathrm{soft}}^{t\\top}A_i^t,\\ \\ \\tilde B_i^t=B_i^tR_{i,\\mathrm{soft}}^t\\ \\ (\\tilde B_i^t\\tilde A_i^t=B_i^tA_i^t);\\quad \\bar A^t=\\tfrac1N\\textstyle\\sum_i\\tilde A_i^t,\\ \\ \\bar B^t=\\tfrac1N\\sum_i\\tilde B_i^t;\\ \\ W_0\\ \\text{frozen},\\ A,B\\ \\text{trained on clients},\\ R\\ \\text{computed in closed form}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix (per client; same communication as FedIT); } R_i^t\\in SO(r)\\ \\text{is computed, not trained}",
+   "locus": "LoRA-adapted linear layers in federated fine-tuning (RoBERTa-Large on GLUE; Llama 3-8B on GSM8K and HumanEval), implemented in FederatedScope-LLM",
+   "modification_kind": "composition-or-routing",
+   "structure": "Each client trains a rank-\\(r\\) LoRA \\(\\Delta W=BA\\). The contribution is the aggregation map: before uploading, each client picks a representative of its factor pair's orbit under the \\(SO(r)\\) subgroup of the \\(GL(r)\\) gauge action \\((B,A)\\mapsto(BR,R^{-1}A)\\). The representative is chosen by orthogonal Procrustes against last round's global factors, aligning \\(A\\) and \\(B\\) in alternate rounds. The server then averages factors, so the global adapter stays rank \\(r\\) and \\(\\bar B\\bar A\\) approximates \\(\\tfrac1N\\sum_iB_iA_i\\) up to the aggregation error \\(E^t=\\bar B\\bar A-\\tfrac1N\\sum_iB_iA_i\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "The global adapter \\(\\bar B^t\\bar A^t\\) is an ordinary rank-\\(r\\) LoRA product and folds into \\(W_0\\).",
+   "identity_at_init": "\\(\\Delta W_0=\\bar B^0\\bar A^0=0\\) (Algorithm 1 sets \\(\\bar B^0=0\\)), so training starts at \\(W_0\\). Each alignment preserves every client's update exactly, since \\(\\tilde B_i\\tilde A_i=B_iRR^\\top A_i=B_iA_i\\).",
+   "key_idea": "Because \\((BR)(R^\\top A)=BA\\) for every rotation \\(R\\), clients can reach equivalent but rotated factors, and averaging them gives a \\(\\bar B\\bar A\\) far from \\(\\tfrac1N\\sum_iB_iA_i\\). Fixing this gauge with a closed-form Procrustes rotation toward last round's global factors (softened by \\(\\lambda\\); \\(\\lambda=0\\) is plain FedIT averaging) shrinks the aggregation-error term in the nonconvex convergence bound. It costs \\(O(dr^2+r^3)\\) per client and adds no communication.",
+   "results_note": "On GLUE with RoBERTa-Large (r=4, Dirichlet h=0.5, 50 clients), FedRot-LoRA averages 87.34% accuracy versus 82.44% for RoLoRA and 76.80% for FedIT.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Plain LoRA factors on each client; only the aggregation changes."
+    },
+    {
+     "target": "fedit",
+     "type": "generalizes",
+     "note": "With rotation strength lambda=0, FedRot-LoRA reduces to FedIT's naive factor-wise averaging."
+    },
+    {
+     "target": "ffa-lora",
+     "type": "competes-with",
+     "note": "FFA-LoRA makes aggregation exact by freezing A (losing expressivity). FedRot keeps both factors trainable and instead reduces the error by aligning the rotation gauge."
+    },
+    {
+     "target": "flora-federated",
+     "type": "competes-with",
+     "note": "FLoRA stacks client factors for exact aggregation at rank Nr and higher communication. FedRot keeps rank r and communication unchanged."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "Same align-then-average idea used for multi-task LoRA merging (KnOTS: shared SVD basis). FedRot does not cite KnOTS; FedRot uses per-client Procrustes rotations toward the previous global adapter."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.23638",
+    "https://arxiv.org/html/2602.23638",
+    "https://icml.cc/virtual/2026/poster/66566",
+    "https://openreview.net/forum?id=2X8Qi3VdjA",
+    "https://github.com/haoran-zh/FedRot-LoRA",
+    "https://github.com/haoran-zh/FedRot-LoRA/blob/main/federatedscope/rotation_alignment_tools.py",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2602.23638"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "rlpo-rlmo",
+   "name": "LoRA-RLPO / LoRA-RLMO",
+   "full_name": "Geometry-preserving orthonormal LoRA initialization for RLVR (principal / minor variants)",
+   "paper_title": "Geometry-Preserving Orthonormal Initialization for Low-Rank Adaptation in RLVR",
+   "authors": "Zhang et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2606.31813",
+   "url": "https://arxiv.org/abs/2606.31813",
+   "code_url": "https://github.com/Richard-ZZZ/geometry-preserving-orthonormal-init-rlvr",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0=U\\Sigma V^\\top;\\quad h=\\big(W_0+\\tfrac{\\alpha}{r}BA\\big)x,\\quad B_0=0_{d_{out}\\times r},\\quad A_0=V_{[:,1:r]}^\\top\\ (\\text{LoRA-RLPO, top-}r)\\ \\ \\text{or}\\ \\ A_0=V_{[:,-r:]}^\\top\\ (\\text{LoRA-RLMO, bottom-}r),\\ \\ A_0A_0^\\top=I_r;\\quad \\max_{A,B}\\ \\mathbb{E}_{y\\sim\\pi_\\theta}[R(x,y)]-\\beta\\,\\mathrm{KL}(\\pi_\\theta\\|\\pi_{ref})\\ \\ (\\text{RLVR, DAPO in experiments});\\ \\ W_0\\ \\text{frozen and not modified (no residual)},\\ A,B\\ \\text{trained};\\quad \\tfrac1T\\|W_T^{LoRA}-W_T^{full}\\|_F\\le M\\eta\\,\\Gamma_T(\\eta)\\,\\|I_{d_{in}}-A_0^\\top A_0\\|_2+O(\\eta^2),\\ \\ \\|I_{d_{in}}-A_0^\\top A_0\\|_2\\ge1\\ \\text{with equality iff } A_0A_0^\\top=I_r",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix (}r=16\\text{ in the main experiments)}",
+   "locus": "all linear layers (attention and MLP projections) of DeepSeek-R1-Distill-Qwen-1.5B under DAPO; also Llama-3.2-3B-Instruct and Qwen2.5-7B-Instruct, plus an SFT check on GLUE and GSM8K",
+   "modification_kind": "additive-weight",
+   "structure": "Plain rank-\\(r\\) LoRA \\(\\Delta W=\\tfrac{\\alpha}{r}BA\\); only the starting point changes. \\(A_0\\) is the transpose of \\(r\\) right singular vectors of \\(W_0\\) (top \\(r\\) for RLPO, bottom \\(r\\) for RLMO), so it has orthonormal rows and no singular-value scaling, and \\(B_0=0\\). PiSSA and MiLoRA use \\(B_0=U_r\\Sigma_r^{1/2}\\), \\(A_0=\\Sigma_r^{1/2}V_r^\\top\\) and a residual base \\(W_0-B_0A_0\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "After training, \\(\\tfrac{\\alpha}{r}BA\\) is an ordinary rank-\\(r\\) matrix added to the untouched \\(W_0\\).",
+   "identity_at_init": "Exact: \\(B_0=0\\) gives \\(\\Delta W=0\\), and \\(W_0\\) is left untouched, unlike PiSSA, MiLoRA and OLoRA, which subtract \\(B_0A_0\\) from \\(W_0\\).",
+   "key_idea": "In RLVR with \\(B_0=0\\), the gap between LoRA and full fine-tuning after \\(T\\) steps is controlled by \\(\\|I-A_0^\\top A_0\\|_2\\ge1\\). A row-orthonormal \\(A_0\\) attains this minimum and also caps the first update at full fine-tuning's (\\(\\|\\Delta W_1\\|_F\\le\\eta\\|G_0\\|_F\\)). Taking \\(A_0\\) from \\(W_0\\)'s principal or minor right singular vectors keeps PiSSA's and MiLoRA's subspaces but drops their singular-value scaling, which inflates the first update by at least \\(\\sigma_r\\), and their nonzero \\(B_0\\). The authors argue this scaling explains the KL blow-up and reward collapse of PiSSA and MiLoRA in RL.",
+   "results_note": "With DAPO on DeepSeek-R1-Distill-Qwen-1.5B (r=16, cosine LR), LoRA-RLPO averages 65.03% over GSM8K, MATH500 and AIME22-24, versus 63.76% for LoRA-RLMO, 62.40% for LoRA, 51.71% for MiLoRA and 4.57% for PiSSA.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Keeps LoRA's B_0=0 and replaces the Gaussian A_0 with an orthonormal, SVD-derived one."
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "RLPO uses the same top-r singular subspace without Sigma^{1/2} scaling, without a nonzero B_0 and without a residual base; PiSSA collapses under RLVR in the paper's runs."
+    },
+    {
+     "target": "milora",
+     "type": "competes-with",
+     "note": "RLMO is the minor-subspace counterpart with orthonormal A_0 and B_0=0; the paper attributes MiLoRA's RLVR instability to singular-value scaling, not to near-zero tail initialization."
+    },
+    {
+     "target": "olora",
+     "type": "competes-with",
+     "note": "The paper uses OLoRA (B_0=U_r, A_0=V_r^T, residual base) as a control and shows PiSSA's first update is at least sigma_r times OLoRA's. RLPO goes further and sets B_0=0."
+    },
+    {
+     "target": "asylora",
+     "type": "builds-on",
+     "note": "Cites the asymmetry result that a fixed random orthonormal A works well, and gives an RLVR-specific reason why orthonormal A_0 is optimal."
+    },
+    {
+     "target": "mica",
+     "type": "competes-with",
+     "note": "Both target the minor singular subspace of W_0. MiCA freezes B=U_{-r} and zero-initializes A; RLMO sets A_0=V_{-r}^T and trains both factors (not cited)."
+    },
+    {
+     "target": "evaluating-peft-rlvr",
+     "type": "builds-on",
+     "note": "Gives a theoretical account of that benchmark's finding that PiSSA and MiLoRA collapse under RLVR."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2606.31813",
+    "https://arxiv.org/html/2606.31813",
+    "https://icml.cc/virtual/2026/poster/63355",
+    "https://openreview.net/forum?id=Xo95FS2GTK",
+    "https://github.com/Richard-ZZZ/geometry-preserving-orthonormal-init-rlvr",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2606.31813"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "nara",
+   "name": "NaRA",
+   "full_name": "Noise-aware Low-Rank Adaptation",
+   "paper_title": "NaRA: Noise-Aware LoRA for Parameter-Efficient Fine-Tuning of Diffusion LLMs",
+   "authors": "Wang et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2605.29716",
+   "url": "https://arxiv.org/abs/2605.29716",
+   "code_url": "https://github.com/generaldi/NaRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+B\\,C(\\lambda)\\,A\\,x,\\quad C(\\lambda)=I_r+\\eta\\,\\mathcal{F}_\\phi(e_\\lambda),\\quad e_\\lambda=\\cos(2\\pi k\\lambda)\\oplus\\sin(2\\pi k\\lambda),\\ k\\sim\\mathcal{N}(0,\\sigma^2I)\\ \\text{fixed};\\quad \\lambda=m/L_s\\in[0,1]\\ (\\text{fraction of masked response tokens});\\quad \\Delta W_{l,m}(\\lambda)=B_{l,m}\\,C(\\lambda)\\,A_{l,m},\\ \\ B_{l,m}\\in\\mathbb{R}^{d_{out}\\times r},\\ A_{l,m}\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ W_0\\ \\text{frozen};\\ A,B\\ (\\text{per module})\\ \\text{and one globally shared MLP}\\ \\mathcal{F}_\\phi:\\mathbb{R}^{64}\\to\\mathbb{R}^{r\\times r}\\ \\text{trained};\\ \\eta=0.1",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix} + |\\phi|\\ \\text{once per model (shared MLP } 64\\to256\\to512\\to r^2;\\ \\approx6.7\\times10^{5}\\ \\text{for } r=32)",
+   "locus": "q, k, v, o attention projections of masked-diffusion LLMs (LLaDA-8B-Base and LLaDA-8B-Instruct); one image-diffusion experiment in Section 6.6",
+   "modification_kind": "additive-weight",
+   "structure": "\\(\\Delta W(\\lambda)=BC(\\lambda)A\\). Static per-module factors \\(B\\in\\mathbb{R}^{d_{out}\\times r}\\) and \\(A\\in\\mathbb{R}^{r\\times d_{in}}\\) sandwich a dynamic \\(r\\times r\\) core that is a smooth function of the scalar noise level \\(\\lambda\\). One Fourier-feature MLP, shared by every adapted module, produces the core once per denoising step. The update therefore moves continuously along the denoising trajectory inside fixed rank-\\(r\\) column and row spaces.",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a fixed \\(\\lambda\\), \\(W_0+BC(\\lambda)A\\) is a dense matrix. But \\(\\lambda\\) changes at every denoising step (and can differ across sequences in a batch), so no single merged weight exists. The paper lists non-mergeability as a limitation: merging would have to be redone per step or cached per discrete step.",
+   "identity_at_init": "\\(B=0\\) gives \\(\\Delta W(\\lambda)=0\\) for every \\(\\lambda\\). The hypernetwork's last layer is zero-initialized, so \\(C(\\lambda)=I_r\\) and the initial gradients equal LoRA's.",
+   "key_idea": "Masked-diffusion LLMs see very different inputs at different noise levels, so a static \\(\\Delta W\\) helps mostly at mid noise. NaRA sandwiches a noise-conditioned core \\(C(\\lambda)=I_r+\\eta\\mathcal F_\\phi(e_\\lambda)\\) between static LoRA factors, giving a continuous family \\(\\Delta W(\\lambda)\\). Theorem 4.1 shows this family can represent any finite set of updates whose combined column and row spaces have dimension \\(\\le r\\); the extra parameters are under 0.01% of the model. Timestep-conditioned LoRAs already existed for image diffusion (TC-LoRA, TimeStep Master); NaRA is the first noise-aware PEFT for diffusion LLMs.",
+   "results_note": "On LLaDA-8B-Instruct commonsense reasoning (r=32), NaRA averages 84.09% versus 80.18% for LoRA and 82.73% for HiRA, with 0.425% versus 0.417% trainable parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "eta=0 (C=I_r) recovers LoRA exactly."
+    },
+    {
+     "target": "moslora",
+     "type": "generalizes",
+     "note": "Structural (not cited): a lambda-independent hypernetwork output gives a static learned r x r core between B and A, MoSLoRA's mixer."
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "Strongest noise-agnostic baseline in the paper's tables."
+    },
+    {
+     "target": "dora",
+     "type": "combines",
+     "note": "Appendix M applies the same noise-conditioned core inside DoRA."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.29716",
+    "https://arxiv.org/html/2605.29716",
+    "https://icml.cc/virtual/2026/poster/61250",
+    "https://openreview.net/forum?id=s8UGIRF38a",
+    "https://github.com/generaldi/NaRA",
+    "https://arxiv.org/abs/2510.09561",
+    "https://proceedings.neurips.cc/paper_files/paper/2024/hash/8716aa6a02bcc3c8e69a3a42be192236-Abstract-Conference.html",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2605.29716"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lime",
+   "name": "LiME",
+   "full_name": "Lightweight Mixture of Experts",
+   "paper_title": "LiME: Lightweight Mixture of Experts for Efficient Multimodal Multi-task Learning",
+   "authors": "Kowsher et al.",
+   "year": 2026,
+   "venue": "ICML 2026 (spotlight)",
+   "arxiv": "2604.02338",
+   "url": "https://arxiv.org/abs/2604.02338",
+   "code_url": "https://github.com/Kowsher/LiME",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\hat z\\odot\\mathcal{P}(x)+\\gamma\\,(\\hat z\\odot p_s),\\quad \\hat z=\\delta_\\phi(x)\\ (\\text{e.g. } BAx),\\quad \\mathcal{P}(x)=\\sum_{i\\in S_\\theta(x)}\\tilde w_i(x)\\,p_i,\\ \\ p_i\\in\\mathbb{R}^{d_{out}};\\quad w(x)=\\mathrm{softmax}\\!\\Big(\\tfrac{(1-\\gamma_r)\\,z_{1:E}/\\|z_{1:E}\\|_\\infty+\\gamma_r\\,\\hat z_{1:E}/\\|\\hat z_{1:E}\\|_\\infty}{\\tau}\\Big),\\ \\ z=W_0x;\\quad S_\\theta(x)=\\{i:w_i(x)\\ge\\theta\\max_jw_j(x)\\},\\ \\ \\tilde w_i=w_i\\big/\\textstyle\\sum_{j\\in S_\\theta}w_j;\\ \\ W_0\\ \\text{frozen};\\ \\phi,\\{p_i\\},p_s,\\gamma\\ \\text{trained};\\ \\text{router has no parameters};\\ \\ \\mathcal{L}=\\mathcal{L}_{task}+\\alpha\\mathcal{L}_{imp}+\\beta\\,\\mathrm{KL}(\\bar p\\,\\|\\,\\mathcal{U})",
+   "trainable_params": "|\\phi|+E\\,d_{out}+d_{out}+1\\ \\text{per adapted layer (LoRA: } |\\phi|=r(d_{in}+d_{out})\\text{), versus } E|\\phi|\\ \\text{plus a } d\\times E \\text{ router for MoE-LoRA}",
+   "locus": "q, k, v, o attention projections of LLaVA-OneVision-Qwen2-7B (0.5B for ablations; also Molmo2-8B); wraps LoRA, DoRA, LoRA-FA, SliceFine or prompt tuning; E=4 experts, n-gram routing window 3",
+   "modification_kind": "composition-or-routing",
+   "structure": "The output \\(\\hat z\\) of one shared PEFT module is rescaled element-wise by a convex combination of \\(E\\) expert vectors. A parameter-free softmax router chooses the combination from normalized slices of \\(W_0x\\) and \\(\\hat z\\), with confidence-adaptive top-\\(k\\) and one decision per n-gram window. For LoRA this is \\(\\Delta W(x)=\\mathrm{diag}(\\mathcal P(x)+\\gamma p_s)\\,BA\\): a token-dependent diagonal rescaling of the rows of one rank-\\(r\\) update.",
+   "mergeable": "no",
+   "mergeable_reason": "\\(\\mathcal P(x)\\) depends on each token (or n-gram window) through the router, so \\(\\Delta W(x)=\\mathrm{diag}(\\mathcal P(x)+\\gamma p_s)BA\\) varies per token. Only with \\(E=1\\) does it collapse to a static, mergeable \\(\\mathrm{diag}(p_1+\\gamma p_s)BA\\).",
+   "identity_at_init": "With LoRA, the released code zero-initializes \\(B\\), so \\(\\hat z=0\\) and \\(h=W_0x\\) exactly. Initialization is \\(p_i\\sim\\mathcal U(0.9,1.1)\\), \\(p_s\\sim\\mathcal N(0,0.1^2)\\), \\(\\gamma=0\\), so LiME also starts close to the plain shared PEFT module.",
+   "key_idea": "MoE-PEFT methods normally keep \\(E\\) adapter copies plus a learned router. LiME keeps one PEFT module and lets \\(E\\) vectors \\(p_i\\in\\mathbb{R}^{d_{out}}\\) rescale its output, so expert cost becomes \\(E\\,d_{out}\\) and works with any PEFT method. Routing logits come for free from the first \\(E\\) coordinates of the frozen output and the PEFT output. The paper proves that this modulation approximates expert-specific PEFT with bounded risk gap.",
+   "results_note": "On MMT-47 with LLaVA-OneVision-Qwen2-7B, LiME-LoRA has the best commonsense-reasoning average (84.98%). On GLUE it uses 0.52M trainable parameters versus 1.97M for MoELoRA and trains 23% faster.",
+   "relations": [
+    {
+     "target": "moelora",
+     "type": "competes-with",
+     "note": "Main MoE-LoRA baseline; LiME matches it with about 4x fewer trainable parameters."
+    },
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "HydraLoRA shares A and routes among several B heads. LiME shares the whole adapter and routes among diagonal output scalings."
+    },
+    {
+     "target": "mixlora",
+     "type": "competes-with",
+     "note": "MoE-PEFT baseline with replicated LoRA experts and a learned router."
+    },
+    {
+     "target": "loramoe",
+     "type": "competes-with",
+     "note": "Cited as an adapter-replicating MoE-PEFT design."
+    },
+    {
+     "target": "mov",
+     "type": "competes-with",
+     "note": "MoV already mixes routed (IA)^3 scaling vectors with a learned router. LiME applies routed scaling vectors to a shared PEFT output and removes the router (not cited by LiME)."
+    },
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "LiME-LoRA."
+    },
+    {
+     "target": "dora",
+     "type": "combines",
+     "note": "LiME-DoRA."
+    },
+    {
+     "target": "lora-fa",
+     "type": "combines",
+     "note": "LiME-LoRA-FA."
+    },
+    {
+     "target": "prompt-tuning",
+     "type": "combines",
+     "note": "LiME-PromptTuning shows the wrapper also works for non-adapter PEFT."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.02338",
+    "https://arxiv.org/html/2604.02338",
+    "https://icml.cc/virtual/2026/poster/64728",
+    "https://openreview.net/forum?id=KRSZj8z5Lr",
+    "https://github.com/Kowsher/LiME",
+    "https://github.com/Kowsher/LiME/blob/main/LiMELoRA.py",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2604.02338"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "agzo",
+   "name": "AGZO",
+   "full_name": "Activation-Guided Zeroth-Order optimization",
+   "paper_title": "AGZO: Activation-Guided Zeroth-Order Optimization for LLM Fine-Tuning",
+   "authors": "Lin et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2601.17261",
+   "url": "https://arxiv.org/abs/2601.17261",
+   "code_url": "https://github.com/LouisLINWEI/AGZO",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{for each linear layer } W_\\ell\\in\\mathbb{R}^{d_{out}\\times d_{in}} \\text{ with batch inputs } H_\\ell\\in\\mathbb{R}^{d_{in}\\times m}:\\ \\ \\nabla_{W_\\ell}f=Q_\\ell H_\\ell^\\top\\ \\Rightarrow\\ \\mathrm{row}(\\nabla_{W_\\ell}f)\\subseteq\\mathrm{col}(H_\\ell);\\quad U_\\ell=\\mathrm{orth}\\big((H_\\ell H_\\ell^\\top)^{K}H_\\ell\\Omega\\big)\\in\\mathbb{R}^{d_{in}\\times r}\\ \\ (\\text{power iteration inside the } f_0=f(W;\\mathcal{B}) \\text{ forward pass; called } A_\\ell \\text{ in the paper});\\quad \\Delta_\\ell=R_\\ell U_\\ell^\\top,\\ R_\\ell\\sim\\mathcal{N}(0,I_{d_{out}\\times r})\\ \\ (\\text{dense Gaussian } u_\\ell \\text{ for non-linear-layer parameters});\\quad \\widehat\\nabla_{W_\\ell}=\\frac{f(W+\\mu\\Delta;\\mathcal{B})-f_0}{\\mu}\\,\\Delta_\\ell,\\qquad W_\\ell\\leftarrow W_\\ell-\\eta\\,\\widehat\\nabla_{W_\\ell};\\ \\ \\text{all weights trained in place, no backpropagation};\\ r=1,\\ K=3",
+   "trainable_params": "\\text{all } d_{out}d_{in} \\text{ entries of each linear layer (full-parameter ZO); each step's update has rank} \\le r\\ (r=1);\\ \\text{extra state } d_{in}r \\text{ per layer for } U_\\ell",
+   "locus": "all parameters (full-parameter zeroth-order fine-tuning); activation-guided perturbations on linear layers (attention and FFN projections); Qwen3-0.6B/4B and openPangu-Embedded-1B",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A randomized finite-difference (SPSA) gradient estimate with rank-\\(r\\) perturbations \\(R_\\ell U_\\ell^\\top\\). Their row space is the top-\\(r\\) left singular subspace of the layer's current input activations. In expectation the estimate is \\(\\nabla_{W_\\ell}F_{\\mu,U}(W)\\,U_\\ell U_\\ell^\\top\\): the gradient of a subspace-smoothed objective, projected onto the activation subspace.",
+   "mergeable": "yes",
+   "mergeable_reason": "AGZO edits the model's own weights in place; there is no adapter to merge.",
+   "identity_at_init": "Trivial: there is no reparameterization, and training starts at \\(W_0\\).",
+   "key_idea": "A linear layer's gradient \\(Q_\\ell H_\\ell^\\top\\) has its row space inside the span of the layer's input activations, and that span is spectrally concentrated. AGZO therefore perturbs only along \\(R_\\ell U_\\ell^\\top\\), with \\(U_\\ell\\) the top activation directions found by power iteration in the same forward pass. The expected cosine with the true gradient is \\(\\beta_{d_{out}r}\\|GU\\|_F/\\|G\\|_F\\), versus \\(\\beta_{d_{out}d_{in}}\\) for MeZO, a strict gain unless the gradient energy sits mostly in the low-variance activation directions.",
+   "results_note": "On Qwen3-0.6B, AGZO beats MeZO and LOZO on most SuperGLUE-style tasks, e.g. CB 0.892 versus 0.803 (MeZO) and 0.760 (LOZO), against 0.946 for first-order fine-tuning, with almost the same peak memory as MeZO.",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "generalizes",
+     "note": "With U_l = I (full activation space), the estimator is MeZO's dense Gaussian SPSA (Corollary 5.5)."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Both confine updates to a data-derived low-rank subspace. GaLore uses the gradient's top singular vectors (first-order); AGZO uses the activations', which contain the gradient's row space (zeroth-order)."
+    },
+    {
+     "target": "zo-muon",
+     "type": "competes-with",
+     "note": "Both use low-rank ZO perturbations. AGZO's subspace is activation-informed on the input side; ZO-Muon's is random on the output side and adds Muon-style orthogonalization."
+    },
+    {
+     "target": "zo-bench",
+     "type": "builds-on",
+     "note": "The released code is built on the ZO-LLM benchmark codebase."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2601.17261",
+    "https://arxiv.org/html/2601.17261",
+    "https://icml.cc/virtual/2026/poster/60499",
+    "https://openreview.net/forum?id=zfVxpXEZti",
+    "https://github.com/LouisLINWEI/AGZO",
+    "https://github.com/Yining-Jiang/ActivationGuidedZO-NPU",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2601.17261"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "zo-muon",
+   "name": "ZO-Muon",
+   "full_name": "Zeroth-order Muon via subspace gradient orthogonalization",
+   "paper_title": "Powering Up Zeroth-Order Training via Subspace Gradient Orthogonalization",
+   "authors": "Lang et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2602.17155",
+   "url": "https://arxiv.org/abs/2602.17155",
+   "code_url": "https://github.com/OPTML-Group/ZO-Muon",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{for each weight } W_\\ell\\in\\mathbb{R}^{d_{out}\\times d_{in}}:\\ P_\\ell\\in\\mathbb{R}^{d_{out}\\times r},\\ P_\\ell^\\top P_\\ell=I_r\\ (\\text{QR of a Gaussian, resampled every } v=100 \\text{ steps});\\quad \\widehat G_{Z,\\ell}=\\frac{1}{N_q}\\sum_{i=1}^{N_q}\\frac{f(W+\\mu P\\Psi_i)-f(W)}{\\mu}\\,\\Psi_{i,\\ell},\\ \\ \\Psi_{i,\\ell}\\sim\\mathcal{N}(0,I_{r\\times d_{in}});\\quad O_\\ell=P_\\ell\\,\\mathrm{msign}(\\widehat G_{Z,\\ell}),\\ \\ \\mathrm{msign}(G)=G(G^\\top G)^{-1/2}\\ (\\text{Newton--Schulz});\\quad W_\\ell\\leftarrow W_\\ell-\\eta\\,O_\\ell;\\ \\ \\text{first-order analogue } O=P\\,\\mathrm{msign}(P^\\top\\nabla_Wf),\\ \\text{equal to } \\mathrm{msign}(\\nabla_Wf) \\text{ when } P \\text{ spans the gradient's column space};\\ \\text{all weights trained, no backpropagation};\\ N_q=4,\\ r\\in\\{64,128\\}\\ \\text{for LLMs}",
+   "trainable_params": "\\text{all } d_{out}d_{in} \\text{ entries of each weight matrix (full-parameter ZO); each step's update has rank} \\le r;\\ \\text{state: } P_\\ell\\in\\mathbb{R}^{d_{out}\\times r}",
+   "locus": "all weight matrices (full-parameter zeroth-order fine-tuning) of OPT-1.3B/13B, LLaMA3-8B and Gemma2-2B (SuperGLUE, SQuAD) and ViT-B/16, ViT-L/16 (CIFAR-10/100)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "A multi-query forward-difference gradient estimate (RGE) is taken in a random rank-\\(r\\) left subspace \\(\\mathrm{col}(P)\\), which is lazily resampled. The \\(r\\times d_{in}\\) estimate is orthogonalized by the matrix sign function and lifted back by \\(P\\). Each update \\(P\\,\\mathrm{msign}(\\widehat G_Z)\\) is a rank-\\(\\le r\\) partial isometry: all its nonzero singular values equal 1.",
+   "mergeable": "yes",
+   "mergeable_reason": "ZO-Muon edits the model's own weights in place; there is no adapter to merge.",
+   "identity_at_init": "Trivial: there is no reparameterization, and training starts at \\(W_0\\).",
+   "key_idea": "Estimate the ZO gradient of the projected variable \\(Z\\) (\\(W\\approx PZ\\), with \\(P\\) random and column-orthonormal) by multi-query RGE. This cuts the dimension behind the estimator's variance from \\(d_{out}d_{in}\\) to \\(rd_{in}\\). Then orthogonalize the estimate Muon-style and lift it back with \\(P\\). Orthogonalizing full-space MeZO estimates (ZO-Muon-V0) does not help, but inside the subspace the matrix sign acts as a spectral noise filter, making ZO-Muon a zeroth-order approximation of low-rank Muon.",
+   "results_note": "Versus MeZO, ZO-Muon needs 24.7% of the queries to reach 0.90 on SST-2 (OPT-1.3B, Fig. 2a) and reaches 72.4% versus 47.3% on CIFAR-100 with ViT-L (Table 1). The abstract attributes this +25.1-point gain to ViT-B, but Table 1 shows it is ViT-L.",
+   "relations": [
+    {
+     "target": "mezo",
+     "type": "builds-on",
+     "note": "Same seed-regenerated, forward-only RGE. ZO-Muon adds a random orthonormal subspace, multiple queries and Muon-style orthogonalization; applying msign to MeZO directly (ZO-Muon-V0) fails."
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "Zeroth-order counterpart of projected low-rank updates with periodic subspace refresh. GaLore uses gradient SVD; ZO-Muon uses a random P, since informed sketches gave no gain."
+    },
+    {
+     "target": "flora-opt",
+     "type": "competes-with",
+     "note": "Both rely on a random projection that is resampled periodically, rather than a learned subspace, to keep low-rank optimizer state cheap."
+    },
+    {
+     "target": "agzo",
+     "type": "competes-with",
+     "note": "Low-rank ZO with a random output-side subspace plus orthogonalization, versus AGZO's activation-informed input-side subspace."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.17155",
+    "https://arxiv.org/html/2602.17155",
+    "https://github.com/OPTML-Group/ZO-Muon",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2602.17155"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "papers": [],
+ "notes": "Scope: one entry per requested method; all six exist, are distinct from catalogued ids, and are PEFT or memory-efficient-fine-tuning methods. None was skipped. VENUES checked against https://icml.cc/static/virtual/data/icml-2026-orals-posters.json on 2026-10-02: FedRot-LoRA (poster 66566), Geometry-Preserving Orthonormal Init / RLPO-RLMO (poster 63355), NaRA (poster 61250) and AGZO (poster 60499) are 'Accept (regular)'; LiME (poster 64728) is 'Accept (spotlight)'. ZO-Muon is not in the ICML 2026 list (posted 2026-02-19, after the ICLR 2026 deadline); no other venue was found, so its venue is arXiv. Semantic Scholar citations (2026-10-02): ZO-Muon 11 (3 influential), FedRot-LoRA 9 (1), AGZO 3 (1), RLPO-RLMO 1, NaRA 1, LiME 0. Suggested site families: fedrot-lora -> lora-core (federated aggregation; also gap-3 next to ffa-lora and flora-federated); rlpo-rlmo -> init-rank; nara -> frontier; lime -> composition; agzo and zo-muon -> quant-memory. HF PEFT v0.21.2 (2026-10-01) has no tuner or init option for any of the six. Its LoraConfig(init_lora_weights='orthogonal') is a different, data-free scheme: both factors are nonzero, with BA=0 via orthogonal row splitting, so it is NOT RLPO. DISCREPANCIES AND CAVEATS: (1) ZO-Muon: the abstract says '+25.1% on ViT-B CIFAR-100', but Table 1 and Section 5.2 give 72.4 vs 47.3 for ViT-L (ViT-B is 72.6 vs 64.5). The results_note follows the table. (2) FedRot-LoRA: the paper's soft-rotation projection formula writes V diag(.) U^T for R' = U Sigma V^T, the transpose of the nearest rotation. The released code (rotation_alignment_tools.py) uses U' V'^T and builds M = A A_ref^T, consistent with R = U V^T. The formula entry therefore writes a generic projection onto SO(r). Uniform 1/N averaging as in Algorithm 1. (3) NaRA: the 'first noise-conditioned LoRA' claim holds only for diffusion LLMs. Timestep-conditioned LoRAs already exist for image diffusion: TC-LoRA (2510.09561, hypernetwork-generated per-step LoRA, earlier excluded from the catalogue) and TimeStep Master (timestep-interval LoRA experts). NaRA's architecture is credited to Terra (Time-Varying LoRA, NeurIPS 2024, same group), whose variable is a domain-flow time rather than the noise level. NaRA's hypernetwork size (about 0.67M) is computed from Table 12 (64->256->512->1024, biases assumed), not stated in the paper. (4) LiME: arXiv id 2604.02338 although the v1 timestamp is 2026-02-01. The repo README badge text shows a different id (2510.08513 = SliceFine), but its link points to 2604.02338. Initial values of B, p_s and gamma are from the paper's hyperparameter table and the released LiMELoRA.py; the code also multiplies routing logits by random jitter during training. (5) AGZO renames the activation basis A_l to U_l here to avoid a clash with the LoRA factor A. The power iteration Y=H Omega; repeat qr then Y=H(H^T Q) spans (HH^T)^K H Omega. The official repo is LouisLINWEI/AGZO (code described as a rough draft) plus an NPU fork. (6) RLPO/RLMO: experiments use alpha=32, r=16 (alpha/r=2), but the theorem is stated for unscaled BA. The ablation shows orthonormality alone (DCT-LoRA, Wavelet-LoRA) beats LoRA, while principal-subspace geometry adds a further gain only for RLPO. TENSION WORTH TAGGING: AGZO finds that a data-informed (activation) subspace improves ZO gradient alignment, while ZO-Muon reports that informed sketches (Gaussian sketching or past-gradient bases) give no gain over random P. They project on different sides (input vs output) and ZO-Muon adds orthogonalization, so the results are not directly contradictory. CATEGORY-THEORY NOTE: FedRot-LoRA is an explicit gauge fixing (choosing a representative in the SO(r) orbit of the GL(r) inner symmetry of (B, A)) applied before a non-equivariant operation (factor averaging). It belongs with learning-on-loras-gl-equivariance, balanced-lora and lora-rite as methods that treat the factorization's symmetry explicitly, but FedRot does not cite them."
+}

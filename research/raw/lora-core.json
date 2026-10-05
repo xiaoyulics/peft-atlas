@@ -1,0 +1,1128 @@
+{
+ "family": "lora-core",
+ "family_title": "LoRA and its training-dynamics / scaling variants",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "lora",
+   "name": "LoRA",
+   "full_name": "Low-Rank Adaptation",
+   "paper_title": "LoRA: Low-Rank Adaptation of Large Language Models",
+   "authors": "Hu et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2106.09685",
+   "url": "https://arxiv.org/abs/2106.09685",
+   "code_url": "https://github.com/microsoft/LoRA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig",
+   "formula_latex": "h = W_0 x + \\tfrac{\\alpha}{r} B A x,\\qquad W = W_0 + \\tfrac{\\alpha}{r} B A,\\quad B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ W_0\\ \\text{frozen},\\ (A,B)\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer; the paper adapts W_q and W_v of Transformer attention (PEFT also supports target_modules='all-linear', embeddings, conv)",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W = \\tfrac{\\alpha}{r}BA factors through an r-dimensional space, i.e. it is the image of the multiplication map \\mu:\\mathbb{R}^{d_{out}\\times r}\\times\\mathbb{R}^{r\\times d_{in}}\\to\\{\\mathrm{rank}\\le r\\}; the factorization is only defined up to the gauge action (B,A)\\mapsto(BR,R^{-1}A),\\ R\\in GL(r).",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 + (alpha/r) B A can be computed once and stored in place of W_0, so inference runs the original architecture with no extra latency (and can be unmerged by subtraction).",
+   "identity_at_init": "B = 0 (A random Gaussian in the paper; Kaiming-uniform in HF PEFT), so Delta W = 0 and the model starts exactly at the pretrained function; alpha/r rescaling is fixed (alpha set to the first r tried and not tuned).",
+   "key_idea": "Freeze the pretrained weights and learn the weight update as a product of two thin matrices, exploiting the hypothesis that task-adaptation updates have low intrinsic rank; because the update is linear in W it can be merged away after training.",
+   "results_note": "On GPT-3 175B LoRA reduces trainable parameters ~10,000x and training GPU memory ~3x while matching or exceeding full fine-tuning on WikiSQL, MNLI and SAMSum; it is on par with full fine-tuning on RoBERTa/DeBERTa (GLUE) and GPT-2 (E2E).",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "competes-with",
+     "note": "LoRA was motivated as an adapter alternative without serial inference latency"
+    },
+    {
+     "target": "prefix-tuning",
+     "type": "competes-with",
+     "note": "compared as a baseline in the LoRA paper"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.09685",
+    "https://arxiv.org/html/2106.09685",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/layer.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "rslora",
+   "name": "rsLoRA",
+   "full_name": "Rank-Stabilized LoRA",
+   "paper_title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA",
+   "authors": "Kalajdzievski",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2312.03732",
+   "url": "https://arxiv.org/abs/2312.03732",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_rslora=True)",
+   "formula_latex": "W = W_0 + \\gamma_r\\, B A,\\qquad \\gamma_r = \\tfrac{\\alpha}{\\sqrt{r}}\\ \\ (\\text{instead of LoRA's } \\tfrac{\\alpha}{r});\\quad W_0\\ \\text{frozen},\\ (A,B)\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA (paper adapts all attention and MLP linear layers of Llama 2)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Identical rank-r factorization \\Delta W=\\gamma_r BA; only the scalar multiplier changes. Theorem: with B=0 and A i.i.d. with r-independent variance, adapters are rank-stabilized (forward outputs and backward gradients \\Theta_r(1) as r\\to\\infty) iff \\gamma_r\\in\\Theta(1/\\sqrt{r}).",
+   "mergeable": "yes",
+   "mergeable_reason": "Only a scalar on the LoRA branch changes, so W_0 + gamma_r B A merges exactly like LoRA.",
+   "identity_at_init": "B = 0 (standard LoRA initialization), so Delta W = 0; the paper notes that rank-correcting only the initialization instead of the multiplier is unstable at large rank.",
+   "key_idea": "LoRA's alpha/r multiplier is overly aggressive: it makes gradients collapse as rank grows, so higher ranks learn no better than rank 4-8; dividing by sqrt(r) instead keeps learning rank-stable and lets extra rank buy extra performance at no inference cost.",
+   "results_note": "Fine-tuning Llama 2 on 20k OpenOrca examples with ranks 4 to 2048, rsLoRA's fine-tuning perplexity keeps improving with rank whereas standard LoRA plateaus and shows collapsing gradient norms at high rank.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "changes only the rank-dependent scale gamma_r"
+    },
+    {
+     "target": "lora-without-regret",
+     "type": "competes-with",
+     "note": "LoRA Without Regret argues 1/r makes the optimal LR roughly rank-independent (early training), whereas rsLoRA argues 1/sqrt(r) is needed for large-rank stability"
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "both are width/rank-scaling (muP-style) corrections of LoRA hyperparameters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2312.03732",
+    "https://arxiv.org/html/2312.03732",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-plus",
+   "name": "LoRA+",
+   "full_name": "LoRA+ (decoupled learning rates for A and B)",
+   "paper_title": "LoRA+: Efficient Low Rank Adaptation of Large Models",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.12354",
+   "url": "https://arxiv.org/abs/2402.12354",
+   "code_url": "https://github.com/nikhil-ghosh-berkeley/loraplus",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_loraplus_optimizer(model, optimizer_cls, lr, loraplus_lr_ratio)",
+   "formula_latex": "W = W_0 + \\tfrac{\\alpha}{r}BA;\\qquad A \\leftarrow A - \\eta_A\\, g_A,\\quad B \\leftarrow B - \\eta_B\\, g_B,\\quad \\eta_B = \\lambda\\,\\eta_A,\\ \\ \\lambda\\gg 1\\ (\\text{e.g. } \\lambda=2^4)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Unchanged rank-r factorization; the optimizer applies a block-diagonal learning-rate operator \\mathrm{diag}(\\eta_A I,\\ \\lambda\\eta_A I) to (A,B). Infinite-width analysis: efficient feature learning requires \\eta_A=\\Theta(n^{-1}),\\ \\eta_B=\\Theta(1), i.e. \\eta_B/\\eta_A=\\Theta(n) (n = model width); this explicitly breaks the GL(r) gauge symmetry in favour of B.",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the training procedure changes; the trained adapter is a standard LoRA product that merges into W_0.",
+   "identity_at_init": "Standard B = 0 with A random of variance Theta(1/n) (Init[1]); the paper also analyses the reverse A = 0, B random (Init[2]). Delta W = 0 in both cases.",
+   "key_idea": "With one shared learning rate, A and B cannot both learn features efficiently as width grows; setting the B learning rate a fixed large multiple of the A learning rate fixes this while keeping a 1-D LR search.",
+   "results_note": "Reports 1-2% accuracy improvements and up to ~2x faster fine-tuning at the same compute as LoRA (RoBERTa/GPT-2 on GLUE, Llama-7b on MNLI and MMLU); best ratio is task/model dependent (~2^4 for RoBERTa with Init[2], ~2^1-2^2 for Llama).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "same parametrization, different per-factor learning rates"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "competes-with",
+     "note": "both fix the A/B learning-rate imbalance; LoRA+ with a fixed scalar ratio, Riemannian LoRA with an r x r preconditioner and a single learning rate"
+    },
+    {
+     "target": "asylora",
+     "type": "generalizes",
+     "note": "the eta_A -> 0 limit of LoRA+ freezes A and trains only B"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.12354",
+    "https://arxiv.org/html/2402.12354",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/tree/main/src/peft/optimizers"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-fa",
+   "name": "LoRA-FA",
+   "full_name": "LoRA with Frozen-A (and projected B-gradient)",
+   "paper_title": "LoRA-FA: Memory-efficient Low-rank Adaptation for Large Language Models Fine-tuning",
+   "authors": "Zhang et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2308.03303",
+   "url": "https://arxiv.org/abs/2308.03303",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_lorafa_optimizer(model, r, lora_alpha, lr)",
+   "formula_latex": "W = W_0 + s\\,B A_0,\\ \\ s=\\tfrac{\\alpha}{r};\\quad A_0\\ \\text{random and frozen},\\ B\\ \\text{trained with}\\ \\ \\tilde g_B = \\tfrac{1}{s^{2}}\\,\\nabla_B\\mathcal{L}\\,(A_0A_0^{\\top})^{-1}\\ \\Rightarrow\\ s\\,\\tilde g_B A_0 = G\\,A_0^{\\top}(A_0A_0^{\\top})^{-1}A_0,\\ \\ G=\\nabla_W\\mathcal{L}",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "same as LoRA (any linear layer)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "\\Delta W = sBA_0 with A_0 a fixed random r\\times d_{in} matrix, so updates live in the linear space \\mathbb{R}^{d_{out}}\\otimes\\mathrm{row}(A_0); the corrected gradient makes each induced weight step the orthogonal projection G P_{A_0} (P_{A_0}=A_0^{\\top}(A_0A_0^{\\top})^{-1}A_0) of the full gradient onto that fixed subspace.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter is still an additive rank-r product B A_0 that merges into W_0.",
+   "identity_at_init": "B = 0 with A_0 random (Gaussian or uniform; the paper ablates the choice) and never updated, so Delta W = 0 at init.",
+   "key_idea": "Freezing the down-projection A means backprop only needs the r-dimensional activation XA instead of the full input X, making activation memory insensitive to rank; the current version additionally rescales B's gradient by (AA^T)^{-1} so the induced update is the best Frobenius approximation of the full gradient within the frozen row space (the 2023 v1 only froze A).",
+   "results_note": "The current version reports performance competitive with full fine-tuning and LoRA variants on GLUE (RoBERTa) and on GSM8K/HumanEval/MT-Bench after SFT of Llama-2/Llama-3/Qwen3/DeepSeek-V2-Lite, with substantially reduced activation memory.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA with eta_A = 0"
+    },
+    {
+     "target": "lora-pro",
+     "type": "special-case-of",
+     "note": "LoRA-Pro's gradient-matching objective with g^A constrained to 0 yields exactly LoRA-FA's corrected B-gradient"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "special-case-of",
+     "note": "with A frozen the correction equals the Riemannian B-preconditioner (AA^T)^{-1} up to the constant s^{-2}"
+    },
+    {
+     "target": "asylora",
+     "type": "competes-with",
+     "note": "same freeze-A/train-B asymmetry; AsyLoRA supplies the generalization theory, LoRA-FA the memory argument and gradient projection"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2308.03303",
+    "https://arxiv.org/html/2308.03303",
+    "https://github.com/huggingface/peft/blob/main/src/peft/optimizers/lorafa.py",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/releases"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "riemannian-preconditioned-lora",
+   "name": "Riemannian Preconditioned LoRA",
+   "full_name": "Riemannian Preconditioned LoRA (scaled GD / scaled AdamW)",
+   "paper_title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models",
+   "authors": "Zhang & Pilanci",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.02347",
+   "url": "https://arxiv.org/abs/2402.02347",
+   "code_url": "https://github.com/pilancilab/Riemannian_Preconditioned_LoRA",
+   "hf_peft": true,
+   "hf_peft_config": "peft.optimizers.create_riemannian_optimizer(model, optimizer_cls, lr, reg)",
+   "formula_latex": "W=W_0+BA:\\quad A \\leftarrow A - \\eta\\,(B^{\\top}B+\\delta I_r)^{-1}\\nabla_A\\mathcal{L},\\qquad B \\leftarrow B - \\eta\\,\\nabla_B\\mathcal{L}\\,(AA^{\\top}+\\delta I_r)^{-1};\\quad \\text{to first order } \\delta W \\approx -\\eta\\,(P_B G + G P_A)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA (PEFT preconditions nn.Linear-shaped lora_A/lora_B only)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "r\\times r preconditioners from the Mishra et al. Riemannian metric on the quotient manifold (\\mathbb{R}^{d_{out}\\times r}_*\\times\\mathbb{R}^{r\\times d_{in}}_*)/GL(r) of rank-r matrices; the induced step P_BG+GP_A (P_B=B(B^{\\top}B)^{-1}B^{\\top},\\ P_A=A^{\\top}(AA^{\\top})^{-1}A) depends only on BA, so plain scaled GD is invariant to the gauge (B,A)\\mapsto(BR,R^{-1}A).",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the optimizer changes; the trained adapter is a standard LoRA product.",
+   "identity_at_init": "Standard LoRA init (B = 0); because B^T B is singular at init a damping delta*I (reg in PEFT) is added before inversion.",
+   "key_idea": "Precondition each factor's gradient by the inverse Gram matrix of the other factor, turning LoRA's update into (approximately) the projection of the full gradient onto col(B) and row(A); under infinite width this yields stable feature learning with a single learning rate for A and B, at negligible r x r cost.",
+   "results_note": "Scaled GD closes the SGD-AdamW gap and scaled AdamW improves AdamW for GPT-2 LoRA fine-tuning on E2E NLG, and the preconditioner makes Stable Diffusion / Mix-of-Show LoRA fine-tuning markedly more robust to the learning rate, with runtime close to unscaled optimizers.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "optimizer-only change"
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "solves the same A/B learning-rate imbalance with a matrix preconditioner instead of a scalar ratio"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.02347",
+    "https://arxiv.org/html/2402.02347",
+    "https://github.com/huggingface/peft/blob/main/src/peft/optimizers/riemannian.py",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/releases"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-rite",
+   "name": "LoRA-RITE",
+   "full_name": "Robust Invariant Transformation Equilibration for LoRA",
+   "paper_title": "LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization",
+   "authors": "Yen et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2410.20625",
+   "url": "https://arxiv.org/abs/2410.20625",
+   "code_url": "https://github.com/gkevinyen5418/LoRA-RITE",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "A^{\\top}=U_AR_A\\ (\\text{polar}),\\ \\ \\bar\\nabla_B = G\\,U_A = \\nabla_B\\mathcal{L}\\,R_A^{\\dagger},\\ \\ \\bar V_B \\leftarrow P\\,\\bar V_B P^{\\top} + \\bar\\nabla_B^{\\top}\\bar\\nabla_B,\\ \\ B \\leftarrow B - \\eta\\,\\bar\\nabla_B\\,(\\bar V_B+\\rho I_r)^{-1/2}(R_A^{\\top})^{\\dagger}\\ \\ (\\text{symmetric rule for } A;\\ P=U_{A,t}^{\\top}U_{A,t-1};\\ \\text{first moment omitted})",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Adaptive one-sided r\\times r matrix preconditioning of 'unmagnified' gradients expressed in orthonormal bases of the factors; moments are transported between successive bases and an 'escaped mass' \\rho I compensates lost second-moment mass. The resulting W-update is exactly invariant under (B,A)\\mapsto(BR,R^{-1}A),\\ R\\in GL(r) (transformation invariance).",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the optimizer changes; the adapter remains a mergeable LoRA product.",
+   "identity_at_init": "Standard LoRA initialization (B = 0); the update uses pseudo-inverses R^dagger so rank-deficient factors are allowed.",
+   "key_idea": "Adam, Shampoo, LoRA+ and ScaledAdam all produce different W-updates for equivalent factorizations (they are not even scalar-scale invariant); RITE builds an Adam-like adaptive optimizer whose update depends only on BA, at roughly Adam's cost for small r.",
+   "results_note": "Replacing Adam with LoRA-RITE for LoRA tuning of Gemma-2B gives +4.6% accuracy on Super-Natural Instructions and +3.5% averaged over HellaSwag, ARC-Challenge, GSM8K and OpenBookQA; with Gemma-7B-IT it reaches 55.50% on GSM8K vs 48.37% for Adam.",
+   "relations": [
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "builds-on",
+     "note": "Riemannian GD is transformation invariant but ScaledAdam (with element-wise Adam) is not; RITE restores invariance with adaptivity"
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "both address one factor dominating optimization"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "optimizer-only change"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2410.20625",
+    "https://arxiv.org/html/2410.20625",
+    "https://openreview.net/forum?id=VpWki1v2P8"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-pro",
+   "name": "LoRA-Pro",
+   "full_name": "LoRA-Pro (equivalent-gradient matching)",
+   "paper_title": "LoRA-Pro: Are Low-Rank Adapters Properly Optimized?",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2407.18242",
+   "url": "https://arxiv.org/abs/2407.18242",
+   "code_url": "https://github.com/mrflogs/LoRA-Pro",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\tilde g := sBg^{A}+sg^{B}A\\approx G:\\quad g^{A}=\\tfrac{1}{s^{2}}(B^{\\top}B)^{-1}\\nabla_A\\mathcal{L}+XA,\\quad g^{B}=\\tfrac{1}{s^{2}}\\big[I-B(B^{\\top}B)^{-1}B^{\\top}\\big]\\nabla_B\\mathcal{L}\\,(AA^{\\top})^{-1}-BX,\\quad B^{\\top}BX+XAA^{\\top}=-\\tfrac{1}{s^{2}}(B^{\\top}B)^{-1}\\nabla_A\\mathcal{L}\\,A^{\\top}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Gradient surgery on the fixed-rank manifold: the 'equivalent gradient' becomes \\tilde g = P_BG+(I-P_B)GP_A, the orthogonal projection of the full gradient G onto the tangent space of rank-r matrices at BA (closed-form minimiser of \\|\\tilde g-G\\|_F); the residual r\\times r gauge freedom X is fixed by a Sylvester equation keeping (g^A,g^B) closest to the vanilla LoRA gradients. The AdamW variant keeps moments of the full-size equivalent gradient.",
+   "mergeable": "yes",
+   "mergeable_reason": "Only the optimizer changes; the result is a standard LoRA adapter.",
+   "identity_at_init": "Standard LoRA init (B = 0); the closed form assumes full-rank B and A, so inverses must be regularized while B is rank-deficient early in training.",
+   "key_idea": "Training LoRA is equivalent to full fine-tuning with a low-rank 'equivalent gradient' sBg^A + sg^BA; choosing g^A, g^B to make this as close as possible to the true full gradient (closed form, guaranteed loss decrease) narrows the gap to full fine-tuning.",
+   "results_note": "On a GLUE subset with T5-base LoRA-Pro beats standard LoRA by 6.36 points on average (above full fine-tuning), and on Llama-2-7B it beats LoRA-GA by 2.85 (GSM8K) and 6.45 (HumanEval) at rank 32, at ~4 GB more GPU memory than LoRA.",
+   "relations": [
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "generalizes",
+     "note": "scaled GD gives P_BG+GP_A (double-counting P_BGP_A); LoRA-Pro gives the exact tangent-space projection P_BG+(I-P_B)GP_A"
+    },
+    {
+     "target": "lora-ga",
+     "type": "competes-with",
+     "note": "both align LoRA with full fine-tuning gradients: LoRA-GA only at initialization, LoRA-Pro at every step"
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "both approximate full-gradient training with low-rank projected updates"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.18242",
+    "https://arxiv.org/html/2407.18242",
+    "https://openreview.net/forum?id=gTwRMU3lJ5"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "relora",
+   "name": "ReLoRA",
+   "full_name": "Restarted LoRA (high-rank training through low-rank updates)",
+   "paper_title": "ReLoRA: High-Rank Training Through Low-Rank Updates",
+   "authors": "Lialin et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2307.05695",
+   "url": "https://arxiv.org/abs/2307.05695",
+   "code_url": "https://github.com/Guitaricet/relora",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{(k)} = W^{(k-1)} + s\\,B_kA_k\\ \\ (\\text{merge every } T \\text{ steps}),\\qquad \\Delta W_{\\text{total}}=\\sum_{k=1}^{N} s\\,B_kA_k,\\ \\ \\mathrm{rank}\\le Nr;\\quad \\text{after each merge: } B_k\\leftarrow 0,\\ A_k\\ \\text{re-init},\\ \\text{prune most Adam moments, LR re-warm-up}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{at any time (after a short full-rank warm start when training from scratch)}",
+   "locus": "attention and MLP linear layers of Transformer LMs during (pre-)training",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Sum of N rank-r increments accumulated by periodic merge-and-reinit: the total update lies in M_{\\le r}+\\cdots+M_{\\le r}=M_{\\le Nr} while each phase optimizes only a rank-r chart; uses a jagged cosine schedule and magnitude-pruned (~99%) optimizer state at each restart.",
+   "mergeable": "yes",
+   "mergeable_reason": "LoRA factors are merged into the dense weights at every restart and at the end, leaving a plain dense model.",
+   "identity_at_init": "Each restart re-initializes B = 0 (A Kaiming) so merge-and-reinit leaves the function unchanged; from-scratch training needs a full-rank warm start (e.g. 5k steps) before switching to ReLoRA.",
+   "key_idea": "Since rank(X+Y) can exceed rank(X), repeatedly merging low-rank updates into the weights and restarting the adapter yields a high-rank total update with low-rank memory; partial optimizer reset and LR re-warm-up stop the new adapter from relearning the old subspace.",
+   "results_note": "Pre-training Transformer LMs up to 1.3B parameters on C4, ReLoRA performs comparably to full-rank training while saving up to 5.5 GB RAM per GPU and speeding up training by 9-40% depending on model size and hardware.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA plus periodic merge-and-restart"
+    },
+    {
+     "target": "galore",
+     "type": "competes-with",
+     "note": "both target memory-efficient high-rank (pre-)training via low-rank updates"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2307.05695",
+    "https://arxiv.org/html/2307.05695"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "delta-lora",
+   "name": "Delta-LoRA",
+   "full_name": "Delta-LoRA (propagating the low-rank delta into the pretrained weight)",
+   "paper_title": "Delta-LoRA: Fine-Tuning High-Rank Parameters with the Delta of Low-Rank Matrices",
+   "authors": "Zi et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2309.02411",
+   "url": "https://arxiv.org/abs/2309.02411",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h = W^{(t)}x+\\tfrac{\\alpha}{r}B^{(t)}A^{(t)}x;\\quad (A,B)\\ \\text{updated by AdamW};\\quad W^{(t+1)} = W^{(t)} + \\lambda\\,\\tfrac{\\alpha}{r}\\big(B^{(t+1)}A^{(t+1)}-B^{(t)}A^{(t)}\\big)\\ \\ \\text{for } t\\ge K;\\ \\ \\text{no dropout on the LoRA branch}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{with optimizer state; all } d_{out}d_{in} \\text{ entries of } W \\text{ are also modified (no gradient or moments stored for } W)",
+   "locus": "same as LoRA (paper: GPT-2, BART, RoBERTa weight matrices)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Every step after K adds \\lambda times the increment of the rank-r product (itself of rank \\le 2r) to the base weight, so W accumulates an unbounded-rank sum of low-rank increments; the increment acts as a surrogate for -\\eta\\,\\partial\\mathcal{L}/\\partial W, which is exact only without dropout in the branch.",
+   "mergeable": "yes",
+   "mergeable_reason": "The final model is the dense weight W^(T) + (alpha/r) B A, but the pretrained weight itself is overwritten, so the adaptation cannot be stored or swapped as a small detachable adapter.",
+   "identity_at_init": "B = 0 and W-updates only start after K steps, so training starts from the pretrained function.",
+   "key_idea": "Reuse the change of the low-rank product between consecutive steps as a free (no gradient, no optimizer state) update to the full pretrained weight, giving high-rank adaptation at LoRA's memory cost.",
+   "results_note": "Outperforms LoRA, DyLoRA and AdaLoRA in the paper's experiments on E2E and WebNLG (GPT-2 medium), XSum (BART-large) and GLUE (RoBERTa-base).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA branch plus a delta-driven update of W"
+    },
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "both push high-rank updates into W; Delta-LoRA does it continuously every step rather than by periodic merges"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2309.02411",
+    "https://arxiv.org/html/2309.02411",
+    "https://openreview.net/forum?id=FAO4VS9QRV"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "cola",
+   "name": "COLA",
+   "full_name": "Chain of LoRA",
+   "paper_title": "Chain of LoRA: Efficient Fine-tuning of Language Models via Residual Learning",
+   "authors": "Xia et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2401.04151",
+   "url": "https://arxiv.org/abs/2401.04151",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{(i)} = W_0 + \\sum_{j=1}^{i} B_jA_j,\\qquad (B_i,A_i) \\approx \\arg\\min_{B_i,A_i}\\ \\mathcal{L}\\big(W^{(i-1)} + B_iA_i\\big);\\quad \\text{then merge ('tie a knot'), re-init } B_{i+1}=0,\\ A_{i+1}\\sim\\mathcal{N},\\ \\text{reset optimizer}",
+   "trainable_params": "r_i(d_{in}+d_{out})\\ \\text{for the active link (ranks may decrease along the chain)}",
+   "locus": "same as LoRA (OPT-1.3B, Llama-2-7B)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Residual learning: a chain of M rank-r_i corrections, each fitted to the residual \\Delta W^\\star-\\sum_{j<i}B_jA_j on top of the merged weights; analysed as a (stochastic, non-convex) Frank-Wolfe / conditional-gradient method over low-rank atoms.",
+   "mergeable": "yes",
+   "mergeable_reason": "Each link is merged into the frozen weights as training proceeds, so the final model is a dense matrix of the original shape.",
+   "identity_at_init": "Each new link starts with B = 0 and Gaussian A, so extending the chain does not change the function.",
+   "key_idea": "Approximate the optimal high-rank update by a Frank-Wolfe-like sequence of low-rank residual fits (tune LoRA, merge, extend the chain with a fresh LoRA and reset optimizer state), at LoRA's compute and memory.",
+   "results_note": "Across OPT-1.3B and Llama-2-7B on seven tasks COLA consistently beats LoRA, e.g. a 6.47% relative test-accuracy gain on WSC with OPT-1.3B and up to 4.4% relative gain with Llama-2-7B.",
+   "relations": [
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "same merge-and-reinit idea applied to fine-tuning, with full optimizer reset and a Frank-Wolfe convergence analysis"
+    },
+    {
+     "target": "periodic-lora",
+     "type": "competes-with",
+     "note": "same periodic-merge mechanism"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "chain of standard LoRA modules"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2401.04151",
+    "https://arxiv.org/html/2401.04151"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "periodic-lora",
+   "name": "PeriodicLoRA",
+   "full_name": "PeriodicLoRA (PLoRA)",
+   "paper_title": "PeriodicLoRA: Breaking the Low-Rank Bottleneck in LoRA Optimization",
+   "authors": "Meng et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2402.16141",
+   "url": "https://arxiv.org/abs/2402.16141",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_t = W_{t-1} + s\\,B_tA_t\\ \\ (\\text{unload at the end of stage } t),\\qquad W_T = W_0 + \\sum_{t=1}^{T} s\\,B_tA_t,\\ \\ \\mathrm{rank}\\le Tr;\\quad \\text{momentum unloading: merge } (1-m)\\,sB_tA_t \\text{ and keep } (B_t,A_t) \\text{ scaled by } m",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all attention and MLP linear layers (LLaMA-7B experiments)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Periodic merge-and-reinit (stage length = a fixed number of mini-batches, e.g. ~4.8k examples) accumulating a sum of rank-r terms, with an exponential-moving-average-like 'momentum' that only partially unloads the adapter to stabilize training.",
+   "mergeable": "yes",
+   "mergeable_reason": "Adapters are unloaded into the backbone during training; the final model is dense with the original shape.",
+   "identity_at_init": "Each stage re-initializes B = 0, A Gaussian (when m = 0), together with optimizer and LR-scheduler state.",
+   "key_idea": "Unload LoRA weights into the backbone after every few hundred steps and restart them, so multiple low-rank updates accumulate into a higher-rank update at constant memory; a momentum-based partial unload prevents collapse across mini-batches.",
+   "results_note": "With LLaMA-7B instruction tuning PLoRA consistently outperforms LoRA at the same rank (reporting up to ~1.8x LoRA's 'learning ability') without extra memory.",
+   "relations": [
+    {
+     "target": "relora",
+     "type": "competes-with",
+     "note": "same merge-and-restart idea for fine-tuning; PLoRA adds momentum unloading"
+    },
+    {
+     "target": "cola",
+     "type": "competes-with",
+     "note": "concurrent periodic-merge method"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "periodically restarted LoRA"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.16141",
+    "https://arxiv.org/html/2402.16141"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lora-dropout",
+   "name": "LoRA Dropout",
+   "full_name": "LoRA Dropout (sparsity-regularizing dropout on LoRA factors with test-time ensembling)",
+   "paper_title": "LoRA Dropout as a Sparsity Regularizer for Overfitting Control",
+   "authors": "Lin et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2404.09610",
+   "url": "https://arxiv.org/abs/2404.09610",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + s\\,\\hat B\\hat A,\\quad \\hat A = A\\,\\mathrm{diag}(m_A),\\ \\hat B = \\mathrm{diag}(m_B)\\,B,\\quad m_A\\in\\{0,1\\}^{d_{in}},\\ m_B\\in\\{0,1\\}^{d_{out}}\\sim\\mathrm{Bern}(1-p);\\quad \\text{test time: } \\bar o(x)=\\tfrac{1}{N}\\sum_{n=1}^{N}\\mathcal{M}\\big(x;\\,W_0+s\\hat B^{(n)}\\hat A^{(n)}\\big)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA; also applied to AdaLoRA's P, Q factors",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Bernoulli masks on the input columns of A and output rows of B (not on the rank dimension), so each entry of the product is zeroed with probability 2p-p^2; analysed as sparsity-regularized empirical risk minimization with a stability-based generalization bound, plus a Monte-Carlo test-time ensemble.",
+   "mergeable": "conditional",
+   "mergeable_reason": "Without test-time ensembling the trained BA merges like LoRA; the proposed test-time ensemble needs several stochastic forward passes and cannot be folded into a single weight.",
+   "identity_at_init": "Standard LoRA initialization (B = 0).",
+   "key_idea": "Even with few trainable parameters LoRA overfits; randomly dropping input/output coordinates of the LoRA factors acts as a sparsity regularizer that trades empirical risk against adaptation complexity, and averaging over dropout masks at test time tightens the bound further.",
+   "results_note": "Improves accuracy and calibration over LoRA/AdaLoRA on GLUE and SQuAD (DeBERTaV3-base) and on Alpaca instruction tuning of LLaMA2-7B in the paper's experiments.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "regularizer on the LoRA factors"
+    },
+    {
+     "target": "adalora",
+     "type": "combines",
+     "note": "the paper also applies the masks to AdaLoRA"
+    },
+    {
+     "target": "flat-lora",
+     "type": "competes-with",
+     "note": "both are regularizers for LoRA generalization (noise on factors vs. noise in full weight space)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2404.09610",
+    "https://arxiv.org/html/2404.09610",
+    "https://openreview.net/forum?id=c4498OydLP"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "asylora",
+   "name": "AsyLoRA",
+   "full_name": "Asymmetric LoRA (random frozen A, train only B)",
+   "paper_title": "Asymmetry in Low-Rank Adapters of Foundation Models",
+   "authors": "Zhu et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.16842",
+   "url": "https://arxiv.org/abs/2402.16842",
+   "code_url": "https://github.com/Jiacheng-Zhu-AIML/AsymmetryLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + s\\,B\\,Q,\\quad Q\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{random with orthonormal rows (Haar/Stiefel), frozen};\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r}\\ \\text{trained from } B=0",
+   "trainable_params": "r\\,d_{out}",
+   "locus": "same as LoRA (RoBERTa, BART, LLaMA-2, ViT experiments)",
+   "modification_kind": "additive-weight",
+   "structure": "Linear (not bilinear) parametrization: \\Delta W ranges over \\mathbb{R}^{d_{out}}\\otimes\\mathrm{row}(Q) for a fixed random r-dim input subspace; freezing A gives least-squares/logistic regression on randomly projected features Qx, whereas freezing B only fits outputs projected onto a random subspace.",
+   "mergeable": "yes",
+   "mergeable_reason": "B Q is an ordinary additive low-rank update that merges into W_0.",
+   "identity_at_init": "B = 0 with Q random orthogonal and never updated.",
+   "key_idea": "A and B play asymmetric roles: A extracts input features (and a random A works about as well as a learned one) while B maps them to the task; training only B halves parameters, tightens information-theoretic generalization bounds, and lets one double r at fixed budget.",
+   "results_note": "Across RoBERTa, BART-Large, LLaMA-2 and ViT, B-only tuning with a random orthogonal A matches or beats standard LoRA at matched parameter count and improves out-of-domain accuracy on DomainBed.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with eta_A = 0 and orthogonal random A"
+    },
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "same freeze-A design, LoRA-FA motivated by activation memory"
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "both rely on frozen random projections"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2402.16842",
+    "https://arxiv.org/html/2402.16842"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-ga",
+   "name": "LoRA-GA",
+   "full_name": "Low-Rank Adaptation with Gradient Approximation",
+   "paper_title": "LoRA-GA: Low-Rank Adaptation with Gradient Approximation",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2407.05000",
+   "url": "https://arxiv.org/abs/2407.05000",
+   "code_url": "https://github.com/Outsider565/LoRA-GA",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(init_lora_weights='lora_ga', lora_ga_config=LoraGAConfig(...)) + preprocess_loraga(model, config, train_step)",
+   "formula_latex": "G=\\nabla_W\\mathcal{L}(W_0)=USV^{\\top}:\\quad A_{\\text{init}}=\\tfrac{\\sqrt[4]{d_{out}}}{\\gamma}V_{[1:r]}^{\\top},\\ \\ B_{\\text{init}}=\\tfrac{\\sqrt[4]{d_{out}}}{\\gamma}U_{[r+1:2r]},\\ \\ W_{\\text{init}}=W_0-\\eta\\,B_{\\text{init}}A_{\\text{init}},\\ \\ \\eta=\\tfrac{\\alpha}{\\sqrt{r}};\\qquad W=W_{\\text{init}}+\\eta\\,BA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Gradient-aligned initialization: (A_{init},B_{init}) minimize \\|\\eta^2 G A^{\\top}A+\\eta^2 BB^{\\top}G-\\zeta G\\|_F, so the first LoRA step reproduces a scaled full-gradient step restricted to the top-2r singular directions of a sampled-batch gradient; rsLoRA-style \\alpha/\\sqrt{r} scaling and a d_{out}^{1/4}/\\gamma factor give rank- and scale-stability.",
+   "mergeable": "yes",
+   "mergeable_reason": "W_init + eta B A is a dense matrix; to ship a detachable adapter relative to the original W_0 the update is converted to eta(BA - B_init A_init) (rank <= 2r), which HF PEFT supports via path_initial_model_for_weight_conversion.",
+   "identity_at_init": "B_init A_init is non-zero, but it is subtracted from the base weight (W_init = W_0 - eta B_init A_init), so the network function is unchanged at step 0; requires a gradient-estimation pass over a few batches before training.",
+   "key_idea": "LoRA converges slowly because its random/zero initialization ignores the task; initializing A and B from the SVD of a (batch-estimated) full fine-tuning gradient makes the first LoRA updates mimic full fine-tuning, giving much faster convergence.",
+   "results_note": "Beats LoRA by 5.69% on a GLUE subset (T5-Base) and by 0.34 on MT-Bench, 11.52% on GSM8K and 5.05% on HumanEval (Llama 2-7B), with 2-4x faster convergence.",
+   "relations": [
+    {
+     "target": "rslora",
+     "type": "combines",
+     "note": "uses alpha/sqrt(r) scaling for rank stability"
+    },
+    {
+     "target": "pissa",
+     "type": "competes-with",
+     "note": "both replace LoRA's zero/random init by an SVD-based init that compensates the base weight (PiSSA uses SVD of W_0, LoRA-GA of the gradient)"
+    },
+    {
+     "target": "lora-one",
+     "type": "competes-with",
+     "note": "LoRA-One argues the top-r (not r+1..2r) singular subspace of the negative gradient is the correct alignment target"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2407.05000",
+    "https://arxiv.org/html/2407.05000",
+    "https://huggingface.co/docs/peft/package_reference/lora",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://github.com/huggingface/peft/releases"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-one",
+   "name": "LoRA-One",
+   "full_name": "LoRA-One (one-step full-gradient spectral initialization)",
+   "paper_title": "LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently",
+   "authors": "Zhang et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2502.01235",
+   "url": "https://arxiv.org/abs/2502.01235",
+   "code_url": "https://github.com/YuanheZ/LoRA-One",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "USV^{\\top}=\\mathrm{SVD}\\big(-\\nabla_W\\mathcal{L}(W_0)\\big),\\ S\\leftarrow S/S_{11}:\\quad B_0=\\tfrac{1}{\\sqrt{s}}\\,U_{[:,1:r]}S_{[1:r]}^{1/2},\\ \\ A_0=\\tfrac{1}{\\sqrt{s}}\\,S_{[1:r]}^{1/2}V_{[:,1:r]}^{\\top}\\ \\Rightarrow\\ sB_0A_0=\\big[-\\nabla_W\\mathcal{L}(W_0)\\big]_r/\\sigma_1;\\qquad W=W_0+sBA",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Spectral initialization of both factors from the best rank-r approximation of the (normalized) negative one-step full gradient, after which plain (or r\\times r-preconditioned, 'LoRA-One-P') gradient descent is run; theory shows GD-trained adapters align with exactly these singular subspaces, so the init reaches the alignment immediately.",
+   "mergeable": "yes",
+   "mergeable_reason": "The adapter is a standard additive rank-r product (initialized non-zero but still merged as W_0 + s B A).",
+   "identity_at_init": "Not identity-preserving: the base weight is not compensated, so the model starts at W_0 plus a normalized rank-r one-step full-gradient update (effectively a first spectral GD step).",
+   "key_idea": "Under gradient descent LoRA factors provably align with the top singular subspaces of the one-step full fine-tuning gradient; initializing there directly gives linear convergence (with preconditioning removing ill-conditioning) and corrects the subspace chosen by LoRA-GA.",
+   "results_note": "Outperforms LoRA and LoRA-GA (and other variants) on GLUE (T5-base), GSM8K/MMLU/HumanEval fine-tuning of LLaMA-2-7B, e.g. +2.52 points over LoRA on GSM8K with few-shot CoT.",
+   "relations": [
+    {
+     "target": "lora-ga",
+     "type": "competes-with",
+     "note": "both gradient-SVD initializations; LoRA-One uses the top-r subspace for both factors and no base-weight subtraction"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "combines",
+     "note": "LoRA-One-P uses the Zhang & Pilanci preconditioned AdamW"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "changes only the initialization (and optionally the optimizer)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2502.01235",
+    "https://arxiv.org/html/2502.01235"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-without-regret",
+   "name": "LoRA Without Regret",
+   "full_name": "LoRA Without Regret (Thinking Machines Lab recipe and analysis)",
+   "paper_title": "LoRA Without Regret",
+   "authors": "Schulman & Thinking Machines Lab",
+   "year": 2025,
+   "venue": "Thinking Machines Lab: Connectionism (blog), 2025",
+   "arxiv": "",
+   "url": "https://thinkingmachines.ai/blog/lora/",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(lora_alpha=32, target_modules='all-linear')  # same-LR AdamW, LR ~10x the FullFT LR",
+   "formula_latex": "W = W_0+\\tfrac{\\alpha}{r}BA,\\ \\ \\alpha=32,\\ \\ A_{ij}\\sim\\mathcal{U}\\big(\\pm\\tfrac{1}{\\sqrt{d_{in}}}\\big),\\ B=0,\\ \\ \\eta_A=\\eta_B=\\eta_{\\text{LoRA}}\\approx 10\\,\\eta_{\\text{FullFT}};\\ \\ \\text{apply to all linear layers incl. MLP/MoE}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "all weight matrices, especially MLP and MoE layers (attention-only LoRA underperforms MLP-only LoRA)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Standard LoRA parametrization; of the four hyperparameters (\\alpha, \\eta_A, \\eta_B, init scale of A) only two affect the dynamics, and with the 1/r multiplier and B=0 the expected first update \\tfrac{1}{r}\\sum_i b_ia_i^{\\top} is rank-independent, making the optimal LR approximately independent of r.",
+   "mergeable": "yes",
+   "mergeable_reason": "It is plain LoRA, so the adapter merges into W_0.",
+   "identity_at_init": "B = 0 with A uniform of scale 1/sqrt(d_in) (the PEFT default parametrization).",
+   "key_idea": "LoRA matches full fine-tuning in the regime that matters for post-training when applied to all layers (especially MLPs) with ~10x the FullFT learning rate and when the dataset does not exceed adapter capacity; RL needs very little capacity, so even rank-1 LoRA matches FullFT for policy-gradient training.",
+   "results_note": "On Llama 3 / Qwen3 models with Tulu3 and OpenThoughts3 SFT, LoRA matches FullFT until capacity is exceeded; on MATH/GSM8K/DeepMath RL even rank-1 LoRA matches FullFT; LoRA is less tolerant of large batch sizes; LoRA costs slightly more than 2/3 of FullFT FLOPs per pass.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "empirical study and recipe for vanilla LoRA"
+    },
+    {
+     "target": "rslora",
+     "type": "competes-with",
+     "note": "argues the default 1/r scaling already makes the optimal LR roughly rank-invariant"
+    },
+    {
+     "target": "lora-plus",
+     "type": "competes-with",
+     "note": "uses a single LR for A and B and shows two of the four hyperparameters are redundant"
+    }
+   ],
+   "sources": [
+    "https://thinkingmachines.ai/blog/lora/",
+    "https://doi.org/10.64434/tml.20250929"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "flat-lora",
+   "name": "Flat-LoRA",
+   "full_name": "Flat-LoRA (low-rank adaptation over a flat full-space loss landscape)",
+   "paper_title": "Flat-LoRA: Low-Rank Adaptation over a Flat Loss Landscape",
+   "authors": "Li et al.",
+   "year": 2024,
+   "venue": "ICML 2025",
+   "arxiv": "2409.14396",
+   "url": "https://arxiv.org/abs/2409.14396",
+   "code_url": "https://github.com/nblt/Flat-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\min_{A,B}\\ \\mathbb{E}_{\\varepsilon_W}\\,\\mathcal{L}\\big(W'+\\varepsilon_W\\big),\\quad W'=W_0+sBA,\\quad (\\varepsilon_W)_{ij}\\sim\\mathcal{N}\\!\\big(0,\\tfrac{\\sigma^2}{d_{in}}\\|W'_{i,:}\\|_2^2\\big)\\ \\ (\\text{fresh noise each step, regenerated from a seed})",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA (LLMs and text-to-image diffusion models)",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Random-weight-perturbation (Bayesian expected loss) regularizer applied in the full d_{out}\\times d_{in} weight space rather than in the (A,B) space, with filter(row)-norm-scaled Gaussian noise; a cheap relaxation of SAM's min-max over full-space perturbations.",
+   "mergeable": "yes",
+   "mergeable_reason": "Noise is used only during training; the learned BA merges like LoRA.",
+   "identity_at_init": "Standard LoRA initialization (B = 0); the perturbation is zero-mean training noise only.",
+   "key_idea": "A minimum that is flat in LoRA's (A,B) coordinates can still be sharp in the full weight space; averaging the loss over full-space random weight perturbations steers LoRA toward full-space flat minima without SAM's extra gradient step or weight copy.",
+   "results_note": "Improves in-domain and out-of-domain generalization over LoRA on mathematical reasoning, coding, dialogue, instruction following and text-to-image generation in the paper's experiments.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "regularized LoRA training objective"
+    },
+    {
+     "target": "lora-dropout",
+     "type": "competes-with",
+     "note": "alternative regularizer for LoRA generalization"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2409.14396",
+    "https://arxiv.org/html/2409.14396"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "altlora",
+   "name": "AltLoRA",
+   "full_name": "Alternating-projection LoRA",
+   "paper_title": "AltLoRA: Towards Better Gradient Approximation in Low-Rank Adaptation with Alternating Projections",
+   "authors": "Yu et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2505.12455",
+   "url": "https://arxiv.org/abs/2505.12455",
+   "code_url": "https://github.com/LucasXinYu/AltLoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{even } t:\\ A\\leftarrow A-\\eta\\,\\tfrac{1}{s^2}(B^{\\top}B)^{-1}\\nabla_A\\mathcal{L}\\ \\ (\\delta W=-\\eta P_BG);\\qquad \\text{odd } t:\\ B\\leftarrow B-\\eta\\,\\tfrac{1}{s^2}\\nabla_B\\mathcal{L}\\,(AA^{\\top})^{-1}\\ \\ (\\delta W=-\\eta\\, G P_A);\\quad \\tilde M^B = M^BA_tA_{t+1}^{\\top}(A_{t+1}A_{t+1}^{\\top})^{-1}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Alternating one-sided projections of the full gradient onto col(B) and row(A) (each the exact least-squares solution for the factor being updated), with momentum transported into the new low-rank subspace by an r\\times r change-of-basis; avoids LoRA-Pro's non-unique X and full-size optimizer state.",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only change; the result is a standard LoRA adapter.",
+   "identity_at_init": "Standard LoRA initialization; Gram inverses are damped as (B^T B + lambda I)^{-1} to stay invertible when a factor is rank-deficient.",
+   "key_idea": "Instead of jointly matching the full gradient (LoRA-Pro), alternately update A and B so each step is an exact projection of the full gradient, and keep momentum aligned with the changing subspace without extra memory; this gives stable feature learning and transformation invariance.",
+   "results_note": "Outperforms LoRA and its variants (including LoRA-Pro) across SFT and NLU tasks while keeping LoRA-level memory, narrowing the gap to full fine-tuning.",
+   "relations": [
+    {
+     "target": "lora-pro",
+     "type": "competes-with",
+     "note": "same gradient-approximation goal, alternating instead of joint update, low-rank momentum"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "builds-on",
+     "note": "each half-step uses the same (B^T B)^{-1} / (AA^T)^{-1} preconditioners"
+    },
+    {
+     "target": "loft",
+     "type": "competes-with",
+     "note": "concurrent alternating-update optimizer"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.12455",
+    "https://arxiv.org/html/2505.12455",
+    "https://openreview.net/forum?id=9YNJ03jYsU",
+    "https://github.com/LucasXinYu/AltLoRA"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "loft",
+   "name": "LoFT",
+   "full_name": "Low-rank adaptation that mimics Full fine-Tuning",
+   "paper_title": "LoFT: Low-Rank Adaptation That Behaves Like Full Fine-Tuning",
+   "authors": "Tastan et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2505.21289",
+   "url": "https://arxiv.org/abs/2505.21289",
+   "code_url": "https://github.com/tnurbek/loft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{alternating; } B\\text{-step: } W^{+}=W-\\eta\\,\\widehat G\\,P_A,\\ \\ P_A=A^{\\top}(AA^{\\top})^{-1}A,\\ \\ \\tilde\\nabla_B=\\nabla_B\\mathcal{L}\\,(AA^{\\top})^{-1},\\ \\ \\tilde\\nabla_A=(B^{\\top}B)^{-1}\\nabla_A\\mathcal{L};\\ \\ \\widehat G=\\text{AdamW direction from projected gradients with recalibrated first/second moments}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "same as LoRA",
+   "modification_kind": "optimizer-or-training-procedure",
+   "structure": "Six building blocks (alternating updates, scaled gradients, momentum recalibration across changing subspaces via C_k=(V_{k-1}^{\\top}V_k)(V_k^{\\top}V_k)^{-1}, second-moment alignment with cross terms, projected full update, gradient clipping) that make the low-rank step the tightest approximation to the AdamW full-fine-tuning step; reduces exactly to AdamW when r=\\max(d_{in},d_{out}).",
+   "mergeable": "yes",
+   "mergeable_reason": "Optimizer-only change; the adapter is a standard mergeable low-rank product.",
+   "identity_at_init": "Inherits LoRA's zero-product initialization; Gram inverses fall back to pseudo-inverses when a factor is rank-deficient.",
+   "key_idea": "Not only gradients but also Adam's first and second moments are misaligned between LoRA and full fine-tuning; projecting and recalibrating them in the evolving low-rank subspace makes LoRA behave like full fine-tuning and removes the need to tune alpha.",
+   "results_note": "Substantially narrows the gap to full fine-tuning and consistently outperforms standard LoRA-style methods without increasing inference cost; memory overhead O((d_in+d_out) r^2) for second-moment calibration.",
+   "relations": [
+    {
+     "target": "altlora",
+     "type": "competes-with",
+     "note": "concurrent alternating-update optimizers"
+    },
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "builds-on",
+     "note": "Building Block 2 (scaled gradients) coincides with the Riemannian preconditioner"
+    },
+    {
+     "target": "lora-pro",
+     "type": "competes-with",
+     "note": "both align low-rank updates with full fine-tuning; LoFT also aligns optimizer states"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2505.21289",
+    "https://arxiv.org/html/2505.21289",
+    "https://openreview.net/forum?id=86P3sb1dpr"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "polar",
+   "name": "PoLAR",
+   "full_name": "Polar-Decomposed Low-Rank Adapter Representation",
+   "paper_title": "PoLAR: Polar-Decomposed Low-Rank Adapter Representation",
+   "authors": "Lion et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2506.03133",
+   "url": "https://arxiv.org/abs/2506.03133",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + X\\Theta Y^{\\top},\\quad X\\in\\mathrm{St}(d_{out},r),\\ Y\\in\\mathrm{St}(d_{in},r),\\ \\Theta\\in\\mathbb{R}^{r\\times r};\\ \\ X,Y\\ \\text{optimized on Stiefel manifolds (landing field)},\\ \\Theta\\ \\text{unconstrained}",
+   "trainable_params": "r(d_{in}+d_{out})+r^{2}",
+   "locus": "same as LoRA (models from 350M to 27B)",
+   "modification_kind": "additive-weight",
+   "structure": "Rank-r update written in polar/SVD-like form: two direction factors with orthonormal columns (points of Stiefel manifolds) and a free r\\times r 'scale' core; the orthogonality constraint raises the stable rank of \\Delta W and is maintained by retraction-free Riemannian (landing) optimization.",
+   "mergeable": "yes",
+   "mergeable_reason": "X Theta Y^T is an ordinary rank-r matrix that can be added to W_0.",
+   "identity_at_init": "Theta = 0 with X, Y drawn uniformly from the Stiefel manifolds, so Delta W = 0.",
+   "key_idea": "LoRA updates have very low stable rank (often near 1), wasting the allocated rank; constraining the two direction factors to be orthonormal and learning a free core, optimized with Riemannian methods, diversifies update directions and provably converges exponentially faster on a canonical problem.",
+   "results_note": "Consistent gains over LoRA on general language understanding, commonsense reasoning and mathematical reasoning benchmarks with base models from 350M to 27B parameters.",
+   "relations": [
+    {
+     "target": "riemannian-preconditioned-lora",
+     "type": "builds-on",
+     "note": "uses Riemannian optimization for the adapter factors"
+    },
+    {
+     "target": "dora",
+     "type": "competes-with",
+     "note": "both are direction-magnitude decompositions; PoLAR enforces orthogonality instead of column normalization"
+    },
+    {
+     "target": "adalora",
+     "type": "competes-with",
+     "note": "both use an SVD-like P Lambda Q style factorization of the update"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2506.03133",
+    "https://arxiv.org/html/2506.03133"
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "papers": [
+  {
+   "id": "intrinsic-dimension-objective-landscapes",
+   "title": "Measuring the Intrinsic Dimension of Objective Landscapes",
+   "authors": "Li et al.",
+   "year": 2018,
+   "venue": "ICLR 2018",
+   "arxiv": "1804.08838",
+   "url": "https://arxiv.org/abs/1804.08838",
+   "claim": "Training in a random low-dimensional affine subspace of parameter space reveals an 'intrinsic dimension' at which solutions appear, which is often far smaller than the parameter count and nearly constant across model sizes.",
+   "relevance": "Original evidence that useful updates live in tiny subspaces; LoRA's rank-r factorization is a structured, learnable version of the random-subspace construction.",
+   "sources": [
+    "https://arxiv.org/abs/1804.08838",
+    "https://arxiv.org/html/1804.08838"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "intrinsic-dimensionality-lm-finetuning",
+   "title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning",
+   "authors": "Aghajanyan et al.",
+   "year": 2020,
+   "venue": "ACL 2021",
+   "arxiv": "2012.13255",
+   "url": "https://arxiv.org/abs/2012.13255",
+   "claim": "Pretrained LMs have very low fine-tuning intrinsic dimension (e.g. 200 random-projected parameters reach 90% of full RoBERTa performance on MRPC), pre-training lowers it, and larger models have lower intrinsic dimension; this yields parameter-count-free generalization bounds.",
+   "relevance": "The empirical and theoretical premise behind LoRA's low-rank hypothesis and behind treating PEFT as a choice of low-dimensional reparametrization.",
+   "sources": [
+    "https://arxiv.org/abs/2012.13255",
+    "https://arxiv.org/html/2012.13255"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "kernel-view-lm-finetuning",
+   "title": "A Kernel-Based View of Language Model Fine-Tuning",
+   "authors": "Malladi et al.",
+   "year": 2022,
+   "venue": "ICML 2023",
+   "arxiv": "2210.05643",
+   "url": "https://arxiv.org/abs/2210.05643",
+   "claim": "Prompt-based fine-tuning of pretrained LMs often exhibits kernel (eNTK) dynamics; in that regime, a Johnson-Lindenstrauss argument shows SGD-LoRA preserves the fine-tuning kernel, explaining why low-rank subspace methods work.",
+   "relevance": "Gives the linearized (functorial-in-the-tangent-space) picture in which LoRA is a random projection of the full fine-tuning kernel; baseline for NTK-regime LoRA theory.",
+   "sources": [
+    "https://arxiv.org/abs/2210.05643",
+    "https://arxiv.org/html/2210.05643"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "expressive-power-lora",
+   "title": "The Expressive Power of Low-Rank Adaptation",
+   "authors": "Zeng & Lee",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.17513",
+   "url": "https://arxiv.org/abs/2310.17513",
+   "claim": "For fully connected networks LoRA can adapt any model to exactly represent any smaller target model once the LoRA rank exceeds (width of f) x (depth of target)/(depth of f), with quantified approximation error below that threshold; for Transformer networks rank-(embedding size/2) LoRA adapters suffice to adapt any model to a same-size target.",
+   "relevance": "Characterizes the image of the LoRA parametrization map, i.e. which fine-tuned functions are reachable at a given rank.",
+   "sources": [
+    "https://arxiv.org/abs/2310.17513",
+    "https://arxiv.org/html/2310.17513"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-ntk-no-spurious-minima",
+   "title": "LoRA Training in the NTK Regime has No Spurious Local Minima",
+   "authors": "Jang et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.11867",
+   "url": "https://arxiv.org/abs/2402.11867",
+   "claim": "In the NTK regime with N data points, full fine-tuning admits a low-rank solution of rank about sqrt(N); LoRA with rank of order sqrt(N) has no spurious local minima, so (S)GD finds such low-rank solutions, which generalize well.",
+   "relevance": "Landscape result for the bilinear LoRA parametrization; justifies optimizer-agnostic success of LoRA in the linearized regime.",
+   "sources": [
+    "https://arxiv.org/abs/2402.11867",
+    "https://arxiv.org/html/2402.11867"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-init-impact",
+   "title": "The Impact of Initialization on LoRA Finetuning Dynamics",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.08447",
+   "url": "https://arxiv.org/abs/2406.08447",
+   "claim": "The two zero-product initializations (B=0, A random vs A=0, B random) are not equivalent: B=0 with random A allows larger stable learning rates and yields better fine-tuning on average.",
+   "relevance": "Shows that the symmetric-looking choices of which factor is zero break the A/B symmetry dynamically; complements LoRA+ and asymmetry results.",
+   "sources": [
+    "https://arxiv.org/abs/2406.08447",
+    "https://arxiv.org/html/2406.08447"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-learns-less-forgets-less",
+   "title": "LoRA Learns Less and Forgets Less",
+   "authors": "Biderman et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2405.09673",
+   "url": "https://arxiv.org/abs/2405.09673",
+   "claim": "On code and math (instruction tuning and continued pretraining) LoRA substantially underperforms full fine-tuning at standard ranks but better preserves out-of-domain abilities; full fine-tuning learns perturbations of 10-100x higher rank than typical LoRA configs.",
+   "relevance": "Quantifies the capacity/forgetting trade-off that motivates high-rank-through-low-rank methods (ReLoRA, COLA, Delta-LoRA) and regularization views of LoRA.",
+   "sources": [
+    "https://arxiv.org/abs/2405.09673",
+    "https://arxiv.org/html/2405.09673"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-illusion-of-equivalence",
+   "title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+   "authors": "Shuttleworth et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.21228",
+   "url": "https://arxiv.org/abs/2410.21228",
+   "claim": "LoRA and full fine-tuning produce spectrally different weights: LoRA introduces high-ranking 'intruder dimensions' (new singular vectors) that causally drive forgetting, and scaling them down recovers pre-training behaviour with little task loss.",
+   "relevance": "Shows that equal task accuracy does not mean equal morphisms in weight space; HF PEFT implements the mitigation as peft.tuners.lora.intruders.reduce_intruder_dimension.",
+   "sources": [
+    "https://arxiv.org/abs/2410.21228",
+    "https://arxiv.org/html/2410.21228",
+    "https://openreview.net/forum?id=xp7B8rkh7L",
+    "https://huggingface.co/docs/peft/package_reference/lora"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-converges-or-fails-loudly",
+   "title": "LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)",
+   "authors": "Kim et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2502.09376",
+   "url": "https://arxiv.org/abs/2502.09376",
+   "claim": "Beyond linearization, in a 'generic regime' LoRA training converges either to a low-rank, small-magnitude global minimizer or to a qualitatively distinct high-rank, large-magnitude solution; zero-initialization and weight decay bias training toward the former.",
+   "relevance": "Non-linearized landscape theory explaining why zero-product initialization (identity at init) is not just cosmetic but an implicit bias.",
+   "sources": [
+    "https://arxiv.org/abs/2502.09376",
+    "https://arxiv.org/html/2502.09376",
+    "https://openreview.net/forum?id=o9zDYV4Ism"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-gradient-flow-matrix-factorization",
+   "title": "Understanding the Learning Dynamics of LoRA: A Gradient Flow Perspective on Low-Rank Adaptation in Matrix Factorization",
+   "authors": "Xu et al.",
+   "year": 2025,
+   "venue": "AISTATS 2025",
+   "arxiv": "2503.06982",
+   "url": "https://arxiv.org/abs/2503.06982",
+   "claim": "For LoRA on matrix factorization under gradient flow, small initialization converges to a neighbourhood of the optimum whose error is governed by misalignment between pretrained and target singular spaces; a small spectral initialization converges to arbitrary precision.",
+   "relevance": "Clean dynamical model connecting initialization scale and singular-subspace alignment, the mechanism exploited by LoRA-GA and LoRA-One.",
+   "sources": [
+    "https://arxiv.org/abs/2503.06982",
+    "https://arxiv.org/html/2503.06982"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lr-matters-vanilla-lora",
+   "title": "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning",
+   "authors": "Lee et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2602.04998",
+   "url": "https://arxiv.org/abs/2602.04998",
+   "claim": "Re-evaluating nine LoRA variants (initialization, architectural and optimizer changes, incl. PiSSA, MiLoRA, LoRA-GA, DoRA, LoFT) with thorough hyperparameter search shows they prefer different learning-rate ranges but reach similar peak performance (within 1-2%) once LR is tuned; the LR differences track the largest Hessian eigenvalue.",
+   "relevance": "Important caution for any taxonomy: many training-dynamics variants may be reparametrizations of the learning rate rather than genuinely different adaptation morphisms.",
+   "sources": [
+    "https://arxiv.org/abs/2602.04998",
+    "https://arxiv.org/html/2602.04998"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-meets-dropout",
+   "title": "LoRA Meets Dropout under a Unified Framework",
+   "authors": "Wang et al.",
+   "year": 2024,
+   "venue": "ACL 2024 (Findings)",
+   "arxiv": "2403.00812",
+   "url": "https://arxiv.org/abs/2403.00812",
+   "claim": "LoRA fine-tuning is still overfitting-prone; transformer dropout variants (DropKey, DropAttention, HiddenCut) can be unified by dropping position, structural pattern and compensation, and the best combination (HiddenKey) improves LoRA on NLU and NLG.",
+   "relevance": "Complements LoRA Dropout: places regularization of the low-rank branch inside a general design space.",
+   "sources": [
+    "https://arxiv.org/abs/2403.00812",
+    "https://arxiv.org/html/2403.00812",
+    "https://openreview.net/forum?id=EQ9zm9ZjeR"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "notes": "Coverage: 20 method entries (LoRA, rsLoRA, LoRA+, LoRA-FA, Riemannian Preconditioned LoRA, LoRA-RITE, LoRA-Pro, ReLoRA, Delta-LoRA, COLA, PeriodicLoRA, LoRA Dropout, AsyLoRA, LoRA-GA, LoRA-One, LoRA Without Regret, Flat-LoRA, AltLoRA, LoFT, PoLAR) and 12 theory/analysis papers. All seeds confirmed and kept. UNIFYING OBSERVATION (useful for the categorical narrative): with G = grad_W L, P_B = B(B^T B)^{-1}B^T, P_A = A^T(AA^T)^{-1}A, the optimizer-geometry subfamily differs only in which projection of G onto the tangent space T_{BA} of the rank-r stratum it applies: LoRA-FA = G P_A (one side, A frozen); Riemannian scaled GD = P_B G + G P_A (double-counts P_B G P_A); LoRA-Pro = P_B G + (I-P_B) G P_A (exact orthogonal tangent projection; verified algebraically from its Theorem 2.1); AltLoRA/LoFT = alternate P_B G and G P_A; LoRA-RITE = adaptive (Adam-like) GL(r)-invariant version. Plain LoRA/LoRA+/rsLoRA are NOT GL(r)-gauge invariant; these are. Restart methods (ReLoRA, COLA, PeriodicLoRA, Delta-LoRA) instead escape the rank-r stratum by composing updates additively (sum of rank-r terms). HF PEFT status (checked against main and release notes, v0.21.1 on 2026-09-29): rsLoRA = LoraConfig(use_rslora=True); LoRA+ = create_loraplus_optimizer; LoRA-FA optimizer since v0.16.0 (2025-07); LoRA-GA init since v0.19.0 (2026-04); Riemannian preconditioned optimizer since v0.21.0 (2026-09-15); PEFT also ships reduce_intruder_dimension from the Illusion-of-Equivalence paper. PEFT's lora_dropout is ordinary input dropout on x, NOT the LoRA Dropout method of Lin et al. (masks on A columns / B rows + test-time ensemble). Caveats: (1) LoRA-FA: v1 (2023) only froze A; the gradient projection (AA^T)^{-1} appears in the current arXiv version and in PEFT; the arXiv listing metadata now shows the title 'LoRA-FA: Efficient and Effective Low Rank Representation Fine-tuning' while the paper PDF/HTML keeps the original title used here. (2) PeriodicLoRA's momentum unloading is described only in words ('scale BA by (1-m) and A, B by m'); formula given as described, confidence medium. (3) PoLAR may also belong to an SVD-structured/reparametrization family; included here for its Riemannian-optimization angle (medium). (4) LoRA-GA and LoRA-One overlap with an initialization family (PiSSA, MiLoRA, OLoRA, EVA, CorDA, LoRA-SB are deliberately excluded here). (5) Tension worth showing on the site: rsLoRA says scale must be alpha/sqrt(r) for large-rank stability, while LoRA Without Regret finds alpha/r makes the optimal LR roughly rank-independent (early-training argument); Lee et al. 2026 further find most variants equalize once LR is tuned. (6) Venues from OpenReview: LoRA-RITE ICLR 2025 Oral, LoRA-Pro ICLR 2025 Spotlight, LoFT ICLR 2026 Poster, AltLoRA NeurIPS 2025, Illusion of Equivalence NeurIPS 2025, LoRA-One ICML 2025 Oral; Delta-LoRA (ICLR 2024 submission), LoRA Dropout (withdrawn ICLR 2025 submission), COLA and PeriodicLoRA remain arXiv-only. Considered but excluded (low uptake or other family): DyLoRA (rank-allocation family), LoRA-the-Explorer/LTE (2402.16828, parallel merged LoRA heads for pre-training; ~18 citations, arXiv only), ALLoRA (2410.09692, ~3 citations), LoRA-SB (init family), LoRA-GA^2 (2608.19800) and 'One Rate Is Not Enough' (2609.05885) (Aug/Sep 2026, no uptake yet), GaLore/Flora (gradient-projection family), QLoRA (quantization family), HydraLoRA (MoE family), DoRA (decomposition family)."
+}

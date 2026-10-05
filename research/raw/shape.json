@@ -1,0 +1,1470 @@
+{
+ "family": "shape",
+ "family_title": "Structured update shapes: Kronecker, Hadamard, tensor networks, high-rank, circulant, sparse+low-rank, Monarch",
+ "observed_at": "2026-10-01",
+ "methods": [
+  {
+   "id": "loha",
+   "name": "LoHa",
+   "full_name": "Low-Rank Hadamard Product adaptation (FedPara parameterization)",
+   "paper_title": "FedPara: Low-Rank Hadamard Product for Communication-Efficient Federated Learning",
+   "authors": "Hyeon-Woo et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2108.06098",
+   "url": "https://arxiv.org/abs/2108.06098",
+   "code_url": "https://github.com/KohakuBlueleaf/LyCORIS",
+   "hf_peft": true,
+   "hf_peft_config": "LoHaConfig",
+   "formula_latex": "W = W_0 + \\gamma\\,(B_1A_1)\\odot(B_2A_2),\\quad B_k\\in\\mathbb{R}^{d_{out}\\times r},\\ A_k\\in\\mathbb{R}^{r\\times d_{in}}\\ (k=1,2),\\ \\gamma=\\alpha/r;\\ W_0\\ \\text{frozen},\\ A_1,A_2,B_1,B_2\\ \\text{trained}",
+   "trainable_params": "2r(d_{in}+d_{out})",
+   "locus": "any linear or convolutional layer; popular on Stable Diffusion UNet/text-encoder (LyCORIS)",
+   "modification_kind": "additive-weight",
+   "structure": "Hadamard (entrywise) product of two rank-r matrices; \\mathrm{rank}(\\Delta W)\\le r^2 (FedPara Prop. 1) at the parameter cost of a rank-2r LoRA. Equivalently (B_1\\odot_r B_2)(A_1^{\\top}\\odot_r A_2^{\\top})^{\\top}: a rank-r^2 factorization through row-wise Khatri-Rao products. Conv kernels can use a Tucker-style core variant (FedPara Prop. 3, use_effective_conv2d).",
+   "mergeable": "yes",
+   "mergeable_reason": "ΔW is an explicit dense d_out x d_in matrix that can be added to W_0 after training.",
+   "identity_at_init": "HF PEFT: three factors Kaiming-uniform and one (hada_w2_b) zero so ΔW = 0; the original LyCORIS code uses normal init with one factor zeroed.",
+   "key_idea": "Entrywise-multiplying two low-rank matrices multiplies their ranks, so a LoRA-sized budget yields an update of rank up to r^2. Proposed for communication-efficient federated learning (FedPara) and turned into a fine-tuning adapter by LyCORIS.",
+   "results_note": "FedPara matches original-layer accuracy with 3-10x lower federated communication; as a PEFT adapter LoHa is benchmarked mainly for text-to-image customization in the LyCORIS study (ICLR 2024).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "each Hadamard factor is a LoRA product BA"
+    },
+    {
+     "target": "lokr",
+     "type": "competes-with",
+     "note": "sibling LyCORIS adapter: Hadamard vs Kronecker product of factors"
+    },
+    {
+     "target": "hira",
+     "type": "competes-with",
+     "note": "HiRA replaces one trainable Hadamard factor by the frozen W_0"
+    },
+    {
+     "target": "kradapter",
+     "type": "competes-with",
+     "note": "the Hadamard product of two low-rank matrices factors through row-wise Khatri-Rao products"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2108.06098",
+    "https://arxiv.org/pdf/2108.06098",
+    "https://arxiv.org/html/2309.14859",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/loha/layer.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/loha/config.py",
+    "https://export.arxiv.org/api/query?id_list=2108.06098"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "hira",
+   "name": "HiRA",
+   "full_name": "Hadamard High-Rank Adaptation",
+   "paper_title": "HiRA: Parameter-Efficient Hadamard High-Rank Adaptation for Large Language Models",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "",
+   "url": "https://openreview.net/forum?id=TwJrTz9cRS",
+   "code_url": "https://github.com/hqsiswiliam/hira",
+   "hf_peft": true,
+   "hf_peft_config": "HiraConfig",
+   "formula_latex": "W = W_0 + W_0\\odot(BA) = W_0\\odot(\\mathbf{1}\\mathbf{1}^{\\top}+BA),\\quad B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ W_0\\ \\text{frozen},\\ A,B\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer of an LLM (attention and MLP projections)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Entrywise (Hadamard) modulation of the frozen W_0 by a rank-r matrix; \\mathrm{rank}(\\Delta W)\\le \\mathrm{rank}(W_0)\\cdot r, so the update is generically high-rank. Equivalently an additive update \\Delta W = W_0\\odot BA.",
+   "mergeable": "yes",
+   "mergeable_reason": "W_0 ⊙ (BA) is a dense matrix of W_0's shape and is folded into W_0 after training.",
+   "identity_at_init": "One factor zero-initialized, the other Kaiming (paper: A = 0, B Kaiming in its AB notation; HF PEFT: B = 0), so ΔW = 0.",
+   "key_idea": "Reuse the pretrained weight itself as one Hadamard factor: modulating W_0 entrywise by a low-rank matrix gives high-rank updates aligned with W_0 at LoRA's parameter cost.",
+   "results_note": "Reported gains over LoRA and its variants on commonsense reasoning, dialogue generation and mathematical reasoning with LLaMA-family models (ICLR 2025 oral).",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "same parameter budget r(d_in+d_out), but rank no longer bounded by r"
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "LoHa learns both Hadamard factors; HiRA freezes one to W_0"
+    }
+   ],
+   "sources": [
+    "https://proceedings.iclr.cc/paper_files/paper/2025/file/48c368f105e8145b945227b73255635a-Paper-Conference.pdf",
+    "https://iclr.cc/virtual/2025/oral/31839",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/hira/config.py"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "abba",
+   "name": "ABBA",
+   "full_name": "ABBA-Adapters (learnable Hadamard product of two low-rank matrices)",
+   "paper_title": "ABBA-Adapters: Efficient and Expressive Fine-Tuning of Foundation Models",
+   "authors": "Singhal et al.",
+   "year": 2025,
+   "venue": "ICLR 2026",
+   "arxiv": "2505.14238",
+   "url": "https://arxiv.org/abs/2505.14238",
+   "code_url": "https://github.com/CERT-Lab/abba",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\frac{\\alpha}{\\sqrt{r_1r_2}}\\,(B_1A_1)\\odot(B_2A_2) = W_0 + \\frac{\\alpha}{\\sqrt{r_1r_2}}\\,(B_1\\odot_r B_2)(A_1^{\\top}\\odot_r A_2^{\\top})^{\\top},\\quad B_k\\in\\mathbb{R}^{d_{out}\\times r_k},\\ A_k\\in\\mathbb{R}^{r_k\\times d_{in}};\\ W_0\\ \\text{frozen},\\ B_1,A_1,B_2,A_2\\ \\text{trained}",
+   "trainable_params": "(r_1+r_2)(d_{in}+d_{out})",
+   "locus": "any linear layer of an LLM",
+   "modification_kind": "additive-weight",
+   "structure": "Hadamard product of two independently learnable rank-r_1 and rank-r_2 matrices (rank \\le r_1r_2), executed without materialising \\Delta W via the row-wise Khatri-Rao identity (B_1A_1)\\odot(B_2A_2)=(B_1\\odot_r B_2)(A_1^{\\top}\\odot_r A_2^{\\top})^{\\top}; rank-stabilised scale \\alpha/\\sqrt{r_1r_2}.",
+   "mergeable": "yes",
+   "mergeable_reason": "The product is an ordinary dense matrix that can be added to W_0.",
+   "identity_at_init": "(B_1,A_1) initialised from the top-r_1 truncated SVD of W_0; B_2 = 0 and A_2 Kaiming-uniform, so ΔW = 0 at init.",
+   "key_idea": "Make both Hadamard factors learnable (HiRA fixes one to W_0), anchor one to the principal subspace of W_0, and use a rank-stabilising scale; the Khatri-Rao trick keeps memory at LoRA level.",
+   "results_note": "Reports state-of-the-art results on arithmetic and commonsense reasoning benchmarks across multiple LLMs, outperforming LoRA, HiRA and other PEFT baselines.",
+   "relations": [
+    {
+     "target": "hira",
+     "type": "generalizes",
+     "note": "HiRA is the case where the first Hadamard factor is frozen to W_0"
+    },
+    {
+     "target": "loha",
+     "type": "builds-on",
+     "note": "same function class (B_1A_1)⊙(B_2A_2) as LoHa; differs in SVD-anchored init and √(r1 r2) scaling"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "matched parameter budget, rank up to r_1 r_2"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2505.14238",
+    "https://arxiv.org/html/2505.14238v1",
+    "https://export.arxiv.org/api/query?id_list=2505.14238"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lokr",
+   "name": "LoKr",
+   "full_name": "Low-Rank Kronecker Product adaptation",
+   "paper_title": "Navigating Text-To-Image Customization: From LyCORIS Fine-Tuning to Model Evaluation",
+   "authors": "Yeh et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2309.14859",
+   "url": "https://arxiv.org/abs/2309.14859",
+   "code_url": "https://github.com/KohakuBlueleaf/LyCORIS",
+   "hf_peft": true,
+   "hf_peft_config": "LoKrConfig",
+   "formula_latex": "W = W_0 + \\gamma\\,C\\otimes(BA),\\quad C\\in\\mathbb{R}^{u_p\\times u_q},\\ B\\in\\mathbb{R}^{v_p\\times r},\\ A\\in\\mathbb{R}^{r\\times v_q},\\ u_pv_p=d_{out},\\ u_qv_q=d_{in};\\ W_0\\ \\text{frozen},\\ C,B,A\\ \\text{trained (C optionally factorized: decompose\\_both)}",
+   "trainable_params": "u_pu_q + r(v_p+v_q)",
+   "locus": "any linear or convolutional layer; widely used for diffusion-model customization",
+   "modification_kind": "additive-weight",
+   "structure": "Kronecker product of a small dense block C with a low-rank block BA: \\mathrm{rank}(\\Delta W)=\\mathrm{rank}(C)\\,\\mathrm{rank}(BA)\\le \\min(u_p,u_q)\\,r. Block sizes set by the factor hyperparameter f (u_p = largest divisor of d_out not exceeding min(f, sqrt(d_out))).",
+   "mergeable": "yes",
+   "mergeable_reason": "C ⊗ (BA) is materialised as a dense matrix of W_0's shape and added to it.",
+   "identity_at_init": "HF PEFT zero-initializes the left Kronecker factor C (lokr_w1) and Kaiming-initializes the right factors, so ΔW = 0.",
+   "key_idea": "Ranks multiply under the Kronecker product, so a tiny dense block times a low-rank block gives a high-rank, block-structured update with very few parameters.",
+   "results_note": "Evaluated alongside LoRA and LoHa in the LyCORIS study of Stable Diffusion customization, which reports method-dependent trade-offs in fidelity, diversity and controllability rather than a single winner.",
+   "relations": [
+    {
+     "target": "krona",
+     "type": "generalizes",
+     "note": "with the right factor left unfactorized LoKr is exactly KronA's A⊗B"
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "sibling LyCORIS adapter"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "the right Kronecker factor is a LoRA product"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/html/2309.14859",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lokr/layer.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lokr/config.py",
+    "https://export.arxiv.org/api/query?id_list=2309.14859"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "krona",
+   "name": "KronA",
+   "full_name": "Kronecker Adapter",
+   "paper_title": "KronA: Parameter Efficient Tuning with Kronecker Adapter",
+   "authors": "Edalati et al.",
+   "year": 2022,
+   "venue": "arXiv",
+   "arxiv": "2212.10650",
+   "url": "https://arxiv.org/abs/2212.10650",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + s\\,(A_k\\otimes B_k),\\quad A_k\\in\\mathbb{R}^{a_1\\times a_2},\\ B_k\\in\\mathbb{R}^{b_1\\times b_2},\\ a_1b_1=d_{out},\\ a_2b_2=d_{in};\\quad \\Delta W x = s\\,\\mathrm{vec}(B_k X A_k^{\\top}),\\ X=\\mathrm{mat}(x)\\in\\mathbb{R}^{b_2\\times a_2};\\ W_0\\ \\text{frozen},\\ A_k,B_k\\ \\text{trained}",
+   "trainable_params": "a_1a_2+b_1b_2",
+   "locus": "parallel to attention/FFN weight matrices (KronA); KronA^B and KronA^B_res sit parallel to the whole FFN block",
+   "modification_kind": "additive-weight",
+   "structure": "Single Kronecker product of two dense small factors; \\mathrm{rank}(A_k\\otimes B_k)=\\mathrm{rank}(A_k)\\,\\mathrm{rank}(B_k), reaching full rank with O(\\sqrt{d_{in}d_{out}}) parameters; forward pass by the vec-trick without materialising \\Delta W.",
+   "mergeable": "conditional",
+   "mergeable_reason": "The weight-parallel KronA merges into W_0; the block-parallel KronA^B / KronA^B_res variants wrap a nonlinear FFN block and cannot be merged.",
+   "identity_at_init": "One factor zero-initialized and the other Kaiming-uniform (a = sqrt(5)); the paper reports zero-init of one factor markedly improves results.",
+   "key_idea": "Replace LoRA's low-rank product by a Kronecker product, which is full-rank-capable for the same tiny budget and cheap to apply via reshaping.",
+   "results_note": "On GLUE with T5-base, KronA variants outperform LoRA, adapters and Compacter at comparable budgets, with KronA^B_res the strongest (at extra inference latency).",
+   "relations": [
+    {
+     "target": "lokr",
+     "type": "special-case-of",
+     "note": "LoKr with an unfactorized right factor"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "rank-unbounded alternative at similar parameter count"
+    },
+    {
+     "target": "compacter",
+     "type": "competes-with",
+     "note": "Compacter uses a sum of n Kronecker products inside adapters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/html/2212.10650",
+    "https://arxiv.org/pdf/2212.10650",
+    "https://export.arxiv.org/api/query?id_list=2212.10650"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "phm-adapter",
+   "name": "PHM-Adapter",
+   "full_name": "Parameterized Hypercomplex Multiplication Adapter",
+   "paper_title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+   "authors": "Karimi Mahabadi et al.",
+   "year": 2021,
+   "venue": "NeurIPS 2021",
+   "arxiv": "2106.04647",
+   "url": "https://arxiv.org/abs/2106.04647",
+   "code_url": "https://github.com/rabeehk/compacter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h \\leftarrow h + U\\,\\mathrm{GeLU}(Dh),\\quad D=\\sum_{i=1}^{n}A_i^{D}\\otimes B_i^{D},\\ U=\\sum_{i=1}^{n}A_i^{U}\\otimes B_i^{U},\\ A_i\\in\\mathbb{R}^{n\\times n},\\ B_i^{D}\\in\\mathbb{R}^{\\frac{r}{n}\\times\\frac{d}{n}},\\ B_i^{U}\\in\\mathbb{R}^{\\frac{d}{n}\\times\\frac{r}{n}};\\ \\text{backbone frozen, adapters trained}",
+   "trainable_params": "2\\left(\\tfrac{dr}{n}+n^{3}\\right)\\ \\text{per adapter}",
+   "locus": "bottleneck adapters after the attention and feed-forward sublayers (Houlsby placement)",
+   "modification_kind": "architectural-insertion",
+   "structure": "Bottleneck MLP inserted serially with residual connection whose down/up projections are PHM layers: sums of n Kronecker products (Kronecker rank \\le n, i.e. rank \\le n after Van Loan-Pitsianis rearrangement), reducing parameters by about 1/n.",
+   "mergeable": "no",
+   "mergeable_reason": "The adapter contains a GeLU nonlinearity in a new serial branch, so it cannot be folded into existing weights.",
+   "identity_at_init": "No exact zero-init guarantee is stated in the method section; like Houlsby adapters it relies on the residual connection with small-initialized adapter weights.",
+   "key_idea": "Learn the 'multiplication rule' of an n-dimensional hypercomplex algebra: a dense projection becomes a sum of n Kronecker products, cutting adapter parameters by ~n.",
+   "results_note": "On GLUE with T5-base, PHM-Adapter (n = 12) trains 0.179% of parameters and is competitive with full fine-tuning and standard adapters.",
+   "relations": [
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "replaces the adapter's dense projections by PHM layers"
+    },
+    {
+     "target": "compacter",
+     "type": "generalizes",
+     "note": "Compacter shares A_i across layers and makes B_i low-rank"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.04647",
+    "https://arxiv.org/pdf/2106.04647",
+    "https://arxiv.org/abs/2102.08597"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "compacter",
+   "name": "Compacter",
+   "full_name": "Compacter (Compact Adapter with low-rank PHM layers)",
+   "paper_title": "Compacter: Efficient Low-Rank Hypercomplex Adapter Layers",
+   "authors": "Karimi Mahabadi et al.",
+   "year": 2021,
+   "venue": "NeurIPS 2021",
+   "arxiv": "2106.04647",
+   "url": "https://arxiv.org/abs/2106.04647",
+   "code_url": "https://github.com/rabeehk/compacter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h \\leftarrow h + \\mathrm{LPHM}^{U}\\big(\\mathrm{GeLU}(\\mathrm{LPHM}^{D}(h))\\big),\\quad \\mathrm{LPHM}=\\sum_{i=1}^{n}A_i\\otimes(s_i t_i^{\\top}),\\ A_i\\in\\mathbb{R}^{n\\times n}\\ \\text{shared by all adapters},\\ s_i\\in\\mathbb{R}^{\\frac{k}{n}\\times\\rho},\\ t_i\\in\\mathbb{R}^{\\frac{k'}{n}\\times\\rho}\\ (\\rho=1\\ \\text{default})",
+   "trainable_params": "2\\rho(d+r)\\ \\text{per adapter} + n^{3}\\ \\text{shared};\\ \\text{model total } 4L(d+r)+n^{3}\\ (\\rho=1)",
+   "locus": "bottleneck adapters after attention and FFN sublayers (Compacter++: after the FFN only)",
+   "modification_kind": "architectural-insertion",
+   "structure": "Adapter projections are sums of n Kronecker products of shared 'slow' n x n matrices A_i with layer-specific rank-\\rho 'fast' matrices s_i t_i^{\\top} (low-rank PHM, LPHM).",
+   "mergeable": "no",
+   "mergeable_reason": "Serial bottleneck adapter with a nonlinearity; adds inference latency and cannot be folded.",
+   "identity_at_init": "Not specified as an exact zero-init; relies on the adapter residual connection as in Houlsby adapters.",
+   "key_idea": "Combine hypercomplex (Kronecker-sum) layers, cross-layer sharing of the slow factors, and rank-one fast factors to bring adapter cost from O(kd) to O(k+d).",
+   "results_note": "On GLUE with T5-base, Compacter (0.073%) and Compacter++ (0.047% of parameters) perform on par with full fine-tuning and outperform it on SuperGLUE and in low-resource settings.",
+   "relations": [
+    {
+     "target": "phm-adapter",
+     "type": "builds-on",
+     "note": "adds cross-layer sharing of A_i and low-rank B_i"
+    },
+    {
+     "target": "houlsby-adapter",
+     "type": "builds-on",
+     "note": "same insertion points and bottleneck design"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "both reach ~0.05-0.1% trainable parameters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2106.04647",
+    "https://arxiv.org/pdf/2106.04647",
+    "https://export.arxiv.org/api/query?id_list=2106.04647"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "kadaptation",
+   "name": "KAdaptation",
+   "full_name": "Kronecker Adaptation",
+   "paper_title": "Parameter-efficient Model Adaptation for Vision Transformers",
+   "authors": "He et al.",
+   "year": 2022,
+   "venue": "AAAI 2023",
+   "arxiv": "2203.16329",
+   "url": "https://arxiv.org/abs/2203.16329",
+   "code_url": "https://github.com/eric-ai-lab/PEViT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\sum_{i=1}^{n}A_i\\otimes(u_iv_i^{\\top}),\\quad A_i\\in\\mathbb{R}^{n\\times n}\\ \\text{(shared across layers)},\\ u_i\\in\\mathbb{R}^{\\frac{d_{out}}{n}\\times r},\\ v_i\\in\\mathbb{R}^{\\frac{d_{in}}{n}\\times r};\\ W_0\\ \\text{frozen},\\ A_i,u_i,v_i\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per matrix} + n^{3}\\ \\text{shared}",
+   "locus": "ViT attention weight matrices (submodules selected by lowest local intrinsic dimension)",
+   "modification_kind": "additive-weight",
+   "structure": "Low-rank PHM (sum of n Kronecker products of shared slow weights with low-rank fast weights) applied directly to the weight update \\Delta W rather than to an inserted adapter.",
+   "mergeable": "yes",
+   "mergeable_reason": "ΔW is a dense matrix added to frozen attention weights; the paper notes no added inference latency.",
+   "identity_at_init": "Not stated explicitly in the method section consulted; presumably one fast factor starts at zero so ΔW = 0 (unverified).",
+   "key_idea": "Choose where to adapt via the local intrinsic dimension of each ViT submodule, then express the update as a Compacter-style Kronecker sum so it merges like LoRA.",
+   "results_note": "Best accuracy/parameter trade-off among compared methods on 20 image-classification datasets few-shot and 7 datasets full-shot with CLIP ViTs.",
+   "relations": [
+    {
+     "target": "compacter",
+     "type": "builds-on",
+     "note": "same LPHM parameterization, moved from inserted adapters to ΔW"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "mergeable additive update with Kronecker structure instead of plain low rank"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2203.16329",
+    "https://arxiv.org/pdf/2203.16329",
+    "https://export.arxiv.org/api/query?id_list=2203.16329"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "kradapter",
+   "name": "KRAdapter",
+   "full_name": "Khatri-Rao Adapter",
+   "paper_title": "Towards Higher Effective Rank in Parameter-efficient Fine-tuning using Khatri--Rao Product",
+   "authors": "Albert et al.",
+   "year": 2025,
+   "venue": "ICCV 2025",
+   "arxiv": "2508.00230",
+   "url": "https://arxiv.org/abs/2508.00230",
+   "code_url": "https://github.com/PaulAlbert31/KRAdapter",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\alpha\\,\\big[U\\odot_{KR}V\\big]_{1:d_{out},\\,:},\\quad (U\\odot_{KR}V)_{:,j}=U_{:,j}\\otimes V_{:,j},\\ U\\in\\mathbb{R}^{k_1\\times d_{in}},\\ V\\in\\mathbb{R}^{k_2\\times d_{in}},\\ k_1k_2\\ge d_{out};\\ W_0\\ \\text{frozen},\\ U,V\\ \\text{trained}",
+   "trainable_params": "d_{in}(k_1+k_2)\\approx 2\\,d_{in}\\sqrt{d_{out}}",
+   "locus": "linear layers of vision-language models and LLMs",
+   "modification_kind": "additive-weight",
+   "structure": "Column-wise Kronecker (Khatri-Rao) product truncated to d_out rows; almost surely full column rank, with a heavier singular-value tail (higher effective rank) than Kronecker or low-rank updates.",
+   "mergeable": "yes",
+   "mergeable_reason": "The Khatri-Rao product is a dense matrix of W_0's shape.",
+   "identity_at_init": "U zero-initialized and V randomly initialized, so ΔW = 0.",
+   "key_idea": "Target effective rank, not just algebraic rank: the Khatri-Rao product spreads energy over many singular directions at about the cost of a rank-16-32 LoRA.",
+   "results_note": "Reports gains on vision-language models up to 1B and LLMs up to 8B parameters, especially on unseen commonsense-reasoning tasks, with LoRA-level memory and compute.",
+   "relations": [
+    {
+     "target": "krona",
+     "type": "competes-with",
+     "note": "column-wise vs full Kronecker product; paper contrasts their spectra"
+    },
+    {
+     "target": "randlora",
+     "type": "competes-with",
+     "note": "same authors' alternative route to full-rank updates"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "matched budget, higher effective rank"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2508.00230",
+    "https://export.arxiv.org/api/query?id_list=2508.00230"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "loretta",
+   "name": "LoRETTA",
+   "full_name": "Low-Rank Economic Tensor-Train Adaptation",
+   "paper_title": "LoRETTA: Low-Rank Economic Tensor-Train Adaptation for Ultra-Low-Parameter Fine-Tuning of Large Language Models",
+   "authors": "Yang et al.",
+   "year": 2024,
+   "venue": "NAACL 2024",
+   "arxiv": "2402.11417",
+   "url": "https://arxiv.org/abs/2402.11417",
+   "code_url": "https://github.com/yifanycc/loretta",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\mathrm{TT}(\\Delta W_{up})\\,\\mathrm{TT}(\\Delta W_{down}),\\quad \\Delta W_{up}\\in\\mathbb{R}^{d_{out}\\times r},\\ \\Delta W_{down}\\in\\mathbb{R}^{r\\times d_{in}},\\ \\mathrm{TT}(M)[a_1,\\dots,a_D]=G^{1}_{a_1}G^{2}_{a_2}\\cdots G^{D}_{a_D},\\ G^{i}\\in\\mathbb{R}^{r_{i-1}\\times k_i\\times r_i}\\ (\\text{LoRETTA}_{rep});\\ \\text{TT cores trained}",
+   "trainable_params": "\\sum_{i=1}^{D}r_{i-1}k_ir_i\\ \\text{for each of the two tensorized factors}",
+   "locus": "LoRETTA_rep: attention/MLP weight matrices (like LoRA); LoRETTA_adp: tensorized bottleneck adapters after attention and FFN sublayers",
+   "modification_kind": "additive-weight",
+   "structure": "Each LoRA factor is reshaped into a D-way tensor and stored in tensor-train (MPS) format; the adapter variant tensorizes the up/down projections of a bottleneck adapter instead.",
+   "mergeable": "conditional",
+   "mergeable_reason": "LoRETTA_rep yields a dense ΔW that can be merged; LoRETTA_adp is a serial adapter with a nonlinearity and cannot.",
+   "identity_at_init": "All TT cores are Gaussian-initialized (a zero core would stall gradients); the noise injected by this random initialization is then compensated using the initialized weights so training starts from the pretrained function.",
+   "key_idea": "Push LoRA's parameter count down by another one to two orders of magnitude by storing its factors as tensor trains.",
+   "results_note": "Comparable or better than widely used PEFT methods with up to 100x fewer trainable parameters than LoRA/adapters on LLaMA-2-7B.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "tensorizes LoRA's two factors"
+    },
+    {
+     "target": "tt-lora",
+     "type": "competes-with",
+     "note": "TT-LoRA tensorizes the whole ΔW as a single tensor train"
+    },
+    {
+     "target": "quanta",
+     "type": "competes-with",
+     "note": "QuanTA uses a circuit-shaped tensor network instead of a TT chain"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/html/2402.11417",
+    "https://arxiv.org/pdf/2402.11417",
+    "https://export.arxiv.org/api/query?id_list=2402.11417"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tt-lora",
+   "name": "TT-LoRA",
+   "full_name": "Tensor-Train Low-Rank Approximation",
+   "paper_title": "Tensor Train Low-rank Approximation (TT-LoRA): Democratizing AI with Accelerated LLMs",
+   "authors": "Anjum et al.",
+   "year": 2024,
+   "venue": "ICMLA 2024",
+   "arxiv": "2408.01008",
+   "url": "https://arxiv.org/abs/2408.01008",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\alpha\\,\\mathrm{mat}\\big(\\mathcal{C}_1\\times^{1}\\mathcal{C}_2\\times^{1}\\cdots\\times^{1}\\mathcal{C}_D\\big),\\quad \\mathcal{C}_i\\in\\mathbb{R}^{r_{i-1}\\times k_i\\times r_i},\\ r_0=r_D=1,\\ \\textstyle\\prod_i k_i=d_{out}d_{in};\\quad y=W_0x+\\alpha\\,(\\textstyle\\prod_i\\mathcal{C}_i)\\,x;\\ W_0\\ \\text{frozen},\\ \\mathcal{C}_i\\ \\text{trained}",
+   "trainable_params": "\\sum_{i=1}^{D}r_{i-1}k_ir_i",
+   "locus": "W_q and W_v attention projections",
+   "modification_kind": "additive-weight",
+   "structure": "\\Delta W reshaped into a D-way tensor held in tensor-train (MPS) format; the input is contracted core-by-core without reconstructing \\Delta W.",
+   "mergeable": "yes",
+   "mergeable_reason": "The TT cores can be contracted into a dense ΔW and added to W_0.",
+   "identity_at_init": "Does not preserve the function: ΔW is drawn from a Gaussian and then TT-decomposed, so the adapted model differs from the base model at step 0.",
+   "key_idea": "Drop the LoRA matrix factorization altogether and represent the full update as one tensor train, contracted directly with the input for compression and lower latency.",
+   "results_note": "On BERT-family models (GLUE) and LLaMA-2/3, reports accuracy comparable to LoRA and other PEFT methods with substantially higher compression.",
+   "relations": [
+    {
+     "target": "loretta",
+     "type": "builds-on",
+     "note": "extends LoRETTA's tensor-train idea to a single TT for ΔW"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "alternative factorization of ΔW"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/html/2408.01008",
+    "https://arxiv.org/pdf/2408.01008",
+    "https://ieeexplore.ieee.org/document/10903446/",
+    "https://export.arxiv.org/api/query?id_list=2408.01008"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "lotr",
+   "name": "LoTR",
+   "full_name": "Low Tensor Rank weight adaptation",
+   "paper_title": "LoTR: Low Tensor Rank Weight Adaptation",
+   "authors": "Bershatsky et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2402.01376",
+   "url": "https://arxiv.org/abs/2402.01376",
+   "code_url": "https://github.com/skolai/lotr",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_s = W_{0,s} + \\alpha\\,A\\,G_s\\,B^{\\top},\\quad A\\in\\mathbb{R}^{d_{out}\\times r},\\ B\\in\\mathbb{R}^{d_{in}\\times r}\\ \\text{shared by all layers } s,\\ G_s\\in\\mathbb{R}^{r\\times r}\\ \\text{layer-specific};\\ \\delta\\mathcal{W}=\\mathcal{G}\\times_1A\\times_2B",
+   "trainable_params": "|\\mathcal{W}|\\,r^{2}+r(d_{in}+d_{out})\\ \\text{for a stack of } |\\mathcal{W}| \\text{ equally shaped matrices}",
+   "locus": "a stack of same-type matrices across depth (e.g. all W_q, all W_v)",
+   "modification_kind": "additive-weight",
+   "structure": "Tucker-2 decomposition of the 3-tensor of updates stacked over layers: shared left/right factor matrices with a per-layer r x r core.",
+   "mergeable": "yes",
+   "mergeable_reason": "Each A G_s B^T is a dense update for its layer and can be added to W_{0,s}.",
+   "identity_at_init": "Core G = 0 with A, B ~ N(0,1) (found best among tested schemes), so ΔW = 0.",
+   "key_idea": "Share the column/row spaces of the update across all layers and only learn a tiny r x r mixing core per layer, so cost grows with depth as r^2 rather than r(d_in+d_out).",
+   "results_note": "Reports better parameter efficiency than LoRA, with savings that grow with model depth.",
+   "relations": [
+    {
+     "target": "fact",
+     "type": "equivalent-to",
+     "note": "same Tucker-2 form as FacT-TT (ΔW_i = UΣ_iV^T with shared U,V)"
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "LoRA with an r x r core and cross-layer sharing of the outer factors"
+    },
+    {
+     "target": "flora-tucker",
+     "type": "competes-with",
+     "note": "FLoRA uses an unshared per-layer Tucker core"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2402.01376",
+    "https://export.arxiv.org/api/query?id_list=2402.01376"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "fact",
+   "name": "FacT",
+   "full_name": "Factor-Tuning (FacT-TT / FacT-TK)",
+   "paper_title": "FacT: Factor-Tuning for Lightweight Adaptation on Vision Transformer",
+   "authors": "Jie and Deng",
+   "year": 2022,
+   "venue": "AAAI 2023",
+   "arxiv": "2212.03145",
+   "url": "https://arxiv.org/abs/2212.03145",
+   "code_url": "https://github.com/JieShibo/PETL-ViT",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\text{FacT-TT: }\\Delta W_i = s\\,U\\Sigma_iV^{\\top},\\ U,V\\in\\mathbb{R}^{d\\times r},\\ \\Sigma\\in\\mathbb{R}^{12L\\times r\\times r};\\qquad \\text{FacT-TK: }\\Delta\\mathcal{W}=s\\,\\mathcal{C}\\times_1P\\times_2U\\times_3V,\\ \\mathcal{C}\\in\\mathbb{R}^{r\\times r\\times r},\\ P\\in\\mathbb{R}^{12L\\times r};\\ W_0\\ \\text{frozen}",
+   "trainable_params": "\\text{FacT-TT: }2dr+12Lr^{2};\\quad \\text{FacT-TK: }2dr+12Lr+r^{3}\\ \\text{(whole model)}",
+   "locus": "all d x d weight blocks of a ViT (W_q, W_k, W_v, W_o and the MLP matrices split into d x d blocks) stacked into a 12L x d x d tensor",
+   "modification_kind": "additive-weight",
+   "structure": "The whole ViT is tensorized into one 12L x d x d tensor and its increment is held in a tensor-train (FacT-TT) or Tucker (FacT-TK) format; LoRA corresponds to the matrix-batch format.",
+   "mergeable": "yes",
+   "mergeable_reason": "Factors are contracted into dense increments and absorbed into the weights before inference.",
+   "identity_at_init": "V zero-initialized and the other factors random, so ΔW = 0.",
+   "key_idea": "Exploit redundancy both within and across weight matrices by decomposing all increments of the network as one tensor.",
+   "results_note": "On VTAB-1K performs on par with NOAH while being 5x more parameter-efficient; an 8K-parameter version (0.01% of ViT-B) outperforms full fine-tuning, VPT and BitFit.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "the paper reads LoRA as the matrix-batch format of the same tensorized update"
+    },
+    {
+     "target": "lotr",
+     "type": "equivalent-to",
+     "note": "FacT-TT and LoTR share the Tucker-2 form with cross-layer U, V"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2212.03145",
+    "https://export.arxiv.org/api/query?id_list=2212.03145"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "flora-tucker",
+   "name": "FLoRA (Tucker core)",
+   "full_name": "Low-rank core-space adaptation for N-dimensional parameter spaces",
+   "paper_title": "Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning",
+   "authors": "Si et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2405.14739",
+   "url": "https://arxiv.org/abs/2405.14739",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + s\\,\\mathcal{G}\\times_1A^{(1)}\\times_2\\cdots\\times_NA^{(N)};\\quad \\text{linear: } W=W_0+s\\,AGB^{\\top},\\ G\\in\\mathbb{R}^{r_1\\times r_2},\\ A\\in\\mathbb{R}^{d_{out}\\times r_1},\\ B\\in\\mathbb{R}^{d_{in}\\times r_2};\\ \\text{conv: }\\Delta W=\\mathcal{G}\\times_1A\\times_2B\\times_3C\\times_4D",
+   "trainable_params": "\\text{linear: }r_1r_2+r_1d_{out}+r_2d_{in};\\ \\text{N-D: }\\textstyle\\prod_k r_k+\\sum_k r_kn_k",
+   "locus": "linear and convolutional layers (ConvNeXt, DeBERTa, LLaMA-3, InternViT)",
+   "modification_kind": "additive-weight",
+   "structure": "Tucker decomposition of \\Delta W in its native N-D shape (a low-rank 'core space' with the same topology as the weight); for matrices it is the three-factor A G B^{\\top}.",
+   "mergeable": "yes",
+   "mergeable_reason": "The Tucker product is a dense tensor of the weight's shape.",
+   "identity_at_init": "Core G zero-initialized, factor matrices Gaussian, so ΔW = 0.",
+   "key_idea": "Do not flatten conv kernels into matrices: model the update with a Tucker core that keeps the kernel's spatial structure.",
+   "results_note": "Outperforms LoRA and DoRA on ConvNeXt-V2 detection/segmentation, DeBERTaV3 GLUE, LLaMA-3-8B commonsense reasoning and InternViT multimodal tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "G = I recovers LoRA; for linear layers the function class equals rank-min(r1,r2) LoRA, so the gain is in N-D layers and optimization"
+    },
+    {
+     "target": "lotr",
+     "type": "competes-with",
+     "note": "LoTR shares the outer factors across layers"
+    },
+    {
+     "target": "fact",
+     "type": "competes-with",
+     "note": "FacT-TK applies Tucker across layers instead of within a kernel"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2405.14739",
+    "https://export.arxiv.org/api/query?id_list=2405.14739"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lorta",
+   "name": "LoRTA",
+   "full_name": "Low Rank Tensor Adaptation",
+   "paper_title": "LoRTA: Efficient Low Rank Tensor Adaptation of Large Language Models",
+   "authors": "Hounie et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2410.04060",
+   "url": "https://arxiv.org/abs/2410.04060",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta W_{k,l,i}=A\\,\\mathrm{Diag}(C_H[k,:])\\,\\mathrm{Diag}(C_L[l,:])\\,\\mathrm{Diag}(C_M[i,:])\\,B^{\\top},\\ \\text{i.e. } \\Delta\\mathcal{W}=[\\![A,B,C_H,C_L,C_M]\\!],\\quad A\\in\\mathbb{R}^{d\\times r},\\ B\\in\\mathbb{R}^{\\frac{d}{H}\\times r},\\ C_H\\in\\mathbb{R}^{H\\times r},\\ C_L\\in\\mathbb{R}^{L\\times r},\\ C_M\\in\\mathbb{R}^{4\\times r}",
+   "trainable_params": "\\left(d+\\tfrac{d}{H}+H+L+M\\right)r\\ \\text{(whole model; } M=4 \\text{ matrix types)}",
+   "locus": "Q, K, V and output projections of every attention head in every layer",
+   "modification_kind": "additive-weight",
+   "structure": "Rank-r CP (Candecomp/Parafac) model of the 5th-order tensor of all attention updates indexed by (input dim, head dim, head, layer, matrix type).",
+   "mergeable": "yes",
+   "mergeable_reason": "Each slice of the CP tensor is a dense per-head update that can be added to its weight.",
+   "identity_at_init": "Not detailed in the sections consulted.",
+   "key_idea": "Share one CP model over heads, layers and Q/K/V/O so that parameters grow additively, not multiplicatively, in these dimensions.",
+   "results_note": "Reports performance comparable to LoRA with far fewer parameters on NLU, instruction tuning, preference optimization and protein-folding benchmarks.",
+   "relations": [
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "LoRTA Sec. 3 reads VeRA's frozen shared bases with per-layer diagonal scalings as a sum of CP models with frozen factors"
+    },
+    {
+     "target": "lotr",
+     "type": "competes-with",
+     "note": "CP across layers/heads vs Tucker-2 across layers"
+    },
+    {
+     "target": "metatt",
+     "type": "competes-with",
+     "note": "MetaTT uses a tensor train over the same index set"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2410.04060",
+    "https://export.arxiv.org/api/query?id_list=2410.04060"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "metatt",
+   "name": "MetaTT",
+   "full_name": "Global Tensor-Train Adapter",
+   "paper_title": "MetaTT: A Global Tensor-Train Adapter for Parameter-Efficient Fine-Tuning",
+   "authors": "Lopez-Piqueres et al.",
+   "year": 2025,
+   "venue": "TMLR",
+   "arxiv": "2506.09105",
+   "url": "https://arxiv.org/abs/2506.09105",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = xW_{0,l,m} + \\alpha\\,x\\,G_1\\,G_2[l]\\,G_3[m]\\,G_4\\ \\ (\\text{row-vector convention}),\\quad G_1\\in\\mathbb{R}^{d_{in}\\times r},\\ G_2[l],G_3[m]\\in\\mathbb{R}^{r\\times r},\\ G_4\\in\\mathbb{R}^{r\\times d_{out}}\\ \\ (\\text{MetaTT-4D})",
+   "trainable_params": "\\text{4D: }2dr+(L+M)r^{2};\\quad \\text{5D: }\\left(d+\\tfrac{d}{H}\\right)r+(L+M+H)r^{2}",
+   "locus": "attention (and optionally MLP) projections of all layers; layer index l and matrix type m (and head h, task t) are TT modes",
+   "modification_kind": "additive-weight",
+   "structure": "A single tensor train over (input, layer, matrix type, [head], [task], output) whose slices are the per-matrix updates; a DMRG-style sweep can adapt TT ranks during training.",
+   "mergeable": "yes",
+   "mergeable_reason": "Middle cores can be contracted into G_1 or G_4 to give a dense per-matrix update.",
+   "identity_at_init": "Not detailed in the sections consulted.",
+   "key_idea": "One global adapter for the whole network: factorize the update tensor across depth and matrix type with a tensor train, borrowing DMRG rank adaptation from many-body physics.",
+   "results_note": "Reports substantial parameter reductions at competitive accuracy versus LoRA-style baselines, and competitive multi-task results with a task mode.",
+   "relations": [
+    {
+     "target": "lotr",
+     "type": "generalizes",
+     "note": "LoTR's per-matrix core G_s factorizes here as G_2[l] G_3[m]"
+    },
+    {
+     "target": "lorta",
+     "type": "competes-with",
+     "note": "TT vs CP over the same layer/head/matrix modes"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2506.09105",
+    "https://export.arxiv.org/api/query?id_list=2506.09105"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "quanta",
+   "name": "QuanTA",
+   "full_name": "Quantum-informed Tensor Adaptation",
+   "paper_title": "QuanTA: Efficient High-Rank Fine-Tuning of LLMs with Quantum-Informed Tensor Adaptation",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.00132",
+   "url": "https://arxiv.org/abs/2406.00132",
+   "code_url": "https://github.com/quanta-fine-tuning/quanta",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "y = W_0x + \\mathcal{T}_{\\theta}x - \\mathcal{S}x,\\quad \\mathcal{T}_{\\theta}=\\prod_{\\alpha}T^{(\\alpha)},\\ T^{(\\alpha)}\\in\\mathbb{R}^{d_{m}d_{n}\\times d_{m}d_{n}}\\ \\text{acting on axes } (m(\\alpha),n(\\alpha)) \\text{ of } x \\text{ reshaped to } d_1\\times\\cdots\\times d_N,\\ \\textstyle\\prod_n d_n=d;\\ \\mathcal{S}=\\mathcal{T}_{\\theta_0}\\ \\text{frozen}",
+   "trainable_params": "\\sum_{\\alpha}\\big(d_{m(\\alpha)}d_{n(\\alpha)}\\big)^{2}",
+   "locus": "linear layers of LLMs (attention projections)",
+   "modification_kind": "additive-weight",
+   "structure": "Circuit-shaped tensor network: the hidden vector is viewed as an N-qudit state and a sequence of two-axis 'gates' is applied (an einsum of small tensors); by the universality and rank-representation theorems it can express full-rank updates.",
+   "mergeable": "yes",
+   "mergeable_reason": "The gate sequence is linear, so the full matrix T can be contracted and added to W_0.",
+   "identity_at_init": "A frozen copy S of the initial gates is subtracted (T_θ x - S x = 0 at step 0); S is then folded into W_0' = W_0 + S at no extra cost.",
+   "key_idea": "Borrow quantum-circuit structure (local two-qudit gates composed in sequence) to get high-rank updates with few parameters and without zero-initialized factors.",
+   "results_note": "Improves over LoRA and DoRA on commonsense and arithmetic reasoning with LLaMA-family models while using fewer trainable parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "high-rank alternative at lower parameter count"
+    },
+    {
+     "target": "loretta",
+     "type": "competes-with",
+     "note": "different tensor-network topology (circuit vs train)"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2406.00132",
+    "https://export.arxiv.org/api/query?id_list=2406.00132"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "quantum-peft",
+   "name": "Quantum-PEFT",
+   "full_name": "Quantum-PEFT (Pauli-parameterized unitary adaptation)",
+   "paper_title": "Quantum-PEFT: Ultra parameter-efficient fine-tuning",
+   "authors": "Koike-Akino et al.",
+   "year": 2025,
+   "venue": "ICLR 2025",
+   "arxiv": "2503.05431",
+   "url": "https://arxiv.org/abs/2503.05431",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + U\\Lambda V^{\\top},\\quad U=Q_P(\\theta_U)\\,I_{d_{out}\\times K},\\ V=Q_P(\\theta_V)\\,I_{d_{in}\\times K},\\ \\Lambda=\\mathrm{diag}(\\lambda)\\in\\mathbb{R}^{K\\times K},\\ Q_P=\\prod_{l=1}^{L}\\Big(\\mathrm{CZ}\\text{-layer}\\cdot\\textstyle\\bigotimes_{k=1}^{q}\\mathrm{RY}(\\theta_{k,l})\\Big),\\ q=\\log_2 d;\\ \\theta_U,\\theta_V,\\lambda\\ \\text{trained}",
+   "trainable_params": "O\\big((2L+1)(\\log_2 d_{in}+\\log_2 d_{out})+K\\big)",
+   "locus": "same targets as LoRA (attention/linear layers of language and vision transformers)",
+   "modification_kind": "additive-weight",
+   "structure": "SVD-form update whose orthogonal factors are quantum-circuit (Pauli) parameterizations: Kronecker products of 2 x 2 RY rotations interleaved with diagonal \\pm1 CZ entanglers, so parameters grow logarithmically in d.",
+   "mergeable": "yes",
+   "mergeable_reason": "U Λ V^T is a dense matrix that can be added to W_0.",
+   "identity_at_init": "Not stated explicitly in the sections consulted (AdaLoRA-style SVD form; a zero diagonal Λ would give ΔW = 0).",
+   "key_idea": "Parameterize the singular-vector frames by a small quantum circuit, so trainable parameters scale like log d instead of d.",
+   "results_note": "Reports orders of magnitude fewer trainable parameters than the lowest-rank LoRA with competitive accuracy on language and vision transfer benchmarks.",
+   "relations": [
+    {
+     "target": "adalora",
+     "type": "builds-on",
+     "note": "same UΛV^T SVD-form update"
+    },
+    {
+     "target": "boft",
+     "type": "competes-with",
+     "note": "both build orthogonal matrices from products of sparse/Kronecker-structured factors"
+    },
+    {
+     "target": "quanta",
+     "type": "competes-with",
+     "note": "both quantum-circuit-inspired tensor networks"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2503.05431",
+    "https://arxiv.org/abs/2503.05431",
+    "https://export.arxiv.org/api/query?id_list=2503.05431"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "mora",
+   "name": "MoRA",
+   "full_name": "High-rank updating with a square matrix",
+   "paper_title": "MoRA: High-Rank Updating for Parameter-Efficient Fine-Tuning",
+   "authors": "Jiang et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2405.12130",
+   "url": "https://arxiv.org/abs/2405.12130",
+   "code_url": "https://github.com/kongds/MoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h = W_0x + f_{decomp}\\big(M\\,f_{comp}(x)\\big),\\quad M\\in\\mathbb{R}^{\\hat r\\times\\hat r},\\ \\hat r=\\big\\lfloor\\sqrt{(d_{in}+d_{out})\\,r}\\big\\rfloor;\\ \\text{reshape variant: }\\Delta W=I_{d/\\hat r}\\otimes M=\\mathrm{diag}(M,\\dots,M);\\ \\text{RoPE variant: }\\Delta W=\\mathrm{diag}(P^{1},\\dots,P^{n}),\\ P^{i}=M\\ \\text{rotated by block rotation } R_{\\theta,i}",
+   "trainable_params": "\\hat r^{2}\\approx r(d_{in}+d_{out})",
+   "locus": "all linear layers of LLMs",
+   "modification_kind": "additive-weight",
+   "structure": "A single trainable square matrix sandwiched between fixed, non-parameterized compression/decompression operators (truncation, row/column sharing, reshaping, RoPE-style rotations); the reshape variant is a Kronecker product with the identity, i.e. a block-diagonal matrix with tied blocks of rank up to \\hat r each.",
+   "mergeable": "yes",
+   "mergeable_reason": "The fixed operators are linear, so ΔW can be formed explicitly and merged like LoRA.",
+   "identity_at_init": "M = 0 (a single matrix can be zero-initialized without stalling gradients).",
+   "key_idea": "Spend the LoRA parameter budget on one square matrix to maximize the rank of ΔW, which matters for knowledge-memorizing tasks.",
+   "results_note": "Outperforms LoRA on memory-intensive tasks (UUID memorization, continual pretraining) and is comparable on instruction tuning and math reasoning.",
+   "relations": [
+    {
+     "target": "krona",
+     "type": "special-case-of",
+     "note": "freezing KronA's left factor to I gives the reshape variant I ⊗ M"
+    },
+    {
+     "target": "melora",
+     "type": "competes-with",
+     "note": "block-diagonal with tied full-rank blocks vs untied low-rank blocks"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "same parameter budget, much higher rank"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2405.12130",
+    "https://export.arxiv.org/api/query?id_list=2405.12130"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "melora",
+   "name": "MELoRA",
+   "full_name": "Mini-Ensemble Low-Rank Adapters",
+   "paper_title": "MELoRA: Mini-Ensemble Low-Rank Adapters for Parameter-Efficient Fine-Tuning",
+   "authors": "Ren et al.",
+   "year": 2024,
+   "venue": "ACL 2024",
+   "arxiv": "2402.17263",
+   "url": "https://arxiv.org/abs/2402.17263",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\mathrm{diag}(B_1A_1,\\dots,B_nA_n)=W_0+\\bigoplus_{i=1}^{n}B_iA_i,\\quad A_i\\in\\mathbb{R}^{\\frac{r}{n}\\times\\frac{d_{in}}{n}},\\ B_i\\in\\mathbb{R}^{\\frac{d_{out}}{n}\\times\\frac{r}{n}};\\ W_0\\ \\text{frozen},\\ A_i,B_i\\ \\text{trained}",
+   "trainable_params": "\\tfrac{r}{n}(d_{in}+d_{out})",
+   "locus": "attention/MLP linear layers (as LoRA)",
+   "modification_kind": "additive-weight",
+   "structure": "Block-diagonal direct sum of n independent mini-LoRAs acting on disjoint feature slices; rank is the sum of block ranks, so rank r is reached with n times fewer parameters than LoRA.",
+   "mergeable": "yes",
+   "mergeable_reason": "The block-diagonal ΔW is a dense matrix of W_0's shape.",
+   "identity_at_init": "A_i Gaussian and B_i = 0, as in LoRA.",
+   "key_idea": "Concatenating mini-LoRAs along the diagonal adds their ranks instead of sharing a bottleneck, trading cross-block interactions for rank per parameter.",
+   "results_note": "Compared with LoRA, better results with 8x fewer trainable parameters on natural language understanding and 36x fewer on instruction following.",
+   "relations": [
+    {
+     "target": "gralora",
+     "type": "special-case-of",
+     "note": "GraLoRA with all off-diagonal blocks removed"
+    },
+    {
+     "target": "bd-lora",
+     "type": "special-case-of",
+     "note": "BD-LoRA with both factors block-diagonal and aligned"
+    },
+    {
+     "target": "more",
+     "type": "special-case-of",
+     "note": "MoRe's Monarch product with identity permutations"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "higher rank per parameter"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2402.17263",
+    "https://export.arxiv.org/api/query?id_list=2402.17263"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "gralora",
+   "name": "GraLoRA",
+   "full_name": "Granular Low-Rank Adaptation",
+   "paper_title": "GraLoRA: Granular Low-Rank Adaptation for Parameter-Efficient Fine-Tuning",
+   "authors": "Jung et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2505.20355",
+   "url": "https://arxiv.org/abs/2505.20355",
+   "code_url": "https://github.com/SqueezeBits/GraLoRA",
+   "hf_peft": true,
+   "hf_peft_config": "GraloraConfig",
+   "formula_latex": "W = W_0 + \\tfrac{\\alpha}{r}\\big[\\,B_{ij}A_{ij}^{\\top}\\,\\big]_{i,j=1}^{k},\\quad A_{ij}\\in\\mathbb{R}^{\\frac{d_{in}}{k}\\times\\frac{r}{k}},\\ B_{ij}\\in\\mathbb{R}^{\\frac{d_{out}}{k}\\times\\frac{r}{k}};\\ W_0\\ \\text{frozen},\\ A_{ij},B_{ij}\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "any linear layer of LLMs",
+   "modification_kind": "additive-weight",
+   "structure": "k x k grid of independent rank-(r/k) blocks, equivalently B_G A_G^{\\top} with sparse block-structured factors; rank up to k r at LoRA's parameter count; Hybrid GraLoRA adds a plain LoRA term.",
+   "mergeable": "yes",
+   "mergeable_reason": "The block matrix is an ordinary dense update.",
+   "identity_at_init": "A Kaiming-uniform and B = 0 (HF PEFT), so ΔW = 0.",
+   "key_idea": "Partition the weight into sub-blocks with their own small adapters so that input outlier channels only perturb local gradients and effective rank grows by k.",
+   "results_note": "Up to +8.5% absolute Pass@1 on HumanEval+ over LoRA, with consistent gains on commonsense reasoning across model sizes and ranks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "k = 1 recovers LoRA"
+    },
+    {
+     "target": "melora",
+     "type": "generalizes",
+     "note": "MELoRA keeps only the diagonal blocks"
+    },
+    {
+     "target": "mora",
+     "type": "competes-with",
+     "note": "both raise rank at LoRA's budget"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2505.20355",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/gralora/config.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/gralora/layer.py",
+    "https://export.arxiv.org/api/query?id_list=2505.20355"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "bd-lora",
+   "name": "BD-LoRA",
+   "full_name": "Block-Diagonal LoRA",
+   "paper_title": "Block-Diagonal LoRA for Eliminating Communication Overhead in Tensor Parallel LoRA Serving",
+   "authors": "Wang et al.",
+   "year": 2025,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2510.23346",
+   "url": "https://arxiv.org/abs/2510.23346",
+   "code_url": "https://github.com/huggingface/peft/tree/main/examples/bdlora_finetuning",
+   "hf_peft": true,
+   "hf_peft_config": "LoraConfig(use_bdlora=BdLoraConfig(...))",
+   "formula_latex": "W = W_0 + \\tfrac{\\alpha}{r}BA,\\ \\ B=\\mathrm{diag}(B_1,\\dots,B_N)\\ (\\text{column-sharded: } W_q,W_k,W_v,\\text{up},\\text{gate})\\ \\text{or}\\ A=\\mathrm{diag}(A_1,\\dots,A_N)\\ (\\text{row-sharded: } W_o,\\text{down}),\\ N=\\text{tensor-parallel degree}",
+   "trainable_params": "r\\,d_{in}+\\tfrac{r}{N}d_{out}\\ \\ (B\\ \\text{block-diagonal})\\quad\\text{or}\\quad \\tfrac{r}{N}d_{in}+r\\,d_{out}\\ \\ (A\\ \\text{block-diagonal})",
+   "locus": "attention and MLP projections, with the block-diagonal factor chosen to match the layer's tensor-parallel sharding",
+   "modification_kind": "additive-weight",
+   "structure": "LoRA with one factor constrained to a block-diagonal matrix aligned with the tensor-parallel shards, so the adapter factors through a direct sum of N per-device maps and needs no extra all-gather/all-reduce.",
+   "mergeable": "yes",
+   "mergeable_reason": "It is a constrained LoRA, so BA can be merged; the design target is unmerged multi-adapter serving.",
+   "identity_at_init": "Standard LoRA initialization (B = 0), so ΔW = 0.",
+   "key_idea": "Choose the shape of the adapter to fit the hardware sharding: block-diagonal factors make multi-LoRA serving communication-free with almost no loss in quality per parameter.",
+   "results_note": "Matches LoRA's downstream quality at similar parameter counts and gives up to 1.79x end-to-end serving speed-up over S-LoRA tensor parallelism for Llama-3.1-8B on eight A100 GPUs.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with a block-diagonal constraint on one factor"
+    },
+    {
+     "target": "melora",
+     "type": "generalizes",
+     "note": "MELoRA constrains both factors block-diagonally"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2510.23346",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/lora/config.py",
+    "https://export.arxiv.org/api/query?id_list=2510.23346"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "more",
+   "name": "MoRe",
+   "full_name": "Monarch Rectangular Fine-tuning",
+   "paper_title": "MoRe Fine-Tuning with 10x Fewer Parameters",
+   "authors": "Tan et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2408.17383",
+   "url": "https://arxiv.org/abs/2408.17383",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + P_1\\,L\\,P_2\\,R,\\quad L=\\mathrm{diag}(L_1,\\dots,L_N),\\ R=\\mathrm{diag}(R_1,\\dots,R_N),\\ L_j\\in\\mathbb{R}^{\\frac{d_{out}}{N}\\times r_{blk}},\\ R_j\\in\\mathbb{R}^{r_{blk}\\times\\frac{d_{in}}{N}},\\ P_1,P_2\\ \\text{fixed permutations};\\ L,R\\ \\text{trained}",
+   "trainable_params": "r_{blk}(d_{in}+d_{out})",
+   "locus": "attention/MLP linear layers",
+   "modification_kind": "additive-weight",
+   "structure": "Rectangular low-rank Monarch matrix: block-diagonal, permutation, block-diagonal, permutation; rank up to N r_{blk}; N = 1 recovers LoRA and the class contains butterfly matrices.",
+   "mergeable": "yes",
+   "mergeable_reason": "The Monarch product is a dense matrix that W absorbs before inference.",
+   "identity_at_init": "Not specified in the paper; a LoRA-style zero factor would give ΔW = 0 (unverified).",
+   "key_idea": "Search over a hardware-efficient structured matrix family (Monarch) instead of fixing low rank, gaining rank per parameter with almost no hyperparameter tuning (N = 4).",
+   "results_note": "Reported to be more parameter-efficient and accurate than state-of-the-art PEFT methods on a range of tasks and models, using as little as 5% of LoRA's parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "N = 1 gives LoRA"
+    },
+    {
+     "target": "melora",
+     "type": "generalizes",
+     "note": "identity permutations give MELoRA's block-diagonal update"
+    },
+    {
+     "target": "boft",
+     "type": "competes-with",
+     "note": "BOFT uses orthogonal butterfly factors multiplicatively; MoRe uses non-orthogonal Monarch factors additively"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2408.17383",
+    "https://export.arxiv.org/api/query?id_list=2408.17383"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "id": "c3a",
+   "name": "C³A",
+   "full_name": "Circular Convolution Adaptation",
+   "paper_title": "Parameter-Efficient Fine-Tuning via Circular Convolution",
+   "authors": "Chen et al.",
+   "year": 2024,
+   "venue": "ACL 2025",
+   "arxiv": "2407.19342",
+   "url": "https://arxiv.org/abs/2407.19342",
+   "code_url": "",
+   "hf_peft": true,
+   "hf_peft_config": "C3AConfig",
+   "formula_latex": "W = W_0 + \\mathcal{C}_{blk}(\\Delta w),\\quad \\mathcal{C}_{blk}(\\Delta w)=\\big[\\mathcal{C}(\\Delta w_{ij})\\big]_{i\\le d_{out}/b,\\ j\\le d_{in}/b},\\ \\mathcal{C}(w)=F^{-1}\\mathrm{diag}(Fw)\\,F\\in\\mathbb{R}^{b\\times b};\\ \\Delta W x\\ \\text{computed with FFTs};\\ W_0\\ \\text{frozen},\\ \\Delta w_{ij}\\in\\mathbb{R}^{b}\\ \\text{trained}",
+   "trainable_params": "\\tfrac{d_{in}d_{out}}{b}",
+   "locus": "linear layers (nn.Linear only in HF PEFT)",
+   "modification_kind": "additive-weight",
+   "structure": "Block-circulant matrix: each b x b block is a circular-convolution kernel, diagonalized by the DFT; a block's rank equals its number of non-zero Fourier coefficients (up to b), so \\mathrm{rank}(\\Delta W) can reach \\min(d_{in},d_{out}) independently of the parameter count.",
+   "mergeable": "yes",
+   "mergeable_reason": "The block-circulant matrix can be materialized and added to W_0.",
+   "identity_at_init": "HF PEFT default is Xavier-uniform (not a no-op); init_weights=True zero-initializes the kernels for an exact no-op. The paper finds results insensitive to the initialization scheme.",
+   "key_idea": "Learn convolution kernels instead of low-rank factors: circulant structure gives high rank with FFT-speed, LoRA-like memory.",
+   "results_note": "Consistently outperforms LoRA and its variants across fine-tuning tasks (GLUE, instruction tuning, vision) while being efficient in compute and memory.",
+   "relations": [
+    {
+     "target": "fourierft",
+     "type": "dual-to",
+     "note": "a circulant matrix is diagonal in the Fourier basis (convolution theorem)"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "high-rank alternative at comparable cost"
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "positioned as more efficient than random-projection methods"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2407.19342",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/c3a/config.py",
+    "https://github.com/huggingface/peft/blob/main/docs/source/package_reference/c3a.md",
+    "https://export.arxiv.org/api/query?id_list=2407.19342"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "rosa",
+   "name": "RoSA",
+   "full_name": "Robust Adaptation (sparse plus low-rank)",
+   "paper_title": "RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation",
+   "authors": "Nikdan et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2401.04679",
+   "url": "https://arxiv.org/abs/2401.04679",
+   "code_url": "https://github.com/IST-DASLab/RoSA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + BA + S,\\quad \\mathrm{supp}(S)\\subseteq\\Omega,\\ |\\Omega|=\\delta\\,d_{out}d_{in},\\ \\Omega=\\mathrm{TopK}\\Big(\\textstyle\\sum_{s\\in\\mathcal{D}_M}\\big(\\nabla_W\\mathcal{L}(s)\\big)^{2}\\Big);\\ W_0\\ \\text{frozen},\\ A,B,S|_{\\Omega}\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})+\\delta\\,d_{in}d_{out}",
+   "locus": "all linear layers of LLMs (LLaMA-2)",
+   "modification_kind": "additive-weight",
+   "structure": "Robust-PCA-shaped update: low-rank plus fixed-support sparse matrix; the support is the top-\\delta fraction of accumulated squared gradients on a small mask-generation set.",
+   "mergeable": "yes",
+   "mergeable_reason": "Both components are explicit matrices of W_0's shape and can be added.",
+   "identity_at_init": "Low-rank part initialized as in LoRA (one factor zero) and sparse values start at zero, so ΔW = 0.",
+   "key_idea": "Full fine-tuning updates are approximately low-rank plus sparse, so learning both components jointly recovers more of full fine-tuning's accuracy than either alone.",
+   "results_note": "Outperforms LoRA, pure sparse fine-tuning and other hybrids at equal budget on GSM8k, ViGGO and SQL generation with LLaMA-2-7B, sometimes matching full fine-tuning.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "adds a sparse component to LoRA"
+    },
+    {
+     "target": "shira",
+     "type": "generalizes",
+     "note": "with no low-rank part RoSA is gradient-masked sparse adaptation as in SHiRA-Grad"
+    },
+    {
+     "target": "dsee",
+     "type": "competes-with",
+     "note": "DSEE picks its sparse support by robust PCA of W_0 rather than gradients"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2401.04679",
+    "https://export.arxiv.org/api/query?id_list=2401.04679"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "dsee",
+   "name": "DSEE",
+   "full_name": "Dually Sparsity-Embedded Efficient Tuning",
+   "paper_title": "DSEE: Dually Sparsity-embedded Efficient Tuning of Pre-trained Language Models",
+   "authors": "Chen et al.",
+   "year": 2021,
+   "venue": "ACL 2023",
+   "arxiv": "2111.00160",
+   "url": "https://arxiv.org/abs/2111.00160",
+   "code_url": "https://github.com/VITA-Group/DSEE",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = \\big(W_0 + UV + \\mathcal{P}_{\\Omega}(S)\\big)\\odot \\mathcal{M},\\quad U\\in\\mathbb{R}^{d_{out}\\times r},\\ V\\in\\mathbb{R}^{r\\times d_{in}},\\ \\Omega=\\mathrm{supp}\\Big(\\arg\\min_{\\mathrm{rank}\\le r,\\ \\mathrm{card}(S')\\le c}\\|W_0-U'V'-S'\\|_F^{2}\\Big),\\ \\mathcal{M}\\ \\text{optional pruning mask}",
+   "trainable_params": "r(d_{in}+d_{out})+c\\ \\ (c=16\\ \\text{in the paper})",
+   "locus": "attention weight matrices of BERT, RoBERTa and GPT-2",
+   "modification_kind": "hybrid",
+   "structure": "Low-rank plus sparse-residual update whose sparse support comes from a robust-PCA (GreBsmo) decomposition of W_0, combined with unstructured or structured pruning of the resulting weights for inference efficiency.",
+   "mergeable": "yes",
+   "mergeable_reason": "UV + P_Ω(S) is added to W_0; the result can additionally be pruned with the mask.",
+   "identity_at_init": "V = 0 and S = 0, so ΔW = 0 at init.",
+   "key_idea": "Exploit sparsity twice: sparse-plus-low-rank structure in the update for parameter efficiency, and sparse final weights for inference efficiency.",
+   "results_note": "On BERT, saves about 25% inference FLOPs with 0.5% trainable parameters at comparable downstream performance.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "combines",
+     "note": "adds a sparse residual and weight pruning to a LoRA-style update"
+    },
+    {
+     "target": "rosa",
+     "type": "competes-with",
+     "note": "both sparse-plus-low-rank updates"
+    },
+    {
+     "target": "diff-pruning",
+     "type": "builds-on",
+     "note": "sparse update component"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2111.00160",
+    "https://export.arxiv.org/api/query?id_list=2111.00160"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "shira",
+   "name": "SHiRA",
+   "full_name": "Sparse High Rank Adapters",
+   "paper_title": "Sparse High Rank Adapters",
+   "authors": "Bhardwaj et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.13175",
+   "url": "https://arxiv.org/abs/2406.13175",
+   "code_url": "https://github.com/Qualcomm-AI-research/SHiRA",
+   "hf_peft": true,
+   "hf_peft_config": "ShiraConfig",
+   "formula_latex": "W = W_0 + M\\odot S,\\quad M\\in\\{0,1\\}^{d_{out}\\times d_{in}}\\ \\text{fixed},\\ \\|M\\|_0=r(d_{in}+d_{out})\\ (\\approx1\\text{-}2\\%),\\ S\\ \\text{trained only on } \\mathrm{supp}(M)",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "linear layers of LVMs (e.g. SDXL) and LLMs (e.g. LLaMA)",
+   "modification_kind": "selective",
+   "structure": "Static sparse coordinate mask on W_0 (implemented by gradient masking or as a separate sparse delta); masks: Struct (rows/columns plus diagonal), Rand, weight-magnitude, gradient, SNIP; the sparse update is generically high-rank.",
+   "mergeable": "yes",
+   "mergeable_reason": "Only 1-2% of entries of W_0 are overwritten, so the adapter merges (and switches) by a sparse scatter.",
+   "identity_at_init": "S zero-initialized (HF PEFT), so W = W_0.",
+   "key_idea": "Fine-tune 1-2% of the base weights directly: sparse updates are high-rank, switch quickly on device and interfere less when fused.",
+   "results_note": "Outperforms LoRA on LVM and LLM adaptation while enabling rapid adapter switching and multi-adapter fusion; the PEFT implementation uses up to 16% less peak GPU memory than LoRA.",
+   "relations": [
+    {
+     "target": "rosa",
+     "type": "special-case-of",
+     "note": "RoSA without its low-rank part"
+    },
+    {
+     "target": "diff-pruning",
+     "type": "builds-on",
+     "note": "sparse update of pretrained weights with a fixed mask"
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "same parameter count r(d_in+d_out), high rank"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2406.13175",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/shira/config.py",
+    "https://export.arxiv.org/api/query?id_list=2406.13175"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "sine-lora",
+   "name": "Sine-LoRA",
+   "full_name": "Sine-activated low-rank adaptation",
+   "paper_title": "Efficient Learning With Sine-Activated Low-rank Matrices",
+   "authors": "Ji et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2403.19243",
+   "url": "https://arxiv.org/abs/2403.19243",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0 + \\tfrac{1}{g}\\sin(\\omega\\,BA),\\quad \\sin\\ \\text{entrywise},\\ \\omega\\ \\text{(frequency)},\\ g\\ \\text{(gain) fixed},\\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}}\\ \\text{trained}",
+   "trainable_params": "r(d_{in}+d_{out})",
+   "locus": "LoRA/DoRA target layers in LLMs and ViTs (also NeRF and 3D-shape networks)",
+   "modification_kind": "additive-weight",
+   "structure": "Entrywise sinusoid of a rank-r matrix; the rank of \\sin(\\omega\\,BA) grows with \\omega (the paper gives a lower bound in terms of \\omega), so the update is no longer low-rank.",
+   "mergeable": "yes",
+   "mergeable_reason": "sin(ωBA)/g is a dense matrix computable after training and addable to W_0.",
+   "identity_at_init": "With LoRA's B = 0 initialization, sin(0) = 0 so ΔW = 0.",
+   "key_idea": "A fixed high-frequency entrywise nonlinearity raises the rank of a low-rank parameterization for free.",
+   "results_note": "Improves LoRA and DoRA at equal parameter count across ViT, LLM (e.g. LLaMA-3-8B commonsense reasoning, GLUE), NeRF and 3D-shape tasks.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "drop-in modification of LoRA's product"
+    },
+    {
+     "target": "loha",
+     "type": "competes-with",
+     "note": "both raise rank with entrywise operations on low-rank matrices"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2403.19243",
+    "https://export.arxiv.org/api/query?id_list=2403.19243"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "miss",
+   "name": "MiSS",
+   "full_name": "Matrix Shard Sharing (formerly Bone)",
+   "paper_title": "MiSS: Revisiting the Trade-off in LoRA with an Efficient Shard-Sharing Structure",
+   "authors": "Kang and Yin",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2409.15371",
+   "url": "https://arxiv.org/abs/2409.15371",
+   "code_url": "https://github.com/Joluck/MiSS",
+   "hf_peft": true,
+   "hf_peft_config": "MissConfig",
+   "formula_latex": "W = W_0 + \\mathrm{expand}(D)=W_0+E\\,D,\\quad E=\\mathrm{diag}(\\mathbf{1}_{s_1},\\dots,\\mathbf{1}_{s_N})\\in\\{0,1\\}^{d_{out}\\times N}\\ \\text{fixed},\\ D\\in\\mathbb{R}^{N\\times d_{in}};\\ \\text{efficient form: }\\Delta W=D'\\,(\\mathbf{1}_{d_{in}/r}^{\\top}\\otimes I_r),\\ D'\\in\\mathbb{R}^{d_{out}\\times r}",
+   "trainable_params": "N\\,d_{in}\\ \\ (\\text{efficient form: } r\\,d_{out})",
+   "locus": "any linear layer of LLMs",
+   "modification_kind": "additive-weight",
+   "structure": "A single small trainable matrix replicated across shards by a fixed 0/1 replication operator (a Kronecker product with an all-ones vector); rank \\le N (or r).",
+   "mergeable": "yes",
+   "mergeable_reason": "The expanded matrix is dense and is added to W_0.",
+   "identity_at_init": "D = 0.",
+   "key_idea": "Replace one LoRA factor by a fixed shard-replication operator: a single zero-initialized matrix gives fast init, low memory and LoRA-level accuracy.",
+   "results_note": "Reports a favorable trade-off between performance, memory, initialization overhead and speed versus LoRA, PiSSA and DoRA on LLaMA-2, Mistral, RWKV and Qwen3.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "special-case-of",
+     "note": "LoRA with one factor frozen to the 0/1 replication matrix"
+    },
+    {
+     "target": "vera",
+     "type": "competes-with",
+     "note": "both freeze part of the factorization to cut trainable parameters"
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/pdf/2409.15371",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/miss/config.py",
+    "https://github.com/huggingface/peft/blob/main/src/peft/tuners/miss/layer.py",
+    "https://github.com/huggingface/peft/blob/main/docs/source/package_reference/miss.md",
+    "https://export.arxiv.org/api/query?id_list=2409.15371"
+   ],
+   "confidence": "high"
+  }
+ ],
+ "papers": [
+  {
+   "id": "phm-layer",
+   "title": "Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters",
+   "authors": "Zhang et al.",
+   "year": 2021,
+   "venue": "ICLR 2021",
+   "arxiv": "2102.08597",
+   "url": "https://arxiv.org/abs/2102.08597",
+   "claim": "A dense layer can be parameterized as a sum of n Kronecker products, W = Σ_i A_i ⊗ B_i, which subsumes the quaternion Hamilton product and learns arbitrary n-D hypercomplex multiplication rules with about 1/n of the parameters.",
+   "relevance": "The algebraic origin of PHM-Adapter, Compacter and KAdaptation; makes 'Kronecker rank' an explicit design axis, the Kronecker analogue of LoRA's matrix rank.",
+   "sources": [
+    "https://arxiv.org/abs/2102.08597",
+    "https://export.arxiv.org/api/query?id_list=2102.08597"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "kronecker-approximation",
+   "title": "Approximation with Kronecker Products",
+   "authors": "Van Loan and Pitsianis",
+   "year": 1993,
+   "venue": "Linear Algebra for Large Scale and Real-Time Applications (NATO ASI Series, vol. 232), Springer",
+   "arxiv": "",
+   "url": "https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17",
+   "claim": "The nearest Kronecker product (and sum of Kronecker products) to a matrix is obtained from an SVD of a rearrangement of that matrix, so Kronecker rank equals ordinary rank after rearrangement.",
+   "relevance": "Shows that Kronecker-sum adapters (PHM, KAdaptation, KronA) are low-rank adapters in a different matricization, a single invariant that organizes the whole 'shape' family.",
+   "sources": [
+    "https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tensor-train-decomposition",
+   "title": "Tensor-Train Decomposition",
+   "authors": "Oseledets",
+   "year": 2011,
+   "venue": "SIAM Journal on Scientific Computing 33(5)",
+   "arxiv": "",
+   "url": "https://epubs.siam.org/doi/10.1137/090752286",
+   "claim": "Introduces the tensor-train (TT) format with SVD-based TT-SVD and rounding algorithms, storing a d-way tensor with O(d n r^2) parameters.",
+   "relevance": "Mathematical basis of LoRETTA, TT-LoRA, FacT-TT and MetaTT; TT is the simplest non-trivial tensor network (a linear chain).",
+   "sources": [
+    "https://epubs.siam.org/doi/10.1137/090752286"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tensor-decompositions-applications",
+   "title": "Tensor Decompositions and Applications",
+   "authors": "Kolda and Bader",
+   "year": 2009,
+   "venue": "SIAM Review 51(3)",
+   "arxiv": "",
+   "url": "https://epubs.siam.org/doi/10.1137/07070111X",
+   "claim": "Standard survey of CP (CANDECOMP/PARAFAC), Tucker and related decompositions, mode-n products and their algorithms.",
+   "relevance": "Reference notation for the Tucker (LoTR, FLoRA, FacT-TK) and CP (LoRTA) adapters and for VeRA-style shared bases read as CP models.",
+   "sources": [
+    "https://epubs.siam.org/doi/10.1137/07070111X"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tensor-networks-dimensionality-reduction",
+   "title": "Low-Rank Tensor Networks for Dimensionality Reduction and Large-Scale Optimization Problems: Perspectives and Challenges PART 1",
+   "authors": "Cichocki et al.",
+   "year": 2016,
+   "venue": "Foundations and Trends in Machine Learning 9(4-5)",
+   "arxiv": "1609.00893",
+   "url": "https://arxiv.org/abs/1609.00893",
+   "claim": "Monograph on tensor networks (TT, hierarchical Tucker, etc.) with graphical (string-diagram) notation for contractions and their use in large-scale optimization.",
+   "relevance": "Supplies the diagrammatic calculus in which every 'shape' adapter is a string diagram of trainable and frozen boxes, the natural bridge to a categorical (monoidal) treatment.",
+   "sources": [
+    "https://arxiv.org/abs/1609.00893",
+    "https://export.arxiv.org/api/query?id_list=1609.00893"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "monarch",
+   "title": "Monarch: Expressive Structured Matrices for Efficient and Accurate Training",
+   "authors": "Dao et al.",
+   "year": 2022,
+   "venue": "ICML 2022",
+   "arxiv": "2204.00595",
+   "url": "https://arxiv.org/abs/2204.00595",
+   "claim": "Monarch matrices, products of two block-diagonal matrices interleaved with permutations, are hardware-efficient, express many standard transforms, and admit an analytically optimal projection of a dense matrix.",
+   "relevance": "Structured-matrix foundation of MoRe; also explains MELoRA/GraLoRA/BD-LoRA as block-diagonal (direct-sum) shapes and BOFT's butterflies as the orthogonal counterpart.",
+   "sources": [
+    "https://arxiv.org/abs/2204.00595",
+    "https://export.arxiv.org/api/query?id_list=2204.00595"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "compute-better-spent",
+   "title": "Compute Better Spent: Replacing Dense Layers with Structured Matrices",
+   "authors": "Qiu et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2406.06248",
+   "url": "https://arxiv.org/abs/2406.06248",
+   "claim": "Different structured matrix families need different initialization scales and learning rates (derived via muP); the Block Tensor-Train (BTT) family, which contains Monarch, beats dense layers per unit of compute.",
+   "relevance": "Explains why shape-based adapters need method-specific scalings (e.g. ABBA's rank-stabilized scale, C3A's large learning rate) and gives a compute-optimal lens for comparing shapes.",
+   "sources": [
+    "https://arxiv.org/abs/2406.06248",
+    "https://export.arxiv.org/api/query?id_list=2406.06248"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "lora-learns-less-forgets-less",
+   "title": "LoRA Learns Less and Forgets Less",
+   "authors": "Biderman et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2405.09673",
+   "url": "https://arxiv.org/abs/2405.09673",
+   "claim": "On code and math, LoRA substantially underperforms full fine-tuning but forgets less; full fine-tuning learns perturbations whose rank is 10-100x larger than typical LoRA configurations.",
+   "relevance": "Empirical motivation for the high-rank branch of the shape family (MoRA, HiRA, ABBA, C3A, QuanTA, GraLoRA, SHiRA).",
+   "sources": [
+    "https://arxiv.org/abs/2405.09673",
+    "https://export.arxiv.org/api/query?id_list=2405.09673"
+   ],
+   "confidence": "high"
+  },
+  {
+   "id": "tensor-networks-meet-neural-networks",
+   "title": "Tensor Networks Meet Neural Networks: A Survey and Future Perspectives",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2302.09019",
+   "url": "https://arxiv.org/abs/2302.09019",
+   "claim": "Surveys 'tensorial neural networks' that combine tensor networks with CNNs, RNNs, Transformers, LLMs and quantum neural networks, covering compression, fusion and efficient training.",
+   "relevance": "Places TT/Tucker/CP adapters within the wider practice of tensor-network parameterization of neural layers.",
+   "sources": [
+    "https://arxiv.org/abs/2302.09019",
+    "https://export.arxiv.org/api/query?id_list=2302.09019"
+   ],
+   "confidence": "medium"
+  }
+ ],
+ "notes": "Scope: methods whose novelty is the algebraic/tensor-network SHAPE of Delta W beyond plain low rank. 29 methods in 8 sub-families: (1) Hadamard: loha, hira, abba; (2) Kronecker / hypercomplex / Khatri-Rao: lokr, krona, phm-adapter, compacter, kadaptation, kradapter; (3) tensor networks: loretta, tt-lora, lotr, fact, flora-tucker, lorta, metatt, quanta, quantum-peft; (4) square high-rank / block (direct-sum) shapes: mora, melora, gralora, bd-lora; (5) Monarch: more; (6) circulant: c3a; (7) sparse(+low-rank): rosa, dsee, shira; (8) entrywise-nonlinear or replication shapes: sine-lora, miss. Unifying algebra for the category-theory site: Kronecker product = tensor product of linear maps, so rank(A (x) B) = rank A * rank B (LoKr, KronA; MoRA's reshape variant is I (x) M); a sum of n Kronecker products has Kronecker rank n, i.e. ordinary rank n after the Van Loan-Pitsianis rearrangement, so PHM/KAdaptation are 'low rank in another matricization'; Hadamard product = Kronecker product restricted to the diagonal, A o B = J^T (A (x) B) J with J the diagonal embedding, hence rank(A o B) <= rank A * rank B (LoHa, HiRA, ABBA) and the row-wise Khatri-Rao factorization ABBA uses; Khatri-Rao = column-wise Kronecker (KRAdapter); block-diagonal = direct sum of maps (MELoRA, BD-LoRA, MoRA); a circulant is an intertwiner of the cyclic group's regular representation, diagonalized by the DFT (C3A is dual to FourierFT); TT, Tucker and CP adapters are string diagrams in FinVect with trainable boxes, differing only in the graph of contractions (chain, star, hyperedge). A useful invariant across the family is the rank of Delta W under a chosen matricization/reshaping, plus whether factors are shared across layers (LoTR, FacT, LoRTA, MetaTT, Compacter, KAdaptation). Ambiguities: 'FLoRA' names at least three different papers (this Tucker-core one, ICLR 2025, retitled 'Maintaining Structural Integrity...'; the gradient-compression Flora of Hao et al.; federated FLoRA), so the id is flora-tucker. ABBA exists (arXiv 2505.14238, retitled 'ABBA-Adapters', ICLR 2026). HiRA has no arXiv version (ICLR 2025 proceedings/OpenReview only). SHiRA is a sparse-selective method included as a seed; it also belongs in a selective/sparse family. BD-LoRA, MiSS and GraLoRA are low-rank-bounded or rank-k*r but included because their novelty is the shape constraint (block-diagonal, replication, block grid). Unverified details (medium confidence): initialization of MoRe, LoRTA, MetaTT, Quantum-PEFT and KAdaptation was not stated in the sections read; TT-LoRA's venue is from IEEE Xplore/Semantic Scholar (ICMLA 2024) and it does NOT start from the identity; LoRETTA's compensation of random init is paraphrased. Omitted for low uptake or because they duplicate a listed shape: Block Circulant Adapter (BCA, Ding et al., IJCAI 2025, arXiv 2505.00582; same block-circulant shape as C3A plus a learning-rate heuristic), DoTA (TT init from pretrained weights), TLoRA / transformed low-rank via tensor decomposition (ICCV 2025, arXiv 2501.08727), LSR-Adapt (Kronecker-sum kernels), SoKA (SVD on Kronecker adaptation), TT-LoRA MoE, Kron-LoRA. Hadamard Adapter (CIKM 2023, arXiv 2407.11033) is an activation-scaling method that belongs with (IA)^3, not here. Orthogonal butterfly/Householder methods (BOFT, OFT, HRA) and random-basis methods (VeRA, RandLoRA) and spectral FourierFT belong to other families and appear only as relation targets."
+}

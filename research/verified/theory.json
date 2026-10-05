@@ -1,0 +1,1059 @@
+{
+ "family": "theory",
+ "family_title": "Theory, Unification & Categorical Foundations of PEFT",
+ "observed_at": "2026-10-01",
+ "methods": [],
+ "papers": [
+  {
+   "id": "intrinsic-dimension-objective-landscapes",
+   "title": "Measuring the Intrinsic Dimension of Objective Landscapes",
+   "authors": "Li et al.",
+   "year": 2018,
+   "venue": "ICLR 2018",
+   "arxiv": "1804.08838",
+   "url": "https://arxiv.org/abs/1804.08838",
+   "claim": "Training only in a random d-dimensional affine subspace, \\theta = \\theta_0 + P z with P frozen, reveals an 'intrinsic dimension' at which good solutions first appear; it is often orders of magnitude below the parameter count and varies little across model sizes for the same task.",
+   "relevance": "The founding example of a PEFT-style reparametrisation: the affine map z \\mapsto \\theta_0 + P z from R^d into R^D with P and \\theta_0 frozen. In the Para picture this is a reparametrisation 2-cell Q -> P, and every random-basis method (VeRA, NOLA, Fastfood-style projections) descends from it.",
+   "sources": [
+    "https://arxiv.org/abs/1804.08838",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1804.08838"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1804.08838 (Li, Chunyuan; 2018-04) matches; venue from the arXiv comment 'Published in ICLR 2018'; the subspace parametrisation and size-stability claim match the abstract.",
+   "corrections": [
+    "relevance: the reparametrisation is the affine map z -> theta_0 + P z; 'linear map pulled back along the frozen point' was imprecise"
+   ]
+  },
+  {
+   "id": "intrinsic-dimensionality-lm-finetuning",
+   "title": "Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning",
+   "authors": "Aghajanyan et al.",
+   "year": 2020,
+   "venue": "ACL 2021",
+   "arxiv": "2012.13255",
+   "url": "https://arxiv.org/abs/2012.13255",
+   "claim": "Pretrained LMs have very low fine-tuning intrinsic dimension (200 randomly projected parameters recover 90% of full RoBERTa performance on MRPC). Pre-training lowers it, and larger models have lower intrinsic dimension. The paper derives generalization bounds that depend on intrinsic dimension rather than the full parameter count.",
+   "relevance": "This is the premise LoRA cites for its low-rank hypothesis. It says that adaptation lives on a small parameter object Q mapped into the huge P, which is why a theory of PEFT can be phrased as a theory of reparametrisations Q -> P.",
+   "sources": [
+    "https://arxiv.org/abs/2012.13255",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2012.13255"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2012.13255 (Aghajanyan; 2020-12) matches; ACL-IJCNLP 2021 long paper confirmed by DOI 10.18653/v1/2021.acl-long.568 (Crossref, pp. 7319-7328); 200-parameter/90% MRPC figure and bounds match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "unified-view-peft",
+   "title": "Towards a Unified View of Parameter-Efficient Transfer Learning",
+   "authors": "He et al.",
+   "year": 2021,
+   "venue": "ICLR 2022",
+   "arxiv": "2110.04366",
+   "url": "https://arxiv.org/abs/2110.04366",
+   "claim": "Prefix tuning can be rewritten as a gated modification of the attention output, h \\leftarrow (1-\\lambda(x))h + \\lambda(x)\\Delta h. With that, adapters, prefix tuning and LoRA all become modifications \\Delta h of specific hidden states that differ along four design dimensions: functional form of \\Delta h, insertion form (sequential or parallel), modified representation, and composition function (gated, additive, scaled). Moving design elements between methods gives the parallel adapter, scaled parallel adapter and Mix-And-Match (MAM) adapter, which match full fine-tuning on four tasks.",
+   "relevance": "The canonical pre-categorical unification. Its design dimensions are exactly the data a categorical classification has to encode: where a module attaches in the computation graph, whether it is composed in series or in parallel, and how it is combined with the frozen map.",
+   "sources": [
+    "https://arxiv.org/abs/2110.04366",
+    "https://arxiv.org/pdf/2110.04366",
+    "https://github.com/jxhe/unify-parameter-efficient-tuning",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2110.04366"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2110.04366 (He, Junxian; 2021-10) matches; ICLR 2022 spotlight per the arXiv comment; the gated rewrite and the four design dimensions match the paper.",
+   "corrections": []
+  },
+  {
+   "id": "delta-tuning",
+   "title": "Parameter-efficient fine-tuning of large-scale pre-trained language models",
+   "authors": "Ding et al.",
+   "year": 2022,
+   "venue": "Nature Machine Intelligence 2023",
+   "arxiv": "2203.06904",
+   "url": "https://www.nature.com/articles/s42256-023-00626-4",
+   "claim": "Formalises 'delta tuning' and sorts methods into addition-based (new parameters, M >= N), specification-based (a chosen subset of existing parameters) and reparameterization-based (existing parameters re-expressed in a parameter-efficient form). It interprets delta tuning in two ways: as subspace optimization in solution or function space, and as seeking optimal controllers for the PLM. Experiments cover over 100 NLP tasks and study performance, combinability, scaling and transferability.",
+   "relevance": "This three-way split is the de facto taxonomy that a categorical refoundation has to explain or replace. Addition corresponds to enlarging the parameter object, specification to restricting along a mono into it, and reparametrisation to a 2-cell Q -> P. The optimal-control reading is close in spirit to the 'controller' of categorical cybernetics.",
+   "sources": [
+    "https://www.nature.com/articles/s42256-023-00626-4",
+    "https://arxiv.org/abs/2203.06904",
+    "https://arxiv.org/pdf/2203.06904",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2203.06904"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2203.06904 (Ding, Ning; 2022-03) exists under the title 'Delta Tuning: A Comprehensive Study of Parameter Efficient Methods for Pre-trained Language Models'; the entry uses the Nature MI title, confirmed by Crossref DOI 10.1038/s42256-023-00626-4 (Nat. Mach. Intell. 5(3):220-235, 2023). M >= N for addition-based methods and the two theoretical frameworks were checked in the full text.",
+   "corrections": []
+  },
+  {
+   "id": "peft-design-spaces",
+   "title": "Parameter-Efficient Fine-Tuning Design Spaces",
+   "authors": "Chen et al.",
+   "year": 2023,
+   "venue": "ICLR 2023",
+   "arxiv": "2301.01821",
+   "url": "https://arxiv.org/abs/2301.01821",
+   "claim": "Defines PEFT design spaces with four components: layer grouping, trainable-parameter allocation, tunable groups and strategy assignment. Greedily refining the space gives four patterns: spindle-shaped layer grouping, uniform parameter allocation, tuning all groups, and assigning different strategies to different groups. The resulting methods beat individual PEFT strategies across backbones and NLP tasks.",
+   "relevance": "Treats a PEFT configuration as a structured assembly of per-layer choices. Categorically, this is a monoidal or sequential composite of local reparametrisations, which supports a compositional rather than monolithic view of methods.",
+   "sources": [
+    "https://arxiv.org/abs/2301.01821",
+    "https://github.com/amazon-science/peft-design-spaces",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2301.01821"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2301.01821 (Chen, Jiaao; 2023-01) matches; ICLR 2023 confirmed in the ICLR 2023 virtual paper list (poster 11418); the four components and four patterns match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "effectiveness-of-peft-sparsity",
+   "title": "On the Effectiveness of Parameter-Efficient Fine-Tuning",
+   "authors": "Fu et al.",
+   "year": 2022,
+   "venue": "AAAI 2023",
+   "arxiv": "2211.15583",
+   "url": "https://arxiv.org/abs/2211.15583",
+   "claim": "Groups PEFT methods into random, rule-based and projection-based by how they choose tunable parameters, and shows that all of them are sparse fine-tuned models. The sparsity acts as a regularizer by controlling an upper bound on stability, which explains better generalization. The paper also proposes a Second-order Approximation Method (SAM) for choosing the tunable parameters.",
+   "relevance": "A unification through sparsity: every method is restriction to a sub-object of parameter space plus regularization. It complements the reparametrisation view by giving a stability-based generalization account of selective and other methods.",
+   "sources": [
+    "https://arxiv.org/abs/2211.15583",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2211.15583"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2211.15583 (Fu, Zihao; 2022-11) matches; AAAI 2023 confirmed by DOI 10.1609/aaai.v37i11.26505 (AAAI 37(11):12799-12807).",
+   "corrections": []
+  },
+  {
+   "id": "subspace-tuning-decomposition-view",
+   "title": "See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition",
+   "authors": "Si et al.",
+   "year": 2024,
+   "venue": "arXiv",
+   "arxiv": "2407.05417",
+   "url": "https://arxiv.org/abs/2407.05417",
+   "claim": "Unifies PEFT as 'subspace tuning' relative to the SVD W = U\\Sigma V^\\top. Reconstruction-based methods transform existing subspaces (e.g. scaling singular vectors, BitFit, soft prompts). Extension-based methods add new subspaces (LoRA and its derivatives, adapters). Combination-based methods do both (e.g. DoRA, Spectral Adapter, SVDiff). The analysis motivates two new methods (SSL, SSB) and a Matrix Pattern Constraints framework.",
+   "relevance": "A recent explicit unification attempt whose reconstruction/extension split lines up with acting on W_0 by a transformation (multiplicative, group-action-like) versus adding a new low-rank summand (additive). A categorical treatment can make this dichotomy precise.",
+   "sources": [
+    "https://arxiv.org/abs/2407.05417",
+    "https://arxiv.org/html/2407.05417",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2407.05417"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2407.05417 (Si, Chongjie; 2024-07, v2 2024-12) matches; no venue found on Semantic Scholar or Crossref, so arXiv. The classification was checked in the full text: DoRA is combination-based, and soft prompts and BitFit are reconstruction-based.",
+   "corrections": [
+    "claim: DoRA moved from extension-based to combination-based, as classified in Sec. V of the paper"
+   ]
+  },
+  {
+   "id": "expressive-power-lora",
+   "title": "The Expressive Power of Low-Rank Adaptation",
+   "authors": "Zeng & Lee",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.17513",
+   "url": "https://arxiv.org/abs/2310.17513",
+   "claim": "For fully connected networks, LoRA can adapt any model f to exactly represent any smaller target model (under mild non-degeneracy conditions) if LoRA-rank >= (width of f) x (depth of target)/(depth of f), with quantified approximation error below that threshold. For Transformers, any model can be adapted to a same-size target with rank-(embedding size/2) LoRA adapters.",
+   "relevance": "The first sharp result on the image of the LoRA reparametrisation map, i.e. which functions are reachable from W_0 through rank-r updates. It is the expressivity half of any 'what does a PEFT morphism reach' theory.",
+   "sources": [
+    "https://arxiv.org/abs/2310.17513",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2310.17513"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2310.17513 (Zeng, Yuchen; 2023-10) matches; ICLR 2024 confirmed in the ICLR 2024 virtual list (poster 17923); the rank thresholds match the abstract and Theorem 1.",
+   "corrections": [
+    "claim: added the paper's 'mild conditions' qualifier on the exact-representation theorem"
+   ]
+  },
+  {
+   "id": "prompt-tuning-universality-limitations",
+   "title": "Universality and Limitations of Prompt Tuning",
+   "authors": "Wang et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.18787",
+   "url": "https://arxiv.org/abs/2305.18787",
+   "claim": "There exists a strong transformer that, given a soft prompt, approximates any Lipschitz sequence-to-sequence function. For limited-depth fixed-weight transformers, however, there are datasets that no prompt of any length can memorize through a single encoder layer. The paper gives a lower bound on the number of prompt parameters, compares it with the parameter count of a LoRA update in the single-layer setting, and gives conditions under which multi-layer prompt tuning can only learn invertible functions.",
+   "relevance": "Separates input-augmentation (precomposition with learned tokens) from weight-space reparametrisation by expressive power. This is a key datum for classifying prompt methods as a different kind of morphism than additive weight updates.",
+   "sources": [
+    "https://arxiv.org/abs/2305.18787",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2305.18787"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2305.18787 (Wang, Yihan; 2023-05) matches; NeurIPS 2023 confirmed in the NeurIPS 2023 virtual list (poster 69889); the claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "prefix-tuning-capabilities-limitations",
+   "title": "When Do Prompting and Prefix-Tuning Work? A Theory of Capabilities and Limitations",
+   "authors": "Petrov et al.",
+   "year": 2023,
+   "venue": "ICLR 2024",
+   "arxiv": "2310.19698",
+   "url": "https://arxiv.org/abs/2310.19698",
+   "claim": "Although continuous embeddings are more expressive than discrete tokens, soft prompting and prefix-tuning are potentially less expressive than full fine-tuning, even with the same number of learnable parameters. A prefix cannot change the relative attention pattern over the content and can only bias an attention layer's output in a fixed direction, so these methods elicit existing skills but may fail on tasks that need new attention patterns.",
+   "relevance": "Precisely characterises the image of the prefix reparametrisation: a prefix cannot change the relative attention pattern over the content and can only bias an attention layer's output in a fixed direction. This justifies placing prompt/prefix methods in a separate class (input composition) from weight-space updates.",
+   "sources": [
+    "https://arxiv.org/abs/2310.19698",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2310.19698"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2310.19698 (Petrov; 2023-10) matches; ICLR 2024 per the arXiv comment and the ICLR 2024 virtual list (poster 18932); wording aligned with the abstract.",
+   "corrections": [
+    "claim: 'strictly less expressive' overstated the paper, which says 'potentially less expressive'",
+    "relevance: replaced 'affine bias' with the paper's actual statement (fixed-direction bias, unchanged relative attention pattern)"
+   ]
+  },
+  {
+   "id": "prefix-tuning-universal-approximator",
+   "title": "Prompting a Pretrained Transformer Can Be a Universal Approximator",
+   "authors": "Petrov et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.14753",
+   "url": "https://arxiv.org/abs/2402.14753",
+   "claim": "Prefix-tuning a single attention head is enough to approximate any continuous function, and any sequence-to-sequence function can be approximated by prefixing a transformer whose depth is linear in the sequence length. The paper gives Jackson-type bounds on the prefix length needed for a given precision.",
+   "relevance": "Together with the companion limitations paper, it shows that the expressivity of input-composition PEFT depends on depth and prefix length rather than being simply weaker. A unified theory has to state expressivity relative to such resources.",
+   "sources": [
+    "https://arxiv.org/abs/2402.14753",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.14753"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.14753 (Petrov; 2024-02) matches; ICML 2024 confirmed in PMLR v235; the single-head universality, linear-depth and Jackson-type bounds match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "kernel-view-lm-finetuning",
+   "title": "A Kernel-Based View of Language Model Fine-Tuning",
+   "authors": "Malladi et al.",
+   "year": 2022,
+   "venue": "ICML 2023",
+   "arxiv": "2210.05643",
+   "url": "https://arxiv.org/abs/2210.05643",
+   "claim": "Extends the NTK formalism to Adam and uses Tensor Programs to characterise when fine-tuning pretrained LMs is kernel-like. Prompt-based fine-tuning (masked-word formulation) often shows kernel behavior across 14 NLP tasks, while some tasks do not. A Johnson-Lindenstrauss argument shows that the kernel analog of SGD fine-tuning is approximately preserved by LoRA, which explains subspace methods in the kernel regime.",
+   "relevance": "Gives a linearised semantics in which PEFT is a choice of subspace of the tangent space at \\theta_0, and LoRA's random A acts as a JL projection. This is the first-order 'tangent functor' picture of PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/2210.05643",
+    "https://arxiv.org/pdf/2210.05643",
+    "https://github.com/princeton-nlp/LM-Kernel-FT",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2210.05643"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2210.05643 (Malladi; 2022-10) matches; ICML 2023 per the arXiv comment and PMLR v202; the 14 tasks and the JL argument for LoRA (Sec. 7) were checked in the full text.",
+   "corrections": []
+  },
+  {
+   "id": "lora-ntk-no-spurious-minima",
+   "title": "LoRA Training in the NTK Regime has No Spurious Local Minima",
+   "authors": "Jang et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.11867",
+   "url": "https://arxiv.org/abs/2402.11867",
+   "claim": "In the NTK regime with N data points: (i) full fine-tuning admits a low-rank solution of rank r \\lesssim \\sqrt{N}; (ii) LoRA with rank r \\gtrsim \\sqrt{N} has no spurious local minima, so gradient descent finds the low-rank solutions; (iii) these solutions generalize well.",
+   "relevance": "A landscape theorem for the factorised parametrisation \\Delta W = BA. The GL(r) redundancy of the factorisation does not create bad critical points once r passes a data-dependent threshold.",
+   "sources": [
+    "https://arxiv.org/abs/2402.11867",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.11867"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.11867 (Jang, Uijeong; 2024-02) matches; ICML 2024 confirmed in PMLR v235; (i)-(iii) match the abstract verbatim in substance.",
+   "corrections": []
+  },
+  {
+   "id": "lora-converges-or-fails-loudly",
+   "title": "LoRA Training Provably Converges to a Low-Rank Global Minimum or It Fails Loudly (But it Probably Won't Fail)",
+   "authors": "Kim et al.",
+   "year": 2025,
+   "venue": "ICML 2025",
+   "arxiv": "2502.09376",
+   "url": "https://arxiv.org/abs/2502.09376",
+   "claim": "Without linearization, the paper separates a 'special' regime (where linearization holds) from a 'generic' one. In the generic regime, LoRA training converges either to a low-rank, small-magnitude global minimizer or to a qualitatively different high-rank, large-magnitude solution. Zero initialization and weight decay bias training toward the low-rank, small-magnitude region where the global minima lie.",
+   "relevance": "A landscape result for LoRA that does not rely on linearization. It links the identity-at-init convention (B = 0) and weight decay to an implicit bias, which a structural theory should model as part of the reparametrisation data.",
+   "sources": [
+    "https://arxiv.org/abs/2502.09376",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2502.09376"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2502.09376 (Kim, Junsu; 2025-02) matches; ICML 2025 confirmed in PMLR v267; the special/generic regimes and the implicit-bias claim match the abstract.",
+   "corrections": [
+    "relevance: removed the unverifiable superlative 'most general ... to date'"
+   ]
+  },
+  {
+   "id": "lora-plus-width-scaling",
+   "title": "LoRA+: Efficient Low Rank Adaptation of Large Models",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.12354",
+   "url": "https://arxiv.org/abs/2402.12354",
+   "claim": "In the infinite-width limit with Adam, using the same learning rate for A and B prevents efficient feature learning. Efficiency is achieved with \\eta_A = \\Theta(n^{-1}) and \\eta_B = \\Theta(1), so the ratio \\lambda = \\eta_B/\\eta_A must be \\Theta(n) (Theorem 1). In practice a fixed ratio is used: about 2^4 for RoBERTa under the paper's Init[2] (A = 0, B random), 2^2-2^3 under the standard Init[1] (B = 0, A random), and 2^1-2^2 for Llama. This gives 1-2% gains and up to about 2x faster fine-tuning.",
+   "relevance": "This shows that the two factors of the GL(r)-redundant parametrisation are not interchangeable under standard optimizers. The scaling part of the gauge (B -> cB, A -> A/c) interacts with learning rates, which motivates gauge-aware optimizers.",
+   "sources": [
+    "https://arxiv.org/abs/2402.12354",
+    "https://arxiv.org/html/2402.12354",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.12354"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.12354 (Hayou; 2024-02) matches; ICML 2024 confirmed in PMLR v235; Theorem 1 and the ratio recommendations in Sec. 5.3 were read in the full text.",
+   "corrections": [
+    "claim: Theorem 1 is stated for Adam and gives a sufficient scaling; the 2^4 RoBERTa ratio holds under Init[2] (A = 0), while the standard B = 0 init gives 2^2-2^3 (Sec. 5.3)"
+   ]
+  },
+  {
+   "id": "lora-init-impact",
+   "title": "The Impact of Initialization on LoRA Finetuning Dynamics",
+   "authors": "Hayou et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2024",
+   "arxiv": "2406.08447",
+   "url": "https://arxiv.org/abs/2406.08447",
+   "claim": "The two zero-product initializations, B = 0 with A random (the PEFT default) and A = 0 with B random, both start from the pretrained model but lead to different dynamics. The first allows larger stable learning rates and on average performs better, which the theory explains through large-width scaling.",
+   "relevance": "Both schemes satisfy identity at initialization, yet they start with different values of the gradient-flow invariant A A^\\top - B^\\top B (PSD versus NSD). So 'identity at init' alone does not determine a PEFT method's behavior, and the conserved charge has to be part of the specification.",
+   "sources": [
+    "https://arxiv.org/abs/2406.08447",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2406.08447"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2406.08447 (Hayou; 2024-06) matches; NeurIPS 2024 confirmed in the NeurIPS 2024 virtual list (poster 93375); the invariant A A^T - B^T B at init (PSD vs NSD) was re-derived.",
+   "corrections": []
+  },
+  {
+   "id": "rslora-rank-stabilization",
+   "title": "A Rank Stabilization Scaling Factor for Fine-Tuning with LoRA",
+   "authors": "Kalajdzievski",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2312.03732",
+   "url": "https://arxiv.org/abs/2312.03732",
+   "claim": "The conventional \\alpha/r scaling slows learning and stunts performance at higher ranks. The paper proves that LoRA adapters should instead be scaled by \\alpha/\\sqrt{r} for rank-stable learning (rsLoRA), which makes higher ranks a useful compute/performance trade-off at no extra inference cost.",
+   "relevance": "A scaling-limit result for the factorised parametrisation, available in HF PEFT as LoraConfig(use_rslora=True). It shows that the normalisation constant is part of the reparametrisation and not a cosmetic hyperparameter.",
+   "sources": [
+    "https://arxiv.org/abs/2312.03732",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2312.03732",
+    "https://github.com/huggingface/peft"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.03732 (Kalajdzievski; 2023-11) matches; no venue found, so arXiv. The alpha/sqrt(r) scaling matches the abstract, and LoraConfig(use_rslora=True) with lora_alpha/math.sqrt(r) was confirmed in peft main src/peft/tuners/lora/config.py.",
+   "corrections": []
+  },
+  {
+   "id": "asymmetry-lora",
+   "title": "Asymmetry in Low-Rank Adapters of Foundation Models",
+   "authors": "Zhu et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.16842",
+   "url": "https://arxiv.org/abs/2402.16842",
+   "claim": "In \\Delta W = BA, A extracts input features and B maps them to the desired output. Tuning B is more effective than tuning A, and a random, untrained (e.g. orthogonal) A performs nearly as well as a learned one. An information-theoretic generalization bound improves when only B is trained. Experiments cover RoBERTa, BART-Large, LLaMA-2 and ViTs.",
+   "relevance": "Freezing A to a random matrix removes the GL(r) redundancy, but it is not a gauge fixing: it also restricts the image to updates whose row space is that of the frozen A. It turns LoRA into a linear model in B and unifies it with frozen-random-basis methods such as VeRA, NOLA and LoRA-FA.",
+   "sources": [
+    "https://arxiv.org/abs/2402.16842",
+    "https://arxiv.org/pdf/2402.16842",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.16842"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.16842 (Zhu, Jiacheng; 2024-02) matches; ICML 2024 confirmed in PMLR v235; the claim matches the abstract. Relevance corrected: freezing A is not a gauge fixing.",
+   "corrections": [
+    "relevance: freezing A is not a gauge fixing (not every rank-r update has a representative with that A); it restricts the image"
+   ]
+  },
+  {
+   "id": "lora-learns-less-forgets-less",
+   "title": "LoRA Learns Less and Forgets Less",
+   "authors": "Biderman et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2405.09673",
+   "url": "https://arxiv.org/abs/2405.09673",
+   "claim": "On code and math, with both instruction tuning (about 100K pairs) and continued pretraining (20B tokens), standard low-rank LoRA substantially underperforms full fine-tuning but better preserves out-of-domain performance and generation diversity, more than weight decay or dropout do. Full fine-tuning learns perturbations with 10-100x higher rank than typical LoRA configurations.",
+   "relevance": "Empirical evidence about the limited image of rank-r reparametrisations (learns less) and their conservativeness (forgets less), the two sides of restricting to a small sub-object of weight space.",
+   "sources": [
+    "https://arxiv.org/abs/2405.09673",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2405.09673"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2405.09673 (Biderman, Dan; 2024-05) matches; TMLR August 2024 (Featured Certification) per the arXiv comment and the TMLR accepted-papers list; the 100K pairs, 20B tokens and 10-100x rank figures match the v2 abstract.",
+   "corrections": []
+  },
+  {
+   "id": "lora-illusion-of-equivalence",
+   "title": "LoRA vs Full Fine-tuning: An Illusion of Equivalence",
+   "authors": "Shuttleworth et al.",
+   "year": 2024,
+   "venue": "NeurIPS 2025",
+   "arxiv": "2410.21228",
+   "url": "https://arxiv.org/abs/2410.21228",
+   "claim": "Even at matched task performance, LoRA and full fine-tuning produce structurally different weights. LoRA introduces new high-ranking singular vectors ('intruder dimensions') that full fine-tuning does not. These dimensions causally drive forgetting, scaling them down significantly improves modelling of the pre-training distribution with a minimal drop in task performance, and they accumulate in continual learning.",
+   "relevance": "Shows that the right notion of 'equivalence' between PEFT and full FT is not equal task loss. Invariants of the resulting weights, such as spectral structure relative to W_0, separate methods.",
+   "sources": [
+    "https://arxiv.org/abs/2410.21228",
+    "https://neurips.cc/virtual/2025/poster/115207",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2410.21228"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.21228 (Shuttleworth; 2024-10) matches; NeurIPS 2025 confirmed (neurips.cc/virtual/2025/poster/115207); wording aligned with the v3 abstract.",
+   "corrections": [
+    "claim: 'restores' overstated the paper ('significantly improves modeling of the pre-training distribution')"
+   ]
+  },
+  {
+   "id": "lora-without-regret",
+   "title": "LoRA Without Regret",
+   "authors": "Schulman & Thinking Machines Lab",
+   "year": 2025,
+   "venue": "Thinking Machines Lab blog (Connectionism), 2025",
+   "arxiv": "",
+   "url": "https://thinkingmachines.ai/blog/lora/",
+   "claim": "LoRA matches full fine-tuning in a 'low-regret' regime: when it is applied to all weight matrices, especially MLP/MoE layers, and is not capacity-limited. Attention-only LoRA underperforms. The optimal LoRA learning rate is about 10x the full-FT optimum, and rank 1 suffices for policy-gradient RL because RL absorbs only about 1 bit per episode.",
+   "relevance": "A widely shared capacity argument (bits learned versus parameters exposed) that states when the restriction to a rank-r sub-object costs nothing. It is useful for calibrating claims of 'equivalence' between PEFT and full fine-tuning.",
+   "sources": [
+    "https://thinkingmachines.ai/blog/lora/",
+    "https://huggingface.co/docs/trl/en/lora_without_regret",
+    "https://doi.org/10.64434/tml.20250929"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "Blog post confirmed at thinkingmachines.ai/blog/lora/ (John Schulman in collaboration with others at Thinking Machines, Sep 29 2025; DOI 10.64434/tml.20250929). The 10x LR ratio, the MLP/all-layers finding, RL at ranks as low as 1 and the ~1 bit per episode argument were all checked in the text. There is no arXiv id.",
+   "corrections": [
+    "authors: 'Schulman et al.' -> 'Schulman & Thinking Machines Lab', the post's own citation form",
+    "sources: added the post's DOI 10.64434/tml.20250929 (resolves to the blog)"
+   ]
+  },
+  {
+   "id": "scaling-llm-finetuning",
+   "title": "When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method",
+   "authors": "Zhang et al.",
+   "year": 2024,
+   "venue": "ICLR 2024",
+   "arxiv": "2402.17193",
+   "url": "https://arxiv.org/abs/2402.17193",
+   "claim": "On bilingual LLMs from 1B to 16B parameters, fine-tuning follows a power-based multiplicative joint scaling law between fine-tuning data size and each other scaling factor. Fine-tuning benefits more from model scaling than from pretraining-data scaling, scaling PET parameters (prompt length, LoRA rank) is generally ineffective, and the best method depends on task and data.",
+   "relevance": "Scaling-law evidence that the size of the PEFT parameter object matters much less than the frozen base. This fits the picture of PEFT as a small reparametrisation of a large fixed morphism.",
+   "sources": [
+    "https://arxiv.org/abs/2402.17193",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.17193"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.17193 (Zhang, Biao; 2024-02) matches; ICLR 2024 per the arXiv comment and the ICLR 2024 virtual list (poster 19432); the claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "task-arithmetic-tangent-space",
+   "title": "Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models",
+   "authors": "Ortiz-Jimenez et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2305.12827",
+   "url": "https://arxiv.org/abs/2305.12827",
+   "claim": "Weight disentanglement, where distinct weight-space directions govern separate localized regions of function space, is the key to task arithmetic. Fine-tuning in the linearized tangent space amplifies it, and the paper links task arithmetic to spatial localization of NTK eigenfunctions.",
+   "relevance": "Gives conditions under which adding task deltas (the commutative monoid structure on \\Delta W used by adapter merging) commutes with the model function. This is the theoretical basis for composition and merging of PEFT modules.",
+   "sources": [
+    "https://arxiv.org/abs/2305.12827",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2305.12827"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2305.12827 (Ortiz-Jimenez; 2023-05) matches; NeurIPS 2023 per the arXiv journal-ref and the NeurIPS 2023 virtual list (poster 73073).",
+   "corrections": []
+  },
+  {
+   "id": "scaling-down-to-scale-up",
+   "title": "Scaling Down to Scale Up: A Guide to Parameter-Efficient Fine-Tuning",
+   "authors": "Lialin et al.",
+   "year": 2023,
+   "venue": "arXiv",
+   "arxiv": "2303.15647",
+   "url": "https://arxiv.org/abs/2303.15647",
+   "claim": "Taxonomy covering over 50 papers (early 2019 to mid-2024) that sorts methods into addition-based (adapter-like, soft prompts, other), selection-based, reparametrization-based and hybrid. A head-to-head comparison of 15 methods (14 in the body text) on models up to 11B finds that Houlsby adapters and LoRA are consistently best, that methods reported to beat LoRA struggle under limited hyperparameter search, and that LayerNorm tuning is unexpectedly competitive.",
+   "relevance": "One of the standard taxonomies (additive / selective / reparametrisation / hybrid) that the categorical classification should refine. Its efficiency comparison is a useful empirical check on the theory.",
+   "sources": [
+    "https://arxiv.org/abs/2303.15647",
+    "https://arxiv.org/html/2303.15647",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2303.15647"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2303.15647 (Lialin; 2023-03, v2 covers 2019 to mid-2024) matches; no venue found, so arXiv. Section headings in v2 confirm that Houlsby adapters and LoRA perform best, hybrid methods are hyperparameter-sensitive, and LN tuning is unexpectedly competitive.",
+   "corrections": [
+    "claim: v2 abstract says 'over 50 papers published between early 2019 and mid-2024', not 50 methods",
+    "claim: stated the method count as in the abstract (15) and body (14)"
+   ]
+  },
+  {
+   "id": "peft-critical-review",
+   "title": "Parameter-Efficient Fine-Tuning Methods for Pretrained Language Models: A Critical Review and Assessment",
+   "authors": "Xu et al.",
+   "year": 2023,
+   "venue": "IEEE TPAMI 2026",
+   "arxiv": "2312.12148",
+   "url": "https://arxiv.org/abs/2312.12148",
+   "claim": "Systematic review that sorts PEFT methods for PLMs into additive, partial, reparameterized, hybrid and unified fine-tuning, with experiments on representative methods measuring parameter and memory efficiency.",
+   "relevance": "A five-class taxonomy whose 'unified' class (AdaMix, SparseAdapter, ProPETL) is kept apart from 'hybrid' combinations (MAM adapter, UniPELT, AutoPEFT, S3Delta-M). Comparing it with the Delta-Tuning and Han et al. taxonomies shows how unstable informal classifications are, which motivates a principled one.",
+   "sources": [
+    "https://arxiv.org/abs/2312.12148",
+    "https://arxiv.org/pdf/2312.12148",
+    "https://doi.org/10.1109/tpami.2026.3657354",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2312.12148"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2312.12148 (Xu, Lingling; 2023-12) matches; IEEE TPAMI 48(6):6107-6126 (2026) confirmed by Crossref DOI 10.1109/TPAMI.2026.3657354. The five classes were checked in the full text.",
+   "corrections": [
+    "relevance: UniPELT and MAM are in the paper's hybrid class (Sec. III-D), not the unified class (Sec. III-E: AdaMix, SparseAdapter, ProPETL)"
+   ]
+  },
+  {
+   "id": "peft-survey-han",
+   "title": "Parameter-Efficient Fine-Tuning for Large Models: A Comprehensive Survey",
+   "authors": "Han et al.",
+   "year": 2024,
+   "venue": "TMLR 2024",
+   "arxiv": "2403.14608",
+   "url": "https://arxiv.org/abs/2403.14608",
+   "claim": "Comprehensive survey that organises PEFT into additive (adapters, soft prompts, others), selective (unstructured and structured masking), reparameterized (low-rank decomposition, LoRA derivatives) and hybrid methods. It also covers efficient-PEFT techniques, applications across model families, and system-level costs.",
+   "relevance": "One of the most-cited PEFT surveys (about 1,100 Semantic Scholar citations in 2026-10; Ding et al.'s Nature MI survey has more). Its four-way taxonomy is the baseline any categorical reclassification is compared against.",
+   "sources": [
+    "https://arxiv.org/abs/2403.14608",
+    "https://arxiv.org/html/2403.14608",
+    "https://openreview.net/pdf?id=lIsCS8b6zj",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2403.14608"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2403.14608 (Han, Zeyu; 2024-03) matches; TMLR November 2024 confirmed in the TMLR accepted-papers list (openreview lIsCS8b6zj); the taxonomy (additive, selective with unstructural/structural masking, reparameterized, hybrid) was checked.",
+   "corrections": [
+    "relevance: 'the most-cited' is false on Semantic Scholar (Ding et al., Nature MI: 1,289 vs Han et al.: 1,110)"
+   ]
+  },
+  {
+   "id": "lora-survey-mao",
+   "title": "A Survey on LoRA of Large Language Models",
+   "authors": "Mao et al.",
+   "year": 2024,
+   "venue": "Frontiers of Computer Science 2025",
+   "arxiv": "2407.11046",
+   "url": "https://arxiv.org/abs/2407.11046",
+   "claim": "Reviews LoRA progress along five axes: downstream-adaptation variants, cross-task generalization by mixing LoRA plugins, efficiency improvements, privacy-preserving and federated use, and applications. Maintains an Awesome-LoRAs list.",
+   "relevance": "The standard map of the LoRA sub-family, including mixture and composition methods that a categorical treatment models as coproducts or monoidal combinations of reparametrisations.",
+   "sources": [
+    "https://arxiv.org/abs/2407.11046",
+    "https://github.com/ZJU-LLMs/Awesome-LoRAs",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2407.11046"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2407.11046 (Mao, Yuren; 2024-07) matches; Frontiers of Computer Science 19(7) (2025; online 2024-12) confirmed by Crossref DOI 10.1007/s11704-024-40663-9; the Awesome-LoRAs repo resolves.",
+   "corrections": []
+  },
+  {
+   "id": "visual-peft-survey",
+   "title": "Parameter-Efficient Fine-Tuning for Pre-Trained Vision Models: A Survey and Benchmark",
+   "authors": "Xin et al.",
+   "year": 2024,
+   "venue": "International Journal of Computer Vision 2026",
+   "arxiv": "2402.02242",
+   "url": "https://arxiv.org/abs/2402.02242",
+   "claim": "Surveys visual PEFT and sorts it into addition-based, partial-based, unified-based and multi-task tuning. It introduces V-PEFT Bench for standardized evaluation across vision tasks.",
+   "relevance": "The main vision-side taxonomy. It shows that the same structural classes recur across modalities, which supports a modality-independent categorical classification.",
+   "sources": [
+    "https://arxiv.org/abs/2402.02242",
+    "https://link.springer.com/article/10.1007/s11263-026-02864-6",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.02242"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.02242 (Xin, Yi; 2024-02) matches; IJCV 134(6) (2026) confirmed by Crossref DOI 10.1007/s11263-026-02864-6; the four categories and V-PEFT Bench match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "modular-deep-learning",
+   "title": "Modular Deep Learning",
+   "authors": "Pfeiffer et al.",
+   "year": 2023,
+   "venue": "TMLR 2023",
+   "arxiv": "2302.11529",
+   "url": "https://arxiv.org/abs/2302.11529",
+   "claim": "Unified view of modular architectures in which parameter-efficient modules are combined with a frozen model by one of three computation functions: parameter composition f_{\\theta\\oplus\\phi}(x) (e.g. LoRA, sparse adapters), input composition f_\\theta([\\phi,x]) (e.g. prefix tuning) or function composition f_\\phi \\circ f_\\theta(x) (adapter layers). Routing (hard or soft) and aggregation functions select and combine modules.",
+   "relevance": "The closest existing taxonomy to a categorical one. Parameter composition is a reparametrisation 2-cell, input composition is precomposition with a learned state, and function composition is composition of morphisms; routing and aggregation correspond to coproduct and colimit-like structure.",
+   "sources": [
+    "https://arxiv.org/abs/2302.11529",
+    "https://arxiv.org/pdf/2302.11529",
+    "https://www.modulardeeplearning.com/",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2302.11529"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2302.11529 (Pfeiffer, Jonas; 2023-02) matches; TMLR December 2023 (Survey Certification) confirmed in the TMLR list; the three computation functions match Sec. 3 verbatim.",
+   "corrections": []
+  },
+  {
+   "id": "lora-redux",
+   "title": "Low-Rank Adaptation Redux for Large Models",
+   "authors": "Li et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2604.21905",
+   "url": "https://arxiv.org/abs/2604.21905",
+   "claim": "A signal-processing overview of LoRA along three axes. Architectural design covers SVD-based factorisation, rank augmentation and cross-layer tensorisation. Efficient optimization covers initialization, alternating solvers, gauge-invariant optimization and parameterization-aware methods. Applications span pre-training, post-training and serving.",
+   "relevance": "A recent survey that names 'gauge-invariant optimization' as a category of its own. This indicates that the GL(r) symmetry viewpoint has become an organising principle for LoRA research.",
+   "sources": [
+    "https://arxiv.org/abs/2604.21905",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2604.21905"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2604.21905 (Li, Bingcong; 2026-04) matches; arXiv only; the three axes, including 'gauge-invariant optimization', match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "implicit-acceleration-overparameterization",
+   "title": "On the Optimization of Deep Networks: Implicit Acceleration by Overparameterization",
+   "authors": "Arora et al.",
+   "year": 2018,
+   "venue": "ICML 2018",
+   "arxiv": "1802.06509",
+   "url": "https://arxiv.org/abs/1802.06509",
+   "claim": "For deep linear networks with balanced initialization, W_{j+1}^\\top W_{j+1} = W_j W_j^\\top, gradient flow preserves balancedness. The end-to-end matrix then follows a preconditioned update whose preconditioner depends on the singular values of the product (powers of W W^\\top and W^\\top W), so depth acts as an accelerating preconditioner. This effect cannot be obtained from the gradient of any regularizer.",
+   "relevance": "For depth 2 (\\Delta W = BA), balancedness B^\\top B = A A^\\top is a GL(r)-gauge condition, and the induced end-to-end dynamics explain why the factorised LoRA parametrisation changes optimization geometry relative to training \\Delta W directly. This is the root of balanced and Riemannian LoRA variants.",
+   "sources": [
+    "https://arxiv.org/abs/1802.06509",
+    "https://arxiv.org/pdf/1802.06509",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1802.06509"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1802.06509 (Arora; 2018-02) matches; ICML 2018 per the arXiv comment and PMLR v80; the balancedness condition maps to B^T B = A A^T for W = BA; the no-regularizer impossibility is in the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "layers-automatically-balanced",
+   "title": "Algorithmic Regularization in Learning Deep Homogeneous Models: Layers are Automatically Balanced",
+   "authors": "Du et al.",
+   "year": 2018,
+   "venue": "NeurIPS 2018",
+   "arxiv": "1806.00900",
+   "url": "https://arxiv.org/abs/1806.00900",
+   "claim": "For homogeneous networks (linear, ReLU, Leaky ReLU), gradient flow keeps the differences between squared layer norms invariant, and for linear layers the matrix W_{j+1}^\\top W_{j+1} - W_j W_j^\\top is conserved. Small initialization therefore yields automatically balanced layers. For asymmetric low-rank matrix factorization, gradient descent with decaying step sizes balances the factors and converges to a global optimum.",
+   "relevance": "Applied to LoRA, gradient flow conserves A A^\\top - B^\\top B, which is the Noether charge of the GL(r) symmetry. With the default init (B = 0), this charge equals A_0 A_0^\\top, so standard LoRA starts and stays off the balanced set.",
+   "sources": [
+    "https://arxiv.org/abs/1806.00900",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1806.00900"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1806.00900 (Du, Simon S.; 2018-06) matches; NeurIPS 2018 per the arXiv comment and the NeurIPS 2018 list; the invariants and the asymmetric factorization result match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "implicit-regularization-deep-matrix-factorization",
+   "title": "Implicit Regularization in Deep Matrix Factorization",
+   "authors": "Arora et al.",
+   "year": 2019,
+   "venue": "NeurIPS 2019",
+   "arxiv": "1905.13655",
+   "url": "https://arxiv.org/abs/1905.13655",
+   "claim": "Gradient descent on deep (multi-factor) matrix factorizations has an implicit bias toward low-rank solutions that grows with depth. The paper argues that this bias is not captured by simple norms such as the nuclear norm.",
+   "relevance": "Explains why factorised parametrisations of \\Delta W (BA, or deeper products and tensorised variants) carry an implicit low-rank bias beyond their explicit rank constraint. A theory of PEFT should treat the parametrisation, and not only its image, as meaningful.",
+   "sources": [
+    "https://arxiv.org/abs/1905.13655",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1905.13655"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1905.13655 (Arora; 2019-05) matches; NeurIPS 2019 per the arXiv comment and the NeurIPS 2019 list.",
+   "corrections": []
+  },
+  {
+   "id": "neural-mechanics-symmetry",
+   "title": "Neural Mechanics: Symmetry and Broken Conservation Laws in Deep Learning Dynamics",
+   "authors": "Kunin et al.",
+   "year": 2020,
+   "venue": "ICLR 2021",
+   "arxiv": "2012.04728",
+   "url": "https://arxiv.org/abs/2012.04728",
+   "claim": "Continuous symmetries of the architecture (translation from softmax, scale from normalization, rescale from homogeneous activations) constrain gradients and Hessians and give Noether-like conservation laws under gradient flow. Finite learning rates break these laws, and modified gradient flow yields exact integral expressions for the dynamics of symmetric parameter combinations, validated on VGG-16.",
+   "relevance": "Supplies the Noether framework (symmetry -> conserved quantity, broken at finite step size) needed to treat LoRA's GL(r) gauge and the scaling symmetries of DoRA- and (IA)^3-style methods uniformly.",
+   "sources": [
+    "https://arxiv.org/abs/2012.04728",
+    "https://arxiv.org/pdf/2012.04728",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2012.04728"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2012.04728 (Kunin; 2020-12) matches; ICLR 2021 per the arXiv comment; the symmetries, broken conservation, modified gradient flow and VGG-16 validation match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "symmetries-conserved-quantities-gradient-flow",
+   "title": "Symmetries, Flat Minima, and the Conserved Quantities of Gradient Flow",
+   "authors": "Zhao et al.",
+   "year": 2022,
+   "venue": "ICLR 2023",
+   "arxiv": "2210.17216",
+   "url": "https://arxiv.org/abs/2210.17216",
+   "claim": "A general framework for continuous parameter-space symmetries, including nonlinear data-dependent ones, that carve out flat low-loss valleys. For a two-layer linear network UV the loss is GL_h(R)-invariant and every entry of V V^\\top - U^\\top U is conserved. Conserved quantities parametrise flat minima and are tied to convergence rate and sharpness, so the initialization fixes which part of the minimum set gradient flow explores.",
+   "relevance": "The cleanest statement that LoRA's factor pair (U, V) = (B, A) carries a GL(r) symmetry with conserved charge A A^\\top - B^\\top B, and that this charge (fixed at init) affects convergence and sharpness. The gauge-theoretic layer of a categorical PEFT theory rests on this.",
+   "sources": [
+    "https://arxiv.org/abs/2210.17216",
+    "https://arxiv.org/pdf/2210.17216",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2210.17216"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2210.17216 (Zhao, Bo; 2022-10) matches; ICLR 2023 per the arXiv comment and the ICLR 2023 virtual list (poster 11070); Example 5.2 (GL_h symmetry, every entry of VV^T - U^T U conserved) was read in the full text.",
+   "corrections": []
+  },
+  {
+   "id": "conservation-laws-gradient-flows",
+   "title": "Abide by the Law and Follow the Flow: Conservation Laws for Gradient Flows",
+   "authors": "Marcotte et al.",
+   "year": 2023,
+   "venue": "NeurIPS 2023",
+   "arxiv": "2307.00144",
+   "url": "https://arxiv.org/abs/2307.00144",
+   "claim": "Defines conservation laws as quantities preserved by gradient flow for any data and loss, and shows that the maximal number of independent laws can be computed by finite-dimensional algebra on the Lie algebra generated by the model's Jacobian vector fields. Algorithms recover all known laws for several ReLU architectures and show there are no others.",
+   "relevance": "A complete, algorithmic answer to 'what is conserved' for a given parametrisation. In principle it lets one compute the full invariant set of any PEFT parametrisation (LoRA, DoRA, Kronecker or tensor factorisations), not only the obvious GL(r) charge.",
+   "sources": [
+    "https://arxiv.org/abs/2307.00144",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2307.00144"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2307.00144 (Marcotte; 2023-06) matches; NeurIPS 2023 confirmed in the NeurIPS 2023 virtual list (poster 70647); the claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "fixed-rank-riemannian-quotient",
+   "title": "Fixed-rank matrix factorizations and Riemannian low-rank optimization",
+   "authors": "Mishra et al.",
+   "year": 2012,
+   "venue": "Computational Statistics 2014",
+   "arxiv": "1209.0430",
+   "url": "https://arxiv.org/abs/1209.0430",
+   "claim": "Optimization over fixed-rank matrices is cast on Riemannian quotient manifolds. The full-rank factorization W = GH^\\top has the symmetry (G, H) -> (GM^{-1}, HM^\\top), M in GL(r), giving the quotient R_*^{d_1\\times r} x R_*^{d_2\\times r}/GL(r). Equivalent polar (St x S_{++} x St / O(r)) and subspace-projection quotients are given, and gradient and trust-region algorithms are derived for each geometry.",
+   "relevance": "Classical geometry behind LoRA's gauge: the space of factor pairs (B, A) is a principal GL(r)-bundle over the manifold of rank-r updates. Riemannian-preconditioned LoRA, LoRA-RITE and BaLoRA all choose a metric or gauge on this bundle.",
+   "sources": [
+    "https://arxiv.org/abs/1209.0430",
+    "https://arxiv.org/pdf/1209.0430",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1209.0430"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1209.0430 (Mishra, B.; 2012-09) matches; Computational Statistics 29(3-4):591-621 (2014; online 2013) confirmed by Crossref DOI 10.1007/s00180-013-0464-z; the GL(r) action (G M^{-1}, H M^T) was re-derived.",
+   "corrections": []
+  },
+  {
+   "id": "riemannian-preconditioned-lora",
+   "title": "Riemannian Preconditioned LoRA for Fine-Tuning Foundation Models",
+   "authors": "Zhang & Pilanci",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.02347",
+   "url": "https://arxiv.org/abs/2402.02347",
+   "claim": "Adds an r x r preconditioner to each LoRA step (W = W_0 + BA): A \\leftarrow A - \\eta (B^\\top B)^{-1}\\nabla_A L and B \\leftarrow B - \\eta \\nabla_B L\\,(A A^\\top)^{-1}, i.e. left-multiplication for A and right-multiplication for B. It is derived from a Riemannian metric on the quotient manifold of fixed-rank matrices. In the infinite-width limit, with Adam, this gives stable feature learning with a single \\Theta(1) learning rate for both factors (Theorem 4.1), and it makes SGD and AdamW more robust on LLMs and diffusion models.",
+   "relevance": "Shows directly that choosing a GL(r)-compatible (quotient) metric removes the A/B learning-rate asymmetry of LoRA+. Optimization geometry on the gauge bundle is a first-class part of a PEFT method.",
+   "sources": [
+    "https://arxiv.org/abs/2402.02347",
+    "https://arxiv.org/html/2402.02347",
+    "https://github.com/pilancilab/Riemannian_Preconditioned_LoRA",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.02347"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.02347 (Zhang, Fangzhao; 2024-02) matches; ICML 2024 confirmed in PMLR v235; Eq. (1), the metric (2) from Mishra et al., and Theorem 4.1 (Adam, eta = Theta(1)) were read in the full text.",
+   "corrections": [
+    "claim: made explicit which side each r x r preconditioner multiplies, matching Eq. (1)",
+    "claim: added that the stability theorem is for Adam"
+   ]
+  },
+  {
+   "id": "lora-rite-transformation-invariance",
+   "title": "LoRA Done RITE: Robust Invariant Transformation Equilibration for LoRA Optimization",
+   "authors": "Yen et al.",
+   "year": 2024,
+   "venue": "ICLR 2025",
+   "arxiv": "2410.20625",
+   "url": "https://arxiv.org/abs/2410.20625",
+   "claim": "Standard LoRA optimizers (Adam, Shampoo, LoRA+, ScaledAdam) lack transformation invariance: equivalent factorizations (A R, B R^{-\\top}) (paper's notation Z = AB^\\top; (BR, R^{-1}A) in this site's notation) receive different weight updates. LoRA-RITE computes 'unmagnified' gradients in polar-decomposition bases of the factors and preconditions only in the r-dimensional space, which makes updates invariant. Replacing Adam with it on Gemma-2B gives a 4.6% accuracy gain on Super-Natural Instructions.",
+   "relevance": "Turns GL(r) gauge invariance into a design requirement for optimizers and shows that respecting it improves results.",
+   "sources": [
+    "https://arxiv.org/abs/2410.20625",
+    "https://arxiv.org/html/2410.20625",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2410.20625"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.20625 (Yen, Jui-Nan; 2024-10) matches; ICLR 2025 oral per the arXiv comment and the ICLR 2025 virtual list (poster 29397); polar-decomposition unmagnified gradients and the 4.6% gain were checked.",
+   "corrections": [
+    "claim: flagged that (AR, BR^{-T}) uses the paper's Z = AB^T convention, not the site's W_0 + BA"
+   ]
+  },
+  {
+   "id": "learning-on-loras-gl-equivariance",
+   "title": "Learning on LoRAs: GL-Equivariant Processing of Low-Rank Weight Spaces for Large Finetuned Models",
+   "authors": "Putterman et al.",
+   "year": 2024,
+   "venue": "ICLR 2025 Workshop (Neural Network Weights as a New Data Modality)",
+   "arxiv": "2410.04207",
+   "url": "https://arxiv.org/abs/2410.04207",
+   "claim": "LoRA factor pairs (U, V) and (UR, VR^{-\\top}) for R in GL(r) give the same update \\Delta W = UV^\\top (paper's notation), an inner symmetry that differs from the outer permutation symmetries of ordinary networks. The paper builds GL-invariant or equivariant models on LoRA weights (canonicalization via O-Align, singular values as invariant features, multiplied-out dense features, and the equivariant GL-net) that predict CLIP score, data attributes, membership and downstream accuracy over thousands of fine-tuned models.",
+   "relevance": "Treats the GL(r) symmetry of LoRA as a structural fact about the space of PEFT modules and builds equivariant learners on it. The space of adapters becomes an object with a group action, which is the natural home for a functorial classification.",
+   "sources": [
+    "https://arxiv.org/abs/2410.04207",
+    "https://arxiv.org/html/2410.04207",
+    "https://iclr.cc/virtual/2025/33086",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2410.04207"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2410.04207 (Putterman, Theo; 2024-10) matches; iclr.cc/virtual/2025/33086 lists it under the workshop 'Neural Network Weights as a New Data Modality', and it is absent from the ICLR 2025 main-track list. The models (O-Align, SVD, Dense, GL-net) and tasks were checked in the full text.",
+   "corrections": [
+    "claim: flagged the paper's notation Delta W = U V^T",
+    "claim: named the paper's featurizations precisely (MLP + SVD, MLP + Dense)"
+   ]
+  },
+  {
+   "id": "balanced-lora",
+   "title": "Balanced LoRA: Removing Parameter Invariance to Accelerate Convergence",
+   "authors": "Castin et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2605.31484",
+   "url": "https://arxiv.org/abs/2605.31484",
+   "claim": "Factor pairs giving the same adapted matrix can have very different condition numbers, so the minimizer LoRA converges to affects its convergence rate. After each optimizer step, BaLoRA applies a product-preserving balancing map onto the 'hyperbalanced' manifold, on which (in this site's notation) B^\\top B = A A^\\top = S with S diagonal, non-negative and non-increasing; it is computed from the SVD of the product and so leaves the adapted matrix unchanged while improving conditioning. It converges faster and performs better than standard LoRA.",
+   "relevance": "Turns gauge fixing into an algorithm: it fixes the (hyper)balanced section of the GL(r)-bundle, i.e. the zero level set of the conserved quantity of Du et al. and Arora et al., with only a residual sign symmetry left when the singular values are distinct. It closes the loop between deep-linear-network theory and practical PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/2605.31484",
+    "https://arxiv.org/html/2605.31484v1",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2605.31484"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2605.31484 (Castin, Valerie; 2026-05) matches; ICML 2026 per the arXiv comment and the ICML 2026 virtual list (poster 62055). The paper's A^T A = B B^T for adapter AB is B^T B = A A^T in site notation; the hyperbalanced manifold and balancing map are in Sec. 3.1.",
+   "corrections": [
+    "claim: BaLoRA projects onto the hyperbalanced submanifold (balanced with a diagonal Gram matrix, Sec. 3.1), not merely the balanced set",
+    "relevance: made the gauge-fixing statement match the hyperbalanced manifold"
+   ]
+  },
+  {
+   "id": "backprop-as-functor",
+   "title": "Backprop as Functor: A compositional perspective on supervised learning",
+   "authors": "Fong et al.",
+   "year": 2017,
+   "venue": "LICS 2019",
+   "arxiv": "1711.10455",
+   "url": "https://arxiv.org/abs/1711.10455",
+   "claim": "Defines a symmetric monoidal category Learn whose morphisms are learners (P, I, U, r): a parameter space, implementation I: P x A -> B, update U: P x A x B -> P and request function r: P x A x B -> A. For a fixed step size \\epsilon > 0 and an error function e with \\partial e/\\partial x(x_0,-) invertible, gradient descent defines a faithful, injective-on-objects, strong symmetric monoidal functor L_{\\epsilon,e}: Para -> Learn, so backpropagation is functorial.",
+   "relevance": "The original categorical semantics of learning. A PEFT method changes the parameter object P of each learner (restricting, extending or reparametrising it) while keeping I's frozen part fixed. Whether and how such changes commute with L_{\\epsilon,e} is a natural first theorem for a categorical PEFT theory.",
+   "sources": [
+    "https://arxiv.org/abs/1711.10455",
+    "https://arxiv.org/pdf/1711.10455",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1711.10455"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1711.10455 (Fong, Brendan; 2017-11) matches; LICS 2019 per the arXiv journal-ref and DOI 10.1109/LICS.2019.8785665. Theorem III.2 (faithful, injective-on-objects, strong symmetric monoidal L_{eps,e}) was read in the PDF.",
+   "corrections": []
+  },
+  {
+   "id": "lenses-and-learners",
+   "title": "Lenses and Learners",
+   "authors": "Fong & Johnson",
+   "year": 2019,
+   "venue": "Bx 2019 (International Workshop on Bidirectional Transformations)",
+   "arxiv": "1903.03671",
+   "url": "https://arxiv.org/abs/1903.03671",
+   "claim": "There is a faithful, identity-on-objects symmetric monoidal functor embedding a category of asymmetric lenses into the category of learners, and another embedding learners into a category of symmetric lenses. The learners of Backprop as Functor are therefore tightly linked to lenses.",
+   "relevance": "Bridges Learn to the lens/optic formalism, which later work uses as the standard home for gradient-based learning and therefore for PEFT.",
+   "sources": [
+    "https://arxiv.org/abs/1903.03671",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1903.03671"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1903.03671 (Fong, Brendan; 2019-03) matches; Bx 2019 (CEUR) per the arXiv journal-ref; both embeddings match the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "reverse-derivative-categories",
+   "title": "Reverse Derivative Categories",
+   "authors": "Cockett et al.",
+   "year": 2019,
+   "venue": "CSL 2020",
+   "arxiv": "1910.07065",
+   "url": "https://arxiv.org/abs/1910.07065",
+   "claim": "Gives a direct axiomatization of categories with a reverse derivative, analogous to Cartesian differential categories for forward derivatives. A reverse derivative implies a forward derivative but not conversely: it is equivalent to a forward derivative together with a dagger structure on the subcategory of linear maps, which forms an additively enriched category with dagger biproducts.",
+   "relevance": "The axiomatic basis for backpropagating through any reparametrisation. The chain rule for a PEFT map \\alpha: Q -> P (e.g. (A, B) |-> W_0 + BA) is functoriality of the reverse derivative, and the dagger is the transpose that appears in LoRA's gradients.",
+   "sources": [
+    "https://arxiv.org/abs/1910.07065",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:1910.07065"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 1910.07065 (Cockett, Robin; 2019-10) matches; CSL 2020 per the arXiv comment and DOI 10.4230/LIPIcs.CSL.2020.18; the claim matches the abstract.",
+   "corrections": []
+  },
+  {
+   "id": "categorical-foundations-gradient-learning",
+   "title": "Categorical Foundations of Gradient-Based Learning",
+   "authors": "Cruttwell et al.",
+   "year": 2021,
+   "venue": "ESOP 2022",
+   "arxiv": "2103.01931",
+   "url": "https://arxiv.org/abs/2103.01931",
+   "claim": "Gives a categorical semantics of gradient-based learning in which models are morphisms of Para(Lens(C)) for a Cartesian reverse differential category C. Para accounts for parameters, Lens for bidirectional information flow, and the CRDC for differentiation. Optimisers (SGD, Adam, AdaGrad, Nesterov), losses (MSE, softmax cross-entropy) and learning rates are uniformly lenses or reparametrisations, Boolean-circuit learning is covered, and there is a Python implementation.",
+   "relevance": "The formal home for PEFT. It defines a reparametrisation of (P, f): A -> B by \\alpha: Q -> P as (Q, (\\alpha \\otimes 1_A); f), and every weight-space PEFT method (LoRA's (A, B) |-> W_0 + BA, BitFit's coordinate inclusion, OFT's R \\mapsto W_0 R) is exactly such a 2-cell. Optimisers-as-lenses also cover training-procedure methods such as LoRA+ and GaLore.",
+   "sources": [
+    "https://arxiv.org/abs/2103.01931",
+    "https://arxiv.org/pdf/2103.01931",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2103.01931"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2103.01931 (Cruttwell; 2021-03) matches; ESOP 2022 (LNCS, Programming Languages and Systems, pp. 1-28) confirmed by Crossref DOI 10.1007/978-3-030-99336-8_1. Definition 2.3 (reparametrisation (Q, (alpha (x) 1_A); f)) was read in the PDF.",
+   "corrections": [
+    "relevance: OFT acts on the input side in this site's notation (W = W_0 R, as in the multiplicative family file)"
+   ]
+  },
+  {
+   "id": "categorical-cybernetics",
+   "title": "Towards Foundations of Categorical Cybernetics",
+   "authors": "Capucci et al.",
+   "year": 2021,
+   "venue": "ACT 2021 (EPTCS 372, 2022)",
+   "arxiv": "2105.06332",
+   "url": "https://arxiv.org/abs/2105.06332",
+   "claim": "Combines the Para construction over actegories with optics to obtain parametrised optics, a framework for processes that interact bidirectionally with an environment and a controller. Examples include open learners (controller = optimiser such as gradient descent) and compositional game theory via selection functions.",
+   "relevance": "Provides the actegory-based Para construction and the 'controller' perspective. A PEFT method restricts which part of a parametrised optic the controller (optimiser) can act on, which echoes the optimal-control reading of delta tuning.",
+   "sources": [
+    "https://arxiv.org/abs/2105.06332",
+    "https://arxiv.org/pdf/2105.06332",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2105.06332"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2105.06332 (Capucci; 2021-05) matches; ACT 2021, EPTCS 372 (2022) pp. 235-248 per the arXiv journal-ref and DOI 10.4204/EPTCS.372.17.",
+   "corrections": []
+  },
+  {
+   "id": "category-theory-in-ml-survey",
+   "title": "Category Theory in Machine Learning",
+   "authors": "Shiebler et al.",
+   "year": 2021,
+   "venue": "arXiv",
+   "arxiv": "2106.07032",
+   "url": "https://arxiv.org/abs/2106.07032",
+   "claim": "Survey of applications of category theory to machine learning, documenting motivations, goals and common themes across gradient-based learning, probability and Bayesian learning, and invariant or equivariant learning.",
+   "relevance": "The standard entry point to categorical ML. Its three threads (gradient-based learning, probability, equivariance) map onto the optimizer, Bayesian/regularization and symmetry aspects of a categorical PEFT theory.",
+   "sources": [
+    "https://arxiv.org/abs/2106.07032",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2106.07032"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2106.07032 (Shiebler, Dan; 2021-06) matches; no venue found, so arXiv.",
+   "corrections": []
+  },
+  {
+   "id": "categorical-deep-learning",
+   "title": "Position: Categorical Deep Learning is an Algebraic Theory of All Architectures",
+   "authors": "Gavranovic et al.",
+   "year": 2024,
+   "venue": "ICML 2024",
+   "arxiv": "2402.15332",
+   "url": "https://arxiv.org/abs/2402.15332",
+   "claim": "Proposes the universal algebra of monads valued in a 2-category of parametric maps as a single theory that subsumes both constraints on models and their implementations. Equivariant layers are monad-algebra homomorphisms for group-action monads, which recovers geometric deep learning, and the theory also yields RNNs, weight tying and constructs from automata theory.",
+   "relevance": "Gives the 2-categorical (Para-valued) algebraic language in which architectures, and therefore modifications of architectures, can be specified. PEFT structure constraints (weight sharing in VeRA, orthogonality in OFT, block structure in BOFT) can be phrased as algebraic constraints on parametric morphisms.",
+   "sources": [
+    "https://arxiv.org/abs/2402.15332",
+    "https://arxiv.org/pdf/2402.15332",
+    "https://proceedings.mlr.press/v235/gavranovic24a.html",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2402.15332"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2402.15332 (Gavranovic, Bruno; 2024-02) matches; ICML 2024 position paper confirmed in PMLR v235 (gavranovic24a, pp. 15209-15241).",
+   "corrections": []
+  },
+  {
+   "id": "fundamental-components-deep-learning-thesis",
+   "title": "Fundamental Components of Deep Learning: A category-theoretic approach",
+   "authors": "Gavranovic",
+   "year": 2024,
+   "venue": "PhD thesis, University of Strathclyde",
+   "arxiv": "2403.13001",
+   "url": "https://arxiv.org/abs/2403.13001",
+   "claim": "Develops an end-to-end, uniform and prescriptive categorical foundation for deep learning. Parametricity is modelled with actegories and Para, and bidirectionality with weighted optics; combining them gives parametric weighted optics as a model of neural networks. The thesis gives a lens-theoretic axiomatisation of differentiation (smooth and Boolean), categorical models of architectures, formalised optimisers and a compositional account of supervised learning.",
+   "relevance": "The most complete reference for the Para/optics machinery a categorical PEFT theory would build on, including formal optimisers needed to place optimizer-side PEFT methods (LoRA+, GaLore, Riemannian preconditioning).",
+   "sources": [
+    "https://arxiv.org/abs/2403.13001",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2403.13001"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2403.13001 (Gavranovic, Bruno; 2024-03) matches; PhD thesis, University of Strathclyde, per the arXiv comment.",
+   "corrections": []
+  },
+  {
+   "id": "geometric-deep-learning",
+   "title": "Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges",
+   "authors": "Bronstein et al.",
+   "year": 2021,
+   "venue": "arXiv",
+   "arxiv": "2104.13478",
+   "url": "https://arxiv.org/abs/2104.13478",
+   "claim": "In the spirit of Klein's Erlangen Programme, derives CNNs, RNNs, GNNs and Transformers from symmetry and scale-separation priors, with group equivariance, gauge structure and geodesics as organising principles. It also gives a constructive recipe for building architectures from prior physical knowledge.",
+   "relevance": "The Erlangen-style template for organising a zoo of methods by their symmetry groups. Applied to PEFT, it suggests classifying updates by the group acting on W_0 or on the adapter (GL(r) for LoRA, O(d) for OFT/BOFT, diagonal tori for (IA)^3 and scaling methods), with LoRA's GL(r) redundancy acting as a gauge group.",
+   "sources": [
+    "https://arxiv.org/abs/2104.13478",
+    "https://export.arxiv.org/api/query",
+    "https://api.semanticscholar.org/graph/v1/paper/arXiv:2104.13478"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2104.13478 (Bronstein; 2021-04) matches; arXiv proto-book, no formal venue.",
+   "corrections": []
+  }
+ ],
+ "notes": "All 30 seed papers exist and were verified against the arXiv API (titles, authors, dates) and Semantic Scholar (venues, citation counts). For load-bearing statements, method sections were read: He et al. unified equation h <- (1-lambda(x))h + lambda(x)Delta h; Zhao et al. Example 5.2 (GL_h symmetry, conserved V V^T - U^T U); Arora et al. 2018 balancedness and end-to-end preconditioned dynamics; Fong-Spivak-Tuyeras Theorem III.2; Cruttwell et al. Definition 2.3 (reparametrisation in Para); Mishra et al. GL(r) quotient; Pfeiffer et al. parameter/input/function composition; LoRA+ rate scaling; Riemannian-preconditioned LoRA preconditioner; LoRA-RITE invariance definition; Putterman et al. GL(r) inner symmetry. Venue notes: Ding et al. is cited by its Nature MI title (Nat. Mach. Intell. 5, 220-235, 2023); the arXiv version is titled 'Delta Tuning: A Comprehensive Study of Parameter Efficient Methods for Pre-trained Language Models'. Xu et al. appeared in IEEE TPAMI vol. 48 (2026). Xin et al. in IJCV vol. 134 (2026). Mao et al. in Frontiers of Computer Science vol. 19 (2025). Shuttleworth et al. at NeurIPS 2025. Putterman et al. only at an ICLR 2025 workshop. Lialin et al. remains arXiv-only (v2 covers 2019 to mid-2024). 'LoRA Without Regret' is a blog post with no arXiv id. Notation: Zhao et al. write F = U sigma(V z); with U = B, V = A, the LoRA invariant is A A^T - B^T B. Balancedness is B^T B = A A^T in this site's notation (W = W_0 + BA). Gap: searches found no published work that applies category theory specifically to PEFT, LoRA or adapters. The link (PEFT method = reparametrisation 2-cell in Para(Lens(C)); LoRA = principal GL(r)-bundle over rank-r updates) is this site's synthesis of Cruttwell et al., Gavranovic et al., Mishra et al. and the conservation-law literature, and should be presented as such. Considered but omitted to stay within 35-50 or for low uptake or overlap with other families (many are covered there): Saxe et al. 2013 (1312.6120), Gunasekar et al. 2017 (1705.09280), Godfrey et al. 2022 intertwiner groups (2205.14258), Navon et al. 2023 weight-space equivariance (2301.12780), symmetry teleportation (2205.10637), Cohen et al. 2019 gauge-equivariant CNNs (1902.04615), Seven Sketches (1803.05316), Categories of Optics (1809.00738), Deep Learning with Parametric Lenses (2404.00408, the journal version of Cruttwell et al.), Crescenzi 2024 categorical-DL survey (2410.05353), topos-theoretic ML survey (2408.14014), Neural Circuit Diagrams (2402.05424), RefLoRA (2505.18877, NeurIPS 2025, balanced refactorization), LoRA meets Riemannion (2507.12142), LoRA-One (2502.01235), Xu et al. 2025 LoRA gradient flow (2503.06982, AISTATS 2025), Dayi & Chen 2024 (2411.15385), Hu et al. computational limits of LoRA (2406.03136, ICLR 2025), Oymak et al. 2023 prompt attention (2306.03435), Qin et al. intrinsic prompt subspace (2110.07867), Wang et al. 2024 PEFT survey (2410.19878, AI Review), Zhang et al. 2025 PEFT for foundation models survey (2501.13787), Mai et al. CVPR 2025 visual PEFT study (2409.16434), and very recent 2026 preprints (LoRA-Muon 2606.12921; high-dimensional LoRA theory 2606.05899). Confidence is 'medium' for the 2026 papers (BaLoRA, LoRA Redux) only because their uptake is not yet established, for the blog post, and for Si et al. (arXiv-only).",
+ "verification_summary": "Adversarial check on 2026-10-01 of all 50 paper entries (the file has 0 method entries, so there were no formula, trainable_params, mergeability or relation fields to audit). Metadata: all 49 arXiv ids were fetched in one export.arxiv.org batch query; every title, first-author surname and first-version year matches. Ding et al. uses its Nature MI title (the arXiv title differs; the venue is confirmed by Crossref). The one non-arXiv item, 'LoRA Without Regret', was confirmed on thinkingmachines.ai (Sep 29 2025, DOI 10.64434/tml.20250929). Venues were confirmed independently via arXiv comments and journal-refs, PMLR volume indexes (v80, v202, v235, v267), the ICLR 2023/2024/2025, NeurIPS 2018/2019/2023/2024/2025 and ICML 2026 virtual paper lists, the TMLR accepted-papers list, and Crossref DOIs (Nature MI, TPAMI, IJCV, FCS, Comput. Stat., ESOP/LNCS, LICS, ACL, AAAI). No venue needed changing. Putterman et al. is confirmed as an ICLR 2025 workshop paper only. Claims and relevance texts were checked against abstracts and, for load-bearing statements, against the arXiv HTML or PDF full text. 23 corrections were made. Substantive ones: Si et al. classify DoRA as combination-based, not extension-based. Xu et al. put UniPELT and MAM in their hybrid class, not the unified class. Han et al. is not the most-cited PEFT survey (Ding et al.'s Nature MI version has more Semantic Scholar citations). LoRA+ Theorem 1 is stated for Adam, and its 2^4 RoBERTa ratio holds under the A = 0 init (2^2-2^3 under the standard B = 0 init). BaLoRA projects onto a hyperbalanced manifold (B^T B = A A^T = diagonal S), not merely the balanced set. Freezing A (Zhu et al.) is not a gauge fixing. OFT is written W_0 R in site notation. Petrov et al. say 'potentially' (not 'strictly') less expressive. Lialin et al. covers 50 papers, not 50 methods. The paper-specific notation for LoRA-RITE (Z = AB^T) and Learning-on-LoRAs (UV^T) is now flagged, and the preconditioner sides in Riemannian-preconditioned LoRA are made explicit. HF PEFT: LoraConfig(use_rslora=True) was confirmed in peft main. Nothing was dropped."
+}

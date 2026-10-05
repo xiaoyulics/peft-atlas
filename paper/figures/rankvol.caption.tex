@@ -1,0 +1,20 @@
+Rank is not volume (\thmref{Theorem}{II.10}, \thmref{Proposition}{II.12}). One $4096\times4096$ layer at the budget of
+LoRA$_8$ \citep{hu2021lora}, $\lvert M\rvert=8(m+n)=65{,}536$. Each method is placed by the largest rank of $\Delta W$ it
+can reach (horizontal, logarithmic scale), which is bounded by the narrowest cut of its diagram
+(\thmref{Theorem}{II.10}), and by its expressive dimension as a fraction of the layer, $d(M)/(mn)$ (vertical, in units of
+$10^{-3}$, with the axis broken between $3.41$ and $3.90$ at one common scale), from the gauge census of
+\thmref{Proposition}{II.12}. The dashed line is $d=\lvert M\rvert$, a method without gauge, and the dotted line is
+$d=\lvert M\rvert-8^2=65{,}472$, the dimension of LoRA$_8$ with its $\GL_8$ gauge. Along the dotted line the maximum rank
+runs from $8$ to $4{,}096$ at one dimension. GraLoRA \citep{jung2025gralora} with $k=2$ blocks reaches rank $16$, and with
+$k=4$ and $k=8$ (light dots) ranks $32$ and $64$. HiRA$_8$ \citep{huang2025hira}, the transport $X\mapsto W_0\odot X$ of
+LoRA$_8$ (\thmref{Proposition}{II.13}), reaches full rank for generic $W_0$. MoRA \citep{jiang2024mora} in its reshape
+form $\Delta W=I_{16}\otimes M$ with $M\in\R^{256\times256}$, and C3A \citep{chen2024parameter} with $256\times256$
+circulant blocks, are injective, so $d=\lvert M\rvert$, and both reach full rank; their points coincide and are drawn on
+either side of the full-rank line. FourierFT \citep{gao2024parameter} with $n_c=65{,}536$ frequencies from HF PEFT's
+default draw (seed $777$) loses one dimension for each of its $120$ conjugate pairs, so $d=65{,}416$, and its maximum
+rank is known only through the bound $\min(2n_c,m,n)$ (open marker). No KronA \citep{edalati2022krona} factor shapes have
+budget exactly $65{,}536$. The closest, $256\times256\otimes16\times16$, cost $65{,}792$ and give $d=65{,}791$ and rank
+$\min(m_1,n_1)\min(m_2,n_2)=4{,}096$ (\thmref{Theorem}{II.11}(b)). LoHa$_{4,4}$ \citep{hyeonwoo2021fedpara}, below the
+break, is placed at the proved upper bound $F=57{,}313$. It reaches rank $16$, the same as GraLoRA with $k=2$, with at
+least $(m+n-1)-2r^2=8{,}159$ fewer dimensions than LoRA$_8$ (\thmref{Proposition}{II.12}(c)). Every dimension and
+maximum rank shown is confirmed by float64 Jacobian ranks and random-point ranks on a $64\times64$ copy.

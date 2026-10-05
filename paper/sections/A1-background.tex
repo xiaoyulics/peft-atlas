@@ -1,0 +1,1018 @@
+% Appendix A. Mathematical background: introduction, index, Part A (categories) and Part B (monoidal categories,
+% string diagrams and lenses). Parts C and D follow in sections/A2-background.tex.
+% Source: site/sections/13-appendix.html (#app-how, #part-a, #part-b), converted in full; entry numbers A.1--B.17 kept.
+% Statements about numbered results follow the public statements in theory/propositions.json.
+\providecommand{\fbAusedin}[1]{\par\smallskip\noindent{\small\color{inkgray}{\sffamily\bfseries\color{tide}Used in.}\enspace #1\par}\medskip}
+
+\section{Mathematical background}\label{app:background}
+
+This appendix is for readers who know linear algebra, multivariable calculus, basic probability and the PEFT literature,
+and who have not studied category theory, Lie groups or real algebraic geometry. It skips what ML readers already use,
+such as the SVD, rank, orthogonal matrices, eigenvalues, Jacobians, gradients, Adam, LoRA and the transformer block. Each
+of the 93 entries gives a short definition or statement with its hypotheses, a small example from fine-tuning, the places
+in the paper that use it, and usually a textbook for further reading. Definitions carry an ochre rule and standard facts
+quoted from the literature a teal one; the one remark, \bgref{A.20}, is set like a definition.
+
+Part A covers categories, slices and base change, Part B monoidal categories, string diagrams and lenses, Part C
+manifolds, cones and real algebraic geometry, and Part D groups, symmetry and conservation laws. The parts can be read in
+any order, since each entry refers to the entries it depends on at their first use. The exposés cite an entry at the
+first use of its term, as in \bgref{A.8}, and each entry ends with the results that rely on it.
+
+A few symbols from the exposés recur in the examples. A method $M=(Q,q_0,\rho)$ is a smooth map $\rho:Q\to\Theta$ from
+trainable parameters to weights with $\rho(q_0)=\theta_0$ (\bgref{A.8}), and $\lvert M\rvert=\dim Q$ is its parameter
+budget. The expressive dimension $d(M)$, the first-order image $S_1$ and the first-order deficit are defined in
+\bgref{C.3}; the base point is \emph{regular} for $M$ when the deficit is $0$ and an \emph{apex} when it is positive. LoRA
+\citep{hu2021lora} is $\rho(B,A)=W_0+sBA$ with $B\in\R^{m\times r}$ and $A\in\R^{r\times n}$, and its full-rank
+pointings fall into the strata $\mathrm T_A$, $\mathrm T_B$ and $\mathrm S$ of \bgref{C.19}. \emph{Block-scalar rates}
+give each factor one learning rate, $\eta_B$ for $B$ and $\eta_A$ for $A$ (\bgref{D.23}).
+
+Table~\ref{tab:bg-index} lists every entry with its area and the first places it is used.
+
+{\footnotesize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.08}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.8cm}>{\raggedright\arraybackslash}p{4.9cm}>{\raggedright\arraybackslash}p{2.35cm}>{\raggedright\arraybackslash}p{5.95cm}@{}}
+\caption{Index of the background entries, with the area of each and the first places in the paper that use it.}
+\label{tab:bg-index}\\
+\toprule\headrow\textbf{No.} & \textbf{Entry} & \textbf{Area} & \textbf{First places used}\\\midrule
+\endfirsthead
+\toprule\headrow\textbf{No.} & \textbf{Entry} & \textbf{Area} & \textbf{First places used}\\\midrule
+\endhead
+\midrule\multicolumn{4}{r@{}}{\textit{continued on the next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\hyperref[bg:A.1]{A.1} & category & Categories & Table~\ref{tab:notation}, \thmref{Def.}{I.2}\\
+\hyperref[bg:A.2]{A.2} & commutative diagram & Categories & Figure~\ref{fig:interval}, \thmref{Def.}{I.2}\\
+\hyperref[bg:A.3]{A.3} & isomorphism & Categories & \thmref{Obs.}{I.6}, \thmref{Obs.}{I.7}\\
+\hyperref[bg:A.4]{A.4} & functor; functorial invariant & Categories & \thmref{Obs.}{I.4}(c), \thmref{Obs.}{I.6}\\
+\hyperref[bg:A.5]{A.5} & natural transformation; naturality & Categories & \thmref{Thm}{III.3}, \thmref{Prop.}{V.4}\\
+\hyperref[bg:A.6]{A.6} & slice category & Categories & Table~\ref{tab:notation}, \thmref{Def.}{I.2}\\
+\hyperref[bg:A.7]{A.7} & coslice; pointed objects; opposite category & Categories & \thmref{Def.}{I.2}, \thmref{Rem.}{I.3}\\
+\hyperref[bg:A.8]{A.8} & the pointed slice $\Meth(\Theta,\theta_0)$ & Categories & Table~\ref{tab:notation}, \thmref{Def.}{I.2}\\
+\hyperref[bg:A.9]{A.9} & initial and terminal objects; universal property & Limits & \thmref{Obs.}{I.4}(a), Figure~\ref{fig:interval}\\
+\hyperref[bg:A.10]{A.10} & product & Limits & \thmref{Obs.}{I.4}(b), \thmref{Prop.}{I.8}\\
+\hyperref[bg:A.11]{A.11} & pullback; fibre product & Limits & \thmref{Obs.}{I.4}(b), \thmref{Prop.}{I.8}\\
+\hyperref[bg:A.12]{A.12} & limit; creation of limits & Limits & \thmref{Obs.}{I.4}(b)\\
+\hyperref[bg:A.13]{A.13} & adjunction & Limits & \thmref{Obs.}{I.4}(b)\\
+\hyperref[bg:A.14]{A.14} & two standard facts about limits & Limits & \thmref{Obs.}{I.4}(b), \S\ref{sec:slice-interval}\\
+\hyperref[bg:A.15]{A.15} & monomorphism; sub-object & Limits & \thmref{Def.}{I.2}, \thmref{Cor.}{III.13}\\
+\hyperref[bg:A.16]{A.16} & posets; meets; the expressivity order & Limits & \thmref{Obs.}{I.4}(c), \thmref{Prop.}{I.8}(b)\\
+\hyperref[bg:A.17]{A.17} & automorphism of a category; transport of structure & Base change & \thmref{Prop.}{II.13}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:A.18]{A.18} & lift; lifting problem; obstruction & Base change & \thmref{Obs.}{I.4}(c), \thmref{Obs.}{I.6}\\
+\hyperref[bg:A.19]{A.19} & base change; pushforward $\phi_!$; the relative point of view & Base change & Exposés~\ref{sec:thesis}--\ref{sec:slice}, \thmref{Def.}{V.1}\\
+\hyperref[bg:A.20]{A.20} & constructions the paper names and leaves unused & Base change & Exposé~\ref{sec:thesis} (where the category theory earns its keep), Exposé~\ref{sec:analogy} (seven borrowed words)\\
+\hyperref[bg:B.1]{B.1} & monoidal and symmetric monoidal categories & Monoidal & \thmref{Obs.}{I.7}, \thmref{Thm}{II.10}\\
+\hyperref[bg:B.2]{B.2} & direct sum and tensor product in $\FinVect$ & Monoidal & \thmref{Thm}{II.10}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:B.3]{B.3} & string diagrams & Monoidal & Exposé~\ref{sec:cut}, \thmref{Thm}{II.10}\\
+\hyperref[bg:B.4]{B.4} & cartesian categories; copy and discard & Monoidal & \thmref{Def.}{I.1}, \thmref{Thm}{VI.3}\\
+\hyperref[bg:B.5]{B.5} & compact closed categories; cups, caps and wire-bending & Monoidal & \thmref{Thm}{II.11}, \thmref{Thm}{VI.3}\\
+\hyperref[bg:B.6]{B.6} & Frobenius algebras and spiders & Monoidal & Exposé~\ref{sec:cut}, \thmref{Thm}{II.10}\\
+\hyperref[bg:B.7]{B.7} & tensor networks, contraction, bond dimension & Tensor networks & \thmref{Thm}{II.10}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:B.8]{B.8} & the min-cut bound on rank & Tensor networks & \thmref{Thm}{II.10}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:B.9]{B.9} & tensor trains, Tucker and MPO; gauge on bonds & Tensor networks & \thmref{Prop.}{II.12}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:B.10]{B.10} & Kronecker product, vec, tensor product of subspaces & Tensor networks & \thmref{Thm}{II.11}, Exposé~\ref{sec:cut}\\
+\hyperref[bg:B.11]{B.11} & Van Loan--Pitsianis rearrangement; Kronecker rank & Tensor networks & \thmref{Thm}{II.11}, \thmref{Prop.}{II.13}\\
+\hyperref[bg:B.12]{B.12} & Schmidt and operator-Schmidt decompositions & Tensor networks & \thmref{Thm}{II.11}, Figure~\ref{fig:cut}\\
+\hyperref[bg:B.13]{B.13} & rank of a Hadamard product; face-splitting product & Tensor networks & \thmref{Prop.}{II.12}, \thmref{Thm}{II.10}\\
+\hyperref[bg:B.14]{B.14} & sums of methods; Minkowski sums, differences and translates & Para, lenses & \thmref{Obs.}{I.7}, \thmref{Thm}{II.1}\\
+\hyperref[bg:B.15]{B.15} & strong monoidal functors; $(\N,+)$ and the permutation groupoid & Para, lenses & \thmref{Obs.}{I.7}, Exposé~\ref{sec:analogy} (the referee record)\\
+\hyperref[bg:B.16]{B.16} & bicategories and the Para construction & Para, lenses & \thmref{Def.}{I.1}, \thmref{Rem.}{I.3}\\
+\hyperref[bg:B.17]{B.17} & lenses, reverse derivatives and $\Para(\mathsf R)$ & Para, lenses & Exposé~\ref{sec:lens}, \thmref{Def.}{IV.1}\\
+\hyperref[bg:C.1]{C.1} & smooth manifolds and smooth maps & Manifolds & \thmref{Def.}{I.2}, \thmref{Def.}{I.5}\\
+\hyperref[bg:C.2]{C.2} & tangent spaces, differentials and covectors & Manifolds & Table~\ref{tab:notation}, \thmref{Def.}{I.5}\\
+\hyperref[bg:C.3]{C.3} & rank, expressive dimension and first-order image & Manifolds & Table~\ref{tab:notation}, \thmref{Def.}{I.5}\\
+\hyperref[bg:C.4]{C.4} & immersions, submersions and embedded submanifolds & Manifolds & \thmref{Obs.}{I.4}, \thmref{Prop.}{IV.3}\\
+\hyperref[bg:C.5]{C.5} & constant-rank theorem & Manifolds & \thmref{Def.}{I.5}, \thmref{Prop.}{II.12}\\
+\hyperref[bg:C.6]{C.6} & fibres and fibre dimension & Manifolds & Exposé~\ref{sec:fibres}, \thmref{Def.}{I.5}\\
+\hyperref[bg:C.7]{C.7} & fibre products, transversality and clean intersection & Manifolds & \thmref{Obs.}{I.4}, \thmref{Prop.}{I.8}\\
+\hyperref[bg:C.8]{C.8} & germs & Singularities & \thmref{Thm}{II.7}, Exposé~\ref{sec:image} (the image germ)\\
+\hyperref[bg:C.9]{C.9} & smooth and singular points & Singularities & \thmref{Def.}{I.5}, \thmref{Thm}{II.2}\\
+\hyperref[bg:C.10]{C.10} & cones and vertices & Singularities & \thmref{Def.}{I.5}, \thmref{Thm}{II.1}\\
+\hyperref[bg:C.11]{C.11} & first-order image versus image & Singularities & \thmref{Def.}{I.5}, \thmref{Obs.}{I.6}\\
+\hyperref[bg:C.12]{C.12} & the determinantal variety & Varieties & Table~\ref{tab:notation}, \thmref{Thm}{II.1}\\
+\hyperref[bg:C.13]{C.13} & the skew-determinantal cone & Varieties & \thmref{Thm}{II.7}, \S\ref{sec:erlangen-hra}\\
+\hyperref[bg:C.14]{C.14} & Segre and toric cones & Varieties & \thmref{Prop.}{II.8}, \thmref{Prop.}{II.12}\\
+\hyperref[bg:C.15]{C.15} & the Grassmannian & Varieties & \thmref{Thm}{II.2}, \thmref{Thm}{II.7}\\
+\hyperref[bg:C.16]{C.16} & images of smooth maps need not be manifolds & Tame geometry & \thmref{Obs.}{I.4}, \thmref{Thm}{II.2}\\
+\hyperref[bg:C.17]{C.17} & semialgebraic and definable sets & Tame geometry & Exposé~\ref{sec:thesis} (where the category theory earns its keep), \S\ref{sec:atlas-rules} (arrow rules)\\
+\hyperref[bg:C.18]{C.18} & Tarski--Seidenberg and definable dimension & Tame geometry & \thmref{Def.}{I.5}, \S\ref{sec:atlas-rules} (arrow rules)\\
+\hyperref[bg:C.19]{C.19} & stratification and local dimension & Tame geometry & \thmref{Thm}{II.2}, \thmref{Thm}{II.7}\\
+\hyperref[bg:C.20]{C.20} & moduli sets and moduli spaces & Tame geometry & \thmref{Thm}{II.2}, Exposé~\ref{sec:rosetta}\\
+\hyperref[bg:C.21]{C.21} & generic properties & Tame geometry & \thmref{Thm}{II.2}, \thmref{Prop.}{II.8}\\
+\hyperref[bg:C.22]{C.22} & real-analytic functions and their zero sets & Tame geometry & \thmref{Lem.}{VI.2}, \thmref{Thm}{VI.5}\\
+\hyperref[bg:D.1]{D.1} & Lie groups; the matrix groups of this paper & Lie theory & Table~\ref{tab:notation}, \thmref{Def.}{I.5}\\
+\hyperref[bg:D.2]{D.2} & tori, diagonal monoids and saturation & Lie theory & \thmref{Thm}{II.5}, \thmref{Prop.}{II.8}\\
+\hyperref[bg:D.3]{D.3} & permutations, monomial matrices, semidirect products, normalisers & Lie theory & \thmref{Prop.}{II.8}, \thmref{Prop.}{II.9}\\
+\hyperref[bg:D.4]{D.4} & connectedness and the identity component & Lie theory & \thmref{Thm}{V.3}, \S\ref{sec:erlangen-invariants}\\
+\hyperref[bg:D.5]{D.5} & Lie algebras; the commutator; $\gl$, $\so$, $\Sym$, $\wedge$ & Lie theory & \thmref{Thm}{II.7}, \thmref{Thm}{III.5}\\
+\hyperref[bg:D.6]{D.6} & the exponential map; one-parameter subgroups & Lie theory & \thmref{Thm}{III.5}, \thmref{Prop.}{III.7}\\
+\hyperref[bg:D.7]{D.7} & the Cayley map and its Neumann truncation & Lie theory & \thmref{Cor.}{II.6}, \thmref{Thm}{II.7}\\
+\hyperref[bg:D.8]{D.8} & Lie subgroups and subalgebras; the generated Lie algebra & Lie theory & \thmref{Thm}{V.3}, Figure~\ref{fig:rebase}\\
+\hyperref[bg:D.9]{D.9} & Yamabe's theorem & Lie theory & \thmref{Thm}{V.3}, \S\ref{sec:base-rebase}\\
+\hyperref[bg:D.10]{D.10} & monoids, units, monoid orbits, homomorphisms & Lie theory & \thmref{Thm}{V.3}, \thmref{Prop.}{II.9}\\
+\hyperref[bg:D.11]{D.11} & Cartan--Dieudonné theorem; Scherk's sharp form & Lie theory & \thmref{Thm}{II.7}, \S\ref{sec:erlangen-hra}\\
+\hyperref[bg:D.12]{D.12} & group actions & Invariants & \thmref{Def.}{I.2}, Table~\ref{tab:notation}\\
+\hyperref[bg:D.13]{D.13} & orbits, stabilisers, free actions & Invariants & \thmref{Thm}{II.5}, \thmref{Prop.}{II.9}\\
+\hyperref[bg:D.14]{D.14} & Haar measure; invariant measures on homogeneous spaces & Invariants & \thmref{Thm}{II.2}, \S\ref{sec:strata-three}\\
+\hyperref[bg:D.15]{D.15} & invariants and complete invariants & Invariants & \thmref{Thm}{II.5}, \S\ref{sec:erlangen-invariants}\\
+\hyperref[bg:D.16]{D.16} & first fundamental theorem for $\Ort(n)$; Witt's extension theorem & Invariants & \thmref{Thm}{II.5}, Exposé~\ref{sec:related}\\
+\hyperref[bg:D.17]{D.17} & Klein's Erlangen programme & Invariants & \thmref{Def.}{II.14}, Exposé~\ref{sec:erlangen}\\
+\hyperref[bg:D.18]{D.18} & equivariance and invariance of maps, update rules and merge rules & Invariants & \thmref{Def.}{II.14}, \thmref{Obs.}{II.15}\\
+\hyperref[bg:D.19]{D.19} & multihomogeneous maps; multidegree & Invariants & \thmref{Thm}{III.10}, Exposé~\ref{sec:image} (the image germ)\\
+\hyperref[bg:D.20]{D.20} & orbit space of a positive torus & Invariants & \thmref{Thm}{III.10}, \thmref{Cor.}{III.11}\\
+\hyperref[bg:D.21]{D.21} & gauge symmetry of a parametrisation & Gauge, metrics & \thmref{Def.}{I.5}, Table~\ref{tab:notation}\\
+\hyperref[bg:D.22]{D.22} & quotients and descent; the quotient manifold theorem & Gauge, metrics & \thmref{Prop.}{V.4}, \thmref{Prop.}{III.4}\\
+\hyperref[bg:D.23]{D.23} & metrics, cometrics and the pulled-back cometric & Gauge, metrics & \thmref{Def.}{III.1}, \thmref{Obs.}{III.2}\\
+\hyperref[bg:D.24]{D.24} & Riemannian gradient flow; tangent projection; retraction & Gauge, metrics & \thmref{Prop.}{III.4}, \thmref{Thm}{III.12}\\
+\hyperref[bg:D.25]{D.25} & distributions, Lie brackets and Frobenius' theorem & Gauge, metrics & \thmref{Prop.}{IV.3}, \S\ref{sec:lens-integrability}\\
+\hyperref[bg:D.26]{D.26} & Noether's theorem for gradient flows & Conservation & \thmref{Thm}{III.5}, Figure~\ref{fig:noether}\\
+\hyperref[bg:D.27]{D.27} & Cartan decomposition; polar decomposition & Conservation & \thmref{Thm}{III.5}, \thmref{Prop.}{III.7}\\
+\hyperref[bg:D.28]{D.28} & balancedness; the conserved $B\T B-AA\T$ & Conservation & \thmref{Prop.}{III.7}, \thmref{Prop.}{III.8}\\
+\hyperref[bg:D.29]{D.29} & the moment map & Conservation & \thmref{Prop.}{III.7}, \thmref{Cor.}{III.6}\\
+\hyperref[bg:D.30]{D.30} & Kempf--Ness theorem, real form & Conservation & \thmref{Prop.}{III.7}, \thmref{Cor.}{III.6}\\
+\hyperref[bg:D.31]{D.31} & the closed orbit in each fibre of $(B,A)\mapsto BA$ & Conservation & \thmref{Prop.}{V.4}, \S\ref{sec:base-combine}\\
+\hyperref[bg:D.32]{D.32} & Ky Fan's maximum principle & Matrix tools & \thmref{Prop.}{II.3}, \S\ref{sec:erlangen-loft}\\
+\hyperref[bg:D.33]{D.33} & Sylvester equations & Matrix tools & \thmref{Thm}{III.12}, Figure~\ref{fig:gauge}\\
+\hyperref[bg:D.34]{D.34} & the perspective map; convex combinations & Matrix tools & \thmref{Thm}{VI.5}, Figure~\ref{fig:prefix}\\
+\end{longtable}}
+
+% ======================================================================================================================
+\subsection*{Part A. Categories without tears}
+\phantomsection\label{app:bg-a}\addcontentsline{toc}{subsection}{Part A. Categories without tears}
+
+Part A collects the category theory the exposés use, from the definition of a category up to base change, and
+illustrates every notion in one running example, the pointed slice $\Meth(\Theta,\theta_0)$ of weight-space methods.
+Entries \bgref{A.1} to \bgref{A.8} set up categories, functors and slices, \bgref{A.9} to \bgref{A.16} cover universal
+properties, limits and orders, and \bgref{A.17} to \bgref{A.19} cover transport, lifting and base change, with
+\bgref{A.20} listing the constructions the paper names and leaves unused.
+
+\subsubsection*{Categories and slices}
+
+\begin{bgentry}{A.1}{category}
+A \textbf{category} $\mathcal C$ has objects and, for any two objects $X,Y$, a set $\mathcal C(X,Y)$ of
+\textbf{morphisms}, or arrows, $f:X\to Y$. Arrows $f:X\to Y$ and $g:Y\to Z$ have a composite $g\circ f:X\to Z$.
+Composition is associative, and every object has an identity arrow $\id_X$ with $f\circ\id_X=f=\id_Y\circ f$.
+\end{bgentry}
+
+The paper uses $\Set$ (sets and functions), $\Diff$ (smooth manifolds and smooth maps), $\FinVect$ (finite-dimensional
+real vector spaces and linear maps, where tensor networks are evaluated) and the pointed categories $\Set_*$ and
+$\Diff_*$ of \bgref{A.7}. In $\Meth(\Theta,\theta_0)$ the objects are methods $M=(Q,q_0,\rho)$, and an arrow $h:M\to N$
+is a pointed smooth map $h:Q_M\to Q_N$ with $\rho_N\circ h=\rho_M$, read ``$N$ simulates $M$''. Simulations compose,
+since $\rho_P\circ k\circ h=\rho_N\circ h=\rho_M$ for $h:M\to N$ and $k:N\to P$. For instance, $h(B)=(B,A_0)$ is an
+arrow from LoRA-FA$(A_0)$ \citep{zhang2023lora} to LoRA pointed at $(0,A_0)$. The simulation arrows of the atlas are
+arrows of this category, each recorded with its map $h$.
+
+\fbAusedin{Table~\ref{tab:notation}, \thmref{Definition}{I.2}, Exposés~\ref{sec:thesis}--\ref{sec:slice},
+\S\ref{sec:atlas-arrows}, Figure~\ref{fig:graph}. \textsf{Reading:} \citet[Ch.~1]{xleinster2014basic}.}
+
+\begin{bgentry}{A.2}{commutative diagram}
+A \textbf{diagram} is a family of objects joined by arrows, drawn as a directed graph. It \textbf{commutes} if any two
+directed paths with the same start and the same end compose to the same arrow. A triangle commutes when one side equals
+the composite of the other two, and a square commutes when its two routes between opposite corners agree.
+\end{bgentry}
+
+A simulation is a commuting triangle over $\Theta$, whose two paths from $Q_M$ to $\Theta$ are
+\begin{equation*}
+  Q_M\xrightarrow{\;h\;}Q_N\xrightarrow{\;\rho_N\;}\Theta\qquad\text{and}\qquad Q_M\xrightarrow{\;\rho_M\;}\Theta.
+\end{equation*}
+For $M=\mathrm{FA}(A_0)$, $N$ LoRA pointed at $(0,A_0)$ and $h(B)=(B,A_0)$, both paths send $B$ to the weight
+$W_0+BA_0$ (scale absorbed into $B$), so the triangle commutes. Figure~\ref{fig:interval}(a) draws, for a general
+method, the triangle of Figure~\ref{fig:bg-interval}, which commutes only up to a pointing defect when the method starts
+away from $\theta_0$ (\bgref{A.19}). Commuting squares, used for merging on extensions, return in \bgref{A.18}.
+
+\fbAusedin{Figure~\ref{fig:interval}, \thmref{Definition}{I.2}, \thmref{Definition}{VI.1}, \thmref{Definition}{V.1},
+Exposé~\ref{sec:base}. \textsf{Reading:} \citet[\S1.1]{xleinster2014basic}.}
+
+\begin{bgentry}{A.3}{isomorphism}
+An arrow $f:X\to Y$ is an \textbf{isomorphism}, written $X\cong Y$, if some $g:Y\to X$ satisfies $g\circ f=\id_X$ and
+$f\circ g=\id_Y$. The inverse $g$ is then unique. In $\Diff$ the isomorphisms are the diffeomorphisms, so a smooth
+bijection need not be one, as $t\mapsto t^3$ shows. In $\Meth$ an isomorphism $M\cong N$ is a pointed diffeomorphism
+$h:Q_M\to Q_N$ with $\rho_N\circ h=\rho_M$. Its inverse lies over $\Theta$ automatically, since
+$\rho_M\circ h^{-1}=\rho_N$.
+\end{bgentry}
+
+The LoRA gauge (\bgref{D.21}) $(B,A)\mapsto(Bg^{-1},gA)$, $g\in\GL_r$, is an isomorphism from LoRA pointed at
+$(B_0,A_0)$ to LoRA pointed at $(B_0g^{-1},gA_0)$. Other examples are rsLoRA \citep{kalajdzievski2023rank} $\cong$ LoRA
+by $(B,A)\mapsto(\sqrt r\,B,A)$, and $\mathrm{LoRA}_r\oplus\mathrm{LoRA}_s\cong\mathrm{LoRA}_{r+s}$ by concatenating
+factors (\bgref{B.14}). Isomorphic methods have the same image, the same $S_1$ and the same first-order deficit
+(\bgref{C.3}, \thmref{Observation}{I.6}). They can still train differently, because the optimizer acts on the
+coordinates of $Q$. For LoRA's gauge with block-scalar rates (one rate per factor), gradient flow is unchanged exactly
+when $g\in\Ort(r)$, at points where $A$ has full row rank and $r<n$ (\thmref{Theorem}{III.3}; \bgref{D.23}).
+
+\fbAusedin{\thmref{Observation}{I.6}, \thmref{Observation}{I.7}, \S\ref{sec:strata-three}, \thmref{Theorem}{II.2},
+\thmref{Proposition}{VI.4}, \S\ref{sec:atlas-arrows}.}
+
+\begin{bgentry}{A.4}{functor; functorial invariant}
+A \textbf{functor} $F:\mathcal C\to\mathcal D$ sends each object $X$ to an object $FX$ and each arrow $f:X\to Y$ to an
+arrow $Ff:FX\to FY$, with $F(g\circ f)=Fg\circ Ff$ and $F(\id_X)=\id_{FX}$. A functor sends isomorphisms to
+isomorphisms, so $FX$ is an isomorphism invariant of $X$. A \textbf{forgetful} functor discards structure, as
+$\Diff_*\to\Diff$ discards the base point.
+\end{bgentry}
+
+The image is a functor $\Im$ from $\Meth(\Theta,\theta_0)$ to the subsets of $\Theta$ containing $\theta_0$, ordered by
+inclusion (a poset, \bgref{A.16}), because an arrow $h:M\to N$ gives $\Im M=\rho_N(h(Q_M))\subseteq\Im N$. In the same
+way the chain rule at $q_0$ makes $S_1$ a functor to the linear subspaces of $\Theta$, with $S_1(M)\subseteq S_1(N)$
+along every pointed arrow. Read backwards, functoriality gives the atlas test O1 and the first half of O3
+(\S\ref{sec:atlas-tests}). If $\Im M\not\subseteq\Im N$ or $S_1(M)\not\subseteq S_1(N)$, then $N$ does not simulate
+$M$. Base change $\phi_!$ (\bgref{A.19}) and transport $T_*$ (\bgref{A.17}) are functors between slices.
+
+\fbAusedin{\thmref{Observation}{I.4}(c), \thmref{Observation}{I.6}, \S\ref{sec:atlas-arrows},
+\thmref{Proposition}{II.13}, \thmref{Definition}{V.1}, \S\ref{sec:lens-functor}. \textsf{Reading:}
+\citet[\S1.2]{xleinster2014basic}.}
+
+\begin{bgentry}{A.5}{natural transformation; naturality}
+For functors $F,G:\mathcal C\to\mathcal D$, a \textbf{natural transformation} $\alpha:F\Rightarrow G$ is a family of
+arrows $\alpha_X:FX\to GX$ with $Gf\circ\alpha_X=\alpha_Y\circ Ff$ for every $f:X\to Y$. This naturality square says that
+applying $\alpha$ and then moving along $f$ agrees with moving first and applying $\alpha$ after. A group $K$ can be
+viewed as a category with one object whose arrows are the elements of $K$. A functor from it to $\Set$ is then a set
+with a $K$-action, and a natural transformation between two such functors is exactly a $K$-equivariant map.
+\end{bgentry}
+
+The copy map $\Delta_X(x)=(x,x)$ is natural, $\Delta_Y\circ f=(f\times f)\circ\Delta_X$, which is rule R7 of the merge
+calculus (\bgref{B.4}). Elsewhere in the paper, natural for a group of changes of chart means equivariant in this sense
+(\bgref{D.18}). Task arithmetic \citep{ilharco2022editing} is natural for all of $\GL(\Theta)$, and DARE
+\citep{yu2023language} for invertible diagonal matrices at a fixed mask (\thmref{Proposition}{V.4}(c)). Gradient flow
+on LoRA commutes with the gauge $g$ exactly when the induced cometrics (\bgref{D.23}) agree, which for block-scalar rates
+singles out $\Ort(r)$ (\thmref{Theorem}{III.3}).
+
+\fbAusedin{Exposé~\ref{sec:thesis} (where the category theory earns its keep), \thmref{Theorem}{III.3},
+\S\ref{sec:fibres-naturality}, \thmref{Proposition}{V.4}, \S\ref{sec:merge-calculus}, \thmref{Theorem}{VI.3}.
+\textsf{Reading:} \citet[\S1.3]{xleinster2014basic}.}
+
+\begin{bgentry}{A.6}{slice category}
+For an object $X$ of $\mathcal C$, the \textbf{slice} $\mathcal C/X$ has as objects the arrows $a:A\to X$, called
+objects over $X$, and as morphisms $(A,a)\to(B,b)$ the arrows $h:A\to B$ of $\mathcal C$ with $b\circ h=a$. Composition
+and identities are those of $\mathcal C$. The object $X$ is the \textbf{base}, and $a$ is the \textbf{structure map}.
+\end{bgentry}
+
+$\Diff/\Theta$ consists of smooth maps $\rho:Q\to\Theta$ into weight space without base points, and its morphisms are
+the weak morphisms of \thmref{Definition}{I.2}, which need not send $q_0$ to $q_0'$. A slice always has a terminal
+object, the identity $(X,\id_X)$, which here is full fine-tuning. Working in a slice is the relative point of view of
+\bgref{A.19}, in which an object is studied together with its map to a base.
+
+\fbAusedin{Table~\ref{tab:notation}, \thmref{Definition}{I.2}, Exposé~\ref{sec:thesis} (where the category theory earns
+its keep), Rosetta entries 3 and 4 (\S\ref{sec:rosetta-six}), the seven borrowed words of Exposé~\ref{sec:analogy}.
+\textsf{Reading:} \citet[\S II.6]{xmaclane1998categories}.}
+
+\begin{bgentry}{A.7}{coslice; pointed objects; opposite category}
+The \textbf{coslice} $X/\mathcal C$ has as objects the arrows $x:X\to A$ out of $X$, and as morphisms $(A,x)\to(B,x')$
+the arrows $h:A\to B$ with $h\circ x=x'$. For the one-point space $X=\mathrm{pt}$, an arrow $\mathrm{pt}\to Q$ is a point
+$q_0$, so $\Diff_*:=\mathrm{pt}/\Diff$ is the category of \textbf{pointed manifolds} $(Q,q_0)$ and \textbf{pointed
+maps}, those with $h(q_0)=q_0'$. Likewise $\Set_*:=\mathrm{pt}/\Set$. The \textbf{opposite category}
+$\mathcal C^{\mathrm{op}}$ has the same objects and every arrow reversed, and
+$(\mathcal C/X)^{\mathrm{op}}\cong X/\mathcal C^{\mathrm{op}}$.
+\end{bgentry}
+
+A method sends its initialisation to the checkpoint, $\rho(q_0)=\theta_0$, so it is an arrow of $\Diff_*$, and a weak
+morphism forgets the base points and lives in $\Diff$. Opposites enter in \thmref{Remark}{I.3}. A simulation
+$h:M\to N$ runs from $Q_M$ to $Q_N$. The network with $Q_M$-parameters is obtained from the one with $Q_N$-parameters by
+precomposing with $h$,
+\begin{equation*}
+  f\circ(\rho_M\times\id_X)=f\circ(\rho_N\times\id_X)\circ(h\times\id_X),
+\end{equation*}
+with $X$ the input space. Read as a change of parameters for networks, $h$ therefore points the other way, from the
+$Q_N$-network to the $Q_M$-network, and \thmref{Remark}{I.3} records this reversal with an opposite category
+(\bgref{B.16}).
+
+\fbAusedin{\thmref{Definition}{I.2}, \thmref{Remark}{I.3}, \thmref{Observation}{I.4}, \S\ref{sec:slice-para}.}
+
+\begin{bgentry}{A.8}{the pointed slice $\Meth(\Theta,\theta_0)$}
+Combining \bgref{A.6} and \bgref{A.7}, $\Meth(\Theta,\theta_0):=\Diff_*/(\Theta,\theta_0)$. An object is a pointed smooth
+map $\rho:(Q,q_0)\to(\Theta,\theta_0)$, and a morphism $h:M\to N$ is a pointed smooth map with $\rho_N\circ h=\rho_M$.
+Equivalently, an object is a factorisation $\mathrm{pt}\xrightarrow{\,q_0\,}Q\xrightarrow{\,\rho\,}\Theta$ of the point
+$\theta_0:\mathrm{pt}\to\Theta$, and a morphism is a map between the middle terms that is compatible with both ends.
+\end{bgentry}
+
+On one box, LoRA is $\big(\R^{m\times r}\times\R^{r\times n},\,(0,A_0),\,(B,A)\mapsto W_0+sBA\big)$, and OFT
+\citep{qiu2023controlling} is $Q\mapsto W_0\,C(Q)$ on skew matrices (block-diagonal in OFT), pointed at $0$, with $C$
+the Cayley map (\bgref{D.7}). Full fine-tuning is $(\Theta,\theta_0,\id)$ and the frozen model is
+$(\mathrm{pt},*,\theta_0)$. The network $f$ appears nowhere in the definition, so the category depends only on
+$(\Theta,\theta_0)$ (\thmref{Remark}{I.3}). The factorisation picture already shows why the frozen model and full
+fine-tuning sit at the two ends (\bgref{A.9}).
+
+\fbAusedin{Table~\ref{tab:notation}, \thmref{Definition}{I.2}, \S\ref{sec:slice-methods}, \thmref{Remark}{I.3}, Rosetta
+entries 3 and 4 (\S\ref{sec:rosetta-six}).}
+
+\subsubsection*{Universal properties}
+
+\begin{bgentry}{A.9}{initial and terminal objects; universal property}
+An object $I$ is \textbf{initial} if every object $X$ receives exactly one arrow $I\to X$, and $T$ is \textbf{terminal}
+if every $X$ has exactly one arrow $X\to T$. Each is unique up to a unique isomorphism when it exists. Characterising an
+object by the arrows into or out of it in this way is called a \textbf{universal property}. In $\Set$ the empty set is
+initial and a one-point set is terminal, and in $\Set_*$ and $\Diff_*$ the one-point space is both.
+\end{bgentry}
+
+In $\Meth(\Theta,\theta_0)$ the frozen model $(\mathrm{pt},*,\theta_0)$ is initial. The only pointed map
+$\mathrm{pt}\to Q$ is $*\mapsto q_0$, and it lies over $\Theta$ because $\rho(q_0)=\theta_0$. Full fine-tuning
+$(\Theta,\theta_0,\id)$ is terminal, since an arrow $h$ from $M$ must satisfy $\id\circ h=\rho_M$. So the unique arrow
+from $M$ to Full FT is $\rho_M$ itself, the merge, and every weight-space method that starts at $\theta_0$ sits in the
+commuting triangle of Figure~\ref{fig:bg-interval}.
+
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}[>={Stealth[length=2.3mm,width=1.8mm]},
+  obj/.style={align=center, inner sep=3pt, text=ink},
+  arr/.style={->, draw=ink, line width=0.6pt, shorten >=1pt, shorten <=1pt},
+  lab/.style={font=\small, text=ink}]
+  \node[obj] (M) at (0,1.95) {method $M$\\[1pt] $(Q,q_0)$};
+  \node[obj] (F) at (-3.3,0) {Frozen\\[1pt] $(\mathrm{pt},*)$};
+  \node[obj] (T) at (3.3,0) {Full FT\\[1pt] $(\Theta,\theta_0)$};
+  \draw[arr] (F) -- node[above left=-1pt, lab] {$q_0$} (M);
+  \draw[arr] (M) -- node[above right=-1pt, lab] {$\rho$, the merge} (T);
+  \draw[arr] (F) -- node[below, lab] {$\theta_0$} (T);
+\end{tikzpicture}
+\caption{The interval of $\Meth(\Theta,\theta_0)$. The left arrow is the only arrow out of the initial object, the right
+  arrow $\rho$ is the only arrow into the terminal object, and the triangle commutes because $\rho(q_0)=\theta_0$.
+  Figure~\ref{fig:interval}(a) draws the same triangle in the main text, where a pointing defect
+  $\rho_M(q_0)\neq\theta_0$ leaves it commuting only up to that defect.}
+\label{fig:bg-interval}
+\end{figure}
+
+\fbAusedin{\thmref{Observation}{I.4}(a), \S\ref{sec:slice-interval}, Figure~\ref{fig:interval}, Rosetta entries 3 and 4
+(\S\ref{sec:rosetta-six}), rule A1 in \S\ref{sec:atlas-rules}, \S\ref{sec:base-next}.}
+
+\begin{bgentry}{A.10}{product}
+A \textbf{product} of $X$ and $Y$ is an object $X\times Y$ with projections $p_X:X\times Y\to X$ and
+$p_Y:X\times Y\to Y$ such that for every object $T$ and arrows $u:T\to X$, $v:T\to Y$ there is exactly one arrow
+$\langle u,v\rangle:T\to X\times Y$ with $p_X\circ\langle u,v\rangle=u$ and $p_Y\circ\langle u,v\rangle=v$. It is unique
+up to unique isomorphism, and it need not exist. In a slice $\mathcal C/Z$, the product of $(X,a)$ and $(Y,b)$ is the
+pullback of $a$ and $b$ in $\mathcal C$ (\bgref{A.11}).
+\end{bgentry}
+
+In $\Meth$ a product $M\times N$ has arrows to $M$ and to $N$, so both factors simulate it, and every method $T$ with
+arrows $u:T\to M$ and $v:T\to N$ maps to it by exactly one arrow compatible with $u$ and $v$. When it exists, its image is
+$\Im M\cap\Im N$. For the one-sided LoRAs with frozen frames $B_0$ of full column rank and $A_0$ of full row rank,
+\begin{equation*}
+  \mathrm{FA}(A_0)\times\mathrm{FB}(B_0)\;\cong\;\big(\R^{r\times r},\,0,\,R\mapsto W_0+B_0RA_0\big),
+\end{equation*}
+with projections $R\mapsto B_0R$ and $R\mapsto RA_0$. In the SVD frames of $W_0$, when $\rk W_0\ge r$, this is LoRA-XS
+\citep{baazy2024lora} (\thmref{Proposition}{I.8}(a)). The sum $\oplus$ of \thmref{Observation}{I.7} is a different
+operation, whose image is a Minkowski sum (\bgref{B.14}).
+
+\fbAusedin{\thmref{Observation}{I.4}(b), \thmref{Proposition}{I.8}, \S\ref{sec:slice-products},
+\thmref{Proposition}{II.3}, rule A4 in \S\ref{sec:atlas-rules}, \S\ref{sec:rosetta-reverse}. \textsf{Reading:}
+\citet[\S5.1]{xleinster2014basic}.}
+
+\begin{bgentry}{A.11}{pullback; fibre product}
+Given $f:X\to Z$ and $g:Y\to Z$, a \textbf{pullback} is an object $P$ with arrows $p:P\to X$ and $q:P\to Y$ such that
+$f\circ p=g\circ q$, and such that whenever $u:T\to X$ and $v:T\to Y$ satisfy $f\circ u=g\circ v$, exactly one
+$t:T\to P$ has $p\circ t=u$ and $q\circ t=v$ (Figure~\ref{fig:bg-pullback}). In $\Set$ the pullback is the
+\textbf{fibre product} $X\times_ZY=\{(x,y):f(x)=g(y)\}$. In $\Diff$, if this set is an embedded submanifold of
+$X\times Y$, it is the pullback, and transversality (\bgref{C.7}) is the standard sufficient condition for that. A
+pullback in $\Diff$ can fail to exist.
+\end{bgentry}
+
+Products in $\Meth$ are fibre products $Q_M\times_\Theta Q_N=\{(q,q'):\rho_M(q)=\rho_N(q')\}$. For $\mathrm{FA}(A_0)$
+and $\mathrm{FB}(B_0)$, with the ranks of \bgref{A.10}, this set is the linear space $\{(B_0R,RA_0)\}$, so the product
+exists. For $\mathrm{LoRA}_1$ and the frozen model on $1\times1$ weights the set is the cross $\{ba=0\}\subset\R^2$, no
+manifold structure on it has the universal property, and the product does not exist (\bgref{A.13}). Pulling back along
+the point $\theta_0:\mathrm{pt}\to\Theta$ gives the fibre $\rho^{-1}(\theta_0)$, the underlying set of
+$M\times\text{Frozen}$ whenever that product exists.
+
+\paragraph{HRA is a meet of images, not a product}
+Take $W_0$ injective and $r$ even with $2\le r\le n-2$. The fibre product of $\mathrm{LoRA}_r$ with the rotation orbit
+$W_0\cdot\SO(n)$ has local dimension $d(\mathrm{HRA}_r)+r^2=rn+r(r-1)/2$ over generic points of the meet
+(\bgref{C.19}). This exceeds $rn=\lvert\mathrm{HRA}_r\rvert$ because $r\ge2$, so HRA \citep{yuan2024bridging} is not the
+product of the two methods, and \thmref{Theorem}{II.7} keeps only the meet of their images (\bgref{A.16}).
+
+\begin{figure}[tbp]
+\centering
+\begin{tikzcd}[column sep=3.2em, row sep=2.8em, arrows={line width=0.6pt}]
+  T \arrow[drr, bend left=22, "v"] \arrow[ddr, bend right=22, "u"'] \arrow[dr, dashed, "\exists!\,t" description]
+    & & \\
+  & Q_M\times_\Theta Q_N \arrow[r, "p_N"] \arrow[d, "p_M"'] \arrow[dr, phantom, "\lrcorner", very near start]
+    & Q_N \arrow[d, "\rho_N"] \\
+  & Q_M \arrow[r, "\rho_M"'] & \Theta
+\end{tikzcd}
+\caption{A pullback square. It commutes, $\rho_M\circ p_M=\rho_N\circ p_N$, and any test object $T$ whose maps $u,v$
+  agree over $\Theta$ factors through the corner by exactly one $t$. The small corner mark is the usual sign of a
+  pullback.}
+\label{fig:bg-pullback}
+\end{figure}
+
+\fbAusedin{\thmref{Observation}{I.4}(b), \thmref{Proposition}{I.8}, \thmref{Proposition}{II.3},
+\thmref{Theorem}{II.7}(d), \thmref{Corollary}{III.13}.}
+
+\begin{bgentry}{A.12}{limit; creation of limits}
+A \textbf{cone} over a diagram $D$ in $\mathcal C$ is an object $L$ with an arrow to every object of $D$, such that each
+triangle formed with an arrow of $D$ commutes. A \textbf{limit} of $D$ is a cone through which every other cone factors
+by exactly one arrow. This categorical cone is unrelated to the geometric cones of \bgref{C.10}. Terminal objects,
+products and pullbacks are the limits of the empty diagram, of two objects, and of two arrows with a common target. A
+functor $U:\mathcal C\to\mathcal D$ \textbf{creates limits} if, for every diagram $D$ in $\mathcal C$ and every limit cone
+of $U\circ D$, exactly one cone over $D$ is sent by $U$ to that limit cone, and this cone is a limit of $D$.
+\end{bgentry}
+
+The forgetful functor $\Diff_*\to\Diff$ creates limits (\bgref{A.14}). Concretely, when the underlying manifolds have a
+pullback, the pullback of pointed manifolds is that pullback, pointed at the pair of base points. This is how
+\thmref{Observation}{I.4}(b) computes products of methods as fibre products in $\Diff$.
+
+\fbAusedin{\thmref{Observation}{I.4}(b). \textsf{Reading:} \citet[Ch.~V]{xmaclane1998categories};
+\citet[Ch.~3]{xriehl2016category}.}
+
+\begin{bgentry}{A.13}{adjunction}
+A functor $F:\mathcal C\to\mathcal D$ is \textbf{left adjoint} to $G:\mathcal D\to\mathcal C$, and $G$ is \textbf{right
+adjoint} to $F$, written $F\dashv G$, if there are bijections $\mathcal D(FX,Y)\cong\mathcal C(X,GY)$ natural in $X$ and
+$Y$. Many forgetful functors are right adjoints, whose left adjoints add the forgotten structure freely.
+\end{bgentry}
+
+The forgetful functor $\Diff_*\to\Diff$ is right adjoint to $X\mapsto(X\sqcup\mathrm{pt},\mathrm{pt})$, which adds a
+disjoint base point, since a pointed map out of $X\sqcup\mathrm{pt}$ is the same as an arbitrary map out of $X$ (a
+manifold may have components of different dimensions). Right adjoints preserve limits (\bgref{A.14}), so a product of
+methods, if it exists, is also a pullback in $\Diff$ and can be tested with unpointed maps.
+\thmref{Observation}{I.4}(b) uses this to rule out $\mathrm{LoRA}_1\times\text{Frozen}$ on $1\times1$ weights. The axis
+curves $t\mapsto(t,0)$ and $t\mapsto(0,t)$ in the cross would lift smoothly through the point over the origin, so the
+differential of the projection from the product to the parameter plane $\R^2$ of $\mathrm{LoRA}_1$ would have rank $2$
+there. That projection would then be a submersion near the point (\bgref{C.4}), and its image would contain an open set,
+which the cross does not.
+
+\fbAusedin{\thmref{Observation}{I.4}(b). \textsf{Reading:} \citet[Ch.~2 and Ch.~6]{xleinster2014basic}.}
+
+\begin{bgfact}{A.14}{two standard facts about limits}
+Let $\mathcal C$ be a category.
+\begin{enumerate}[label=(\alph*)]
+  \item For every object $X$ of $\mathcal C$, the forgetful functor $X/\mathcal C\to\mathcal C$ creates limits. In
+    particular $\Diff_*\to\Diff$ does.
+  \item A right adjoint preserves every limit that exists in its domain.
+\end{enumerate}
+\end{bgfact}
+
+\paragraph{The idea behind (a) and (b)}
+(a) The structure arrows $X\to D_j$ of a diagram in $X/\mathcal C$ form a cone in $\mathcal C$, which factors through
+the limit by exactly one arrow, and that arrow is the structure map of the limit. (b) For $F\dashv G$,
+\begin{equation*}
+  \mathcal C(X,G\lim D)\cong\mathcal D(FX,\lim D)\cong\lim\mathcal D(FX,D_j)\cong\lim\mathcal C(X,GD_j),
+\end{equation*}
+naturally in $X$.
+
+\medskip\noindent
+\thmref{Observation}{I.4}(b) combines them. Products in $\Meth$ are pullbacks in $\Diff_*$, which by (a) exist whenever
+the underlying pullback exists in $\Diff$, and by (b) and \bgref{A.13} only then. The transversality hypothesis of
+\bgref{C.7} fails at the base point whenever $\lvert M\rvert+\lvert N\rvert<\dim\Theta$, with $\lvert M\rvert=\dim Q_M$
+(\bgref{C.3}), so the products that exist, such as LoRA-XS, come from other structure (\bgref{A.11}).
+
+\fbAusedin{\thmref{Observation}{I.4}(b), \S\ref{sec:slice-interval}. \textsf{Reading:}
+\citet[Ch.~V]{xmaclane1998categories}; \citet[Ch.~3 and Ch.~4]{xriehl2016category}.}
+
+\begin{bgentry}{A.15}{monomorphism; sub-object}
+An arrow $m:A\to B$ is a \textbf{monomorphism} if $m\circ u=m\circ v$ implies $u=v$ for all arrows $u,v:T\to A$. A
+\textbf{sub-object} of $B$ is a monomorphism into $B$, two of them being identified when they differ by an isomorphism
+over $B$. Testing with maps out of one- and two-point manifolds shows that the monomorphisms of $\Diff$, and those of
+$\Meth$, are exactly the arrows whose underlying map is injective. Such a map need not be an embedding, as
+$t\mapsto t^3$ shows.
+\end{bgentry}
+
+Freezing coordinates at their base values gives an injective affine map, hence a sub-object, written $\hookrightarrow$ in
+the atlas (rule A2). Examples are $\mathrm{FA}(A_0)\hookrightarrow\mathrm{LoRA}$ pointed at $(0,A_0)$, by
+$B\mapsto(B,A_0)$, and MiCA \citep{rudiger2026mica} ${}\hookrightarrow{}$ LoRA pointed at $(B_0,0)$, by
+$A\mapsto(B_0,A)$. These maps are embeddings, a stronger property than injectivity. The paper writes sub-object and never
+monomorphism. In \thmref{Corollary}{III.13}, LoRA-FA is a sub-object of LoRA and so a different object, while random-$A$
+LoRA and EVA \citep{paischer2024parameter} are the same map $\rho$ with two different base points in its fibre over
+$\theta_0$.
+
+\fbAusedin{\thmref{Definition}{I.2}, rule A2 in \S\ref{sec:atlas-rules}, \thmref{Corollary}{III.13}.}
+
+\begin{bgentry}{A.16}{posets; meets; the expressivity order}
+A \textbf{preorder} is a category with at most one arrow between any two objects; write $x\le y$ when there is one. It
+is a \textbf{poset} if $x\le y\le x$ forces $x=y$. In a poset the product of $x$ and $y$ is their \textbf{meet}
+$x\wedge y$, the greatest lower bound, and for subsets ordered by inclusion the meet is the intersection. Two elements are
+\textbf{incomparable} if neither $x\le y$ nor $y\le x$, and $x$ is \textbf{maximal} if $x\le y$ implies $x=y$. Every
+category has a \textbf{poset reflection}, in which $X\le Y$ when some arrow $X\to Y$ exists and $X,Y$ are identified when
+arrows run both ways. A \textbf{Hasse diagram} draws a finite poset with $y$ above $x$ when $x<y$, joining them by an
+edge when nothing lies strictly between.
+\end{bgentry}
+
+The poset reflection of $\Meth$, which we call the expressivity order, orders methods by simulation.
+Figure~\ref{fig:graph} draws it for the core methods as a layered Hasse diagram, from the frozen model at the bottom to
+full fine-tuning at the top. A meet of images always exists and need not be the image of a product. For injective $W_0$
+and even $r\le n-2$, the image of HRA without Gram--Schmidt is the meet of LoRA's cone with the rotation orbit
+$W_0\cdot\SO(n)$ (\bgref{D.11}), and HRA is not their product (\thmref{Theorem}{II.7}). Split and zero-init LoRA have
+incomparable images (\thmref{Theorem}{II.2}(d)), so neither simulates the other. The frontier problem asks for the
+maximal methods of budget at most $k$, which are automatically pairwise incomparable.
+
+\fbAusedin{\thmref{Observation}{I.4}(c), \thmref{Proposition}{I.8}(b), \thmref{Theorem}{II.2}, \thmref{Theorem}{II.7},
+\S\ref{sec:erlangen-hra}, Figure~\ref{fig:graph}, the open problems of Exposé~\ref{sec:analogy}. \textsf{Reading:}
+\citet[Ch.~1 and Ch.~2]{xdavey2002introduction}.}
+
+\subsubsection*{Base change and lifting}
+
+\begin{bgentry}{A.17}{automorphism of a category; transport of structure}
+An \textbf{automorphism} of a category $\mathcal C$ is a functor $F:\mathcal C\to\mathcal C$ with an inverse functor, so
+that both composites are identity functors. It carries initial objects, products, isomorphisms and every other notion
+defined from arrows alone to notions of the same kind. \textbf{Transport of structure} builds such a functor from an
+invertible map of the underlying data.
+\end{bgentry}
+
+For $T\in\GL(\Theta)$ put $\tau_T(\theta)=\theta_0+T(\theta-\theta_0)$ and $T_*M:=(Q,q_0,\tau_T\circ\rho)$. An arrow
+$h:M\to N$ is also an arrow $T_*M\to T_*N$, since $\tau_T\circ\rho_N\circ h=\tau_T\circ\rho_M$, so $T_*$ is a functor,
+with inverse $(T^{-1})_*$. It keeps $d(M)$ and the first-order deficit (\bgref{C.3}) and the gauge group (\bgref{D.21}),
+and moves $S_1$ to $TS_1$. It does not keep rank, which depends on the matrix shape of $\Theta$ that $T$ need not
+respect. Sums of $k$ Kronecker products are $(\mathcal R^{-1})_*\mathrm{LoRA}_k$, LoRA on the matrix rearranged by Van
+Loan and Pitsianis and carried back (\bgref{B.11}), and HiRA \citep{huang2025hira} is $(D_{W_0})_*\mathrm{LoRA}$ with
+$D_{W_0}(X)=W_0\odot X$, when $W_0$ has no zero entries. The atlas records $M$ and $T_*M$ as one object in two frames,
+with no arrow between them.
+
+\fbAusedin{\thmref{Proposition}{II.13}, Exposé~\ref{sec:cut}, rule T in \S\ref{sec:atlas-rules},
+\S\ref{sec:rosetta-reverse}.}
+
+\begin{bgentry}{A.18}{lift; lifting problem; obstruction}
+Given arrows $p:E\to B$ and $f:A\to B$, a \textbf{lift} of $f$ along $p$ is an arrow $g:A\to E$ with $p\circ g=f$. A
+\textbf{lifting problem} asks whether a lift exists, and an \textbf{obstruction} is an invariant whose value shows that
+none does. A morphism $h:M\to N$ of $\Meth$ is exactly a pointed smooth lift of $\rho_M$ along $\rho_N$.
+\end{bgentry}
+
+In $\Set$ a lift exists once $f(A)\subseteq p(E)$, by choosing preimages, so smoothness is the real constraint. For
+$\rho_M(t)=t$ and $\rho_N(u)=u^3$ on $\R$ the images agree, and the only lift is the cube root, which is not
+differentiable at $0$. A pointed smooth lift forces $S_1(M)\subseteq S_1(N)$ by the chain rule, so $S_1$ is a
+first-order obstruction, and here $S_1(M)=\R\not\subseteq S_1(N)=0$. For $t^3$ against $u^5$ both $S_1$ vanish, yet the
+only lift $t^{3/5}$ is not $C^1$, so that obstruction is invisible to $S_1$. Merging a method on an extension is again a
+lifting problem, to find $\mu$ with $\Phi_f\circ\mu=\Phi_{\tilde f}\circ\rho$, a lift along the realisation $\Phi_f$
+(\bgref{B.16}, \thmref{Definition}{VI.1}).
+
+\fbAusedin{\thmref{Observation}{I.4}(c), \S\ref{sec:slice-interval}, \thmref{Observation}{I.6},
+\thmref{Definition}{VI.1}, \S\ref{sec:merge-extensions}, Rosetta entry 5 (\S\ref{sec:rosetta-six}).}
+
+\begin{bgentry}{A.19}{base change; pushforward $\phi_!$; the relative point of view}
+A map of bases $\phi:S'\to S$ induces the \textbf{pushforward} $\phi_!:\mathcal C/S'\to\mathcal C/S$,
+$(X,x)\mapsto(X,\phi\circ x)$, by postcomposition. When every object over $S$ has a pullback along $\phi$, it also
+induces the \textbf{pullback} $\phi^*:\mathcal C/S\to\mathcal C/S'$, $(Y,y)\mapsto(Y\times_SS',\text{projection})$, and
+then $\phi_!\dashv\phi^*$. In algebraic geometry, base change usually means $\phi^*$.
+\end{bgentry}
+
+\thmref{Definition}{V.1}(a) uses $\phi_!$ on pointed slices. A function-preserving pointed reparametrisation
+$\phi:(\Theta',\theta_0')\to(\Theta,\theta_0)$, with $f\circ(\phi\times X)=f'$, gives
+$\phi_!:\Meth(\Theta',\theta_0')\to\Meth(\Theta,\theta_0)$, $\rho\mapsto\phi\circ\rho$, for instance for a permutation
+of hidden units. Whether $\phi_!$ carries LoRA to LoRA is the covariance question of \thmref{Observation}{II.15}. A
+quantiser changes the function and induces no such functor, so QLoRA \citep{dettmers2023qlora} and ReLoRA
+\citep{lialin2023relora} only borrow the name, and Exposé~\ref{sec:base} computes pointing defects and reachable sets for
+them.
+
+Grothendieck's relative point of view replaces a space $X$ by a morphism $X\to S$, an object over a base. Properties then
+belong to the morphism, and the useful ones are those that survive pulling back along every change of base $S'\to S$. The
+fibre over a point $s$ is itself the pullback along $s:\mathrm{pt}\to S$. The paper takes this stance in a modest form. A
+method is a morphism over the base point $\theta_0$, and quantisation, restarts and merging are read as moves of that
+base point.
+
+\fbAusedin{Exposés~\ref{sec:thesis}--\ref{sec:slice}, Exposé~\ref{sec:thesis} (where the category theory earns its
+keep), \thmref{Definition}{V.1}, Exposé~\ref{sec:base}, Rosetta entry 28 (\S\ref{sec:rosetta-six}), the seven borrowed
+words of Exposé~\ref{sec:analogy}. \textsf{Reading:} \citet{xvakil2025rising}, on fibred products and base change.}
+
+\begin{bgentry}{A.20}{constructions the paper names and leaves unused}
+Coends, monads, sheaves, stacks, schemes, Grothendieck's descent theory (descent data, effective descent morphisms), the
+Grothendieck construction $\int\Meth\to\mathbf{PNet}$ and coKleisli 2-cells appear in the paper only in lists of
+constructions it leaves out (Exposé~\ref{sec:thesis}, where the category theory earns its keep, and
+Exposé~\ref{sec:analogy}, on what the borrowed words mean). No result depends on them. The elementary descent of
+\bgref{D.22}, factoring a map that is constant on orbits through the orbit space, is a different and much simpler notion,
+and several results use it.
+\end{bgentry}
+
+For orientation only, the Grothendieck construction would assemble the slices of all pretrained models,
+$\Meth(\Theta,\theta_0)$ for each $(\Theta,\theta_0)$, into one category of pairs (network, method), with a projection to the category $\mathbf{PNet}$ whose objects are pointed networks and whose arrows are
+function-preserving reparametrisations. A monad is an endofunctor $T$ with natural transformations
+$\id\Rightarrow T$ and $TT\Rightarrow T$ satisfying unit and associativity laws, and a sheaf assigns data to open sets so
+that compatible local data glue to unique global data.
+
+\fbAusedin{Exposé~\ref{sec:thesis} (where the category theory earns its keep), the seven borrowed words and what the
+borrowed words mean in Exposé~\ref{sec:analogy}.}
+
+% ======================================================================================================================
+\subsection*{Part B. Monoidal categories, string diagrams and lenses}
+\phantomsection\label{app:bg-b}\addcontentsline{toc}{subsection}{Part B. Monoidal categories, string diagrams and lenses}
+
+Part A compared methods through the arrows between them. Part B covers the algebra behind drawing a method as boxes and
+wires, reading a rank bound off a cut of the drawing, and treating backpropagation as a pair of maps. Entries \bgref{B.1}
+to \bgref{B.6} set up monoidal categories and their diagrams, \bgref{B.7} to \bgref{B.13} turn them into rank and
+dimension counts for matrices built from small factors, and \bgref{B.14} to \bgref{B.17} cover sums of methods,
+parametrised maps and lenses.
+
+\subsubsection*{Monoidal categories}
+
+\begin{bgentry}{B.1}{monoidal and symmetric monoidal categories}
+A \textbf{monoidal category} is a category $\mathcal C$ with a functor $\otimes:\mathcal C\times\mathcal C\to\mathcal C$,
+a unit object $I$, and natural isomorphisms $(A\otimes B)\otimes C\cong A\otimes(B\otimes C)$ and
+$I\otimes A\cong A\cong A\otimes I$, the \textbf{coherence isomorphisms}, which satisfy the pentagon and triangle
+equations. Mac Lane's coherence theorem then makes every diagram built from them commute, so brackets can be dropped. The
+category is \textbf{symmetric} if it also has natural isomorphisms $\sigma_{A,B}:A\otimes B\to B\otimes A$ with
+$\sigma_{B,A}\sigma_{A,B}=\id$ that are compatible with the associator (the hexagon equation). Examples are
+$(\FinVect,\otimes,\R)$, $(\FinVect,\oplus,0)$ and $(\Diff,\times,\mathrm{pt})$.
+\end{bgentry}
+
+On methods, $M\oplus N$ runs the two parameter spaces side by side and adds their updates (\bgref{B.14}). This makes
+$\Meth(\Theta,\theta_0)$ symmetric monoidal with the frozen model as unit. Its coherence isomorphisms are those of
+$\times$ on pointed manifolds, and they lie over $\Theta$ because addition is associative and commutative.
+
+\fbAusedin{\thmref{Observation}{I.7}, \S\ref{sec:slice-sums}, Exposé~\ref{sec:thesis} (where the category theory earns
+its keep), \thmref{Theorem}{II.10}, \thmref{Theorem}{VI.3}. \textsf{Reading:} \citet[Ch.~VII and
+Ch.~XI]{xmaclane1998categories}.}
+
+\begin{bgentry}{B.2}{direct sum and tensor product in $\FinVect$}
+The category $\FinVect$ has finite-dimensional real vector spaces as objects and linear maps as morphisms, and two
+monoidal products.
+The \textbf{direct sum} $V\oplus W$ is a \textbf{biproduct}, both the categorical product and the coproduct, with
+$\dim(V\oplus W)=\dim V+\dim W$; on matrices $f\oplus g$ is block-diagonal. The \textbf{tensor product} $V\otimes W$ has
+$\dim(V\otimes W)=\dim V\cdot\dim W$ and is not a categorical product; on matrices $f\otimes g$ is the Kronecker product
+(\bgref{B.10}). Each bilinear map $V\times W\to U$ factors through a unique linear map $V\otimes W\to U$.
+\end{bgentry}
+
+Two boxes drawn side by side therefore mean a block-diagonal map in the activation diagrams of Exposé~\ref{sec:merge},
+whose monoidal product is $\times=\oplus$, and a Kronecker product in a tensor network. Dimensions multiply along
+$\otimes$, which is why the weight of a cut in \thmref{Theorem}{II.10} is a product of wire dimensions. LoRA's residual
+branch $W_0+BA$ uses $\oplus$, since it sends one input to two branches and adds their outputs
+(Figure~\ref{fig:bg-lora}).
+
+\fbAusedin{\thmref{Theorem}{II.10}, Exposé~\ref{sec:cut}, \thmref{Theorem}{VI.3}, \thmref{Observation}{I.7}.}
+
+\begin{bgentry}{B.3}{string diagrams}
+A \textbf{string diagram} draws a morphism $f:A\to B$ of a monoidal category as a box with an input wire $A$ and an
+output wire $B$. Composition $g\circ f$ joins boxes in series, $f\otimes g$ places them side by side, an identity is a
+bare wire, the unit $I$ is drawn as no wire, and in a symmetric category $\sigma$ is a crossing. \citet{xjoyal1991geometry}
+proved that the pictures are sound and complete. In a monoidal category, diagrams related by a planar deformation denote
+the same morphism; in a symmetric one, diagrams with the same boxes joined in the same way do. Laws such as
+$(g\otimes g')\circ(f\otimes f')=(g\circ f)\otimes(g'\circ f')$ can then be read off the picture.
+\end{bgentry}
+
+The plug of Exposé~\ref{sec:cut} (\S\ref{sec:cut-plug}) is a string diagram. LoRA is a box $A:\R^n\to\R^r$ followed by
+$B:\R^r\to\R^m$, drawn beside $W_0$ (Figure~\ref{fig:bg-lora}, read left to right). The merge calculus moves an edit
+along wires by equalities of maps, so a successful slide proves that the merged network computes the same function.
+
+\fbAusedin{Exposé~\ref{sec:cut}, \thmref{Theorem}{II.10}, \S\ref{sec:cut-plug}, \S\ref{sec:merge-calculus} and the
+analogy on string diagrams there, \thmref{Theorem}{VI.3}. \textsf{Reading:} \citet{xselinger2011survey}.}
+
+\begin{bgentry}{B.4}{cartesian categories; copy and discard}
+A monoidal category is \textbf{cartesian} when $\otimes$ is the categorical product $\times$ and $I$ is a terminal object
+$1$. Every object then has a \textbf{copy} map $\Delta_X:X\to X\times X$, $x\mapsto(x,x)$, and a \textbf{discard} map
+${!}_X:X\to1$, and copy is natural, $(f\times f)\circ\Delta_X=\Delta_Y\circ f$ for every $f:X\to Y$. Conversely, by a
+theorem of \citet{xfox1976coalgebras}, a symmetric monoidal category is cartesian exactly when every object carries a
+commutative comonoid, a copy and a discard map obeying coassociativity, counit and commutativity laws (\bgref{B.6}),
+compatible with $\otimes$ and natural in all morphisms. $\Set$, $\Diff$ and $(\FinVect,\oplus)$ are cartesian.
+$(\FinVect,\otimes)$ is not, since $x\mapsto x\otimes x$ is not linear.
+\end{bgentry}
+
+Naturality of copy is rule R7 of the merge calculus. A linear edit $E$ on a wire read by $W_Q$, $W_K$ and $W_V$ equals
+$E$ applied on each of the three branches, so it is absorbed as $W_QE$, $W_KE$, $W_VE$. The paper builds $\Para(\mathcal C)$
+(\bgref{B.16}) over a cartesian $\mathcal C$. The linear copy of \bgref{B.6} copies basis vectors only and is a different
+map.
+
+\fbAusedin{\thmref{Definition}{I.1}, \S\ref{sec:merge-calculus} and the analogy on string diagrams there,
+\thmref{Theorem}{VI.3}.}
+
+\begin{bgentry}{B.5}{compact closed categories; cups, caps and wire-bending}
+A symmetric monoidal category is \textbf{compact closed} if every object $A$ has a dual $A^*$ with a \textbf{cup}
+$\eta_A:I\to A^*\otimes A$ and a \textbf{cap} $\varepsilon_A:A\otimes A^*\to I$ satisfying the snake equations
+\begin{equation*}
+  (\varepsilon_A\otimes\id_A)(\id_A\otimes\eta_A)=\id_A,\qquad(\id_{A^*}\otimes\varepsilon_A)(\eta_A\otimes\id_{A^*})=\id_{A^*},
+\end{equation*}
+with the unitors $I\otimes A\cong A\cong A\otimes I$ of \bgref{B.1} suppressed. Drawn as bent wires, cups and caps turn
+an input wire into an output wire and back. In $\FinVect$ the cap is evaluation, the cup is
+$1\mapsto\sum_ie_i^*\otimes e_i$, and bending gives $\mathrm{Hom}(V,U)\cong U\otimes V^*$. With a fixed basis, a box
+slid around a cup or cap comes out as its transpose.
+\end{bgentry}
+
+Bending the input wire of an $m\times n$ matrix gives its vectorisation in $\R^m\otimes\R^n$, and the Van
+Loan--Pitsianis rearrangement (\bgref{B.11}) is a composite of bends and crossings. Rule R5 of the merge calculus,
+$\langle Mq,k\rangle=\langle q,M\T k\rangle$, slides $M$ around the cap that computes an attention score. The cut-rank
+bound uses only $\otimes$ and crossings.
+
+\fbAusedin{\thmref{Theorem}{II.11}, \thmref{Theorem}{VI.3}, Exposé~\ref{sec:cut}. \textsf{Reading:}
+\citet{xcoecke2017picturing}.}
+
+\begin{bgentry}{B.6}{Frobenius algebras and spiders}
+A \textbf{Frobenius algebra} on an object $V$ is a monoid $\mu:V\otimes V\to V$, $\eta:I\to V$ and a comonoid
+$\delta:V\to V\otimes V$, $\varepsilon:V\to I$ obeying the \textbf{Frobenius law}
+\begin{equation*}
+  (\mu\otimes\id)(\id\otimes\delta)=\delta\mu=(\id\otimes\mu)(\delta\otimes\id).
+\end{equation*}
+A basis $e_1,\dots,e_n$ of $\R^n$ gives one, with \emph{copy} $\delta(e_i)=e_i\otimes e_i$, \emph{merge} (the
+multiplication; unrelated to merging an adapter into the weights) $\mu(e_i\otimes e_j)=e_i$ if $i=j$ and $0$ otherwise,
+$\eta=\sum_ie_i$ and $\varepsilon(e_i)=1$. It is commutative and special ($\mu\delta=\id$). For such algebras the
+\textbf{spider theorem} says that every connected diagram of $\mu,\eta,\delta,\varepsilon$ with $k\ge1$ inputs and $l$
+outputs equals one \textbf{spider}, which sends $e_i^{\otimes k}$ to $e_i^{\otimes l}$ and every other basis tensor to
+$0$.
+\end{bgentry}
+
+Merge multiplies coordinates, $\mu(x\otimes y)=x\odot y$. So for matrices $X,Y:\R^n\to\R^m$ the Hadamard product is the
+spider composite
+\begin{equation*}
+  X\odot Y=\mu_m\circ(X\otimes Y)\circ\delta_n.
+\end{equation*}
+LoHa \citep{hyeonwoo2021fedpara} is a copy spider on the input feeding $A_1$ and $A_2$, then $B_1$ and $B_2$, then a merge
+spider on the output, and in \thmref{Theorem}{II.10} a spider split by the cut counts its dimension once. The copy and
+$\odot$ nodes of Exposé~\ref{sec:merge} live in a cartesian category (\bgref{B.4}), where copy is $x\mapsto(x,x)$;
+together they fail the Frobenius law, so there ``spider'' is only a name.
+
+\fbAusedin{Exposé~\ref{sec:cut}, \thmref{Theorem}{II.10}, \thmref{Proposition}{II.12}, the analogy on string diagrams in
+\S\ref{sec:merge-calculus}. \textsf{Reading:} \citet{xcoecke2013new}.}
+
+\subsubsection*{Tensor networks and rank}
+
+\begin{bgentry}{B.7}{tensor networks, contraction, bond dimension}
+A \textbf{tensor network} $\Gamma$ is a string diagram in $(\FinVect,\otimes)$, possibly with spiders. Each box is a
+tensor and each wire a finite-dimensional space. A wire joining two boxes means \textbf{contraction}, a sum over the index
+the wire carries. The open wires (legs) are the inputs $V$ and outputs $U$, and contracting every internal wire gives the
+value $\llbracket\Gamma\rrbracket:V\to U$. The dimension of an internal wire is its \textbf{bond dimension}. One value has
+many presentations, and quantities read off a network, such as its cuts, depend on the presentation.
+\end{bgentry}
+
+LoRA's update is the two-box network $B\circ A$ with one bond of dimension $r$, and $\Delta W=BA$ contracts it,
+$(BA)_{ij}=\sum_{k\le r}B_{ik}A_{kj}$. HiRA factors $W_0$ through a bond of dimension $\operatorname{rk}W_0$, while MoRA
+\citep{jiang2024mora}, C3A \citep{chen2024parameter} and MPO adapters have no narrow cut between inputs and outputs
+(Table~\ref{tab:cutbounds}, after \thmref{Theorem}{II.10}).
+
+\fbAusedin{\thmref{Theorem}{II.10}, Exposé~\ref{sec:cut}, \S\ref{sec:cut-plug}, Exposé~\ref{sec:thesis} (where the
+category theory earns its keep), the known results credited in Exposé~\ref{sec:related}. \textsf{Reading:}
+\citet{xorus2014practical}.}
+
+\begin{bgfact}{B.8}{the min-cut bound on rank}
+Let $\Gamma$ be a tensor network with input legs $V$ and output legs $U$, with every wire attached to a box (put an
+identity box on any bare strand). Split the boxes into an input side $\mathcal I$ and an output side $\mathcal O$. The
+\textbf{weight} $w$ of the cut is the product of the dimensions of the wires joining the two sides and of the legs attached
+on the wrong side (input legs at $\mathcal O$, output legs at $\mathcal I$); a spider with legs on both sides contributes
+its dimension once. Then
+\begin{equation*}
+  \rk\llbracket\Gamma\rrbracket\le\min_{\text{cuts}}w.
+\end{equation*}
+For sums of networks, $\rk(X+Y)\le\rk X+\rk Y$.
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+Contract each side separately. The value becomes a map into the tensor product of the crossing wires and wrong-side legs
+followed by a map out of it, and that space has dimension $w$.
+
+\medskip\noindent
+For LoRA the cut between $A$ and $B$ crosses one wire, so $\rk BA\le r$ (Figure~\ref{fig:bg-lora}). For LoHa the cut
+with $A_1,A_2$ on the input side crosses two bonds and gives $r_1r_2$. The bound depends on the presentation. HRA's
+product of $r$ reflections expands into $2^r-1$ terms of rank at most one, while the telescoping sum
+\begin{equation*}
+  R-I=\sum_{k=1}^r(H_k-I)H_{k+1}\cdots H_r
+\end{equation*}
+gives $r$.
+
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,
+  box/.style={rectangle, rounded corners=2pt, minimum height=8mm, line width=0.6pt, text=ink},
+  frozen/.style={box, draw=inkgray, fill=headergray, minimum width=22mm},
+  train/.style={box, draw=tide, fill=tide!16, line width=0.8pt, minimum width=11mm},
+  wire/.style={draw=ink, line width=1.2pt},
+  thinwire/.style={draw=ink, line width=0.5pt},
+  lab/.style={font=\footnotesize, text=inkgray}]
+  % input wire and fork
+  \draw[wire] (0,0) -- (1.0,0);
+  \fill[ink] (1.0,0) circle (1.9pt);
+  % upper branch: frozen W_0
+  \node[frozen] (W0) at (4.6,1.0) {$W_0$};
+  \draw[wire] (1.0,0) .. controls (1.55,0) and (1.65,1.0) .. (2.25,1.0) -- (W0.west);
+  \draw[wire] (W0.east) -- (6.95,1.0) .. controls (7.55,1.0) and (7.6,0) .. (7.86,0);
+  % lower branch: A, thin wire r, B
+  \node[train] (A) at (3.0,-1.0) {$A$};
+  \node[train] (B) at (6.2,-1.0) {$B$};
+  \draw[wire] (1.0,0) .. controls (1.55,0) and (1.65,-1.0) .. (2.25,-1.0) -- (A.west);
+  \draw[thinwire] (A.east) -- (B.west);
+  \draw[wire] (B.east) -- (6.95,-1.0) .. controls (7.55,-1.0) and (7.6,0) .. (7.86,0);
+  % sum node and output
+  \node[circle, draw=ink, fill=white, line width=0.7pt, minimum size=4.4mm, inner sep=0pt] (plus) at (8.08,0) {};
+  \draw[ink, line width=0.7pt] (7.96,0) -- (8.20,0) (8.08,-0.12) -- (8.08,0.12);
+  \draw[wire] (plus.east) -- (9.3,0);
+  % dimension labels
+  \node[lab, anchor=south] at (0.45,0.06) {$n$};
+  \node[lab, anchor=south] at (8.85,0.06) {$m$};
+  \node[lab, anchor=south] at (4.1,-0.98) {$r$};
+  % the cut
+  \draw[seal, line width=1pt, dash pattern=on 3pt off 2pt] (4.6,-0.35) -- (4.6,-1.75);
+  \node[font=\footnotesize, text=seal, anchor=north] at (4.6,-1.78) {cut, weight $r$};
+\end{tikzpicture}
+\caption{LoRA as a string diagram, read left to right, with the scale $s$ absorbed into $B$. The fork sends the input to
+  both branches and the $+$ node adds their outputs. These are the copy and sum maps of the biproduct $\oplus$
+  (\bgref{B.2}), so the diagram says $W=W_0+BA$. The frozen $W_0$ is grey, and the trainable $A\in\R^{r\times n}$ and
+  $B\in\R^{m\times r}$ are tinted. The dashed cut separates $A$ from $B$ and crosses one wire of dimension $r$, so
+  $\rk(W-W_0)=\rk BA\le r$. For $W$ itself, subadditivity over the two branches gives only $\rk W\le\rk W_0+r$.}
+\label{fig:bg-lora}
+\end{figure}
+
+\fbAusedin{\thmref{Theorem}{II.10}, Exposé~\ref{sec:cut}, \S\ref{sec:cut-plug}, \thmref{Proposition}{II.12}, the known
+results credited in Exposé~\ref{sec:related}. \textsf{Reading:} \citet{kolda2009tensor}.}
+
+\begin{bgentry}{B.9}{tensor trains, Tucker and MPO; gauge on bonds}
+A \textbf{tensor train} (TT) writes a tensor with legs of dimensions $n_1,\dots,n_d$ as a chain of cores
+$G_k\in\R^{r_{k-1}\times n_k\times r_k}$, $r_0=r_d=1$, joined by bonds of dimensions $r_1,\dots,r_{d-1}$. An
+\textbf{MPO} is the same chain with one input and one output leg on each core. \textbf{Tucker} joins a core
+$C\in\R^{r_1\times\cdots\times r_d}$ to factor matrices $U_k\in\R^{n_k\times r_k}$. Inserting $g^{-1}g=\id$,
+$g\in\GL_{r_e}$, on a bond $e$ and absorbing each factor into its neighbouring box leaves the value unchanged, so the
+gauge (\bgref{D.21}) contains $\prod_e\GL_{r_e}$. When every $r_e$ is the rank of the matching unfolding (minimal ranks),
+the tensors of these ranks form a manifold of dimension $\sum(\text{core sizes})-\sum_er_e^2$.
+\end{bgentry}
+
+LoRA is the two-core case, $B$ and $A$ joined by one bond, with gauge $(B,A)\mapsto(Bg^{-1},gA)$ and, for
+$r\le\min(m,n)$, image dimension $r(m+n)-r^2$. TT and Tucker adapters have $d(M)=\lvert M\rvert-\sum_er_e^2$ at minimal
+ranks (\thmref{Proposition}{II.12}), and under gradient flow each bond carries a conserved matrix
+(\S\ref{sec:fibres-charges}).
+
+\fbAusedin{\thmref{Proposition}{II.12}, Exposé~\ref{sec:cut}, \S\ref{sec:fibres-charges}. \textsf{Reading:}
+\citet{oseledets2011tensor}; \citet{xholtz2012manifolds}; \citet{xkoch2010dynamical}.}
+
+\begin{bgentry}{B.10}{Kronecker product, vec, tensor product of subspaces}
+For $C\in\R^{m_1\times n_1}$ and $D\in\R^{m_2\times n_2}$, the \textbf{Kronecker product}
+$C\otimes D\in\R^{m_1m_2\times n_1n_2}$ is the block matrix $[c_{ij}D]$, the matrix of $C\otimes D$ in the product basis.
+It obeys the mixed-product rule $(C\otimes D)(E\otimes F)=CE\otimes DF$, and $\rk(C\otimes D)=\rk C\cdot\rk D$. The map
+$u\otimes v\mapsto uv\T$ identifies $\R^m\otimes\R^n$ with $\R^{m\times n}$. For subspaces $U\subseteq\R^m$ and
+$V\subseteq\R^n$, $U\otimes V$ is then the space of matrices with column space in $U$ and row space in $V$, of dimension
+$\dim U\cdot\dim V$.
+\end{bgentry}
+
+LoKr's \citep{yeh2023navigating} update is $C\otimes BA$ with $C$ ranging over all $m_1\times n_1$ matrices,
+$B\in\R^{m_2\times r'}$ and $A\in\R^{r'\times n_2}$. For inner rank $r'\le\min(m_2,n_2)$ its rank
+$\operatorname{rk}C\cdot\operatorname{rk}(BA)$ is at most $\min(m_1,n_1)\,r'$, and this is attained. So
+$\Im\mathrm{LoKr}$ lies inside the image $W_0+\Mr$ of zero-init $\mathrm{LoRA}_r$ exactly when $r\ge\min(m_1,n_1)\,r'$
+(\thmref{Theorem}{II.11}(e)). At a LoRA point $(B,A)$, the directions reached by moving one factor alone overlap in
+\begin{equation*}
+  \{XA\}\cap\{BY\}=\operatorname{col}B\otimes\operatorname{row}A,
+\end{equation*}
+of dimension $\operatorname{rk}A\cdot\operatorname{rk}B$ (\thmref{Proposition}{II.3}).
+
+\fbAusedin{\thmref{Theorem}{II.11}, Exposé~\ref{sec:cut}, \thmref{Proposition}{II.3}, \thmref{Theorem}{II.2}, the
+\hyperref[ex:loha]{LoHa\,/\,LoKr example} of Exposé~\ref{sec:examples}. \textsf{Reading:}
+\citet[Ch.~4]{xhorn1991topics}.}
+
+\begin{bgfact}{B.11}{Van Loan--Pitsianis rearrangement; Kronecker rank}
+Let $m=m_1m_2$ and $n=n_1n_2$, and cut $\Delta\in\R^{m\times n}$ into an $m_1\times n_1$ grid of $m_2\times n_2$ blocks
+$\Delta_{ij}$. The \textbf{rearrangement} $\mathcal R(\Delta)\in\R^{m_1n_1\times m_2n_2}$ has the rows
+$\vect(\Delta_{ij})\T$, ordered with $i$ running fastest. Then
+\begin{equation*}
+  \mathcal R(C\otimes D)=\vect(C)\,\vect(D)\T,
+\end{equation*}
+and $\mathcal R$ is a linear bijection that permutes entries, hence a Frobenius isometry. So the \textbf{Kronecker rank}
+$\operatorname{rk}_\otimes\Delta$, the least $k$ with $\Delta=\sum_{i\le k}C_i\otimes D_i$, equals
+$\rk\mathcal R(\Delta)$, and the nearest sum of $k$ Kronecker products in Frobenius norm comes from the rank-$k$
+truncated SVD of $\mathcal R(\Delta)$ (Van Loan and Pitsianis~\citeyear{loan1993approximation}).
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+Block $(i,j)$ of $C\otimes D$ is $c_{ij}D$, so its row in $\mathcal R$ is $c_{ij}\,\vect(D)\T$. Linearity extends this
+to sums, and Eckart--Young applies to $\mathcal R(\Delta)$ because $\mathcal R$ preserves the Frobenius norm.
+
+\medskip\noindent
+In string-diagram terms $\mathcal R$ bends and crosses wires, regrouping the four legs of $\Delta$ from
+$U_1U_2\mid V_1V_2$ to $U_1V_1\mid U_2V_2$. A sum of $k$ Kronecker products is therefore $\mathrm{LoRA}_k$ transported by
+$\mathcal R^{-1}$ (\thmref{Proposition}{II.13}), with rank taken across another cut. For $N=s^2$, $I_N=I_s\otimes I_s$
+has Kronecker rank $1$ and rank $N$. Figure~\ref{fig:cut} shows the singular values across the ordinary cut, this
+Kronecker cut and a third one, for a random rank-one update, the identity and a Kronecker product $C\otimes D$. In this
+paper a \emph{Kronecker sum} means a sum of Kronecker products; matrix analysis uses the same name for
+$C\otimes I+I\otimes D$.
+
+\fbAusedin{\thmref{Theorem}{II.11}, \thmref{Proposition}{II.13}, Figure~\ref{fig:cut}, \thmref{Prediction}{X.5}, the
+known results and key references of Exposé~\ref{sec:related}. \textsf{Reading:} \citet{xvanloan2000ubiquitous}.}
+
+\begin{bgentry}{B.12}{Schmidt and operator-Schmidt decompositions}
+Every $u\in\R^{m_1}\otimes\R^{m_2}$ has a \textbf{Schmidt decomposition} $u=\sum_{i\le\rho}\sigma_ix_i\otimes y_i$ with
+$\sigma_i>0$ and orthonormal families $(x_i)$, $(y_i)$. It is the SVD of the $m_1\times m_2$ reshape of $u$
+($x\otimes y\mapsto xy\T$), and the \textbf{Schmidt rank} $\rho_u$ is the rank of that reshape, at most
+$\min(m_1,m_2)$. The SVD of $\mathcal R(\Delta)$ likewise gives the \textbf{operator-Schmidt decomposition}
+$\Delta=\sum_{k\le K}s_kC_k\otimes D_k$, with $s_k>0$, Frobenius-orthonormal families $(C_k)$ and $(D_k)$, and
+$K=\operatorname{rk}_\otimes\Delta$.
+\end{bgentry}
+
+If $u=\sum_i\sigma_ix_i\otimes y_i$ and $v=\sum_j\tau_jz_j\otimes w_j$ have Schmidt ranks $\rho_u$ and $\rho_v$, the
+mixed-product rule gives
+\begin{equation*}
+  uv\T=\sum_{i,j}\sigma_i\tau_j\,(x_iz_j\T)\otimes(y_iw_j\T),
+\end{equation*}
+an operator-Schmidt decomposition with $\rho_u\rho_v$ terms, so $\operatorname{rk}_\otimes(uv\T)=\rho_u\rho_v$. A generic
+rank-one update, which $\mathrm{LoRA}_1$ reaches, thus needs $\kappa_1=\min(m_1,m_2)\min(n_1,n_2)$ Kronecker terms
+(\thmref{Theorem}{II.11}(c)).
+
+\fbAusedin{\thmref{Theorem}{II.11}, Figure~\ref{fig:cut}, \thmref{Prediction}{X.5}, the known results credited in
+Exposé~\ref{sec:related}. \textsf{Reading:} \citet[\S2.5]{xnielsen2000quantum}.}
+
+\begin{bgfact}{B.13}{rank of a Hadamard product; face-splitting product}
+For $X,Y\in\R^{m\times n}$, $\rk(X\odot Y)\le\rk X\cdot\rk Y$. Explicitly, if $X=B_1A_1$ and $Y=B_2A_2$ with inner
+dimensions $r_1$ and $r_2$, then
+\begin{equation*}
+  X\odot Y=(B_1\bullet B_2)\,(A_1\T\bullet A_2\T)\T,
+\end{equation*}
+where the \textbf{face-splitting product} $B_1\bullet B_2\in\R^{m\times r_1r_2}$ has as row $i$ the Kronecker product of
+row $i$ of $B_1$ and row $i$ of $B_2$. In particular
+\begin{equation*}
+  W_0\odot(BA)=\sum_{k\le r}\diag(b_k)\,W_0\,\diag(a_k),
+\end{equation*}
+summed over the columns $b_k$ of $B$ and the rows $a_k$ of $A$, has rank at most $r\rk W_0$
+\citep[Ch.~5]{xhorn1991topics}.
+\end{bgfact}
+
+\paragraph{The idea of the proof}
+$X\odot Y$ is the submatrix of $X\otimes Y$ on the rows $(i,i)$ and the columns $(j,j)$. In pictures it is the spider
+composite $\mu\circ(X\otimes Y)\circ\delta$ of \bgref{B.6}, which factors through the two inner wires.
+
+\medskip\noindent
+$\mathrm{LoHa}_{r_1,r_2}$ therefore has rank at most $r_1r_2$, and $h=\big(B_1\bullet B_2,(A_1\T\bullet A_2\T)\T\big)$ is
+the atlas arrow $\mathrm{LoHa}_{r_1,r_2}\to\mathrm{LoRA}_{r_1r_2}$. HiRA's update $W_0\odot BA$ has rank at most
+$r\rk W_0$, a bound that allows full rank when $W_0$ has full rank (\thmref{Proposition}{II.9}(a)).
+
+\fbAusedin{\thmref{Proposition}{II.12}, \thmref{Theorem}{II.10}, \thmref{Proposition}{II.9}, \S\ref{sec:atlas-arrows},
+Rosetta entries 6 and 11 (\S\ref{sec:rosetta-six}).}
+
+\subsubsection*{Sums, Para and lenses}
+
+\begin{bgentry}{B.14}{sums of methods; Minkowski sums, differences and translates}
+For subsets $S,T$ of a vector space, the \textbf{Minkowski sum} is $S+T=\{s+t:s\in S,\ t\in T\}$, the
+\textbf{Minkowski difference} is $S-T=\{s-t:s\in S,\ t\in T\}$, a \textbf{translate} of $S$ is $v+S=\{v+s:s\in S\}$,
+and $C^{+K}$ is the sum of $K$ copies of $C$. A sum is the image of $S\times T$ under addition, so for semialgebraic sets
+$\dim(S+T)\le\dim S+\dim T$ (\bgref{C.18}), and likewise for differences. If $0\in C$, the additive monoid
+(\bgref{D.10}) generated by $C$ is $\operatorname{Mon}(C)=\bigcup_KC^{+K}$, and if moreover $\R C=C$ it is
+$\spanop C$. Writing $\rho_M=\theta_0+\delta_M$, the sum of methods
+\begin{equation*}
+  M\oplus N=\big(Q_M\times Q_N,\,(q_0,q_0'),\,\theta_0+\delta_M+\delta_N\big)
+\end{equation*}
+has image $\theta_0+(\Im\delta_M+\Im\delta_N)$, and $\oplus$ is a symmetric monoidal structure with the frozen model as
+unit (\bgref{B.1}).
+\end{bgentry}
+
+Concatenation $([B_1\ B_2],[A_1;A_2])$ is an isomorphism $\mathrm{LoRA}_r\oplus\mathrm{LoRA}_s\cong\mathrm{LoRA}_{r+s}$
+of unpointed objects, with the $A$-blocks rescaled to the target scale when the scales differ, as under $\alpha/r$
+scaling (\thmref{Observation}{I.7}). It is also a pointed isomorphism onto $\mathrm{LoRA}_{r+s}$ pointed at the
+concatenated initialisation. RoSA \citep{nikdan2024rosa} and GraLoRA \citep{jung2025gralora} are $\oplus$-words. The
+categorical product of \thmref{Observation}{I.4}, when it exists, has image $\Im M\cap\Im N$ (\bgref{A.10}). Merging and
+restarting $K$ times with a fixed shape $C$ reaches $\theta_0+C^{+K}$. Since
+$\Mr^{+K}=\mathcal M_{\le\min(Kr,m,n)}$, ReLoRA reaches every matrix after $\lceil\min(m,n)/r\rceil$ cycles
+(\thmref{Theorem}{V.3}).
+
+Re-pointing an additive method $\rho=\theta_b+\delta$ with shape $C=\Im\delta$ at a parameter $q$, so that
+$\theta_b=\theta_0-\delta(q)$, gives the translate $\theta_0+(C-\delta(q))$ as image, and all exact pointings together
+reach $\theta_0+(C-C)$. For LoRA, $\Mr$ is closed under negation and $\Mr+\Mr=\mathcal M_{\le\min(2r,m,n)}$ by
+splitting an SVD (\bgref{C.12}), so $C-C=\mathcal M_{\le\min(2r,m,n)}$, which is why no exact pointing reaches an update
+of rank above $2r$ (\thmref{Theorem}{II.1}).
+
+\fbAusedin{\thmref{Observation}{I.7}, \S\ref{sec:slice-sums}, \thmref{Theorem}{II.1}, \thmref{Proposition}{II.13},
+\thmref{Theorem}{V.3}, \S\ref{sec:base-rebase}, \S\ref{sec:rosetta-reverse}.}
+
+\begin{bgentry}{B.15}{strong monoidal functors; $(\N,+)$ and the permutation groupoid}
+A \textbf{strong monoidal functor} $F:(\mathcal C,\otimes,I)\to(\mathcal D,\otimes,J)$ is a functor with isomorphisms
+$\phi_{A,B}:FA\otimes FB\to F(A\otimes B)$, natural in $A$ and $B$, and $\phi_0:J\to FI$, compatible with associators and
+unitors. It is \textbf{symmetric} if also $F(\sigma_{A,B})\circ\phi_{A,B}=\phi_{B,A}\circ\sigma_{FA,FB}$. The
+\textbf{discrete monoidal category} $(\N,+)$ has the natural numbers as objects, only identity morphisms, $r\otimes s=r+s$
+and identity symmetry. The \textbf{permutation groupoid} $\mathbb P$ has the same objects, the symmetric group $S_r$ as
+the automorphisms of $r$ and no other morphisms, with $\otimes$ given by $+$ and block sums of permutations, and the block
+transposition in $S_{r+s}$ as symmetry.
+\end{bgentry}
+
+Concatenation (\bgref{B.14}) makes $r\mapsto\mathrm{LoRA}_r$ strong monoidal from $(\N,+)$ into unpointed methods. It is
+not symmetric there, because $\phi_{s,r}\circ\sigma$ lists the blocks in the other order. On $\mathbb P$ the block
+transposition acts on $\mathrm{LoRA}_{r+s}$ by permuting inner channels, $(B,A)\mapsto(BP^{-1},PA)$, and the symmetry
+square commutes. Pointed objects behave differently. If $F(r)$ and $F(2r)$ are standard $\mathrm T_A$ pointings
+($B_0=0$ and $A_0$ of full row rank, \bgref{C.19}), which needs $2r<\min(m,n)$, then $F(r)\oplus F(r)\not\cong F(2r)$ as
+pointed objects, since $\dim S_1$ is $mr$ against $2mr$ (\thmref{Observation}{I.7}).
+
+\fbAusedin{\thmref{Observation}{I.7}, the referee record in Exposé~\ref{sec:analogy}. \textsf{Reading:}
+\citet[Ch.~XI]{xmaclane1998categories}.}
+
+\begin{bgentry}{B.16}{bicategories and the Para construction}
+A \textbf{bicategory} has objects, \textbf{1-cells} between objects and \textbf{2-cells} between parallel 1-cells.
+2-cells compose vertically and horizontally, and composition of 1-cells is associative and unital up to coherent
+invertible 2-cells. For a symmetric monoidal category $\mathcal C$, here always cartesian, the bicategory
+$\Para(\mathcal C)$ has the objects of $\mathcal C$. A 1-cell $X\to Y$ is a pair $(P,\,f:P\times X\to Y)$, and
+$(P',g):Y\to Z$ composes with it to $\big(P'\times P,\ (p',p,x)\mapsto g(p',f(p,x))\big)$. A 2-cell
+$(P,f)\Rightarrow(Q,g)$ is a \textbf{reparametrisation} $r:Q\to P$ with $g=f\circ(r\times\id_X)$. A \textbf{2-functor}
+(pseudofunctor) between bicategories sends objects, 1-cells and 2-cells to objects, 1-cells and 2-cells, and preserves
+both compositions up to coherent invertible 2-cells.
+\end{bgentry}
+
+A linear layer is the 1-cell $\big(\R^{m\times n},\,(W,x)\mapsto Wx\big):\R^n\to\R^m$, and stacking a second layer
+$\R^m\to\R^k$ composes 1-cells, with parameter space $\R^{k\times m}\times\R^{m\times n}$. A pretrained model is a
+pointed 1-cell $F=(\Theta,\theta_0,f)$ of $\Para(\Diff)$, and its realisation $\Phi_f:\Theta\to C^\infty(X,Y)$,
+$\theta\mapsto f(\theta,-)$, records the function at each weight. LoRA is a 2-cell
+$F\Rightarrow(Q,f\circ(\rho\times\id_X))$, the network with $(B,A)$ in its parameter slot, and a simulation is a 2-cell
+between two such cells (\thmref{Remark}{I.3}). An adapter extension is a 2-cell into $F$, and merging it is a lift
+through $\Phi_f$ (\thmref{Definition}{VI.1}). Composition is associative only up to
+$(P''\times P')\times P\cong P''\times(P'\times P)$, hence a bicategory; over a strict monoidal category it is a
+2-category.
+
+\fbAusedin{\thmref{Definition}{I.1}, \S\ref{sec:slice-para}, \thmref{Remark}{I.3}, \thmref{Definition}{VI.1},
+\S\ref{sec:lens-functor}, the key references of Exposé~\ref{sec:related}. \textsf{Reading:}
+\citet{xleinster1998basic}.}
+
+\begin{bgentry}{B.17}{lenses, reverse derivatives and $\Para(\mathsf R)$}
+In a cartesian category, a \textbf{lens} $(A,A')\to(B,B')$ is a pair of maps, a forward part $f:A\to B$ and a backward
+part $f^\sharp:A\times B'\to A'$. Lenses compose by
+\begin{equation*}
+  (g,g^\sharp)\circ(f,f^\sharp)=\big(g\circ f,\ (a,c')\mapsto f^\sharp(a,g^\sharp(f(a),c'))\big)
+\end{equation*}
+and form the category $\Lens(\mathcal C)$. For smooth maps between open subsets of Euclidean spaces, the \textbf{reverse
+derivative} is
+\begin{equation*}
+  \mathsf R[f](x,y)=J_f(x)\T y.
+\end{equation*}
+The chain rule $J_{g\circ f}(x)\T=J_f(x)\T J_g(f(x))\T$ says that
+$f\mapsto(f,\mathsf R[f])$ is a functor into $\Lens$. Applied to parametrised maps it gives the 2-functor
+$\Para(\mathsf R):\Para(\mathcal C)\to\Para(\Lens(\mathcal C))$ of \citet{cruttwell2021categorical}, which is
+backpropagation.
+\end{bgentry}
+
+LoRA's forward part is $\rho(B,A)=W_0+sBA$, and its backward part pulls the weight gradient $G$ back to
+\begin{equation*}
+  \mathsf R[\rho]\big((B,A),G\big)=\big(sGA\T,\,sB\T G\big).
+\end{equation*}
+GaLore \citep{zhao2024galore} keeps the forward part $\id_\Theta$ and uses the compression $G\mapsto P\T G$ with anchor
+$P$, a lens whose backward part is not the reverse derivative of its forward part (\thmref{Definition}{IV.1}). For linear
+$\rho(C)=W_k+\mathcal LC$, $\mathsf R[\rho](C,G)=\mathcal L^*G$ does not depend on $C$, which is why the two readings
+agree at degree one (\thmref{Proposition}{IV.2}).
+
+\fbAusedin{Exposé~\ref{sec:lens}, \S\ref{sec:lens-functor}, \thmref{Definition}{IV.1}, \thmref{Proposition}{IV.2},
+Rosetta entry 25 (\S\ref{sec:rosetta-six}), Exposé~\ref{sec:thesis} (where the category theory earns its keep), the
+seven borrowed words of Exposé~\ref{sec:analogy}. \textsf{Reading:} \citet{cruttwell2021categorical}.}

@@ -1,0 +1,852 @@
+{
+ "axes": [
+  {
+   "key": "kind",
+   "name": "Kind (where the method acts)",
+   "question": "Does the method reparametrise the existing weights, extend the architecture (with or without a neutral point), act only on the backward pass / schedule, operate post hoc on several trained points, or form a family over an auxiliary base T?",
+   "values": [
+    {
+     "key": "R",
+     "name": "Reparametrisation",
+     "definition": "A pointed smooth map rho:(Q,q0)->(Theta,theta0) into the existing weight space: an object of Meth(Theta,theta0)=Diff_*/(Theta,theta0). Decide: the trained model is f(rho(q),-) with the original architecture f.",
+     "examples": [
+      "LoRA",
+      "rsLoRA",
+      "LoRA+",
+      "DoRA",
+      "PiSSA",
+      "MiLoRA",
+      "OLoRA",
+      "LoRA-GA",
+      "CorDA",
+      "EVA",
+      "QLoRA",
+      "LoftQ",
+      "AdaLoRA",
+      "DyLoRA",
+      "VeRA",
+      "NOLA",
+      "RandLoRA",
+      "VB-LoRA",
+      "LoRA-FA",
+      "MiSS",
+      "MiCA",
+      "LoRA-XS",
+      "SVFT",
+      "TinyLoRA",
+      "LoRA-SB",
+      "DeLoRA",
+      "GraLoRA",
+      "LoHa",
+      "LoKr",
+      "KronA",
+      "TT adapters",
+      "MoRA",
+      "HiRA",
+      "FourierFT",
+      "WaveFT",
+      "C3A",
+      "SHiRA",
+      "FISH mask",
+      "Trainable Tokens",
+      "Diff pruning",
+      "BitFit",
+      "LN tuning",
+      "OFT",
+      "BOFT",
+      "GOFT",
+      "qGOFT",
+      "HRA",
+      "(IA)^3",
+      "SSF",
+      "RED",
+      "RoAd",
+      "LoRA-Pro",
+      "Riemannian preconditioned LoRA",
+      "LoRA-RITE"
+     ]
+    },
+    {
+     "key": "E",
+     "name": "Pointed extension",
+     "definition": "A function-preserving embedding iota(theta)=(theta,theta0') into a larger architecture f~ with a neutral point theta0' (f~(theta,theta0',-)=f(theta,-)), followed by a reparametrisation of Theta x Theta'. Decide: new boxes are inserted and some parameter value makes them the identity.",
+     "examples": [
+      "Houlsby adapter",
+      "Pfeiffer adapter",
+      "Parallel adapter",
+      "Compacter",
+      "LLaMA-Adapter",
+      "LoReFT"
+     ]
+    },
+    {
+     "key": "E0",
+     "name": "Unpointed extension",
+     "definition": "An extension with no neutral point: no parameter value reproduces the frozen function (generically, positive softmax mass on soft tokens always moves the output). Decide: try to solve f~(theta0,p,-)=f(theta0,-) for p.",
+     "examples": [
+      "Prompt tuning",
+      "P-tuning v1",
+      "Prefix tuning",
+      "P-tuning v2",
+      "MPT",
+      "CPT",
+      "LST (the side network's up-projection has rank <= d/r, so no parameter value reproduces f)",
+      "UniPELT, MAM (the prefix part has no neutral value)"
+     ]
+    },
+    {
+     "key": "B",
+     "name": "Backward lens / schedule",
+     "definition": "The forward map is id_Theta; the update is theta <- theta - eta a_t(opt(c_t(grad L))) with a compression c_t and an anchor a_t, or a sequence of merge-and-restart stages (rebasing scheme), or an optimizer that compresses only its own state (Flora). Decide: the method changes how gradients or optimizer state are compressed, or when the base is re-pointed, not the parametrisation.",
+     "examples": [
+      "GaLore",
+      "GaLore with a random projector",
+      "Flora (compresses only the momentum; full-space steps)",
+      "LISA",
+      "MeZO",
+      "ReLoRA"
+     ]
+    },
+    {
+     "key": "P",
+     "name": "Post-hoc operation",
+     "definition": "An operation Theta^N -> Theta (or on factor tuples) applied to several trained points. Decide: inputs are already-trained adapters or checkpoints.",
+     "examples": [
+      "Task arithmetic",
+      "TIES",
+      "DARE",
+      "LoRA soups / CAT",
+      "LoraHub",
+      "KnOTS"
+     ]
+    },
+    {
+     "key": "F_T",
+     "name": "Family over a base T",
+     "definition": "A T-point a:T->Q of a method, giving rho o a: T -> Theta, with T = tasks (hypernetworks), inputs X (routing), a simplex (mixing) or tenants U (serving). Decide: the adapter depends on an auxiliary variable.",
+     "examples": [
+      "MoLE",
+      "LoRAMoE",
+      "X-LoRA",
+      "AdapterFusion",
+      "Poly",
+      "MHR",
+      "S-LoRA",
+      "Punica",
+      "Text-to-LoRA",
+      "HyperFormer"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "shape",
+   "name": "Shape of the image germ (expressivity)",
+   "question": "What is the germ at theta0 of the reachable set Im(rho)? Read it from the formula: is rho affine, multihomogeneous, a group action, a group acting on a cone, an intersection, or only defined at function level?",
+   "values": [
+    {
+     "key": "Lin",
+     "name": "Linear (flat)",
+     "definition": "rho is affine in q, so Im(rho) is an affine subspace; d(M) is the rank of the linear map (= |M| when it is injective; FourierFT loses one dimension per sampled conjugate frequency pair). Every point is regular, and rebasing is idempotent when frames, masks and operators are frozen across cycles.",
+     "examples": [
+      "LoRA-FA",
+      "MiSS",
+      "MiCA",
+      "LoRA-XS",
+      "SVFT",
+      "TinyLoRA",
+      "LoRA-SB",
+      "MoRA",
+      "FourierFT",
+      "WaveFT",
+      "C3A",
+      "SHiRA",
+      "FISH mask",
+      "Trainable Tokens",
+      "BitFit",
+      "LN tuning",
+      "(IA)^3",
+      "SSF",
+      "RED",
+      "GaLore (per period)",
+      "GaLore with a random projector (per period)",
+      "LISA (per stage)"
+     ]
+    },
+    {
+     "key": "Cone",
+     "name": "Cone with vertex at the start",
+     "definition": "rho - rho(q0) is multihomogeneous (or a union of linear spaces) and the image is a non-linear cone with vertex at the start rho(q0); the start is then a singular point (apex). The start is theta0 for pointed methods, and the quantised or truncated base theta0 + e for QLoRA-type defects (Prop V.2). Includes determinantal, Segre, Hadamard and tensor-network varieties.",
+     "examples": [
+      "LoRA",
+      "rsLoRA",
+      "LoRA+",
+      "EVA",
+      "QLoRA (at kappa theta0)",
+      "AdaLoRA",
+      "DyLoRA",
+      "GraLoRA",
+      "DeLoRA",
+      "VeRA",
+      "NOLA",
+      "RandLoRA",
+      "VB-LoRA",
+      "LoHa",
+      "LoKr",
+      "KronA",
+      "TT adapters",
+      "HiRA",
+      "Diff pruning",
+      "ReLoRA (per stage)"
+     ]
+    },
+    {
+     "key": "Cone*",
+     "name": "Translated cone (split)",
+     "definition": "rho = theta_res + delta(q) with delta multihomogeneous and q0 chosen so that delta(q0)=theta0-theta_res has full rank: the image is a cone whose apex theta_res is not theta0, and theta0 is a smooth point (Type II objects).",
+     "examples": [
+      "PiSSA",
+      "MiLoRA",
+      "OLoRA",
+      "LoRA-GA",
+      "CorDA",
+      "Astra",
+      "LoftQ (approximate split over a quantised residual)",
+      "DeLoRA (paper init)",
+      "LoRETTA (compensated split init of the TT factors)"
+     ]
+    },
+    {
+     "key": "Orb",
+     "name": "Group orbit",
+     "definition": "rho(q)=gamma(q).theta0 with gamma(q) in a group (or monoid) acting linearly on Theta. Exactly orthogonal actions preserve the Gram matrix and the spectrum; torus and Hadamard actions only keep the zeros of W0 (and row lines while scales are nonzero), since unconstrained scales can create new zeros.",
+     "examples": [
+      "OFT (exact Cayley; HF default Cayley-Neumann is only approximately orthogonal)",
+      "GOFT (strict Givens rotations; the official code adds an input scaler by default)",
+      "qGOFT (monoid of arbitrary 2x2 blocks)",
+      "RoAd_1 (orbit closure of (C^x)^{m/2}; RoAd_2/4 are linear, dim 2m)",
+      "ETHER"
+     ]
+    },
+    {
+     "key": "Sat",
+     "name": "Torus saturation",
+     "definition": "A group or monoid acting on a cone or orbit: Im = T.Im(N) for a torus or diagonal monoid T and a method N.",
+     "examples": [
+      "DoRA (Diag_m . LoRA = image of LoRA followed by a trainable output scale)",
+      "BOFT as in HF PEFT (diag(R^m) x butterfly product)"
+     ]
+    },
+    {
+     "key": "Meet",
+     "name": "Meet (pullback)",
+     "definition": "The image is an intersection of a cone and an orbit (an image-level meet), or the object is a fibre product of two methods (a categorical product, which exists only when the set-level fibre product is a manifold).",
+     "examples": [
+      "HRA (image) = Im LoRA_r cap W0.SO(n): image-level meet, not a product of methods",
+      "LoRA-XS = FA x FB (categorical product)",
+      "Im LoRA_r cap Im (IA)^3 (k,v): set-level only, a union of coordinate r-planes; no product in Diff"
+     ]
+    },
+    {
+     "key": "Fun",
+     "name": "Function-level",
+     "definition": "No weight-space image: the method lives on an extension and is compared through the realisation Phi_f.",
+     "examples": [
+      "Houlsby adapter",
+      "Parallel adapter",
+      "Compacter",
+      "LST",
+      "LLaMA-Adapter",
+      "Prompt tuning",
+      "Prefix tuning",
+      "P-tuning v2",
+      "MoLE",
+      "X-LoRA",
+      "LoReFT",
+      "UniPELT / MAM (adapter and prefix parts; input-dependent gates)"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "base_point",
+   "name": "Base point (position of theta0)",
+   "question": "Is theta0 = rho(q0), and if so is the first-order image S1 = d rho_{q0}(T Q) as large as the expressive dimension d(M)?",
+   "values": [
+    {
+     "key": "regular",
+     "name": "Regular",
+     "definition": "dim S1 = d(M) (first-order deficit 0). Linear methods, orbit methods with injective orbit map, and split (Type II) initialisations.",
+     "examples": [
+      "LoRA-FA",
+      "LoRA-XS",
+      "FourierFT",
+      "BitFit",
+      "(IA)^3",
+      "RoAd",
+      "OFT",
+      "GOFT",
+      "PiSSA",
+      "MiLoRA",
+      "OLoRA",
+      "LoRA-GA",
+      "CorDA",
+      "GaLore",
+      "LoRETTA"
+     ]
+    },
+    {
+     "key": "apex",
+     "name": "Apex (first-order deficient)",
+     "definition": "dim S1 < d(M). For cone-shaped germs theta0 is the vertex: LoRA's deficit is r(n-r); HRA's paired init has dim S1 = kn - k(k+1)/2 against d = rn - r(r+1)/2 (k=r/2). DoRA inherits LoRA's deficit through its torus factor.",
+     "examples": [
+      "LoRA",
+      "rsLoRA",
+      "LoRA+",
+      "EVA",
+      "DoRA",
+      "AdaLoRA",
+      "DyLoRA",
+      "GraLoRA",
+      "VeRA",
+      "NOLA",
+      "RandLoRA",
+      "LoHa",
+      "LoKr",
+      "KronA",
+      "TT/Tucker with zero cores (FacT, LoTR)",
+      "HiRA",
+      "Diff pruning",
+      "HRA (paired init)",
+      "ReLoRA (each stage)",
+      "LoRA with HF init_lora_weights=\"orthogonal\" (stratum (r/2, r/2, 0), outside the three strata of Thm II.2)"
+     ]
+    },
+    {
+     "key": "neutral",
+     "name": "Neutral (pointed extension)",
+     "definition": "An extension evaluated at its neutral point: zero up-projection, zero gate, identity box.",
+     "examples": [
+      "Houlsby adapter (zero-up init; the paper's near-identity init leaves a small defect)",
+      "Pfeiffer adapter",
+      "Parallel adapter",
+      "LLaMA-Adapter (g=0)",
+      "LoReFT (W=R, b=0)"
+     ]
+    },
+    {
+     "key": "defect",
+     "name": "Pointing defect",
+     "definition": "rho(q0) differs from theta0, by design or by base change; the defect e = rho(q0) - theta0 is part of the data.",
+     "examples": [
+      "QLoRA (e = kappa theta0 - theta0)",
+      "LoftQ (attained residual when the LoRA scale s = alpha/r is 1; HF ignores s, so with alpha = 2r the one-step defect is as large as e)",
+      "LoRA-SB (by design)",
+      "KaSA (truncated base)",
+      "HF default FourierFT (N(0,1) spectrum with scaling 150) / C3A (Xavier init)",
+      "VB-LoRA",
+      "Uni-LoRA",
+      "TinyLoRA (near-identity)",
+      "LoRA-XS (R0 ~ N(0, 1e-10))",
+      "LoReFT (pyreft initialises W, b independently of R)"
+     ]
+    },
+    {
+     "key": "unpointed",
+     "name": "Unpointed",
+     "definition": "No parameter value reproduces the frozen function.",
+     "examples": [
+      "Prompt tuning",
+      "P-tuning v1",
+      "Prefix tuning",
+      "P-tuning v2",
+      "MPT",
+      "CPT (pointed only relative to the in-context-learning state)",
+      "LoRA with HF init_lora_weights=False (random A and B, no subtraction)",
+      "LST",
+      "UniPELT, MAM"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "gauge",
+   "name": "Gauge (generic fibre of rho)",
+   "question": "Which transformations of the trainable parameters leave rho unchanged, and what is the dimension of the generic fibre (|M| - d(M))? Read off by inserting g g^{-1} on internal wires between trainable boxes and sliding diagonals through spiders; confirm by the generic Jacobian rank.",
+   "values": [
+    {
+     "key": "none",
+     "name": "Trivial",
+     "definition": "rho is injective near generic points; no charges; factor-wise operations are well defined.",
+     "examples": [
+      "LoRA-FA",
+      "MiSS",
+      "LoRA-XS",
+      "FourierFT (+1 per sampled conjugate frequency pair)",
+      "C3A",
+      "MoRA",
+      "BitFit",
+      "(IA)^3",
+      "SSF",
+      "RoAd",
+      "GaLore",
+      "FISH mask",
+      "SHiRA",
+      "Houlsby adapter (GELU in the reference code, swish in AdapterHub: only the discrete S_r)"
+     ]
+    },
+    {
+     "key": "scalar",
+     "name": "One scalar slide",
+     "definition": "A one-parameter group (b,d)->(cb,d/c) through frozen boxes; one conserved charge under gradient flow.",
+     "examples": [
+      "VeRA",
+      "NOLA",
+      "KronA"
+     ]
+    },
+    {
+     "key": "torus",
+     "name": "Torus",
+     "definition": "A diagonal group (per rank channel or per hidden unit); charges are diagonal entries.",
+     "examples": [
+      "DyLoRA (T_r)",
+      "RandLoRA",
+      "ReLU bottleneck adapters: Pfeiffer, parallel adapter (positive per-unit slides)",
+      "MPT (P* trainable: fibre (P*,u,v) -> (P* . ab^T, u/a, v/b); R^x with P* frozen)",
+      "Compacter (per-term slides of the PHM fast weights; GL on the PHM index would leave the rank-rho class)"
+     ]
+    },
+    {
+     "key": "GL",
+     "name": "General linear on internal wires",
+     "definition": "GL_r (or a product of GL on bonds) acting by (B g^{-1}, gA); compact half so(r) gives isometries, non-compact half Sym_r gives r(r+1)/2 charges.",
+     "examples": [
+      "LoRA",
+      "rsLoRA",
+      "LoRA+",
+      "DoRA",
+      "PiSSA",
+      "EVA",
+      "QLoRA",
+      "LoftQ",
+      "HiRA",
+      "GraLoRA (prod GL_{r/k})",
+      "TT adapters (prod GL_{r_e})",
+      "LoKr (GL_r x R^*)",
+      "Riemannian preconditioned LoRA (gauge respected only undamped; damped and LoRA-Pro steps are O(r)-equivariant)"
+     ]
+    },
+    {
+     "key": "GLxTorus",
+     "name": "GL times a Hadamard torus",
+     "definition": "GL on each factor plus the torus (D1 X D2, D1^{-1} Y D2^{-1}) sliding through the copy spider: dim r1^2 + r2^2 + m + n - 1.",
+     "examples": [
+      "LoHa"
+     ]
+    },
+    {
+     "key": "nonlinear",
+     "name": "Non-linear gauge",
+     "definition": "The generic fibre is not an orbit of a linear group action.",
+     "examples": [
+      "HRA (generic fibre dim r(r+1)/2; the only exhibited Lie gauge is the r scalings of u_i)",
+      "AdaLoRA (fibre r(r+1): two torus edges plus absorption of Lambda)",
+      "DeLoRA (fibre r^2+1; its per-term scalings are a 2r-torus inside it; r = 1: the torus)"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "covariance",
+   "name": "Covariance group (Erlangen geometry of the image)",
+   "question": "For which (g,h) in GL_m x GL_n does Im M(g W0 h^{-1}) = g Im M(W0) h^{-1} hold for every W0 (in distribution if random frames or data are involved)?",
+   "values": [
+    {
+     "key": "GLxGL",
+     "name": "GL x GL (basis-free)",
+     "definition": "The image transforms with every change of basis on both sides; it satisfies the sufficient condition of Obs II.15 for every box-wise linear function-preserving gauge.",
+     "examples": [
+      "LoRA",
+      "rsLoRA",
+      "LoRA+",
+      "AdaLoRA",
+      "DyLoRA",
+      "DeLoRA",
+      "ReLoRA",
+      "EVA at a fixed rank (its init frame is only CO(n); HF's default rho = 2 redistributes ranks by explained variance, which makes the image GL x CO(n))",
+      "LoRA-Pro",
+      "Full FT",
+      "BitFit",
+      "LISA (each stage frees whole boxes)",
+      "function-level methods with dense inserted families: Houlsby, Pfeiffer and parallel adapters, prompts, prefixes, LST, LoReFT, routed LoRA mixtures (function-level analogue of Def II.14)"
+     ]
+    },
+    {
+     "key": "OxO",
+     "name": "CO x CO (spectral frame)",
+     "definition": "The method uses an SVD or another orthogonally equivariant frame of W0, gradients or data. Truncated SVDs are also equivariant under positive scalings, so the group is CO(m) x CO(n) = (R_{>0} O(m)) x (R_{>0} O(n)) (Prop II.16). Methods that use bare singular frames without singular values (LoRA-GA) are scale-invariant rather than covariant and get only O(m) x O(n); they are coded with this nearest key.",
+     "examples": [
+      "PiSSA",
+      "MiLoRA",
+      "LoRA-GA (O(m) x O(n) only; sign-convention dependent)",
+      "CorDA (formula level, with or without its trace-relative damping; absolute damping gives O(n); the shipped code max-normalises samples)",
+      "Astra (CO(m) x GL(n): its split is a left multiple Phi(W0 C W0^T) W0, Prop II.16; coded with this key)",
+      "LoRA-XS",
+      "SVFT",
+      "TinyLoRA",
+      "MiCA",
+      "GaLore",
+      "whitened CorDA / PiSSA (CO(m) x GL(n); Prop II.16)"
+     ]
+    },
+    {
+     "key": "GLxCO",
+     "name": "GL x CO(n) (input-side orthogonal)",
+     "definition": "Right action of (a subgroup of) O(n); covariance on the input side is the normaliser of the structure group (CO(n) for full OFT, block normaliser for block OFT).",
+     "examples": [
+      "OFT (block normaliser)",
+      "HRA",
+      "GOFT (strict; the normaliser of its plane pairing)"
+     ]
+    },
+    {
+     "key": "MonxGL",
+     "name": "Mon x GL (one-sided torus)",
+     "definition": "A diagonal torus acts on one side, so only monomial changes of basis are allowed there.",
+     "examples": [
+      "(IA)^3 on k, v (GL x Mon on down_proj, where it scales the input)",
+      "SSF",
+      "RED",
+      "DoRA",
+      "RoAd (pair-monomial on the output side)",
+      "BOFT as in HF PEFT",
+      "Trainable Tokens (GL on the embedding dimensions, Mon on the vocabulary)"
+     ]
+    },
+    {
+     "key": "MonxMon",
+     "name": "Mon x Mon (coordinate geometry)",
+     "definition": "Hadamard or support structure in the standard basis on both sides; it satisfies the sufficient condition of Obs II.15 for neuron permutations but not for rotations.",
+     "examples": [
+      "HiRA",
+      "LoHa",
+      "SHiRA",
+      "FISH mask",
+      "Diff pruning",
+      "QLoRA / LoftQ (quantisation grid)",
+      "LoRA-SB (R^x B_m x R^x B_n: the frame is the SVD of a sign-gradient)"
+     ]
+    },
+    {
+     "key": "Pi",
+     "name": "Imposed structure Pi_X",
+     "definition": "The method imposes a reshape (tensor factorisation), a block partition, a cyclic order or a pairing that the network does not have; it breaks even neuron permutations (Lemma VI.2 test).",
+     "examples": [
+      "LoKr",
+      "KronA",
+      "TT adapters",
+      "Compacter",
+      "MoRA",
+      "GraLoRA",
+      "MiSS",
+      "FourierFT",
+      "WaveFT",
+      "C3A",
+      "BOFT butterfly",
+      "GOFT / qGOFT pairing",
+      "VB-LoRA (chunk partition tied across boxes through the shared bank)",
+      "OLoRA (CO(m) x Borel_n: the QR split depends on the order of input coordinates)"
+     ]
+    },
+    {
+     "key": "frame",
+     "name": "Random or data frame (in distribution)",
+     "definition": "Covariance holds only in law, through the distribution of frozen random matrices or data statistics.",
+     "examples": [
+      "LoRA-FA",
+      "VeRA",
+      "NOLA",
+      "RandLoRA",
+      "GaLore with a random projector; Flora (random momentum projection)",
+      "MeZO (O(Theta) in law)"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "merge",
+   "name": "Merge type (lifting along the realisation)",
+   "question": "After training, does the modified box function stay in the box's function class, and if not, can R1-R6 (fusion, permutation slide, positive-diagonal slide, spider slide, cup slide, norm absorption) move it into a neighbouring linear box?",
+   "values": [
+    {
+     "key": "M1",
+     "name": "Fuses into its own box",
+     "definition": "All non-linearity is on the parameter side; merge = canonical map rho to the terminal object.",
+     "examples": [
+      "LoRA",
+      "DoRA",
+      "PiSSA",
+      "AdaLoRA",
+      "VeRA",
+      "LoHa",
+      "LoKr",
+      "HiRA",
+      "FourierFT",
+      "C3A",
+      "MoRA",
+      "OFT",
+      "BOFT",
+      "HRA",
+      "GOFT",
+      "RoAd",
+      "GraLoRA",
+      "MiSS",
+      "SHiRA",
+      "S-LoRA / Punica (each tenant fibre fuses; left unmerged by design to share the base batch)"
+     ]
+    },
+    {
+     "key": "M1->",
+     "name": "Fuses into a neighbour",
+     "definition": "A diagonal method merges by R1-R7 into a neighbouring linear box, under side conditions: a position-independent path (under RoPE, scales constant on rotary pairs), an unshared target box (no tying, no GQA sharing unless the scale is constant across the group), and a bias slot for shifts. (IA)^3 always fuses into W_K, W_V and W_down; W_up is an alternative only under SwiGLU/GeGLU (every scale) or ReLU (nonnegative scales), and under GELU only for scales in {0,1}. The rules give sufficient conditions, not a decision procedure.",
+     "examples": [
+      "(IA)^3",
+      "SSF",
+      "RED",
+      "LN tuning"
+     ]
+    },
+    {
+     "key": "Mq",
+     "name": "Leaves the quantised type",
+     "definition": "An exact merge of a generic high-precision update leaves the quantised type (NF4 and recomputed-scale absmax grids are not even closed under addition); type-preserving merges (dequantise-add-requantise, as HF PEFT does for bitsandbytes layers) stay on the grid but are lossy. QA-LoRA's group-constant adapters are the exception.",
+     "examples": [
+      "QLoRA",
+      "LoftQ"
+     ]
+    },
+    {
+     "key": "Minf",
+     "name": "Obstructed",
+     "definition": "The activation side is non-affine in the input for some parameter value (non-linear adapters, softmax-gated prefixes, input-dependent routing), or the edit acts only at selected positions (ReFT, position-gated LoRA variants). This is box-local non-mergeability under the rewrite calculus of Thm VI.3; whole-network non-mergeability is open, and some residual-stream edits do merge (into an untied embedding table, a writer's bias, a post-LN affine, or globally for orthogonal edits in RMSNorm models).",
+     "examples": [
+      "Houlsby adapter",
+      "Pfeiffer adapter",
+      "Parallel adapter (non-linear)",
+      "Compacter",
+      "LST",
+      "LLaMA-Adapter",
+      "Prompt tuning",
+      "Prefix tuning",
+      "P-tuning v2",
+      "MoLE",
+      "LoRAMoE",
+      "X-LoRA",
+      "AdapterFusion",
+      "LoReFT",
+      "UniPELT / MAM (all parts, including UniPELT's input-gated LoRA)",
+      "HyperFormer (generated non-linear adapters)",
+      "AdapterFusion (even with a constant gate)"
+     ]
+    },
+    {
+     "key": "na",
+     "name": "Not applicable (legacy key; read as null)",
+     "definition": "Legacy key, kept because classified methods of kind B use it: backward lenses and schedules write the full weight directly, so there is nothing to merge. It means the same as a null coordinate (axis not applicable) and should be read as such; no other axis has a 'not applicable' value.",
+     "examples": [
+      "GaLore",
+      "Flora",
+      "LISA",
+      "MeZO"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "rebasing",
+   "name": "Rebasing closure (merge-and-restart reach)",
+   "question": "What does the reachable set R_K = theta0 + C^{+K} (additive) or S^K theta0 (action) converge to as the number of merge-and-restart cycles K grows?",
+   "values": [
+    {
+     "key": "idempotent",
+     "name": "Idempotent",
+     "definition": "The shape is exactly a subspace, subgroup or submonoid independent of the base, with frames, masks and operators frozen across cycles: cycles gain nothing (up to closure). Recomputing frames or masks from the merged weight does gain.",
+     "examples": [
+      "LoRA-FA (fixed A)",
+      "LoRA-XS (frames frozen)",
+      "MoRA (fixed operators)",
+      "FourierFT (fixed indices)",
+      "WaveFT",
+      "C3A",
+      "MiSS",
+      "SHiRA",
+      "FISH mask (fixed)",
+      "BitFit",
+      "LN tuning",
+      "(IA)^3",
+      "SSF",
+      "RoAd",
+      "OFT (fixed block partition, exact Cayley; gains only the measure-zero set with eigenvalue -1)"
+     ]
+    },
+    {
+     "key": "span",
+     "name": "Converges to the span",
+     "definition": "For a cone closed under real scaling, R_infinity = theta0 + span(C); for LoRA, R_K = W0 + M_{<= min(Kr,m,n)} and full FT is reached exactly at K = ceil(min(m,n)/r).",
+     "examples": [
+      "LoRA (-> Theta)",
+      "ReLoRA",
+      "LoHa (-> Theta)",
+      "LoKr",
+      "HiRA (W0 without zeros; theta0-dependent transport, so not transported ReLoRA)",
+      "DoRA",
+      "AdaLoRA",
+      "GraLoRA",
+      "Diff pruning",
+      "VeRA (-> LoRA-FA(A))",
+      "NOLA (-> span{B_i A_j})",
+      "RandLoRA"
+     ]
+    },
+    {
+     "key": "group",
+     "name": "Converges to a generated group",
+     "definition": "For action methods, R_infinity is the orbit of the monoid generated by one cycle's image; it is the connected Lie subgroup generated when that image contains a neighbourhood of e in each generating subgroup (Thm V.3(b)). For block-orthogonal factors it is prod_C SO(C) over connected components of the block hypergraph. HF's Cayley-Neumann OFT does not satisfy the hypothesis: for small generators it generates only a contraction semigroup.",
+     "examples": [
+      "BOFT iterated (-> diag . W0 . prod SO(b 2^{m'-1}); SO(n) only at full butterfly depth; HF default factor 1 is block OFT)",
+      "GOFT, strict (-> SO(n) if the plane graph is connected)",
+      "qGOFT (-> GL+(n))",
+      "HRA (-> W0 SO(n) in ceil(n/r) cycles; R_K = (W0 + M_{<=Kr}) cap W0 SO(n))",
+      "OFT with HF default Cayley-Neumann map (||Q||_op <= 2^{1/4}: a contraction semigroup, K_out shrinks monotonically; unconstrained Q: prod(GL+(b) u M_{<=b-2}))"
+     ]
+    },
+    {
+     "key": "schedule",
+     "name": "Is itself a rebasing scheme",
+     "definition": "The method is defined as a sequence of base changes with a moving shape; its reach is the sum of the shapes visited.",
+     "examples": [
+      "ReLoRA",
+      "GaLore with a random projector",
+      "GaLore",
+      "LISA",
+      "MeZO"
+     ]
+    }
+   ]
+  }
+ ],
+ "arrow_rules": [
+  {
+   "key": "A1",
+   "name": "Interval",
+   "rule": "For every weight-space method M: Frozen -> M -> Full FT.",
+   "h": "Frozen -> M: h = const_{q0}. M -> Full FT: h = rho_M (merging).",
+   "examples": [
+    "Frozen -> LoRA -> Full FT"
+   ]
+  },
+  {
+   "key": "A2",
+   "name": "Freezing gives sub-objects",
+   "rule": "If M is obtained from N by freezing a block of coordinates q'' at its base value q0'', then M -> N is a pointed monomorphism.",
+   "h": "h(q') = (q', q0'').",
+   "examples": [
+    "LoRA-FA(A0) -> LoRA pointed at (0,A0)",
+    "FB(B0) -> LoRA",
+    "MiCA -> LoRA pointed at (B0,0)",
+    "DyLoRA_k -> DyLoRA_{k+1} (zero padding)"
+   ]
+  },
+  {
+   "key": "A3",
+   "name": "Factorisation through an explicit polynomial map",
+   "rule": "If rho_M = rho_N o h for an explicit smooth pointed h, then M -> N.",
+   "h": "Exhibit h; check h(q0^M) = q0^N.",
+   "examples": [
+    "VeRA -> LoRA-FA(A): h(b,d) = Lambda_b B Lambda_d",
+    "NOLA -> LoRA_r: h(alpha,beta) = (sum alpha_i B_i, sum beta_j A_j)",
+    "LoHa_{r1,r2} -> LoRA_{r1 r2}: h = (B1 . B2, (A1^T . A2^T)^T) with the face-splitting product",
+    "LoRA_r -> LoRA_{r+1}: h(B,A) = ([B 0],[A; a0])",
+    "LoRA-XS -> PiSSA: h(R) = (U_r (S_r + R) S_r^{-1/2}, S_r^{1/2} V_r^T)",
+    "HRA_r -> LoRA_r pointed at h(q0): h(u) = (W0 B(u), A(u)) from R - I = sum_i H_1...H_{i-1}(H_i - I)",
+    "(IA)^3 -> HiRA_1 pointed at (0, 1^T): h(l) = (l - 1, 1^T)",
+    "Isomorphisms: rsLoRA = LoRA via h(B,A) = (sqrt(r) B, A); MiSS = LoRA-FA(1^T (x) I_r); a linear adapter parallel to one linear box = LoRA"
+   ]
+  },
+  {
+   "key": "A4",
+   "name": "Products (and image-level meets)",
+   "rule": "If K is the fibre product of M and N over Theta and it exists in Diff, the projections K -> M and K -> N are arrows and K is universal among methods simulated by both. An intersection of images gives only inclusions of images, not arrows of Meth.",
+   "h": "The two projections of the fibre product; for LoRA-XS, R -> (B0 R) and R -> (R A0).",
+   "examples": [
+    "LoRA-XS -> FA(A0), LoRA-XS -> FB(B0)",
+    "Im HRA in W0.SO(n) and Im HRA in Im LoRA_r (image-level inclusions only)",
+    "Im LoRA_r cap Im (IA)^3: set-level only, no product in Diff"
+   ]
+  },
+  {
+   "key": "A5",
+   "name": "Sums and stages",
+   "rule": "For additive N pointed at theta0, M -> M (+) N; K stages of a rebasing scheme embed in K+1 stages.",
+   "h": "q -> (q, q0^N); for stages, pad with the base value of the new stage.",
+   "examples": [
+    "LoRA_r -> LoRA_r (+) sparse (RoSA)",
+    "LoRA_r (+) LoRA_s = LoRA_{r+s} by concatenation, with the A-blocks rescaled under alpha/r scales (unpointed; pointed at the concatenated init, which is a standard zero-B pointing iff the stacked A0 has full row rank and r+s < min(m,n))",
+    "ReLoRA^K -> ReLoRA^{K+1}"
+   ]
+  },
+  {
+   "key": "T",
+   "name": "Transport is an automorphism, not an arrow",
+   "rule": "For T in GL(Theta), T_* is an automorphism of the slice Meth(Theta,theta0); T_* M and M are the same object in another frame, not related by an arrow inside the slice. For additive families and a base-independent T it also commutes with merge-and-restart; for action-type or theta0-dependent transports it need not.",
+   "h": "None inside the slice; record the frame T instead.",
+   "examples": [
+    "Sum of k Kronecker terms = R^{-1}_* LoRA_k (Van Loan-Pitsianis rearrangement)",
+    "HiRA = (D_{W0})_* LoRA inside the slice at theta0 (theta0-dependent transport)",
+    "FourierFT = mask in the real cosine Fourier frame (a transport only without sampled conjugate pairs, and only for init_weights=True)"
+   ]
+  },
+  {
+   "key": "O1",
+   "name": "Obstruction: image",
+   "rule": "No arrow M -> N if Im M is not contained in Im N; in particular if N preserves an absolute invariant (Gram matrix, spectrum, row lines, zero pattern) that M can change.",
+   "h": "n/a",
+   "examples": [
+    "LoRA -/-> OFT",
+    "LoRA -/-> (IA)^3",
+    "DoRA -/-> LoRA_r"
+   ]
+  },
+  {
+   "key": "O2",
+   "name": "Obstruction: dimension and cut-rank",
+   "rule": "No arrow M -> N if d(M) > d(N) or max rank(M) > max rank(N).",
+   "h": "n/a",
+   "examples": [
+    "LoHa_{r,r} -/-> LoRA_{r'} for r' < r^2 (generic rank r^2)",
+    "LoRA_r -/-> k-term Kronecker sums for k < kappa_1 = min(m1,m2) min(n1,n2), the Kronecker rank of a generic rank-one update (maximal for aligned splits; = N for equal square N x N splits)"
+   ]
+  },
+  {
+   "key": "O3",
+   "name": "Obstruction: first order and base point",
+   "rule": "No smooth arrow M -> N if S1(M) is not contained in S1(N), or if M and N lie in different strata of the moduli of initialisations (Type I apex vs Type II smooth point), even when images agree.",
+   "h": "n/a",
+   "examples": [
+    "T_A-stratum LoRA -/-> T_B-stratum LoRA",
+    "PiSSA -/-> LoRA and LoRA -/-> PiSSA (images incomparable)"
+   ]
+  }
+ ],
+ "notes": "Ambient category: maps and dynamics in Diff; images in Set, where every image used is semialgebraic or definable in R_exp (softmax). All seven axes are decidable from a method's formula: kind and shape by inspection of rho; base point by computing S1 = d rho_{q0}(TQ) and comparing with the generic rank of d rho; gauge by wire insertion and spider slides, confirmed by Jacobian rank (theory/framework_checks.py); covariance by testing Im M(g W0 h^{-1}) = g Im M(W0) h^{-1}; merge by applying rewrite rules R1-R7 box-locally (sufficient conditions plus box-local obstructions, Thm VI.3); rebasing by Theorem V.3. Convention: y = W x with W in R^{m x n}; right (input-side) orthogonal actions preserve K_out = W W^T. HF PEFT implementation details that change the classification: OFT defaults to an approximately orthogonal Cayley-Neumann map; BOFT carries an unconstrained output scale (so it preserves |cosines| when no scale entry is zero, and the cosines when all entries share a sign); DoRA's magnitude is per output row with a detached norm; HRA needs even r for its paired identity init (which is an apex); (IA)^3 scales the input of down_proj; init_lora_weights='orthogonal' lies outside the three LoRA strata; and several defaults (FourierFT, C3A, VB-LoRA, Uni-LoRA, TinyLoRA, LoRA-XS) start off theta0; for FourierFT (N(0,1) spectrum, scaling 150) the offset is not small. HF's LoftQ init ignores the LoRA scale alpha/r; GOFT's official code adds a trainable input scaler by default; MiSS's bat mode is linear in its block but base-dependent; Flora compresses only its momentum and takes full-space steps. Arrows certify expressive inclusion only; training dynamics are compared through the induced cometric K = D rho Lambda D rho^T and the optimizer gauge group (Exposé III of theory/framework.md). Statuses of all numbered results after the two referee rounds (fields status, round2, round2_notes, public_statement) are in theory/propositions.json. Conventions for null coordinates and edge cases are in the 'conventions' list of this file.",
+ "conventions": [
+  "Null, na-free. A null coordinate means that the axis does not apply to the method; it is the '–' of the periodic table (theory/framework.md, Exposé VIII.B). No axis has a separate 'not applicable' value, and none should be added. The merge axis keeps its legacy key 'na' only for backward compatibility with classified kind-B methods; read it as null.",
+  "When an axis applies. Shape and gauge need a parameter space mapping to the method's object, so they are null for closed-form post-hoc operations with no tunable coefficient. Base point is null only for methods with no base point of their own (serving families such as S-LoRA and Punica). Merge and rebasing need a weight-space update to merge, so rebasing is null for every M-infinity method; function-level closures belong in the notes. Covariance applies to every method with a formula.",
+  "Covariance of function-level methods. For extensions and families (shape Fun), covariance is the function-level analogue of Def II.14: the inserted or generated family on each adapted wire is invariant under conjugation by (g,h) on that wire. Routed mixtures are included, since router and experts transform together, so their covariance is recorded rather than left null.",
+  "Post-hoc operations. The parameter space of a P operation is its tunable coefficients (lambda in task arithmetic, TIES, DARE, LoRA soups/CAT, LoraHub), and its covariance is the equivariance of the combination rule (Prop V.4(c)). A closed-form operation with no tunable coefficient (Fisher merging without mixing weights, RegMean, uniform model soups) is a single point: shape and gauge are null, covariance is still recorded.",
+  "Nearest keys. Table entries without an exact key are coded to the nearest one: CO x Borel -> Pi (OLoRA); O(r) -> GL (LoReFT, PoLAR); stabiliser -> none (OFT); CO(m) x GL(n) -> OxO (Astra, whitened splits); O(m) x O(n) -> OxO (LoRA-GA); R^x B_m x R^x B_n -> MonxMon (LoRA-SB); R^x B_N and T_N -> MonxMon (TIES, DARE). One-sided keys (MonxGL, GLxCO) name the group up to exchanging the two sides; the periodic table writes (output side) x (input side).",
+  "Instances. Arrows and obstructions relate instances of a method (rank, pointing, hyperparameter regime). research/classified/edges.json records these qualifiers only in free text, so an id-level checker flags same-pair arrows and obstructions, obstruction-versus-path cases and self-loops that are consistent once the instances are read. Optional source_instance and target_instance fields would remove these false alarms.",
+  "Known deviations of research/classified from these conventions and from the round-2 framework (recorded here, not edited): (1) 16 function-level F_T and P entries have null covariance (LoRAMoE, MixLoRA, HydraLoRA, ICEdit, MoV, Lily, MoLE, X-LoRA, PHATGOOSE, Arrow, LoraRetriever, LoRA-Flow, SMEAR, GOAT, AdapterSoup, multi-LoRA composition) and should carry their expert family's function-level value (GL x GL for dense LoRA experts and routers, Mon x GL for MoV). (2) Initial-state tuning and state-offset tuning are M-infinity with rebasing 'idempotent'; under the conventions their rebasing is null. (3) flora-opt is coded as a per-period Lin method with rebasing 'schedule', but Flora takes full-space steps and only compresses its momentum (Prop IV.2), so its per-step shape is all of Theta and its rebasing is null. (4) eva is coded GLxGL, which holds at a fixed rank; HF's default rho = 2 gives GL x CO(n) (Prop II.16). (5) oftv2's rebasing note says the Cayley-Neumann factors generate prod GL+(b) and that K_out drifts; Thm V.3 now gives a contraction semigroup and monotone shrinkage for small generators. (6) Fisher merging's optional mixing weights would make it a coefficient family under the post-hoc convention. (7) The ids mov (MoV and MoLoRA) and child-tuning (its D and F variants) each cover two variants. (8) The 'core' flag has no written definition; it marks every method named in the periodic table plus a curated set, and it is not a coordinate."
+ ]
+}

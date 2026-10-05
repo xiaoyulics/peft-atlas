@@ -1,0 +1,80 @@
+<section class="expose" id="abstract" data-toc="·" data-toc-title="Abstract">
+  <header class="expose-head"><span class="label">Overview</span><h2>Fine-tuning moves a point</h2><p class="summary">The argument on one page, nine checkable results and the conventions used later.</p></header>
+  <blockquote class="epigraph"><p>The right generality turns a hard theorem into a remark, and the remark into a design rule.</p><footer>after Grothendieck</footer></blockquote>
+  <div class="prose">
+
+    <h3 id="abstract-text">Abstract</h3>
+
+    <p>Parameter-efficient fine-tuning has hundreds of methods, usually compared by parameter count and benchmark score. This site compares them as maps. A pretrained checkpoint \(\theta_0\) is a base point in weight space \(\Theta\), and a weight-space PEFT method is a pointed smooth map \(\rho:(Q,q_0)\to(\Theta,\theta_0)\) from a small parameter space. These maps form the <a href="#app-a-meth" class="gloss">pointed slice category</a> \(\mathsf{Meth}(\Theta,\theta_0)\), where the frozen model is <a href="#app-a-initial" class="gloss">initial</a> and full fine-tuning terminal, so every method pointed at \(\theta_0\) sits in the interval between them.</p>
+    <aside class="note"><span class="label">Credit</span>\(\mathbf{Para}\) and the lens reading of backpropagation are due to <a href="https://arxiv.org/abs/1711.10455">Fong, Spivak and Tuyéras</a> and <a href="https://arxiv.org/abs/2103.01931">Cruttwell et al., 2021</a>. The closest earlier unified frame for PEFT is <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>.</aside>
+
+    <p>Model referees (see <a href="#making-of">How this atlas was made</a>) checked all 41 numbered results against their proofs, the literature and the Hugging Face PEFT source. They repaired 27, a second review narrowed many of those, and only the narrowed forms appear. Some results are new, such as the HRA apex; many are known and re-derived with credit.</p>
+
+    <h3 id="three-invariants">Three invariants</h3>
+
+    <h4>Image germ <span class="muted">· what a method can say</span></h4>
+    <p>Near \(\theta_0\), the weights a method reaches form a linear space, a <a href="#app-c-cone" class="gloss">cone</a>, a <a href="#app-d-orbits" class="gloss">group orbit</a>, or a torus saturation or meet of these. Its first-order image \(S_1\), expressive dimension \(d(M)\), min-cut rank bound and base-point type are read off this <a href="#app-c-germ" class="gloss">germ</a>. Zero-init LoRA starts at the apex of the cone \(\theta_0+\mathcal M_{\le r}\), where first steps miss directions it reaches later; a PiSSA-style split starts at a smooth point (Exposés <a href="#image">II.A</a>, <a href="#erlangen">II.B</a> and <a href="#rank">II.C</a>).</p>
+
+    <h4>Fibres and metric <span class="muted">· how it learns</span></h4>
+    <p>Many parameter values give the same weight; for LoRA these fibres are \(GL_r\) <a href="#app-d-gauge" class="gloss">gauge</a> orbits. The optimizer's rates push forward to a <a href="#app-d-cometrics" class="gloss">cometric</a> \(K\) on weight space, so isomorphic methods can train differently. With per-block rates, the compact half of LoRA's gauge acts by isometries and the non-compact half yields <a href="#app-d-noether" class="gloss">charges</a> conserved under gradient flow. Through the <a href="#app-b-lens" class="gloss">backpropagation lens</a>, GaLore without weight decay or full-gradient clipping is one-sided LoRA with a moving frozen factor and carried-over optimizer state (<a href="#thm-IV-2">Prop IV.2</a>; Exposés <a href="#fibres">III</a> and <a href="#lens">IV</a>).</p>
+    <aside class="note"><span class="label">Credit</span>The GaLore identity is due to <a href="https://arxiv.org/abs/2502.13811">Torroba-Hennigen et al., 2025</a>.</aside>
+
+    <h4>Base change <span class="muted">· how it travels</span></h4>
+    <p>Splitting initialisations, quantisation, restarts and merging move the base point. QLoRA is LoRA pointed at the quantised weights \(\kappa\theta_0\), with defect \(e=\kappa\theta_0-\theta_0\), and its image misses \(\theta_0\) whenever \(\operatorname{rank}e\gt r\), the generic case (<a href="#thm-V-2">Prop V.2</a>). Merge-and-restart with a fixed shape reaches the orbit of the monoid one cycle generates; for ReLoRA, every update of rank at most \(Kr\) after \(K\) cycles (<a href="#thm-V-3">Thm V.3</a>; <a href="#base">Exposé V</a>).</p>
+
+    <p>Adapters, prefixes and ReFT extend the network; seven local rewrite rules with side conditions certify when they merge back (<a href="#merge">Exposé VI</a>).</p>
+
+    <h3 id="checks">Things you can check in your browser</h3>
+
+    <ol>
+      <li><strong>LoRA+ is \(\alpha\) in disguise.</strong> For zero-init LoRA under Adam with \(\varepsilon=0\), no weight decay or clipping, one schedule for both groups and the same data order and dropout masks, LoRA+ with ratio \(\lambda\) follows, in exact arithmetic, the same weight trajectory as LoRA with \(\alpha\) times \(\lambda\). <span class="label"><a href="#thm-III-10">Thm III.10</a> · <a href="#thm-III-11">Cor III.11</a> · <a href="#fig-orbit">orbit explorer</a></span></li>
+      <li><strong>No initialisation buys rank above \(2r\).</strong> No exact pointing of \(\mathrm{LoRA}_r\), zero-init or split, reaches an update of rank above \(2r\). For \(r\lt\min(m,n)\), its full-rank pointings form three <a href="#app-c-strata" class="gloss">strata</a>, classified as a set by \(\mathrm{Gr}(r,n)\sqcup\mathrm{Gr}(r,m)\sqcup\mathcal M_r\). <span class="label"><a href="#thm-II-1">Thm II.1</a> · <a href="#thm-II-2">Thm II.2</a> · <a href="#fig-apex">apex and smooth point</a></span></li>
+      <li><strong>Two apexes.</strong> Zero-init LoRA misses \(r(n-r)\) first-order directions. HRA without Gram–Schmidt, at HF PEFT's default paired initialisation, is an apex too when \(W_0\) has full column rank and \(r\) is even with \(2\le r\le n-2\). <span class="label"><a href="#thm-II-2">Thm II.2</a> · <a href="#thm-II-7">Thm II.7</a> · <a href="#fig-apex">apex</a> · <a href="#fig-gram">Gram lab</a></span></li>
+      <li><strong>Orthogonal methods keep the spectrum.</strong> If every merged weight is \(W_0R\) with \(R\) exactly orthogonal (exact-Cayley OFT, HRA, and GOFT and ETHER as in their papers), the neuron Gram matrix \(WW^\top\) and the singular values never change in exact arithmetic, through any number of merges and restarts. HF PEFT's default Cayley–Neumann OFT is only approximately orthogonal. <span class="label"><a href="#thm-II-6">Cor II.6</a> · <a href="#thm-V-3">Thm V.3</a> · <a href="#fig-gram">Gram lab</a></span></li>
+      <li><strong>Rank is a cut, dimension is a volume.</strong> At equal budget, with \(2r\le\min(m,n)\), \(r^2\le\min(m,n)\) and \(2r^2\lt m+n-1\), \(\mathrm{LoHa}_{r,r}\) reaches at least \((m+n-1)-2r^2\) fewer dimensions than \(\mathrm{LoRA}_{2r}\), buying rank up to \(r^2\) for \(r\ge3\) and strictly dominated for \(r\le2\). GraLoRA keeps LoRA's dimension and lifts the maximum rank to \(\min(kr,m,n)\), but caps each block at rank \(r/k\); for \(k\ge2\) and \(kr\le\min(m,n)\) the images are incomparable. <span class="label"><a href="#thm-II-12">Prop II.12</a> · <a href="#fig-rankvol">rank is not volume</a></span></li>
+      <li><strong>Kronecker sums cut the other way.</strong> With equal square splits of a \(d\times d\) weight, a generic rank-one update has the largest Kronecker rank, \(d\), while the identity has Kronecker rank one, so zero-init \(\mathrm{LoRA}_r\) and unconstrained \(k\)-term Kronecker sums, for \(r,k\lt d\), have incomparable images. <span class="label"><a href="#thm-II-11">Thm II.11</a> · <a href="#fig-cut">cut the tensor</a></span></li>
+      <li><strong>A conserved charge.</strong> With constant per-block rates, LoRA's charge \(\Phi=B^\top B/\eta_B-AA^\top/\eta_A\) is conserved by every continuous-time update \(\dot q=-\Lambda D\rho^\top\gamma\), gradient or not, including minibatches, global-norm clipping and DoRA's detached norm. Discrete steps make the charge drift, with relative drift of second order in the step size; Adam and momentum are not covered. <span class="label"><a href="#thm-III-5">Thm III.5</a> · <a href="#fig-noether">Noether hyperbolas</a></span></li>
+      <li><strong>Adam sees a finite shadow of the gauge.</strong> On LoRA's full-rank locus, with channel-uniform hyperparameters, the largest part of \(GL_r\) an update rule respects is \(O(r)\) for SGD, the \(2^rr!\) signed permutations for Adam and AdamW, and all of \(GL_r\) for undamped scaled GD. <span class="label"><a href="#thm-III-12">Thm III.12</a> · <a href="#fig-gauge">gauge lab</a></span></li>
+      <li><strong>The activation decides the merge.</strong> (IA)\(^3\)'s feed-forward scale always folds into \(W_{\rm down}\). It folds into \(W_{\rm up}\) under SwiGLU for every scale and under ReLU for nonnegative ones, while under GELU only entries \(0\) and \(1\) fold. <span class="label"><a href="#thm-VI-3">Thm VI.3</a> · <a href="#fig-merge">merge game</a></span></li>
+    </ol>
+    <aside class="note"><span class="label">Credit</span>Item 1 for LoRA+ (<a href="https://arxiv.org/abs/2402.12354">Hayou et al., 2024</a>) under Adam is due to <a href="https://thinkingmachines.ai/blog/lora/">Schulman et al., 2025</a>; the general torus and the SGD law are added here. The \(2r\) bound underlies the PiSSA-to-LoRA conversion of <a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a>. Balancedness goes back to <a href="https://arxiv.org/abs/1806.00900">Du, Hu and Lee, 2018</a> and <a href="https://arxiv.org/abs/1802.06509">Arora et al., 2018</a>, and the two-part conservation law is <a href="https://arxiv.org/abs/2210.17216">Zhao et al., 2023</a>. The Kronecker rearrangement is <a href="https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17">Van Loan and Pitsianis, 1993</a>; scaled GD is <a href="https://arxiv.org/abs/2005.08898">Tong, Ma and Chi</a> and <a href="https://arxiv.org/abs/2402.02347">Zhang and Pilanci, 2024</a>. <a href="https://arxiv.org/abs/2205.05638">Liu et al., 2022</a> note the (IA)\(^3\) merge into \(W_{\rm down}\), and <a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a> and <a href="https://arxiv.org/abs/2306.00978">AWQ</a> already migrate scales through activations and meet the GELU obstruction.</aside>
+
+    <h3 id="status-legend">How to read the labels</h3>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Label</th><th>What it means here</th></tr></thead>
+      <tbody>
+        <tr><td>Theorem, Proposition, Lemma, Corollary</td><td>Proved here, with the proof under the statement. <em>Known</em> marks a result of the authors in the margin, re-derived for PEFT.</td></tr>
+        <tr><td>Observation, Definition</td><td>An easy truth kept because it organises; a definition, with an ochre rule.</td></tr>
+        <tr><td>[Num]</td><td>Checked in float64 by the project's scripts. Figures recompute their numbers in your browser.</td></tr>
+        <tr><td>[Sketch], [Conj], [Pred]</td><td>A proof sketch only; a conjecture; a falsifiable prediction, with its optimizer scope.</td></tr>
+        <tr><td>Analogy</td><td>Language with no theorem behind it, in a dashed box. <em>Noether</em>, <em>Erlangen</em>, <em>gauge</em> and <em>moduli</em> are meant this way beyond what is proved.</td></tr>
+        <tr><td>verified, repaired</td><td>Referee status; repaired results were corrected or narrowed, and only that form is shown.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="notation">Notation</h3>
+
+    <p>Papers that store \(W^\top\) swap <em>input</em> and <em>output</em>; we translate every method into this convention.</p>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>\(W\)</td><td>A linear box \(y=Wx\), \(W\in\mathbb R^{m\times n}\), with \(m=d_{\rm out}\) and \(n=d_{\rm in}\). Row \(i\) is output neuron \(i\).</td></tr>
+        <tr><td>\(\Theta\)</td><td>Weight space, a real vector space of adapted and frozen boxes.</td></tr>
+        <tr><td>\(\theta_0\), \(W_0\)</td><td>The pretrained point; \(W_0\) for one box.</td></tr>
+        <tr><td>\(\rho\), \((Q,q_0)\)</td><td>The method, a pointed smooth map from trainable parameters \(Q\) started at \(q_0\). For LoRA, \(\rho(B,A)=W_0+sBA\) with \(s=\alpha/r\).</td></tr>
+        <tr><td>\(\mathsf{Meth}\)</td><td>The pointed slice \(\mathbf{Diff}_*/(\Theta,\theta_0)\). A morphism \(h:M\to N\) is a pointed smooth map with \(\rho_N\circ h=\rho_M\), read “\(N\) simulates \(M\)”.</td></tr>
+        <tr><td>\(\lvert M\rvert\)</td><td>The budget, \(\dim Q\).</td></tr>
+        <tr><td>\(d(M)\)</td><td>The expressive dimension \(\dim\operatorname{Im}M=\max_q\operatorname{rank}d\rho_q\). The gap \(\lvert M\rvert-d(M)\) is gauge waste.</td></tr>
+        <tr><td>\(S_1\)</td><td>The first-order image \(d\rho_{q_0}(T_{q_0}Q)\). The base point is regular if \(\dim S_1=d(M)\), an apex if smaller.</td></tr>
+        <tr><td>\(K\)</td><td>The induced cometric \(D\rho\,\Lambda\,D\rho^\top\), with \(\Lambda\succ0\) the learning rates. Gradient flow is \(\dot\theta=-K\nabla_\theta L\).</td></tr>
+        <tr><td>\(\mathcal M_{\le r}\), \(\mathcal M_r\)</td><td>Matrices of rank at most \(r\); the smooth stratum of rank exactly \(r\), of dimension \(r(m+n-r)\).</td></tr>
+        <tr><td>\(G\), \(GL_r\)</td><td>The weight gradient \(\nabla_WL\); the LoRA gauge, \(g\cdot(B,A)=(Bg^{-1},gA)\).</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Readers new to category theory or Lie groups can start with the <a href="#appendix">appendix</a>, which collects the background the site assumes.</p>
+
+  </div>
+</section>

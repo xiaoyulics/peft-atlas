@@ -1,0 +1,448 @@
+{
+ "family": "addendum2026b-2",
+ "family_title": "2026 sweep pass 2, batch 2",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "coa-lora",
+   "name": "CoA-LoRA",
+   "full_name": "CoA-LoRA: Configuration-Aware LoRA (a hypernetwork maps each layer's quantisation configuration to an \\(r\\times r\\) adjustment of that layer's LoRA)",
+   "paper_title": "On-the-Fly Adaptation to Quantization: Configuration-Aware LoRA for Efficient Fine-Tuning of Quantized LLMs",
+   "authors": "Ye et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2509.25214",
+   "url": "https://arxiv.org/abs/2509.25214",
+   "code_url": "https://github.com/rG223/CoA-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=\\big(\\widetilde W^{(i)}_{\\mathbf C}+L_{1,i}\\,(I_r+U_\\theta(Q_i))\\,L_{2,i}\\big)x,\\quad U_\\theta(Q_i)=\\gamma\\cdot\\mathrm{reshape}_{r\\times r}\\Big(\\mathrm{MLP}_\\theta\\big(\\mathrm{LN}[\\,e(b_{0,i}),e(b_{1,i}),e(b_{2,i}),e(B_{0,i}),e(B_{1,i}),e(\\text{module}_i),e(\\text{block}_i)\\,]\\big)\\Big)\\in\\mathbb{R}^{r\\times r};\\ \\ \\mathbf C=\\{c_i\\}_{i=1}^{N},\\ c_i=[b_{0,i},b_{1,i},b_{2,i},B_{0,i},B_{1,i}]\\ (\\text{NormalFloat bit-widths and block sizes of layer } i);\\ \\ W_0^{(i)}-\\widetilde W^{(i)}_{\\mathbf C}\\approx U\\Sigma V^{\\top}\\Rightarrow L_{1,i}=U_r\\Sigma_r^{1/2}\\in\\mathbb{R}^{d_{out}\\times r},\\ L_{2,i}=\\Sigma_r^{1/2}V_r^{\\top}\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ \\min_\\theta\\ \\mathbb{E}_{\\mathbf C\\in\\mathcal C}\\,\\mathcal L\\big(\\{\\widetilde W^{(i)}_{\\mathbf C}+L_{1,i}(I_r+U_\\theta(Q_i))L_{2,i}\\}_{i=1}^{N};\\mathcal D\\big),\\ \\ \\mathcal C\\ \\text{refined by Pareto/EHVI search};\\ \\ \\text{frozen: quantised base } \\widetilde W_{\\mathbf C};\\ \\text{trained: mapper } \\theta\\ (\\text{embeddings, LayerNorm, 2-layer MLP, scalar }\\gamma);\\ \\text{the released code also trains one LoRA pair } (L_1,L_2)\\ \\text{shared by all configurations}",
+   "trainable_params": "|\\theta|=129\\,r^{2}+O(10^{4})\\ \\text{per model, shared by all } N \\text{ adapted matrices and all configurations }(2{,}121{,}265\\text{ to }2{,}121{,}281 \\text{ at } r=128,\\ 0.03\\text{--}0.5\\%\\ \\text{of the base, Table A.1};\\ \\approx 0.54\\text{M at the main-experiment rank } r=64);\\ \\text{plus } r(d_{in}+d_{out})\\ \\text{per adapted matrix for the LoRA factors (SVD-initialised; frozen in the paper's Eq. (3), trained once and shared in the released code)}",
+   "locus": "Every LoRA-targeted linear layer of a NormalFloat-quantised model, each with its own per-layer configuration: query, key, value, output.dense and intermediate.dense of RoBERTa-Large; q/k/v/o/gate/up/down projections of Qwen2.5-1.5B, Qwen2.5-3B and LLaMA-2-7B",
+   "modification_kind": "hybrid",
+   "structure": "A family of additive rank-\\(r\\) updates indexed by the discrete space of per-layer NormalFloat configurations \\(\\mathbf C=\\{c_i\\}_{i=1}^{N}\\), with \\(c_i\\in\\{2,3,4,8\\}^2\\times\\{\\text{bf16},\\text{fp16},\\text{fp32}\\}\\times\\{16,32,64\\}\\times\\{16,64,256\\}\\) (432 choices per layer, \\(432^{N}\\) per model). One small hypernetwork \\(\\theta\\) maps a layer's configuration embedding, plus its module-type and block-index embeddings, to an \\(r\\times r\\) core \\(I_r+U_\\theta(Q_i)\\) placed between the LoRA factors: \\(\\Delta W_i(\\mathbf C)=L_{1,i}(I_r+U_\\theta(Q_i))L_{2,i}\\). The core acts only on the rank space. When it is invertible, the update keeps column space \\(\\mathrm{col}(L_{1,i})\\) and row space \\(\\mathrm{row}(L_{2,i})\\), so the configuration moves the update only inside a fixed \\(r\\times r\\) coordinate window, as in LoRA-XS. In the paper's Eq. (2) the factors \\(L^{(\\mathbf C)}_{1,i},L^{(\\mathbf C)}_{2,i}\\) are the rank-\\(r\\) SVD of the quantisation residual \\(W_0-\\widetilde W_{\\mathbf C}\\) for that configuration, so a new configuration also needs \\(W_0\\) for the residual SVD. In the released GLUE code (run_glue.py, lorasync mode), one LoRA pair initialised from a single configuration's residual SVD is trained jointly with \\(\\theta\\) and loaded into every configuration's model, so in practice one adapter is shared and only the core varies. The training set \\(\\mathcal C\\) is itself optimised. It starts from 50 configurations of 2.25 to 7.25 average bits chosen by an integer program, then alternates training \\(\\theta\\) with a search step: a Gaussian-process surrogate of accuracy, an expected-hypervolume-improvement acquisition maximised by finite-difference coordinate moves, and Pareto filtering inside 40 bit-width segments.",
+   "mergeable": "conditional",
+   "mergeable_reason": "For a fixed configuration \\(\\mathbf C\\), the generated update \\(L_{1,i}(I_r+U_\\theta(Q_i))L_{2,i}\\) is a static rank-\\(r\\) matrix, computed with one mapper forward pass per layer and kept beside the quantised weights. Folding it into \\(\\widetilde W_{\\mathbf C}\\) needs dequantisation, and requantising would change the configuration, as with QLoRA. The mapper \\(\\theta\\) has to be kept to serve other configurations.",
+   "identity_at_init": "Not identity relative to the quantised base. In the code, the last MLP layer starts with \\(\\mathcal N(0,(10^{-3})^2)\\) weights and zero bias, so \\(I_r+U_\\theta\\approx I_r\\). The LoRA factors start as the rank-\\(r\\) SVD of \\(W_0-\\widetilde W_{\\mathbf C}\\), so the initial model \\(\\widetilde W_{\\mathbf C}+L_1L_2\\) is the best rank-\\(r\\) correction of the quantisation error. It approximates \\(W_0\\), not \\(\\widetilde W_{\\mathbf C}\\).",
+   "key_idea": "The quantisation configuration becomes a conditioning input. A hypernetwork of about 2M parameters turns each layer's bit-width and block-size choice into an \\(r\\times r\\) adjustment \\(I_r+U_\\theta(Q_i)\\) of that layer's LoRA, so one training run serves any per-layer configuration instead of one QLoRA or LQ-LoRA run per configuration. The configurations used for training are chosen by a Pareto search over accuracy and average bit-width.",
+   "results_note": "On four GLUE tasks with RoBERTa-Large, one training run of about an hour covers 50 configurations from 2.5 to 6.25 bits, with accuracy comparable to or better than QLoRA and LQ-LoRA, which need 20-40 minutes of fine-tuning per configuration.",
+   "relations": [
+    {
+     "target": "lq-lora",
+     "type": "builds-on",
+     "note": "Cited and used as the strongest baseline. The base LoRA factors come from the low-rank-plus-quantised (LPQ) decomposition of LQ-LoRA, and the code reuses its NF configuration space and integer-program bit allocation. LQ-LoRA needs one fine-tuning run per configuration; CoA-LoRA amortises over configurations."
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "Per-configuration baseline. A dedicated QLoRA adapter is fine-tuned for each bit-width, so cost grows linearly with the number of configurations."
+    },
+    {
+     "target": "asymmetry-lora",
+     "type": "builds-on",
+     "note": "Cited (with Flora) for the claim that most of the adaptation signal sits in one factor, which motivates adjusting only through the \\(r\\times r\\) core. The paper places the signal in \\(L_{2,i}\\in\\mathbb{R}^{r\\times n}\\), its input-side factor, whereas Zhu et al. find the output-side factor matters more; because the core sits between the factors, \\((I+U)L_2\\) and \\(L_1(I+U)\\) give the same update and the placement is side-neutral."
+    },
+    {
+     "target": "lora-xs",
+     "type": "competes-with",
+     "note": "Not cited. Same shape: an \\(r\\times r\\) core between SVD-derived factors. LoRA-XS trains one core per task from the SVD of \\(W_0\\); CoA-LoRA generates the core \\(I+U_\\theta\\) per quantisation configuration, on factors from the SVD of the quantisation residual."
+    },
+    {
+     "target": "hyperformer",
+     "type": "competes-with",
+     "note": "Not cited. Both generate adapter parameters from layer and condition embeddings with a shared hypernetwork. HyperFormer conditions on task and layer and generates adapter weights; CoA-LoRA conditions on quantisation configuration, module type and block index and generates only an \\(r\\times r\\) LoRA core."
+    },
+    {
+     "target": "flora-opt",
+     "type": "builds-on",
+     "note": "Cited with the asymmetry paper (Hao et al., 2024) as evidence that adaptation concentrates in one LoRA factor, the stated motivation for generating only an \\(r\\times r\\) adjustment per layer."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2509.25214",
+    "https://arxiv.org/html/2509.25214",
+    "https://github.com/rG223/CoA-LoRA",
+    "https://raw.githubusercontent.com/rG223/CoA-LoRA/HEAD/models/lora_utils.py",
+    "https://raw.githubusercontent.com/rG223/CoA-LoRA/HEAD/run_glue.py",
+    "https://openreview.net/forum?id=9OUg0nJE72",
+    "https://iclr.cc/virtual/2026/poster/10011118"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Rongguang Ye and v1 date 2025-09-22 match (latest v4, 2026-06-22). Venue: ICLR 2026 poster 10011118, 'Accept (Poster)' in iclr-2026-orals-posters.json, OpenReview forum 9OUg0nJE72 (public 2025-10-08, so year 2025 holds either way). Formula checked against Sec. 4.2 Eqs. (1)-(3) and Appendix A.1-A.2 of v4: \\(L_{2,i}\\) is reparameterised as \\((I+U_\\theta(Q_i))L_{2,i}\\), the factors \\(L^{(\\mathbf C)}_{1,i},L^{(\\mathbf C)}_{2,i}\\) come from the SVD of \\(W-\\widetilde W_{\\mathbf C}\\) (Eq. 10), and only \\(\\theta\\) is optimised in Eq. (3). Mapper (A.1): seven 8-dimensional embeddings, LayerNorm, a 2-layer SiLU MLP of width 128 with output \\(r^2\\), a learnable scale, plus identity; this gives \\(129r^2\\) for the last layer, about 7.7k for the rest, matching Table A.1. Released code read directly (models/lora_utils.py QuantConfigEmbedding and patch_lora_forward_with_quant_embedding; run_glue.py lorasync branch; train_one_epoch_lora_generate): the forward is \\(\\Delta W=B\\,Q\\,A\\) with \\(Q=\\gamma\\,\\mathrm{MLP}(\\cdot)+I\\), last-layer weights \\(\\mathcal N(0,10^{-6})\\) and zero bias; all trainable tensors of configuration 0's model (LoRA pair and mapper) are copied into each sampled configuration's model, their gradients are accumulated and stepped once, so one LoRA pair is shared, as the entry says. Configuration space (Table 1) gives \\(432^N\\); 50 initial configurations from the integer program (A.2, Gurobi); \\(U=40\\) segments (Sec. 5.1); results from Observation 1 and Table 2. Training rank is 64 in the main experiments. Relation targets cited as stated (Guo et al. 2024 = LQ-LoRA, Dettmers et al. 2023 = QLoRA, Zhu et al. 2024 = Asymmetry, Hao et al. 2024 = Flora). HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false. Confidence stays medium because the paper text and the released code disagree on whether the LoRA pair is trained. Semantic Scholar (2026-10-02): 1 citations, matching the file notes.",
+   "corrections": [
+    "trainable_params: exact Table A.1 mapper counts added (2,121,265 for RoBERTa-Large and 2,121,281 for the others at \\(r=128\\)) and the size at the main-experiment rank \\(r=64\\) (about 0.54M); stated that the LoRA factors are frozen in Eq. (3) but trained and shared in the released code.",
+    "formula_latex: LayerNorm added to the trained mapper components (Appendix A.1; nn.LayerNorm over the 56-dimensional input in the code).",
+    "full_name and the lora-xs and hyperformer relation notes: the unwrapped fragments \\(r\\times r\\), \\(W_0\\) and \\(I+U_\\theta\\) are now wrapped as math.",
+    "asymmetry-lora note: recorded that the paper assigns the adaptation signal to \\(L_2\\) (its input-side factor), the opposite of the cited asymmetry finding, and that the core placement is side-neutral.",
+    "Added relation flora-opt (builds-on): Flora is cited alongside the asymmetry paper for the same motivation."
+   ]
+  },
+  {
+   "id": "low-rank-ternary-adaptation",
+   "name": "Low-Rank Ternary Adaptation",
+   "full_name": "Ternary multiplicative adaptation: a Kronecker-factorised ternary keep/zero/flip mask applied elementwise to ternary weights",
+   "paper_title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+   "authors": "Manolache et al.",
+   "year": 2026,
+   "venue": "ECCV 2026 (poster)",
+   "arxiv": "2608.24469",
+   "url": "https://arxiv.org/abs/2608.24469",
+   "code_url": "https://github.com/alexmanoo/ternary_adaptation",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W_0=\\mathrm{diag}(s)\\,W_{\\text{tern}},\\ W_{\\text{tern}}\\in\\{-1,0,1\\}^{d_{out}\\times d_{in}};\\ \\ h=\\mathrm{diag}(s)\\big(W_{\\text{tern}}\\odot\\Delta_{\\text{tern}}\\big)x,\\quad \\Delta_{\\text{tern}}=A\\otimes B,\\ \\ A=\\mathrm{Tern}(\\bar A)\\in\\{-1,0,1\\}^{p_1\\times q_1},\\ B=\\mathrm{Tern}(\\bar B)\\in\\{-1,0,1\\}^{p_2\\times q_2},\\ \\ p_1p_2=d_{out},\\ q_1q_2=d_{in};\\ \\ \\mathrm{Tern}:\\ \\text{entrywise threshold set from the mean absolute value of each factor, gradients passed to the real proxies } \\bar A,\\bar B \\text{ by a straight-through estimator};\\ \\ W_{\\text{merged}}=W_{\\text{tern}}\\odot(A\\otimes B)\\in\\{-1,0,1\\}^{d_{out}\\times d_{in}};\\ \\ \\text{frozen: } W_{\\text{tern}}\\ \\text{and its scales } s;\\ \\text{trained: } \\bar A\\in\\mathbb{R}^{p_1\\times q_1},\\ \\bar B\\in\\mathbb{R}^{p_2\\times q_2}",
+   "trainable_params": "p_1q_1+p_2q_2\\ \\text{per adapted matrix}\\ (p_1p_2=d_{out},\\ q_1q_2=d_{in});\\ 2d\\ \\text{for a square } d\\times d \\text{ layer only when } d \\text{ is a perfect square } (p_i=q_i=\\sqrt d);\\ \\text{Llama-3.2-1B's } 2048\\times 2048 \\text{ layers use } (32\\times32,\\ 64\\times64)=5120=2.5d,\\ 512\\text{-wide k/v use } 2560,\\ \\text{MLP layers } 10240;\\ \\approx 7.4\\times10^{5}\\ \\text{in total} \\approx 0.06\\%\\ \\text{of Llama-3.2-1B (Table 5)}",
+   "locus": "All self-attention and feed-forward linear layers of ternary Transformers, output head excluded: SpinQuant-ternarised Llama-3.2-1B/3B, the pre-trained ternary BitNet b1.58 2B4T and Falcon-E-1B/3B-Instruct, and the ternary ViT-B/16 encoder of TernaryCLIP",
+   "modification_kind": "multiplicative-weight",
+   "structure": "A Hadamard (entrywise) action of the multiplicative monoid \\(\\{-1,0,1\\}\\) on ternary weights. Each mask entry keeps (\\(+1\\)), zeroes (\\(0\\)) or flips (\\(-1\\)) the corresponding weight. \\(\\{-1,0,1\\}\\) is closed under multiplication and \\(\\odot\\) commutes with the row scaling \\(\\mathrm{diag}(s)\\), so adapted and merged weights stay ternary with unchanged scales. The mask is constrained to a Kronecker product \\(A\\otimes B\\) of two small ternary factors, so \\(\\mathrm{rank}(A\\otimes B)=\\mathrm{rank}(A)\\,\\mathrm{rank}(B)\\) is bounded by \\(\\min(p_1,q_1)\\min(p_2,q_2)\\) and reaches \\(\\min(d_{out},d_{in})\\) for the balanced factor shapes of Table 5, with only \\(p_1q_1+p_2q_2\\) proxies. Despite the title, the update is neither low-rank nor additive. Written additively it is \\(\\Delta W=\\mathrm{diag}(s)\\,\\big(W_{\\text{tern}}\\odot(A\\otimes B-\\mathbf 1\\mathbf 1^{\\top})\\big)\\). Because \\(0\\cdot\\Delta_{ij}=0\\), zero weights can never be reactivated (zero-locking). The weight-transition analysis confirms that no weight leaves 0 and that gains come from sign changes of nonzero weights. The 'balanced' and 'normalized' initialisations draw signed factors and pre-compensate the base, \\(W_{\\text{tern}}\\leftarrow(\\mathrm{sign}\\bar A\\otimes\\mathrm{sign}\\bar B)\\odot W_{\\text{tern}}\\). A \\(\\pm1\\) mask is an involution under \\(\\odot\\), so the step-0 forward weights equal the pretrained ones.",
+   "mergeable": "yes",
+   "mergeable_reason": "The merged weight \\(W_{\\text{tern}}\\odot(A\\otimes B)\\) lies again in \\(\\{-1,0,1\\}^{d_{out}\\times d_{in}}\\) with the original scales. It replaces the base layer with no dequantisation, requantisation, extra parameters or latency, and the proxies \\(\\bar A,\\bar B\\) are discarded.",
+   "identity_at_init": "Yes, by construction. All-ones factors give \\(A\\otimes B=\\mathbf 1\\mathbf 1^{\\top}\\) and \\(W'_{\\text{tern}}=W_{\\text{tern}}\\). The balanced and normalized schemes used in the main experiments have signed factors but pre-multiply the base by \\(\\mathrm{sign}\\bar A\\otimes\\mathrm{sign}\\bar B\\), so the step-0 forward weights are again the pretrained ternary weights.",
+   "key_idea": "Additive LoRA updates leave the ternary domain, so the update is made multiplicative: a ternary keep/zero/flip mask applied entrywise to ternary weights. The mask is parameterised as a Kronecker product \\(A\\otimes B\\) of two small ternary matrices, trained through real-valued proxies with a straight-through estimator. The fine-tuned model merges into a strictly ternary model with no dequantisation.",
+   "results_note": "On SpinQuant-ternarised Llama-3.2-3B fine-tuned on Alpaca, the merged ternary model raises the 9-task zero-shot average from 31.9 to 38.3 and cuts WikiText-2 perplexity from 45.6 to 22.3, ahead of QLoRA merged and requantised to ternary (37.5 and 22.9).",
+   "relations": [
+    {
+     "target": "lokr",
+     "type": "builds-on",
+     "note": "Cited Kronecker-factorised PEFT. LoKr adds \\(A\\otimes B\\) to the weight; here the Kronecker product is ternary and acts by Hadamard multiplication on ternary weights."
+    },
+    {
+     "target": "krona",
+     "type": "builds-on",
+     "note": "Cited Kronecker adapter, the same factorisation idea for high rank from few parameters, used additively in floating point."
+    },
+    {
+     "target": "qlora",
+     "type": "competes-with",
+     "note": "Main PEFT baseline on the same ternary backbone. QLoRA's floating-point adapter must be merged and requantised to stay at 1.58 bits, which costs accuracy."
+    },
+    {
+     "target": "qa-lora",
+     "type": "competes-with",
+     "note": "Cited. QA-LoRA merges without dequantisation by folding the low-rank update into group-wise zero points, but the merged weights cannot stay in \\(\\{-1,0,1\\}\\)."
+    },
+    {
+     "target": "piggyback",
+     "type": "competes-with",
+     "note": "Not cited. Piggyback also thresholds real proxies with a straight-through estimator and multiplies the resulting unstructured \\(\\{0,1\\}\\) mask into frozen weights. Ternary adaptation adds sign flips and constrains the mask to a Kronecker product."
+    },
+    {
+     "target": "kadaptation",
+     "type": "builds-on",
+     "note": "Cited (with LoKr and KronA) as a Kronecker-product adapter that preserves rank with few parameters; KAdaptation adds a floating-point Kronecker update to ViT weights, whereas here the Kronecker factors are ternary and multiply the weights entrywise."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2608.24469",
+    "https://arxiv.org/html/2608.24469",
+    "https://github.com/alexmanoo/ternary_adaptation",
+    "https://eccv.ecva.net/virtual/2026/poster/5924"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Alexandru-Dragos Manolache and v1 date 2026-08-25 match; comment 'Accepted at ECCV 2026 ... Volume 17015 of LNCS'. Venue confirmed on the official site: eccv.ecva.net/static/virtual/data/eccv-2026-orals-posters.json lists poster 5924 with the same title and three authors, decision 'Accept'. Formula checked against Sec. 3.1-3.4 (Eqs. 1-11) and Sec. 4.1 of v1: \\(W'=W_{tern}\\odot(A\\otimes B)\\), \\(A\\in\\{-1,0,1\\}^{p\\times q}\\), \\(B\\in\\{-1,0,1\\}^{r\\times s}\\), \\(pr=d_{out}\\), \\(qs=d_{in}\\) (the entry's \\(p_1,q_1,p_2,q_2\\)), absolute-mean thresholds with STE, merge by Eq. (8). Released code (ternary_adapters/models/bitnet/BitLinearPackedAdapters.py) computes the weight as \\((A\\otimes B)\\odot(W_t\\odot\\beta)\\) with a per-channel scale \\(\\beta\\) and pre-compensates \\(W_t\\) by the sign Kronecker product under the balanced and normalized inits, matching the entry's \\(\\mathrm{diag}(s)\\) form and identity-at-init claim. Initialisations, zero-locking and the transition analysis (Tables 9-10: about 26% of all weights flip, none leave 0) checked against Sec. 4.1, Sec. 4.6 and Appendix S1. Results checked against Sec. 4.2 (Table 4) and Sec. 4.3 (Table 6) (3B: 31.9 to 38.3 average, PPL 45.6 to 22.3; requantised QLoRA 37.5 and 22.9). Parameter count re-derived from Table 5. Relation targets: LoKr [54] = LyCORIS paper (catalogue lokr), KronA [16], QLoRA [11], QA-LoRA [53]; Piggyback is not cited. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false. Semantic Scholar (2026-10-02): 0 citations, matching the file notes.",
+   "corrections": [
+    "venue: confirmed on the official ECCV 2026 list (poster 5924); changed from 'per arXiv comment' to 'ECCV 2026 (poster)' and added the ECCV page to sources.",
+    "trainable_params: \\(2d\\) holds only when \\(d\\) is a perfect square. The 0.06% figure comes from Table 5's factorisation, where Llama-3.2-1B's \\(2048\\times2048\\) layers use \\((32\\times32,\\,64\\times64)\\), i.e. \\(5120=2.5d\\) parameters; the total is about 737k.",
+    "structure: the Kronecker rank is bounded by \\(\\min(p_1,q_1)\\min(p_2,q_2)\\); 'can reach \\(\\min(d_{out},d_{in})\\)' is now qualified to the balanced shapes of Table 5.",
+    "Relation notes to lokr, qa-lora and piggyback: \\(A\\otimes B\\), \\(\\{-1,0,1\\}\\) and \\(\\{0,1\\}\\) wrapped as math.",
+    "Added relation kadaptation (builds-on): cited Kronecker adapter [20], present in the catalogue."
+   ]
+  },
+  {
+   "id": "adarank",
+   "name": "AdaRank",
+   "full_name": "AdaRank: Adaptive Rank Pruning (test-time learned binary masks on the singular components of task vectors)",
+   "paper_title": "AdaRank: Adaptive Rank Pruning for Enhanced Model Merging",
+   "authors": "Lee et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2503.22178",
+   "url": "https://arxiv.org/abs/2503.22178",
+   "code_url": "https://github.com/david3684/AdaRank",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\tau_i^{l}=W_i^{l}-W_0^{l}=U_i^{l}\\Sigma_i^{l}V_i^{l\\top}\\ (i=1,\\dots,T);\\quad W^{l}(B)=W_0^{l}+\\lambda^{l}\\sum_{i=1}^{T}U_i^{l}\\,\\mathrm{diag}(B_i^{l})\\,\\Sigma_i^{l}\\,V_i^{l\\top},\\ \\ B_i^{l}\\in\\{0,1\\}^{\\min(d_{out},d_{in})};\\ \\ B_{i,r}^{l}=\\mathbf 1\\{\\sigma(\\tilde b_{i,r}^{l}/T_{\\text{temp}})\\ge 0.5\\}\\ \\ (\\text{straight-through estimator},\\ T_{\\text{temp}}=10);\\ \\ \\min_{\\tilde b,\\lambda}\\ \\sum_{i=1}^{T}\\sum_{x\\in\\mathcal D_i^{\\text{test}}}H\\big(f(W(B),x)\\big)\\ \\ (\\text{output entropy on unlabeled test inputs});\\ \\ \\text{frozen: } W_0 \\text{ and all } (U_i,\\Sigma_i,V_i);\\ \\text{optimised at test time: mask logits } \\tilde b \\text{ and layer coefficients } \\lambda^{l}",
+   "trainable_params": "T\\cdot\\min(d_{out},d_{in})\\ \\text{mask logits per weight matrix (one per singular component per task), plus one } \\lambda^{l}\\ \\text{per layer; all discarded after merging}",
+   "locus": "Every weight matrix of the task vectors of models fine-tuned from one backbone: CLIP ViT-B/32 and ViT-L/14 image encoders (8, 14 and 20 tasks), and RoBERTa and GPT-2 (7 NLP tasks)",
+   "modification_kind": "composition-or-routing",
+   "structure": "Merging in the SVD basis of each task matrix with a learned 0/1 selection of singular triplets: \\(\\Delta W^{l}=\\lambda^{l}\\sum_{i}\\sum_{r}B^{l}_{i,r}\\sigma^{l}_{i,r}u^{l}_{i,r}v^{l\\top}_{i,r}\\). Each layer's mask set \\(\\{0,1\\}^{T\\times\\min(d_{out},d_{in})}\\) contains top-\\(k\\) truncation (\\(B_{i,r}=\\mathbf 1[r\\le k]\\), as in SVD merging and TSV-M) and full-rank Task Arithmetic (\\(B=\\mathbf 1\\)) as special points. The kept rank and the kept indices can vary by task and layer, and need not be the top ones. AdaRank plugs into a base merger. With Task Arithmetic \\(\\tau_i=W_i-W_0\\); with CART \\(\\tau_i=W_i-\\bar W\\) around the average weight; with TSV-M the concatenated \\(U\\) and \\(V\\) are whitened before masking; Iso-CTS is a fourth base merger in the experiments. Masks start at the base method's best setting and are optimised AdaMerging-style, by straight-through estimation of an entropy objective on unlabeled test batches. The motivation is that adding a top singular component of one task often raises the total multi-task loss.",
+   "mergeable": "yes",
+   "mergeable_reason": "After test-time adaptation the masks are frozen and the output is one static weight set of the backbone's size. No masks, routers or per-task parameters are kept at inference, unlike router-based merging.",
+   "identity_at_init": "Not applicable as an adapter. The masks start by reproducing the base merger: \\(B=\\mathbf 1\\) with \\(\\lambda=0.3\\) is Task Arithmetic, the top 16\\% of components for CART, and top-\\(k\\) for TSV-M. Setting all \\(B=0\\) recovers \\(W_0\\) (or \\(\\bar W\\) for CART).",
+   "key_idea": "When merging, the top-\\(k\\) singular components of a task vector are not always the right ones to keep: large components of one task can raise the other tasks' losses, and the useful rank varies by task and layer. AdaRank instead learns a binary keep/prune mask on every singular component by test-time entropy minimisation, replacing the fixed top-\\(k\\) rule of SVD-based merging.",
+   "results_note": "Added to Task Arithmetic on 8-, 14- and 20-task vision merging, AdaRank raises average accuracy by 18.6% (ViT-B/32) and 11.1% (ViT-L/14), outperforming all static merging baselines.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "generalizes",
+     "note": "With all masks equal to 1, AdaRank's merge is layer-wise Task Arithmetic; it is also the default base merger."
+    },
+    {
+     "target": "adamerging",
+     "type": "builds-on",
+     "note": "Adopts AdaMerging's test-time entropy minimisation and learns its layer coefficients jointly with the masks; AdaRank beats AdaMerging, which tunes only the coefficients."
+    },
+    {
+     "target": "tsv-merge",
+     "type": "builds-on",
+     "note": "Plugs into TSV-M: its fixed top-\\(k\\) truncation of whitened task singular vectors is one mask, and AdaRank replaces it with a learned one."
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "Element-wise trimming and sign election, as opposed to spectral pruning; a static baseline."
+    },
+    {
+     "target": "dare",
+     "type": "competes-with",
+     "note": "Random element-wise drop-and-rescale of task vectors; cited as an element-wise alternative to spectral pruning."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2503.22178",
+    "https://arxiv.org/html/2503.22178",
+    "https://github.com/david3684/AdaRank",
+    "https://openreview.net/forum?id=fTygcJVOni",
+    "https://iclr.cc/virtual/2026/poster/10008234"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Chanhyuk Lee and v1 date 2025-03-28 match (v3 2026-02-28, comment 'ICLR 2026'). Venue: ICLR 2026 poster 10008234, 'Accept (Poster)' in iclr-2026-orals-posters.json; OpenReview forum fTygcJVOni, venue 'ICLR 2026 Poster'. Formula checked against Sec. 2 Eqs. (1)-(2), Sec. 4 Eqs. (5)-(6), Sec. 6.1 and Appendices A and B.1 of v3: \\(\\theta^l(B^l)=\\theta^l_0+\\lambda^l\\sum_iU^l_i(\\mathrm{diag}(B^l_i)\\odot\\Sigma^l_i)V^{l\\top}_i\\), \\(B^l_i\\in\\{0,1\\}^{\\min(d,d')}\\), STE with \\(b=\\mathbf 1\\{\\sigma(\\tilde b/T)\\ge0.5\\}\\), \\(T=10\\); masks and \\(\\lambda^l\\) learned jointly by entropy minimisation (Adam, lr \\(10^{-3}\\) vision, \\(5\\times10^{-5}\\) NLP). Initialisations (TA: \\(\\lambda=0.3\\), \\(B=\\mathbf 1\\); CART: \\(\\lambda=2.3\\), top 16%; TSV-M: \\(\\lambda=1.0\\)) match the identity_at_init field. Results: Sec. 6.2 states average gains of 18.6% (ViT-B/32) and 11.1% (ViT-L/14) over Task Arithmetic. Locus: CLIP ViT-B/32 and ViT-L/14 on 8/14/20 tasks, RoBERTa-base and GPT-2 on 7 NLP tasks. TIES-Merging, DARE, AdaMerging, TSV-M and Task Arithmetic are all cited. Semantic Scholar: 14 citations. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false.",
+   "corrections": [
+    "structure: added Iso-CTS, which the paper also uses as a base merger.",
+    "tsv-merge relation note: top-\\(k\\) wrapped as math."
+   ]
+  },
+  {
+   "id": "slao",
+   "name": "SLAO (Merge before Forget)",
+   "full_name": "SLAO: Single LoRA continual learning with Orthogonal initialization via continual merging",
+   "paper_title": "Merge before Forget: A Single LoRA Continual Learning via Continual Merging",
+   "authors": "Qiao et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (poster)",
+   "arxiv": "2512.23017",
+   "url": "https://arxiv.org/abs/2512.23017",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=\\big(W_0+B^{t}_{\\text{merge}}A^{t}_{\\text{merge}}\\big)x,\\ \\ B\\in\\mathbb{R}^{d_{out}\\times r},\\ A\\in\\mathbb{R}^{r\\times d_{in}};\\ \\ \\text{task }1:\\ B^{1}_{\\text{merge}}=B_{\\text{ft},1},\\ A^{1}_{\\text{merge}}=A_{\\text{ft},1}\\ (\\text{standard LoRA});\\ \\ \\text{task } i\\ge 2:\\ Q_iR_i=\\mathrm{QR}(A_{\\text{ft},i-1}^{\\top}),\\ Q_i\\leftarrow Q_i\\,\\mathrm{sign}(\\mathrm{diag}R_i),\\ \\ A^{(0)}_{\\text{ft},i}=Q_i^{\\top}\\ (A^{(0)}A^{(0)\\top}=I_r),\\ \\ B^{(0)}_{\\text{ft},i}=B_{\\text{ft},i-1};\\ \\ (B_{\\text{ft},i},A_{\\text{ft},i})=\\text{fine-tune on }\\mathcal D_i;\\ \\ A^{i}_{\\text{merge}}=A_{\\text{ft},i},\\ \\ B^{i}_{\\text{merge}}=B^{i-1}_{\\text{merge}}+\\lambda(i)\\big(B_{\\text{ft},i}-B^{i-1}_{\\text{merge}}\\big),\\ \\ \\lambda(i)=1/\\sqrt{i};\\ \\ \\text{frozen: } W_0;\\ \\text{trained per task: one LoRA pair } (B_{\\text{ft},i},A_{\\text{ft},i})",
+   "trainable_params": "r(d_{in}+d_{out})\\ \\text{per adapted matrix, independent of the number of tasks } T\\ (\\text{storage: the merged LoRA plus the current fine-tuned LoRA, } 2r(d_{in}+d_{out}))",
+   "locus": "LoRA on the query and value projections of every attention layer (Appendix B), fixed rank 8: Llama-2-7B/13B-chat, Llama-3.2-3B, Qwen2.5-3B/7B; a rank ablation over 4, 8 and 16 on Llama-2-13B-chat finds 8 best on the standard CL benchmark and 4 best on the large-number-of-tasks benchmark",
+   "modification_kind": "additive-weight",
+   "structure": "A constant-memory recursion on one LoRA pair over a task stream, in three steps. (1) \\(A\\) is rebased: \\(A^{(0)}_{\\text{ft},i}=Q_i^{\\top}=R_i^{-\\top}A_{\\text{ft},i-1}\\) with \\(\\mathrm{diag}R_i>0\\). This moves the previous task's \\(A\\) inside its own row space to the representative with orthonormal rows. (2) \\(B\\) is warm-started from the previous fine-tuned \\(B\\) without the compensating factor \\(R_i^{\\top}\\). The starting product \\(B_{\\text{ft},i-1}R_i^{-\\top}A_{\\text{ft},i-1}\\) therefore differs from the previous adapter unless \\(R_i=I_r\\). (3) After training, \\(A\\) is overwritten (\\(A^{i}_{\\text{merge}}=A_{\\text{ft},i}\\)) and only \\(B\\) is averaged, with weight \\(1/\\sqrt i\\) taken from the OPCM continual-merging schedule. The deployed update is \\(B^{t}_{\\text{merge}}A_{\\text{ft},t}=\\sum_{i}c^{(t)}_{i}B_{\\text{ft},i}A_{\\text{ft},t}\\) with \\(c^{(t)}_{i}=\\lambda(i)\\prod_{j=i+1}^{t}(1-\\lambda(j))\\), so every past \\(B\\) is paired with the latest \\(A\\). This is only approximately coherent: each \\(A^{(0)}_{\\text{ft},i}\\) spans the row space of \\(A_{\\text{ft},i-1}\\), and training moves it by the small drift bounded below. The paper's Theorem 1, a Flora-style small-step analysis with \\(A^{(0)}A^{(0)\\top}=I_r\\), writes \\(A^s=A^{(0)}+\\eta A^{(0)}f_A(s)\\) with \\(\\|f_A(s)\\|_2\\le\\eta L^2/(1-\\eta^2L^2)\\), so \\(A\\) drifts by at most \\(\\eta^2L^2/(1-\\eta^2L^2)\\), i.e. \\(O(\\eta^2L^2)\\), while \\(\\Delta B_i\\approx-\\eta\\big(\\sum_s\\nabla_W\\mathcal L_i^{s}\\big)A^{(0)\\top}_i\\) accumulates each task's gradient in the current \\(A\\) basis. An NTK-regime forgetting/intransigence bound in \\(\\|B_tA_t-B_iA_i\\|_F\\) motivates keeping \\(\\|A_t-A_i\\|_F\\) small and merging \\(B\\) rather than \\(A\\).",
+   "mergeable": "yes",
+   "mergeable_reason": "After any task, the deployed object is one LoRA \\(B^{t}_{\\text{merge}}A^{t}_{\\text{merge}}\\) that can be folded into \\(W_0\\), or kept as a side adapter while the stream continues. There are no per-task modules and no router.",
+   "identity_at_init": "Only for the first task (standard \\(B=0\\), Gaussian \\(A\\)). Later tasks start training from \\(B_{\\text{ft},i-1}R_i^{-\\top}A_{\\text{ft},i-1}\\ne 0\\), and the merged LoRA is never zero after task 1.",
+   "key_idea": "Continual learning becomes sequential merging inside one LoRA. Each new task starts from an orthonormal-row rebasing of the previous \\(A\\) together with the previous \\(B\\). After training, \\(A\\) is replaced and \\(B\\) is averaged with weight \\(1/\\sqrt i\\), exploiting the asymmetry that \\(B\\) carries task-specific, near-orthogonal updates. Memory stays at one LoRA however many tasks arrive.",
+   "results_note": "On the standard CL, large-number-of-tasks and SuperNI benchmarks with Llama-2-7B-chat, the paper reports that SLAO outperforms all data-free baselines, including O-LoRA, InfLoRA, CorDA, MagMax, KnOTS, LoRA-LEGO and OPCM; its own discussion notes that MagMax is comparable on the standard CL benchmark. SAPT-LoRA, which replays generated pseudo-samples, is not data-free and is excluded from that claim.",
+   "relations": [
+    {
+     "target": "o-lora",
+     "type": "competes-with",
+     "note": "Baseline. O-LoRA keeps and freezes every past LoRA and constrains new ones to be orthogonal during training, so memory grows linearly in \\(T\\). SLAO keeps one LoRA and imposes orthogonality only through the initialisation of \\(A\\)."
+    },
+    {
+     "target": "inflora",
+     "type": "competes-with",
+     "note": "Baseline. InfLoRA stores all previous LoRAs and gradient subspaces and places each new \\(A\\) in an interference-free subspace. SLAO takes the new \\(A\\) from the QR basis of the previous \\(A\\)."
+    },
+    {
+     "target": "knots",
+     "type": "competes-with",
+     "note": "LoRA-merging baseline, applied sequentially. It treats \\(A\\) and \\(B\\) symmetrically and has no time-aware scaling."
+    },
+    {
+     "target": "lora-lego",
+     "type": "competes-with",
+     "note": "LoRA-merging baseline (rank-wise clustering), applied sequentially; it weights tasks equally."
+    },
+    {
+     "target": "flora-opt",
+     "type": "builds-on",
+     "note": "Theorem 1 extends Hao et al.'s Flora dynamics (\\(A\\) stays near its initialisation while \\(B\\) accumulates gradients projected onto \\(A\\)) to an orthonormal \\(A^{(0)}\\) and a nonzero warm-started \\(B^{(0)}\\)."
+    },
+    {
+     "target": "asymmetry-lora",
+     "type": "builds-on",
+     "note": "Cited (Zhu et al., 2024b) for the asymmetric roles of \\(A\\) and \\(B\\), which motivate merging only \\(B\\) and replacing \\(A\\)."
+    },
+    {
+     "target": "corda",
+     "type": "competes-with",
+     "note": "Knowledge-preserving decomposition baseline, which degrades on SuperNI."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2512.23017",
+    "https://arxiv.org/html/2512.23017",
+    "https://openreview.net/forum?id=i1Rj7yU6eF",
+    "https://iclr.cc/virtual/2026/poster/10008003"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Fuli Qiao and v1 date 2025-12-28 match. Venue: ICLR 2026 poster 10008003, 'Accept (Poster)' in iclr-2026-orals-posters.json; OpenReview forum i1Rj7yU6eF, venue 'ICLR 2026 Poster', public 2025-10-08 (year 2025 holds). Formula checked line by line against Eq. (13), Eq. (14) and Algorithm 1 of v1: QR of \\(A_{\\text{ft},i-1}^{\\top}\\) with sign fix, \\(A^{(0)}=Q^{\\top}\\), \\(B^{(0)}=B_{\\text{ft},i-1}\\), \\(A_{\\text{merge}}=A_{\\text{ft},i}\\), \\(B\\) merged with \\(\\lambda(i)=1/\\sqrt i\\) from Tang et al. (2025, OPCM). The rebasing identity \\(Q^{\\top}=R^{-\\top}A_{\\text{ft},i-1}\\) and the missing compensation of \\(B\\) follow from Eq. (13) and were re-derived; the unrolled merge weights \\(c^{(t)}_i=\\lambda(i)\\prod_{j>i}(1-\\lambda(j))\\) were re-derived from Eq. (14) with \\(\\lambda(1)=1\\). Theorem 1 and the NTK bound (Eqs. 4-6) read in Secs. 3.2 and 4.2. Locus from Appendix B and the rank ablation. All relation targets are in the bibliography (Wang et al. 2023 O-LoRA, Liang and Li 2024 InfLoRA, Stoica et al. 2025 KnOTS, Zhao et al. 2025 LoRA-LEGO, Hao et al. 2024 Flora, Zhu et al. 2024b Asymmetry, Yang et al. 2024b CorDA). No author code: the only GitHub match (sontungkieu/merge-before-forget, created 2026-07-21) states that it is an independent reproduction. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false. Semantic Scholar (2026-10-02): 11 citations, matching the file notes.",
+   "corrections": [
+    "locus: the paper states LoRA on the query and value projections at a fixed rank 8 (Appendix B), not unspecified attention projections; the rank ablation (4, 8, 16 on Llama-2-13B-chat) has 8 best on standard CL and 4 best on the large-number-of-tasks benchmark.",
+    "structure: Theorem 1 bounds the drift of \\(A\\) by \\(\\eta^2L^2/(1-\\eta^2L^2)\\), i.e. \\(O(\\eta^2L^2)\\), not \\(O(\\eta)\\); 'coherent because all \\(A\\)'s descend from one row space' softened to approximate coherence.",
+    "results_note: framed as the paper's claim, noting that MagMax is comparable on the standard CL benchmark and that SAPT-LoRA (pseudo-sample replay) is excluded.",
+    "Relation notes (o-lora, inflora, knots, flora-opt, asymmetry-lora): \\(A\\), \\(B\\), \\(T\\), \\(A^{(0)}\\) and \\(B^{(0)}\\) wrapped as math."
+   ]
+  },
+  {
+   "id": "rain-merging",
+   "name": "RAIN-Merging",
+   "full_name": "RAIN-Merging: Reasoning-Aware Instruction-attention guided Null-space projection Merging",
+   "paper_title": "RAIN-Merging: A Gradient-Free Method to Enhance Instruction Following in Large Reasoning Models with Preserved Thinking Format",
+   "authors": "Huang et al.",
+   "year": 2025,
+   "venue": "ICLR 2026 (oral)",
+   "arxiv": "2602.22538",
+   "url": "https://arxiv.org/abs/2602.22538",
+   "code_url": "https://github.com/K1nght/RAIN-Merging",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\Delta_I^{k}=W_I^{k}-W_B^{k}\\ (\\text{instruction-model task vector of module } k\\in\\{Q,K,V,O,\\text{FFN}\\}\\text{ in every layer});\\ \\ H_k=[h^{k}_t]_{t\\in\\Omega_{\\text{think}}}\\in\\mathbb{R}^{d_{in}\\times|\\Omega|}\\ (\\text{inputs of module } k \\text{ in the reasoning model at the thinking-marker positions, 150-sample reasoning calibration set});\\ \\ \\Delta_I^{\\perp,k}=\\Delta_I^{k}\\big(I-H_k(H_k^{\\top}H_k)^{+}H_k^{\\top}\\big)\\ \\Rightarrow\\ \\Delta_I^{\\perp,k}h^{k}_t=0\\ \\ \\forall t\\in\\Omega_{\\text{think}};\\ \\ g^{\\tilde k}=\\mathbb{E}_x\\big[a^{\\tilde k}-\\rho\\,u^{\\tilde k}\\big],\\ \\tilde H^{\\tilde k}=1+\\mathbb{E}_x[u^{\\tilde k}],\\ \\alpha^{\\tilde k}_\\star=\\mathrm{clip}_{[0,1]}\\big(g^{\\tilde k}/\\tilde H^{\\tilde k}\\big)\\ \\ (a,u:\\ \\text{mean attention from instruction-constrained / unconstrained response tokens to instruction tokens, 365 IFEval-style samples});\\ \\ \\theta_\\star=\\theta_R+\\lambda\\bigoplus_{k}\\alpha^{k}_\\star\\,\\Delta_I^{\\perp,k};\\ \\ \\text{frozen: } \\theta_R,\\theta_I,\\theta_B;\\ \\text{nothing is gradient-trained}",
+   "trainable_params": "0\\ \\text{gradient-trained; computed in closed form: one coefficient } \\alpha^{\\tilde k} \\text{ per attention head (FFN modules use the layer mean) and one global } \\lambda\\ (\\text{grid search over } [0,1.5])",
+   "locus": "Q, K, V, O and FFN weight matrices of an R1-style reasoning model: DeepSeek-R1-Distill-Qwen-1.5B/7B/14B/32B and DeepSeek-R1-Distill-Llama-8B. The instruction task vector \\(\\theta_I-\\theta_B\\) comes from Qwen2.5-1.5B/7B/14B/32B-Instruct or Llama-3.1-8B-Instruct and their bases. For 1.5B and 7B the reasoning model was distilled from Qwen2.5-Math, so it does not share the instruction model's base.",
+   "modification_kind": "composition-or-routing",
+   "structure": "A two-stage, data-dependent but gradient-free transformation of a full task vector before it is added to a different model, the reasoning model \\(\\theta_R\\), rather than to the base \\(\\theta_B\\) it was computed from (for the 1.5B and 7B pairs \\(\\theta_R\\) is not even fine-tuned from \\(\\theta_B\\): it descends from Qwen2.5-Math). Stage 1 right-multiplies each module's task matrix by the orthogonal projector onto the complement of the span of that module's inputs at the thinking special tokens. This is the matrix form of the paper's vectorised Eq. (4), since \\(\\Phi=H^{\\top}\\otimes I\\). The merged module then reproduces the reasoning model's outputs exactly on those inputs. Proposition 1 bounds the logit change at the marker tokens by \\(C_1\\|\\Phi\\,\\mathrm{vec}(\\Delta)\\|_2+C_2\\|\\Delta\\|_2^2\\), so after projection only the second-order term remains; the paper states the resulting KL bound as \\(O(\\|\\Delta\\|_2^2)\\), although its own inequalities give \\(O(\\|\\Delta\\|_2^4)\\). Algorithm 1 uses the ridge version \\(I-\\Phi^{\\top}(\\Phi\\Phi^{\\top}+I)^{-1}\\Phi\\), which in matrix form is \\(\\Delta\\mapsto\\Delta(I+HH^{\\top})^{-1}\\). The released code (nullspace_merge_qkvo_ffn.py) uses a ridge of \\(10^{-4}\\) solved by conjugate gradient, on positions within 5 tokens after <think> and before </think>. It also relaxes the constraint set: Q and K are constrained through linearised attention logits between each marker and its neighbours, and V, O and the three FFN matrices through projections of the output change onto two random unit readout directions per position. The full \\(\\Delta h=0\\) is not imposed. Stage 2 builds a diagonal quadratic model of an attention proxy (alignment minus \\(\\rho=10\\) times leakage), with coefficients \\(g\\) and \\(\\tilde H\\) measured at \\(\\alpha=\\mathbf 1\\). After dropping the \\(\\alpha_{(0)}\\) offset, its maximiser is \\(\\mathrm{clip}_{[0,1]}(g/\\tilde H)\\), not the Newton step \\(\\mathbf 1+g/\\tilde H\\). This gives per-head scalings. The result is a block-wise rescaling of a projected task vector: the same algebraic class as task arithmetic with per-module coefficients.",
+   "mergeable": "yes",
+   "mergeable_reason": "The output is one static weight set \\(\\theta_\\star\\) with the reasoning model's architecture. Projectors and calibration statistics are used only offline.",
+   "identity_at_init": "Not an adapter. With \\(\\lambda=0\\) (or all \\(\\alpha=0\\)) the result is the reasoning model \\(\\theta_R\\). Stage 2 expands around \\(\\alpha=\\mathbf 1\\), the plain projected merge.",
+   "key_idea": "The goal is to add instruction following to a reasoning model by task arithmetic without breaking its <think>...</think> format. The instruction task vector is first projected onto the null space of the reasoning model's module inputs at the thinking-marker tokens, so those positions compute exactly as before. It is then rescaled per attention head by a closed-form score that rewards attention from instruction-constrained output tokens to the instruction span and penalises leakage.",
+   "results_note": "Merging Qwen2.5-7B-Instruct into DeepSeek-R1-Distill-Qwen-7B, RAIN-Merging outperforms all merging baselines (Task Arithmetic, SLERP, Karcher, TIES, DARE, ACM, LEWIS, AIM) and SFT on the same calibration data on instruction-following, mathematical-reasoning and general-capability benchmarks, while trailing the instruction model slightly on instruction following.",
+   "relations": [
+    {
+     "target": "task-arithmetic",
+     "type": "builds-on",
+     "note": "Starts from the instruction-model task vector and adds it with per-module coefficients; plain Task Arithmetic is a baseline that hurts reasoning."
+    },
+    {
+     "target": "gradient-projection-memory",
+     "type": "builds-on",
+     "note": "Cited in the related-work appendix (Appendix D) as a null-space precedent from continual learning; the null-space step in Sec. 3 itself cites Adam-NSCL (Wang et al., 2021). GPM projects gradients off the span of stored input features; RAIN applies the same right-projector to a task vector, using features at the thinking tokens."
+    },
+    {
+     "target": "lora-null",
+     "type": "builds-on",
+     "note": "Cited in the related-work appendix (Appendix D). LoRA-Null puts adapters in the null space of pre-trained activations to preserve knowledge; RAIN projects a full task vector off the activations that carry the thinking format."
+    },
+    {
+     "target": "tangent-task-arithmetic",
+     "type": "builds-on",
+     "note": "Cited to read the near-orthogonality of the reasoning and instruction task vectors as weak coupling (weight disentanglement), which makes lightweight merging plausible."
+    },
+    {
+     "target": "ties-merging",
+     "type": "competes-with",
+     "note": "Data-free baseline (and the base for the DARE/ACM/LEWIS/AIM variants); it prunes from parameter statistics and ignores the output-format mismatch."
+    },
+    {
+     "target": "dare",
+     "type": "competes-with",
+     "note": "Data-free baseline (DARE-TIES)."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.22538",
+    "https://arxiv.org/html/2602.22538",
+    "https://github.com/K1nght/RAIN-Merging",
+    "https://openreview.net/forum?id=PO2iULmu5e",
+    "https://iclr.cc/virtual/2026/oral/10009682"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title, first author Zhehao Huang and v1 date 2026-02-26 match; comment '41 pages, ICLR 2026 Oral'. Venue: ICLR 2026, 'Accept (Oral)' in iclr-2026-orals-posters.json (oral 10009682, poster 10009681); OpenReview search API returns forum PO2iULmu5e, venue 'ICLR 2026 Oral', odate 2025-10-08. Year 2025 follows the catalogue convention that a public OpenReview submission counts as the first public version (as for Stable-LoRA in addendum2026-4). Formula checked against Sec. 3 Eqs. (1)-(5), (10)-(16), Proposition 1 and Algorithm 1 (Appendix F) of v1. The matrix form \\(\\Delta(I-H(H^{\\top}H)^{+}H^{\\top})\\) was re-derived from \\(\\Phi=H^{\\top}\\otimes I\\). The ridge form was re-derived via Woodbury, \\(I-\\Phi^{\\top}(\\Phi\\Phi^{\\top}+I)^{-1}\\Phi=(I+HH^{\\top})^{-1}\\otimes I\\), i.e. \\(\\Delta(I+HH^{\\top})^{-1}\\). \\(\\rho=10\\), \\([\\tilde\\alpha_l,\\tilde\\alpha_u]=[0,1]\\) and the \\(\\lambda\\) grid \\([0,1.5]\\) (step 0.1; chosen 1.0, 1.0, 0.9, 1.0) come from Appendix I and Table A5. Calibration sets: 150 Mixture-of-Thoughts and 365 IFEval-distilled samples (Sec. 3). Released code read directly (nullspace_merge_qkvo_ffn.py, nullspace_projection_compute.py, scripts/run_stage1.sh and run_stage2.sh): it uses CG with ridge \\(10^{-4}\\) and neighbourhood radius 5, but relaxed scalar constraints (see structure). The stage-2 script defaults (box \\([0,1.5]\\), leak weight 0.5) differ from the paper's \\([0,1]\\) and \\(\\rho=10\\). Results wording from Sec. 4.2. Relation targets: Ilharco et al. 2023, Saha et al. 2021 (GPM), Tang et al. 2025 (LoRA-Null, arXiv 2503.02659), Ortiz-Jimenez et al. 2023, Yadav et al. 2023 and Yu et al. 2024 are all in the bibliography. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false. Semantic Scholar (2026-10-02): 6 citations, matching the file notes.",
+   "corrections": [
+    "locus: removed 'on the same base'. As the paper's footnote states, the 1.5B and 7B reasoning models were distilled from Qwen2.5-Math, while the instruction models (and the base \\(\\theta_B\\) of the task vector) are Qwen2.5.",
+    "structure: 'rather than to the shared base' corrected for the same reason.",
+    "structure: Stage 2 is not a Newton step around \\(\\mathbf 1\\). The paper drops the \\(\\alpha_{(0)}\\) offset, so the solution is \\(\\mathrm{clip}_{[0,1]}(g/\\tilde H)\\), not \\(\\mathbf 1+g/\\tilde H\\).",
+    "structure: the released code imposes a relaxed constraint set. Q and K get attention-logit constraints near the markers; V, O and the FFN get readout-direction projections. The full projector of Eq. (4) is not imposed.",
+    "structure: Proposition 1 restated precisely. The logit change is bounded by \\(C_1\\|\\Phi\\,\\mathrm{vec}(\\Delta)\\|_2+C_2\\|\\Delta\\|_2^2\\). The paper's \\(O(\\|\\Delta\\|_2^2)\\) KL statement is looser than its own inequalities, which give \\(O(\\|\\Delta\\|_2^4)\\).",
+    "gradient-projection-memory and lora-null notes: both are cited only in Appendix D; the Sec. 3 null-space citation is Adam-NSCL."
+   ]
+  },
+  {
+   "id": "smartfed-more",
+   "name": "SmartFed (MoRE + EEQA)",
+   "full_name": "SmartFed: Mixture of Rank-Wise Experts (MoRE) with Elastic Expert Quota Allocation (EEQA) for reusing existing LoRAs in federated fine-tuning",
+   "paper_title": "Elastic Mixture of Rank-Wise Experts for Knowledge Reuse in Federated Fine-Tuning",
+   "authors": "Wu et al.",
+   "year": 2025,
+   "venue": "ICML 2026 (spotlight)",
+   "arxiv": "2512.00902",
+   "url": "https://arxiv.org/abs/2512.00902",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\{(B_n,A_n)\\}_{n=1}^{N}\\ \\text{retrieved pre-trained LoRAs (frozen)},\\ \\ E_m(x)=b_m a_m^{\\top}x,\\ \\ b_m=(B_n)_{:,i}\\in\\mathbb{R}^{d_{out}},\\ a_m^{\\top}=(A_n)_{i,:}\\in\\mathbb{R}^{1\\times d_{in}},\\ \\ m=1,\\dots,M,\\ M=\\sum_n r_n;\\ \\ g=\\mathrm{softmax}(W_{\\text{router}}x),\\ W_{\\text{router}}\\in\\mathbb{R}^{M\\times d_{in}};\\ \\ \\tilde g=g\\odot\\mathbf m,\\ \\mathbf m=\\mathrm{TopK}_{q_j}(g)\\in\\{0,1\\}^{M};\\ \\ h=W_0x+\\sum_{m=1}^{M}\\tilde g_m\\,b_m a_m^{\\top}x;\\ \\ s_{E_m}=1-\\cos(x,E_m(x)),\\ S^{\\text{Sum}}_j=\\sum_m\\tilde g_m s_{E_m},\\ \\alpha_j=\\mathrm{softmax}_j(S^{\\text{Sum}}_j),\\ q_j=\\mathrm{EEQA}\\big(\\alpha;\\ \\textstyle\\sum_j q_j=KJ,\\ q_j\\le M\\big);\\ \\ \\text{frozen: } W_0 \\text{ and every LoRA expert};\\ \\text{trained (federated, FedAvg): the routers } W_{\\text{router}}",
+   "trainable_params": "M\\,d_{in}=\\big(\\textstyle\\sum_n r_n\\big)d_{in}\\ \\text{per adapted matrix (router only)};\\ 64\\,d_{in}\\ \\text{in the paper's setting (two rank-32 LoRAs on } W_q,W_v)",
+   "locus": "Query and value projections of every attention layer, where the reused LoRAs sit, in LLaMA2-7B/13B and Qwen2-7B; one router per adapted matrix",
+   "modification_kind": "composition-or-routing",
+   "structure": "A library of frozen LoRAs is split into a pool of rank-one experts \\(\\{b_ma_m^{\\top}\\}_{m=1}^{M}\\) per matrix and recombined per token by a softmax router with top-\\(q_j\\) sparsification: \\(\\Delta W(x)=\\sum_m\\tilde g_m(x)\\,b_ma_m^{\\top}=\\widehat B\\,\\mathrm{diag}(\\tilde g(x))\\,\\widehat A\\), with \\(\\widehat B=[B_1|\\cdots|B_N]\\in\\mathbb{R}^{d_{out}\\times M}\\) and \\(\\widehat A=[A_1;\\cdots;A_N]\\in\\mathbb{R}^{M\\times d_{in}}\\). This is an input-dependent diagonal core in the concatenated LoRA basis. It avoids the cross terms \\(B_1A_2,\\ B_2A_1\\) that factor averaging creates (the paper's Eq. 5), and it is finer than MoLE's one gate per LoRA. The kept gates are not renormalised after top-\\(K\\) masking. EEQA redistributes a fixed total budget \\(KJ\\) of active experts over the \\(J\\) adapted matrices, in proportion to softmax-normalised importance (gate-weighted cosine deviation between a matrix's input and its experts' outputs), capped at \\(M\\) per matrix and topped up greedily. Only router weights and importance scores travel between devices and server.",
+   "mergeable": "no",
+   "mergeable_reason": "The gates \\(\\tilde g(x)\\) depend on each token through a softmax and a top-\\(K\\) mask, so \\(\\Delta W(x)\\) changes per token and cannot be folded into \\(W_0\\). The full expert pool must be kept. Fixing the gates to constants \\(c\\) would give a static merge \\(\\widehat B\\,\\mathrm{diag}(c)\\,\\widehat A\\), but that is not what is trained.",
+   "identity_at_init": "No. The experts are pre-trained nonzero LoRAs, so at initialisation the model already applies a gated mixture of their rank-one components; it is not the bare base model.",
+   "key_idea": "Instead of training LoRA from scratch on each device, SmartFed reuses existing task LoRAs. Each LoRA is split into its rank-one components, and a federated-trained router sparsely mixes them per token. A budget allocator gives more active experts to the matrices whose experts change representations most.",
+   "results_note": "Across three skill-composition tasks on LLaMA2-7B/13B and Qwen2-7B, SmartFed reports up to 10.21% higher average performance, 3.95x faster convergence, 31.47x lower communication cost and 3.61x lower energy use than existing federated and LoRA-reuse methods.",
+   "relations": [
+    {
+     "target": "mole",
+     "type": "builds-on",
+     "note": "MoLE gates whole LoRA outputs. MoRE moves the gate down to rank-one components and adds top-\\(K\\) sparsity, which also bounds latency as more LoRAs are retrieved. MoLE is also a federated-adapted baseline."
+    },
+    {
+     "target": "lorahub",
+     "type": "competes-with",
+     "note": "Baseline. LoraHub merges retrieved LoRAs into one static composite; SmartFed routes per token instead."
+    },
+    {
+     "target": "lora-flow",
+     "type": "competes-with",
+     "note": "Baseline: dynamic layer-wise fusion weights over whole LoRAs."
+    },
+    {
+     "target": "adalora",
+     "type": "builds-on",
+     "note": "Cited as the inspiration for non-uniform, importance-driven budget allocation across matrices (EEQA); AdaLoRA is also adapted to the federated setting as a knowledge-free baseline."
+    },
+    {
+     "target": "lora-lego",
+     "type": "competes-with",
+     "note": "Not cited. LoRA-LEGO also splits LoRAs into rank-wise units, but clusters them into one static merged LoRA rather than routing them per token."
+    },
+    {
+     "target": "pem-arithmetic",
+     "type": "competes-with",
+     "note": "Baseline ('Linear Arithmetic', Zhang et al., 2023a). Weighted averaging of the LoRA factors produces the cross terms \\(\\lambda_1\\lambda_2B_1A_2\\) and \\(\\lambda_1\\lambda_2B_2A_1\\) of the paper's Eq. (5), which MoRE avoids by routing rank-one components."
+    },
+    {
+     "target": "fedit",
+     "type": "competes-with",
+     "note": "Knowledge-free baseline: FedIT trains a LoRA from scratch with FedAvg on each task, whereas SmartFed trains only the router over retrieved LoRAs."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2512.00902",
+    "https://arxiv.org/html/2512.00902",
+    "https://openreview.net/forum?id=HdsEUNo4C4",
+    "https://icml.cc/virtual/2026/poster/65026"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv export API (2026-10-02): title 'Elastic Mixture of Rank-Wise Experts for Knowledge Reuse in Federated Fine-Tuning', first author Yebo Wu, single version v1 2025-11-30, matches. Venue: icml-2026-orals-posters.json lists poster 65026, 'Accept (spotlight)', titled \"Don't Reinvent the Wheel, Just Realign the Spokes: Resource-Efficient Federated Fine-Tuning via Rank-Wise Expert Assembly\". It has the same four authors, and its OpenReview record HdsEUNo4C4 (venue 'ICML 2026 spotlight') has an abstract and TL;DR naming SmartFed, MoRE and EEQA, so it is the same work. The same paper under the arXiv title is an ICLR 2026 withdrawn submission (OpenReview HFhyCyln4X, public 2025-10-08), so 2025 is the first public year either way. Formula checked against Sec. 3.1-3.2 (Eqs. 6-12, Algorithm 1) of arXiv v1; the ICML camera-ready PDF was behind the OpenReview bot check and was not read. The reused LoRAs (\\(r=32\\), \\(\\alpha=64\\), on Query and Value; Appendix A) give \\(M=64\\) and the \\(64\\,d_{in}\\) router count. Code: the ICML and OpenReview records link github.com/benmagnifico/SmartFed, but that repository returns 404 on 2026-10-02 (the user benmagnifico, Jingguang Li, exists with 12 other public repos), so code_url stays empty. Baselines from Sec. 4.2: FedIT, FwdLLM, DoFIT, FedAdapter, AdaLoRA, Linear Arithmetic, LoRAHub, MoLE, LoRA-Flow. LoRA-LEGO is not cited. HF PEFT main 9146289 (v0.21.2, 2026-10-01): src/peft/tuners has no tuner, LoRA variant or merge helper for this method, so hf_peft stays false. Semantic Scholar (2026-10-02): 8 citations, matching the file notes.",
+   "corrections": [
+    "Added relations pem-arithmetic (competes-with; the 'Linear Arithmetic' baseline, Zhang et al. 2023a) and fedit (competes-with; FedIT baseline).",
+    "adalora and mole notes: noted that both are also adapted as federated baselines.",
+    "Code: the official repository announced on OpenReview and the ICML site (github.com/benmagnifico/SmartFed) is a dead link (404 on 2026-10-02); recorded in verification_notes, code_url left empty.",
+    "Year evidence: an earlier public version exists as an ICLR 2026 withdrawn submission (OpenReview HFhyCyln4X, 2025-10-08)."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "All six requested methods exist, are PEFT or adapter-composition methods in the catalogue's scope, and none duplicates a catalogued id (checked against existing_index.json; the six arXiv ids appear only in sweep2026/). Each formula was read from the arXiv HTML method section. Venues were checked against the official iclr.cc/icml.cc virtual-site JSON and OpenReview, using the notes/search endpoint because the direct notes endpoint returned a challenge page. CoA-LoRA: ICLR 2026 poster (9OUg0nJE72). AdaRank: ICLR 2026 poster (fTygcJVOni). Merge before Forget/SLAO: ICLR 2026 poster (i1Rj7yU6eF). RAIN-Merging: ICLR 2026 oral (PO2iULmu5e). SmartFed: ICML 2026 spotlight (HdsEUNo4C4), published at ICML under the title \"Don't Reinvent the Wheel, Just Realign the Spokes: Resource-Efficient Federated Fine-Tuning via Rank-Wise Expert Assembly\"; I read the arXiv v1 (2025-11-30). Low-Rank Ternary Adaptation: ECCV 2026 poster 5924 (official eccv.ecva.net list; LNCS vol. 17015 per its arXiv comment). Year follows the first public version: RAIN-Merging is 2025, not 2026, because its ICLR submission was public on OpenReview from 2025-10-08 (arXiv v1 2026-02-26). CoA-LoRA, AdaRank and SLAO were also public in 2025; only the ternary paper is a 2026 first posting. CoA-LoRA caveat (hence medium confidence): the task description's 'one shared LoRA' matches the released code but not the paper text. Paper Eq. (2) uses per-configuration factors L^(C) from the SVD of W_0 minus the quantised weights. In run_glue.py (lorasync), one trained LoRA pair plus the mapper is loaded into every configuration. Both readings are recorded in its structure field. CoA-LoRA claims no millisecond adaptation latency; that phrase came from the sweep summary and was dropped. Low-Rank Ternary Adaptation is high-rank and multiplicative despite its title; the 'low-rank' refers to the small Kronecker factors. The RAIN-Merging projector is given in matrix form, Delta(I - P_H), which I derived from the paper's vectorised Kronecker form. Its Algorithm 1 actually uses a ridge version, equal to Delta(I + H H^T)^{-1}. SLAO's warm start does not reproduce the previous adapter: B is not compensated for the QR rebasing of A. This follows directly from Eq. (13) and is noted in its structure field. SmartFed's id is smartfed-more, to avoid the catalogued 'more' (Monarch Rectangular Experts, 2408.17383). Code: official repositories exist for CoA-LoRA, the ternary method, AdaRank and RAIN-Merging. SLAO has none (only an independent reproduction). SmartFed's ICML/OpenReview record links github.com/benmagnifico/SmartFed, which returned 404 on 2026-10-02. None is in Hugging Face PEFT (tuners directory and releases through v0.21.2, 2026-10-01, checked). Semantic Scholar citation counts (2026-10-02): CoA-LoRA 1, ternary 0, AdaRank 14, SLAO 11, RAIN-Merging 6, SmartFed 8. No standalone theory papers were added; SLAO's NTK and Flora-style dynamics analysis and RAIN's KL bound (Proposition 1) are recorded inside their method entries.",
+ "verification_summary": "Adversarial check on 2026-10-02 of all 6 methods (no papers) in addendum2026b-2. All 6 were confirmed and kept; none was dropped. Metadata: all six arXiv ids were fetched from the export API. Titles, first authors (Ye, Manolache, Lee, Qiao, Huang, Wu) and first-version dates match. Years follow the earliest public version: CoA-LoRA, AdaRank, SLAO and SmartFed are 2025 on arXiv alone; RAIN-Merging is 2025 via its OpenReview submission (odate 2025-10-08; arXiv v1 2026-02-26); the ternary paper is 2026. Venues: CoA-LoRA (10011118), AdaRank (10008234) and SLAO (10008003) are 'Accept (Poster)' and RAIN-Merging (10009682) 'Accept (Oral)' in iclr-2026-orals-posters.json, with matching OpenReview forum ids. SmartFed is poster 65026, 'Accept (spotlight)', in icml-2026-orals-posters.json under its new title; OpenReview HdsEUNo4C4 names SmartFed, MoRE and EEQA, and the arXiv title also survives as a withdrawn ICLR 2026 submission (HFhyCyln4X). The ternary paper is now confirmed on the official ECCV 2026 list (poster 5924) rather than only by its arXiv comment. Formulas were checked against the method sections of the latest arXiv HTML versions and, where code exists, against the released code (CoA-LoRA lora_utils.py and run_glue.py; ternary BitLinearPackedAdapters.py; RAIN nullspace_merge_qkvo_ffn.py and the stage scripts). HF PEFT main 9146289 / v0.21.2 has none of the six, so hf_peft stays false. All ids are new against existing_index.json. All 37 relation targets (33 original plus 4 added) resolve to catalogued ids; four relations were added, each confirmed in the paper's bibliography: coa-lora -> flora-opt, ternary -> kadaptation, smartfed -> pem-arithmetic and smartfed -> fedit. Semantic Scholar counts (1, 0, 14, 11, 6, 8) match the notes. Substantive fixes: (1) RAIN-Merging. The 1.5B and 7B reasoning models descend from Qwen2.5-Math, not the instruction model's base, so 'same base' was removed from locus and structure. Stage 2 is the clipped maximiser \\(g/\\tilde H\\) after dropping \\(\\alpha_{(0)}\\), not a Newton step around \\(\\mathbf 1\\). The released code imposes a relaxed constraint set (attention-logit constraints for Q/K, two random readout directions for V/O/FFN), not the full projector. Proposition 1 was restated, and GPM and LoRA-Null are cited only in Appendix D. (2) SLAO. The paper adapts the query and value projections at fixed rank 8. Theorem 1 bounds the drift of \\(A\\) by \\(O(\\eta^2L^2)\\), not \\(O(\\eta)\\). The SOTA claim is now framed as the paper's, with MagMax comparable on standard CL. (3) Ternary adaptation. \\(2d\\) parameters holds only for perfect-square \\(d\\); Llama-3.2-1B's square layers use \\(2.5d\\), about 737k in total (0.06%). The Kronecker-rank claim is qualified. (4) CoA-LoRA. Exact mapper counts and the \\(r=64\\) size were added; LayerNorm is a trained component; the asymmetry note now records that the paper's 'signal in \\(L_2\\)' (input side) runs opposite to the cited finding. The paper-versus-code question of whether the LoRA pair is trained was confirmed in code, so confidence stays medium. (5) SmartFed. The official code link announced on OpenReview and ICML (github.com/benmagnifico/SmartFed) returns 404, so code_url stays empty. (6) AdaRank. Iso-CTS was added as a base merger. Math in prose fields (full_name, locus, structure, mergeable_reason, identity_at_init, key_idea, results_note, relation notes, verification_notes, corrections) is wrapped in \\( \\). All 296 math fragments, formula_latex and trainable_params render under KaTeX without errors. The mergeable, identity_at_init and modification_kind values were re-derived and left unchanged."
+}

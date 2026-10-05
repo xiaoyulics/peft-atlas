@@ -1,0 +1,366 @@
+% Exposé IV. The lens: tangent and cotangent methods
+% Sources: theory/framework.md (Exposé IV), site/sections/07-lens.html, theory/propositions.json (IV.2-IV.4).
+\section{The lens: tangent and cotangent methods}\label{sec:lens}
+
+Backpropagation pairs every map with its reverse derivative, so a method can shape what the model expresses on the
+forward side or compress the gradient on the backward side. For linear methods and optimizers that read only their
+gradients (no weight decay, no clipping of the full gradient), the two sides give the same weights, and GaLore becomes
+one-sided LoRA with a moving frame and carried optimizer state.
+
+\subsubsection{Two sides of one port}\label{sec:lens-hook}
+
+A layer does two jobs in training. Forward, it turns parameters and inputs into outputs. Backward, it turns a cotangent
+at the output into cotangents at the input and at the parameters. Backpropagation keeps the pair together, and a
+category theorist calls it a \emph{lens} (\bgref{B.17}).
+
+Every method in Exposés~\ref{sec:slice} to~\ref{sec:fibres} changes the forward job, replacing the parameter port
+$\Theta$ by a smaller space $Q$ and a map $\rho:Q\to\Theta$. A second family edits only the backward job. GaLore
+\citep{zhao2024galore} compresses the weight gradient $G$ to $P^\top G$, with $P$ from an SVD of $G$, runs Adam on that
+small matrix and maps the result back with $P$. Every weight trains; only the optimizer state is small. LISA
+\citep{pan2024lisa} and MeZO \citep{malladi2023fine} follow the same pattern.
+
+When $\rho$ is linear the two families meet. The pullback of the forward method is then the compression of a backward
+method, and an optimizer that reads only its gradients cannot tell the two apart. The equivalence between GaLore and
+one-sided LoRA is due to \citet{xtorrobahennigen2025duality}, who prove a duality between linear gradient
+transformations and adapters (their Thm~1 and Cor.~3, with weight decay in their App.~B). The frozen-$A$ case under
+SGD, with random projections, appears earlier in \citet{hao2024flora}. Our additions are the lens bookkeeping, the
+explicit hypotheses on the optimizer, and the table that sorts the cotangent family
+(Table~\ref{tab:lens-schedule}).
+
+\subsubsection{Backpropagation as a lens}\label{sec:lens-functor}
+
+In the language of \thmref{Definition}{I.1}, a layer is a parametrised map $f:P\times X\to Y$. Its reverse derivative
+$\mathsf R[f](x,y)=J_f(x)^\top y$ takes an output cotangent to an input cotangent, parameters included, and
+backpropagation is the 2-functor
+\begin{equation}\label{eq:lens-functor}
+  \Para(\mathsf R):\Para(\mathcal C)\longrightarrow\Para(\Lens(\mathcal C)),\qquad f\longmapsto(f,\mathsf R[f]).
+\end{equation}
+The parametrised-map construction and the reading of backpropagation as a functor into lenses are due to
+\citet{fong2017backprop} and \citet{cruttwell2021categorical} (\bgref{B.16}, \bgref{B.17}).
+
+A reparametrisation $\rho$ is a 2-cell, so the functor turns it into a lens $(\rho,\mathsf R[\rho])$, and a
+reparametrisation therefore acts on both sides of the parameter port. Its tangent side is the image, which is what the
+method can \emph{express} (Exposé~\ref{sec:image}). Its cotangent side $\mathsf R[\rho](q,\gamma)=D\rho_q^\top\gamma$
+pulls the weight gradient back to $Q$ and, with the rates $\Lambda$, induces the cometric $K=D\rho\,\Lambda\,D\rho^\top$
+(\thmref{Definition}{III.1}, \bgref{D.23}), which is how the method \emph{moves}. A lens need not come from a map,
+though, and a backward half written down directly gives the second family. The two kinds of lens on the parameter port
+are
+\[
+\begin{tikzcd}[column sep=large,row sep=normal]
+  Q \arrow[r,"\rho"] & \Theta \\
+  T^*_qQ & T^*_{\rho(q)}\Theta \arrow[l,"D\rho_q^{\top}"']
+\end{tikzcd}
+\qquad\qquad
+\begin{tikzcd}[column sep=large,row sep=normal]
+  & \Theta \arrow[r,"\id_\Theta"] & \Theta \\
+  T_\theta\Theta & S \arrow[l,"a_t"'] & T^*_\theta\Theta \arrow[l,"c_t"']
+\end{tikzcd}
+\]
+on the left a forward method, whose backward half is forced by its forward half, and on the right a backward method,
+whose forward half is the identity and whose backward half is chosen freely.
+
+\begin{definition}{IV.1}{forward and backward methods}
+\begin{itemize}
+  \item A \textbf{forward} method acts on the parameter port by a lens in the image of $\mathsf R$, namely
+  $(\rho,\mathsf R[\rho])$.
+  \item A \textbf{backward}, or cotangent-side, method acts by a lens whose forward part is $\id_\Theta$ and whose
+  backward part is a \emph{compression} $c_t:T^*_\theta\Theta\to S$ into a state space $S$, paired with an
+  \emph{anchor} $a_t:S\to T_\theta\Theta$. The update is
+  \begin{equation}\label{eq:lens-backward-update}
+    \theta\leftarrow\theta-\eta\,a_t\big(\mathrm{opt}(c_t(\nabla L))\big).
+  \end{equation}
+\end{itemize}
+Table~\ref{tab:lens-backward} lists examples.
+\end{definition}
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Backward methods as compression--anchor pairs (\thmref{Definition}{IV.1}). The last row is the only reading
+of Flora as published in the form of \thmref{Definition}{IV.1}, the trivial lens with all compression inside
+$\mathrm{opt}$.}\label{tab:lens-backward}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{0.24\linewidth}@{}}
+\toprule
+\headrow \textbf{Method} & \textbf{Compression $c_t$} & \textbf{Anchor $a_t$} \\
+\midrule
+GaLore \citep{zhao2024galore} & $P_t^\top$, with $P_t$ from a gradient SVD & $P_t$ \\
+GaLore with a random projector \citep{xtorrobahennigen2025duality,hao2024flora} & as GaLore, with $P_t$ random & $P_t$ \\
+LISA \citep{pan2024lisa} & layer-block coordinate projection & the same projection \\
+MeZO \citep{malladi2023fine} & $g\mapsto\langle z_t,g\rangle$, estimated by finite differences without a backward pass &
+$\lambda\mapsto\lambda z_t$ \\
+\midrule
+Flora as published \citep{hao2024flora} & identity: only the momentum or accumulation buffer is compressed, by a random
+$A_t$, inside $\mathrm{opt}$ & identity (full-space Adafactor step) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A backward method has its own cometric $K_t=a_tc_t$ (\thmref{Definition}{III.1}), for instance $K(G)=PP^\top G$ for
+GaLore under SGD. The update must lie in the image of the anchor. Read with their projections as anchors, Flora as
+published \citep{hao2024flora}, APOLLO \citep{zhu2024apollo} and Fira \citep{chen2024fira} make updates that leave
+$\operatorname{im}a$, so they are not backward methods in the sense of \thmref{Definition}{IV.1} beyond the trivial
+reading with compression and anchor the identity, which the last row of Table~\ref{tab:lens-backward} records for
+Flora. Flora compresses its momentum or gradient accumulator with a
+random projection and hands the decompressed tensor to Adafactor \citep{shazeer2018adafactor}, which acts in the full
+space, so its update need not lie in the image of the projection. On resampling it transports its momentum to the new
+frame. It fits \thmref{Definition}{IV.1} with a nontrivial anchor only in an idealised form with an SGD or heavy-ball
+base.
+
+\subsubsection{The degree-one collapse}\label{sec:lens-collapse}
+
+If $\rho(C)=W_k+\mathcal LC$, training $C$ and running the backward method with $c=\mathcal L^*$, $a=\mathcal L$ feed
+the optimizer the same gradients $\mathcal L^*G$ and so make the same weight updates. A curved $\rho$, such as LoRA's
+$BA$, separates them after one step, and so does an optimizer that reads the parameter tensor, which is $C$ in one
+procedure and $W$ in the other.
+
+\begin{proposition}{IV.2}{the degree-one collapse; known, \citet{xtorrobahennigen2025duality} for GaLore (their Thm~1
+and Cor.~3, App.~B for weight decay) and \citet{hao2024flora} for random projections}
+Let $\rho_k(C)=W_k+\mathcal LC$ with $\mathcal L$ linear and $C_0=0$. Let $\mathrm{opt}$ be a first-order optimizer,
+with no coupled or decoupled weight decay, whose state and output depend only on the sequence of gradients it is fed,
+and which does not read the parameter tensor: SGD, heavy-ball or Nesterov momentum, Adam or AMSGrad, or Adafactor with
+\texttt{scale\_\allowbreak parameter=False} (fixed or relative step, with its factorisation applied to the compressed gradient in
+the same tensor shape as $C$). Run both procedures below with the same implementation of $\mathrm{opt}$, on the same
+minibatches, and from the same optimizer state, fresh or carried over. Then they produce the same $W$-trajectory over a
+period:
+\begin{itemize}
+  \item training $C$ with $\mathrm{opt}$ and merging at the end of the period;
+  \item the backward method with $c=\mathcal L^*$ and $a=\mathcal L$, started at $W_k$.
+\end{itemize}
+AdamW with $\lambda>0$, LAMB and LARS trust ratios, parameter-scaled Adafactor (\texttt{scale\_\allowbreak parameter=True}, the
+default in HF and in \texttt{galore\_torch}'s \texttt{GaLoreAdafactor}) and global-norm clipping of the full gradient
+(such as HF Trainer's default \texttt{max\_grad\_norm=1.0}, whenever it triggers) all break the identity. Injectivity
+of $\mathcal L$ is not needed.
+
+In particular, on each matrix that GaLore projects (its other parameters train in full in both procedures), GaLore with
+a projector $P_k$ fixed on each period equals one-sided LoRA $W_k+P_kC$ (frozen $B=P_k$, or frozen $A$ when projecting
+on the right), merged and re-based every period, with $C$'s optimizer state (moments and step counter) carried over
+unchanged across re-basings, with no reset. $P_k$ must be exactly GaLore's matrix, signs and column order included; its
+span alone does not suffice, because the state is reused without transport. ReLoRA-style resets give a different
+trajectory. The identity is exact with weight decay $0$, no full-gradient clipping, and an optimizer from the admissible
+class; \texttt{galore\_torch}'s \texttt{GaLoreAdafactor} defaults to \texttt{scale\_\allowbreak parameter=True} and is excluded.
+\texttt{GaLoreAdamW} is the transformers-style AdamW, which adds $\varepsilon$ to $\sqrt v$ before the bias
+correction, so the LoRA side must use the same implementation. GaLore's scale $\alpha$ multiplies the optimizer output,
+so it acts as a learning-rate factor; a LoRA-style scale inside $\rho$ gives a different trajectory under Adam with
+$\varepsilon>0$.
+\end{proposition}
+
+\begin{remark*}{scale and implementation}
+Moving GaLore's $\alpha$ inside $\rho$ as a LoRA scale multiplies the compressed gradient by $\alpha$. Under Adam this
+gives GaLore's trajectory only at $\varepsilon=0$, or with the LoRA side's $\varepsilon$ multiplied by $\alpha$ as well.
+This is the exchange of scale for learning rate and $\varepsilon$ on the hyperparameter torus of
+\thmref{Theorem}{III.10}. Both sides must also run the same implementation: \texttt{galore\_torch}'s AdamW adds
+$\varepsilon$ to $\sqrt v$ before the bias correction, as in transformers, and swapping in \texttt{torch.optim.Adam} on
+the LoRA side moves the trajectory measurably (see the check below).
+\end{remark*}
+
+\noindent\labelsf{Num}\enspace In a toy check under Adam the two procedures agree to $7\times10^{-16}$ over one
+period, and to $5\times10^{-15}$ over four periods with the state carried on both sides. Against the official
+\texttt{galore\_torch} optimizers (least squares, $W\in\R^{6\times10}$, $r=2$, $T=7$, four periods, total movement
+$0.046$), the two procedures agree to $8\times10^{-17}$ with the state carried over. Resetting the LoRA side's state
+separates them by $0.029$, weight decay $0.1$ by $0.020$, HF-default Adafactor by $0.030$ (against $6\times10^{-17}$
+with \texttt{scale\_\allowbreak parameter=False}), and flipping the sign of one column of $P_k$, with the state carried, by $0.12$.
+Using \texttt{torch.optim.Adam} on the LoRA side moves the trajectory by about $4\times10^{-5}$, and placing $\alpha$
+inside $\rho$ by $0.019$ at $\varepsilon=10^{-6}$, with exact agreement at $\varepsilon=0$. The companion site reruns a
+check of this kind live (Appendix~\ref{app:repro}).
+
+\begin{explains}
+Beyond one-sided LoRA, GaLore adds two ingredients: a frame read off the gradient's SVD, and the carry-over of optimizer
+state across re-basings. The carry-over involves no change of basis. Moments written in the coordinates of $P_{k-1}$
+are read as coordinates for $P_k$. Projection-aware state updates, such as LDAdam \citep{xrobert2025ldadam}, and Flora
+transport the state instead. The equivalence classifies the cotangent methods whose optimizer satisfies its hypotheses.
+Table~\ref{tab:lens-schedule} sorts them by where the projector comes from and how often it changes; its LoRA and
+ReLoRA row is a contrast row outside the equivalence.
+\end{explains}
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{The cotangent family by projector (rows) and schedule (columns). \thmref{Proposition}{IV.2} covers the first
+three rows under its optimizer hypotheses, except EVA and LoRA-GA, which initialise two-sided LoRA and sit in the frozen
+column only for their first step. The last row is a contrast row outside the equivalence.}\label{tab:lens-schedule}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.19\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\headrow \textbf{Projector / schedule} & \textbf{Frozen} & \textbf{Re-based periodically} & \textbf{Resampled every step} \\
+\midrule
+random & LoRA-FA \citep{zhang2023lora}, with $K\propto GA_0^\top A_0$ under SGD$^{a}$ & GaLore with a random projector
+\citep{xtorrobahennigen2025duality,hao2024flora}; idealised Flora$^{b}$ & MeZO \citep{malladi2023fine} (rank $1$,
+global), up to its finite-difference estimator \\
+\addlinespace
+gradient or data SVD & EVA \citep{paischer2024parameter}, LoRA-GA \citep{wang2024lorab} (first step only) & GaLore
+\citep{zhao2024galore} & GaLore with $T=1$ \\
+\addlinespace
+coordinate blocks & BitFit \citep{benzaken2021bitfit}, FISH \citep{sung2021training}, LN-tuning
+\citep{zhao2023tuning} & LISA \citep{pan2024lisa} & block coordinate descent \\
+\addlinespace
+two-sided, state-dependent (contrast) & LoRA \citep{hu2021lora} & ReLoRA \citep{lialin2023relora} & none in use \\
+\bottomrule
+\end{tabularx}
+\par\smallskip
+\begin{minipage}{\linewidth}\scriptsize
+$^{a}$\,For the original method under SGD. HF PEFT's LoRA-FA optimizer preconditions by $(A_0A_0^\top+\delta I)^{-1}$,
+which in the undamped limit gives the row-space projector $GP_V$ of \thmref{Proposition}{III.4}(c); its Adam layer
+makes the update nonlinear in $G$.\quad
+$^{b}$\,Flora's Alg.~2 with an SGD or heavy-ball base, with the momentum transported at resampling instead of carried
+over; Flora as published, with an Adafactor base, is outside \thmref{Definition}{IV.1} and outside
+\thmref{Proposition}{IV.2}.
+\end{minipage}
+\end{table}
+
+\thmref{Proposition}{IV.2} covers the first three rows of Table~\ref{tab:lens-schedule} under its optimizer hypotheses,
+except EVA and LoRA-GA, which initialise two-sided LoRA and sit in the frozen column only for their first step; it
+covers MeZO up to the finite-difference error of its estimator. LoRA's map $(B,A)\mapsto W_0+sBA$ has degree
+two, so its cometric moves with the state (\thmref{Observation}{III.2}) and the collapse does not apply. The other
+frozen entries gain nothing from merge-and-restart (\thmref{Theorem}{V.3}, corollary~2); their re-based neighbours move
+the frame and can reach all of weight space. The LoRA-FA cometric holds for the original method of
+\citet{zhang2023lora} under SGD; the LoRA-FA optimizer of HF PEFT \citep{xmangrulkar2022peft} gives the row-space projector of
+\thmref{Proposition}{III.4}(c), as noted under the table.
+
+Flora proper is not in the table. Its Adafactor step acts on the full gradient, with parameter scaling by default, so
+its steps are not confined to $\operatorname{im}P_t$ and \thmref{Proposition}{IV.2} does not apply; like LDAdam, it
+transports its optimizer state. Only the idealised form with an SGD or heavy-ball base sits in the random, re-based
+cell, and there its momentum is transported rather than carried.
+
+\subsubsection{When a backward method is a forward one}\label{sec:lens-integrability}
+
+A backward method chooses at each weight a space of directions $D_\theta=\operatorname{im}a(\theta)$. It reads as a
+forward method only if these directions fit together into $k$-dimensional surfaces, the images of immersive
+parametrisations (\bgref{C.4}). Frobenius' theorem tests this (\bgref{D.25}, \auxref{B.31}). The bracket $[X,Y]$, the gap by which a
+small loop along $X$, $Y$, $-X$, $-Y$ fails to close, must stay in $D$. Discrete steps and the optimizer's metric ask
+for more.
+
+\begin{proposition}{IV.3}{integrability; after Frobenius' theorem}
+Let $D$ be a smooth distribution of constant rank $k$ on an open set $U\subseteq\Theta$, for instance the anchor
+distribution $D_\theta=\operatorname{im}a(\theta)$ of a time-independent backward method. Then $D$ is involutive on
+$U$ if and only if through every $\theta\in U$ passes an injective immersion $\rho_\theta:(\R^k,0)\to(U,\theta)$ with
+$\operatorname{im}D\rho_\theta=D$ along its image. A single such $\rho$ through $\theta_0$ gives involutivity only
+along $\operatorname{im}\rho$. For example, $D=\spanop\{\partial_x,\ \partial_y+xz\,\partial_z\}$ on $\R^3$ has
+$[\partial_x,\partial_y+xz\,\partial_z]=z\,\partial_z\notin D$ off $z=0$, yet the plane $z=0$ is an integral manifold.
+
+The dynamic content needs separate hypotheses.
+\begin{itemize}
+  \item In continuous time, if $D$ is involutive, a backward flow with $\dot\theta\in D_\theta$ stays on the leaf
+  through $\theta_0$.
+  \item In the discrete update \eqref{eq:lens-backward-update} of \thmref{Definition}{IV.1}, the iterates stay on a
+  leaf for all step sizes and all optimizer outputs $s$ (all losses) if and only if that leaf contains
+  $(\theta+D_\theta)\cap U$ at every iterate, that is, if and only if the leaves are affine; an anchor constant over
+  the period gives this (\thmref{Proposition}{IV.2}).
+  \item Under gradient flow, dynamic equivalence with a forward lens $(\rho,\mathsf R[\rho])$ forces matching frames,
+  $a_tc_t=D\rho\,\Lambda\,D\rho^\top$ along the trajectory. Hence $K=ac$ is symmetric positive semidefinite and, for
+  injective $a$, $c=Ma^\top$ with $M$ symmetric positive semidefinite on $S$, possibly depending on $\theta$. If in
+  addition $\rho$ is an immersion with $\dim Q=\rk D$, then $\rho$ is a local isometry from $(Q,\Lambda^{-1})$ onto the
+  leaf with metric $(aMa^\top)^{-1}|_D$, so that metric must be flat. Forward methods with gauge fibres escape this
+  requirement: $\rho(B)=BB^\top$ on symmetric matrices induces the curved Bures--Wasserstein metric, and balanced
+  full-rank LoRA also induces a curved leaf metric. For discrete steps, exact agreement for every step size further
+  forces $\rho$ to be affine along each horizontal line $q+t\,\Lambda D\rho_q^\top g$.
+\end{itemize}
+
+\emph{Instances.} Every projector-type backward method of Table~\ref{tab:lens-backward} (GaLore with any period $T$
+and any projector, its random-projector variant, LISA, MeZO) has an anchor that does not depend on $\theta$ within its
+period. Its distribution is constant, hence trivially involutive with affine leaves (vacuously at $T=1$, where a period
+is a single step). Under the optimizer hypotheses of \thmref{Proposition}{IV.2} (no weight decay of either kind, no
+full-gradient clipping; GaLore and MeZO need weight decay $0$, and LISA's AdamW with positive decay violates them),
+these methods are rebasing schemes of linear forward methods with period $T$, including $T=1$, whose reach
+\thmref{Theorem}{V.3} describes. Each MeZO step is a step of the linear method $\theta_t+\lambda z_t$, up to its SPSA
+estimator, and GaLore with $T=1$ is one-sided LoRA re-based every step. What separates these methods from LoRA-type
+methods is the resampling schedule together with the carry-over of optimizer state; integrability plays no part in it.
+Flora as published (Adafactor base, with a full-rank current-gradient term in the code), APOLLO (a
+low-rank-estimated scaling applied to the full gradient) and Fira (a scaled full-rank residual) are not of the form of
+\thmref{Definition}{IV.1} with their projections as anchors, because their updates leave $\operatorname{im}a$.
+
+Non-involutivity proper needs a $\theta$-dependent anchor. Full-batch GaLore with $T=1$, read as the distribution
+$D_W=\operatorname{Hom}(\R^n,U_r(\nabla L(W)))$ (or $\operatorname{Hom}(V_r(\nabla L(W)),\R^m)$ when $m\ge n$, as
+GaLore projects) wherever a singular-value gap exists, is involutive if and only if $U_r(\nabla L(W))$ (respectively
+$V_r(\nabla L(W))$) is invariant along $D$. That fails generically for every $r\ge1$ once both matrix dimensions are at
+least $2$. For every $r$ with $1\le r<\min(m,n)$ it fails for $L=\tfrac12\lVert W\rVert_F^2$, and numerically it fails
+for least squares and cross-entropy with several samples. It holds, for instance, for single-sample least squares, and
+automatically only when the distribution is a line field ($nr=1$). Minibatch GaLore with $T=1$ and MeZO violate
+time-independence, because their anchors depend on step-wise randomness.
+\end{proposition}
+
+\noindent\labelsf{Num}\enspace For full-batch GaLore with $T=1$, the relative normal part of the bracket is $0.08$ to
+$0.94$ at $r=1$ and $(m,n)\in\{(4,3),(5,4)\}$, for least-squares, tanh-regression and cross-entropy losses with several
+samples (an independent replication), and $0.21$ to $0.95$ at $(m,n,r)=(4,3,2)$. It vanishes only for $n=1$ or for
+single-sample least squares. At $W=\diag(2,1)$ with $L=\tfrac12\lVert W\rVert_F^2$ and the frame $X_i=u(W)e_i^\top$,
+the bracket is $[X_1,X_2]=-\tfrac13e_2e_1^\top\notin D$, and the general diagonal formula behind it was checked by
+central differences for several $(m,n,r)$. The cometric of $B\mapsto BB^\top$ takes the same value at $B$ and at $BR$,
+$R\in\Ort(2)$, to $10^{-12}$. The companion site recomputes the bracket live at $W\in\R^{3\times4}$
+(Appendix~\ref{app:repro}).
+
+\begin{explains}
+The lens 2-functor \eqref{eq:lens-functor} separates tangent-side from cotangent-side methods. Frobenius integrability
+is the test for when a $\theta$-dependent anchor foliates weight space by images of forward methods. For the PEFT zoo it
+does no discriminating work. Every cotangent method whose update lies in $\operatorname{im}a$, whose optimizer does not
+read the parameter, and which has no decoupled decay on $W$ and no clipping of the full gradient (GaLore with any
+projector and MeZO at weight decay $0$, LISA without decay) is, period by period, a forward linear method on a moving
+base (Exposé~\ref{sec:base}). At $T=1$ this reading is automatic.
+\end{explains}
+
+\begin{analogy*}{the lens duality}
+``Tangent side'' and ``cotangent side'' are exact words here. A forward method acts on tangent vectors through
+$D\rho$, and a backward method acts on cotangent vectors through $c$. Calling GaLore and one-sided LoRA \emph{dual} is
+exact only at degree one, and only for optimizers that do not read the parameter tensor, with no weight decay. Beyond
+that range the word organises the zoo and proves nothing.
+\end{analogy*}
+
+\subsubsection{What the backward pass must remember}\label{sec:lens-cone}
+
+Fine-tuning memory consists of weights, gradients and optimizer state, and the activations stored for the backward
+pass. Shrinking $Q$ shrinks the gradients and the optimizer state. As for the activations, a frozen linear box's reverse
+derivative $W^\top y$ ignores its input, and cotangents are needed only downstream of something trainable, so only a
+cone through the network costs activation memory.
+
+\begin{observation}{IV.4}{backward reach and the backprop cone; an upper bound}
+Assume reverse mode in which each box keeps its own residual, with no checkpointing across boxes, and take boxes at the
+granularity where adapters are separate boxes (for LoRA-FA, $A_0$ and $B$ separately). A \emph{VJP residual} is an
+input, an output, a sufficient statistic such as a ReLU mask, or a recipe to recompute one of these inside the box.
+Then it suffices to keep a VJP residual for
+\begin{itemize}
+  \item each trainable box whose parameter-VJP depends on its input: linear and multiplicative boxes such as $W$, $A$,
+  $B$ and (IA)$^3$ scales; additive boxes such as biases and prompts need nothing;
+  \item each \emph{nonlinear} box, bilinear boxes such as the attention products included, on a directed path from a
+  trainable box to the loss.
+\end{itemize}
+Deterministic frozen linear boxes, and all boxes off this cone, need nothing; stochastic linear boxes on the cone
+(dropout) need their mask or random-number state. Alternatively, the $k$ coordinates of $P^\top\nabla L$ can be
+computed exactly by $k$ forward-mode JVPs, with no reverse pass and $O(1)$-layer activation memory, each JVP costing a
+small constant multiple (about $1.5$ to $3$) of a forward pass. This always uses less activation memory than
+un-checkpointed reverse mode, but it is time-competitive with one VJP (about $3$ forward passes) only for $k$ of about
+$1$ or $2$. It also needs $P$ before the passes, so it cannot produce GaLore's SVD refresh, where $P$ depends on
+$\nabla L$, more cheaply than a backward pass ($\nabla L$ itself would take $\lvert\theta\rvert$ JVPs).
+\end{observation}
+
+\begin{explains}
+The bound reads off the activation memory of the zoo.
+\begin{itemize}
+  \item \textbf{LST} \citep{sung2022lst}. The side network reads the backbone through trainable down-projection
+  ladders, so the backbone's backward pass never runs.
+  \item \textbf{LoRA-FA} \citep{zhang2023lora}. With \texttt{lora\_dropout=0} (the HF default) it stores $A_0x$ ($r$
+  numbers per token) instead of $x$ ($n$ numbers); with dropout on, the $n$-element mask is stored too. The saving is
+  realised only where no neighbouring nonlinear box already keeps $x$.
+  \item \textbf{Top-layer adaptation} truncates the cone, under the no-checkpointing assumption. With HF's reentrant
+  gradient checkpointing, PEFT calls \texttt{enable\_input\_require\_grads()}, which makes the embedding outputs require
+  gradients, so cotangents run down to the embeddings and top-layer adaptation no longer truncates the cone.
+  \item \textbf{LISA} \citep{pan2024lisa} trains the embedding and the LM head at every step, so its cone is the whole
+  network and it gets no truncation. On the cone, the unsampled layers' frozen linear boxes drop their input residuals
+  (about $20\%$ of a block's activations at LLaMA proportions without FlashAttention), and relative to LoRA it also
+  drops the adapter residuals, in line with the LISA paper's report of less activation memory than LoRA. Most of its
+  saving against full fine-tuning is in gradients and optimizer state. A variant that froze the embedding would
+  truncate the cone at its lowest sampled layer.
+  \item \textbf{Prompt tuning} \citep{lester2021power} has a $Q$ as small as that of VeRA \citep{kopiczko2023vera},
+  FourierFT \citep{gao2024parameter} or (IA)$^3$ \citep{liu2022few}, and the maximal cone, the whole network, which it
+  shares with every method that trains something in the first layer. Its prompt tokens also enlarge every stored
+  activation.
+  \item \textbf{MeZO} \citep{malladi2023fine} is the case $k=1$, with the JVP estimated by a central difference and no
+  reverse pass. Its estimator is unbiased for the gradient of the Gaussian-smoothed loss and, for a loss with Lipschitz
+  Hessian, has bias $O(\varepsilon^2)$ against $\nabla L$; ReLU networks lack a Lipschitz Hessian. Exact unbiasedness,
+  $\mathbb E[(\nabla L\cdot z)z]=\nabla L$, holds for the forward gradient computed with an exact JVP. GaLore, its
+  random-projector variant, Flora and LISA all take the reverse route.
+\end{itemize}
+\end{explains}
+
+Ladder side-tuning is due to \citet{sung2022lst}, prompt tuning to \citet{lester2021power}, and the zeroth-order
+estimator in this setting to \citet{malladi2023fine}. That reverse derivatives of linear maps ignore their inputs is the
+observation behind many activation-saving designs; the lens of \citet{cruttwell2021categorical} makes it visible box by
+box.
+
+So every cotangent method meeting the hypotheses of \thmref{Proposition}{IV.2} is, period by period, a linear forward
+method on a moving base. What it reaches, and what a quantiser does to the base, are the subject of
+Exposé~\ref{sec:base}.

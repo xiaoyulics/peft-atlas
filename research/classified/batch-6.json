@@ -1,0 +1,1408 @@
+{
+ "batch": 6,
+ "methods": [
+  {
+   "id": "diff-pruning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "The stored object is \\(\\theta_0+\\bigcup_{|S|=k}\\mathbb R^S\\), a union of coordinate \\(k\\)-planes (a cone in the axes.json sense); the Hard-Concrete map \\(\\theta_0+z(\\alpha)\\odot w\\) is its training-time relaxation.",
+    "base_point": "Apex as in VIII.B: \\(\\theta_0\\) is the one point shared by all strata, where the union is not a manifold. The relaxed map at \\((z,w)=(\\mathbf 1,0)\\) has full \\(S_1\\), so 'apex' describes the L0-projected image, not the relaxation.",
+    "gauge": "Each stratum \\(w_S\\mapsto\\theta_0+\\iota_Sw_S\\) is injective; the gates are clamped at \\(z=1\\) near the init \\(\\alpha_0=5\\), so the Hadamard torus \\((cz,w/c)\\) is inactive there.",
+    "covariance": "Support structure in the standard basis; magnitude/L0 selection commutes with signed permutations and homotheties, not with rotations.",
+    "rebasing": "The union of \\(k\\)-planes is closed under scaling and supports can be re-learned each cycle: \\(R_\\infty=\\theta_0+\\mathrm{span}=\\Theta\\) (Thm V.3(a))."
+   },
+   "table_row": "R-selective",
+   "table_col": "Cone",
+   "viii_b_row": "Diff pruning",
+   "categorical_reading": "Diff pruning is the learned-support object: its image is the union of all fixed-mask images of size \\(k\\), so every fixed-mask method (FISH, LT-SFT, PaFi, SIFT, ...) is one stratum of it via an A2 arrow. Its vertex \\(\\theta_0\\) is the only point common to all strata, which makes it a cone with apex rather than a linear method.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A \\(k\\)-sparse update has rank up to \\(\\min(k,m,n)\\), so for \\(k>r\\) its maximum rank exceeds LoRA\\(_r\\)'s (conversely a generic rank-1 update is dense, O1)."
+    },
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "The union of all \\(k\\)-planes is not contained in the single \\(k\\)-plane of one fixed mask."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: union of k-planes (Cone), apex at the vertex common to all strata (the relaxed gate map is regular, as the note says), gauge none per stratum, image exactly MonxMon-covariant, M1, span (= Theta); matches VIII.B. Both obstructions verified. No changes."
+  },
+  {
+   "id": "fish-mask",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(W_0+M\\odot\\Delta W\\) with \\(M\\) the global top-\\(k\\) diagonal-Fisher mask fixed before training: a coordinate subspace of dimension \\(k\\).",
+    "covariance": "Mask in the standard frame; Fisher top-\\(k\\) selection commutes with signed permutations, not with rotations or non-uniform rescalings.",
+    "rebasing": "Fixed mask: \\(R_K=R_1\\) (Thm V.3 cor. 2); recomputing the Fisher mask at the merged weight would gain."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "FISH is a mask in the standard frame chosen by a data statistic: linear, regular and gauge-free, the frozen coordinate-block cell of the cotangent table in Exposé IV. By Prop IV.2 its masked-gradient training produces the same trajectory as training the forward linear method \\(W_0+M\\odot\\Delta W\\).",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "Freeze Diff pruning's gates at their clamped init value \\(z=\\mathbf 1\\) and \\(w\\) at 0 off \\(M\\): FISH\\((M)\\) is the stratum \\(M\\) of the learned-support cone (within the L0 budget when \\(|M|\\le k\\))."
+    },
+    {
+     "target": "rosa",
+     "rule": "A5",
+     "h": "x\\mapsto\\big((0,A_0),\\ x\\big)",
+     "note": "With RoSA's sparse support equal to \\(M\\), FISH is the sparse summand of LoRA \\(\\oplus\\) sparse, the LoRA part held at its base value."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A \\(k\\)-entry mask update can have rank up to \\(\\min(k,m,n)>r\\)."
+    },
+    {
+     "target": "pafi",
+     "test": "O1",
+     "reason": "Fisher-top supports and PaFi's data-free bottom-\\(|W_0|\\) supports are generically different planes, so neither image contains the other."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Lin/regular/none/MonxMon (Fisher top-k is only signed-permutation x homothety equivariant; MonxMon is the nearest key)/M1/idempotent, matching VIII.B. A2 into relaxed Diff pruning (h(0)=(alpha0,0)) and A5 into RoSA (LoRA held at (0,A0)) checked. Obstructions verified. No changes."
+  },
+  {
+   "id": "child-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Classified by Child-Tuning\\(_D\\): a fixed top-\\(p_D\\) Fisher gradient mask, which by Prop IV.2 (frozen coordinate compression) is the forward linear method \\(W_0+M\\odot\\Delta W\\). Child-Tuning\\(_F\\) (a fresh Bernoulli\\((p_F)\\) mask each step, rescaled by \\(1/p_F\\)) is instead a B-kind schedule: per-step Lin, reach \\(\\Theta\\), merge n/a, rebasing schedule.",
+    "shape": "Fixed mask for the D variant; if decoupled weight decay is applied to all parameters, coordinates outside \\(M\\) also shrink and the identity with the masked forward method fails (Prop IV.2 excludes AdamW with \\(\\lambda>0\\)).",
+    "covariance": "Empirical-Fisher top-\\(p_D\\) selection in the standard basis: signed-permutation equivariant; the F variant's i.i.d. mask is permutation-invariant in law.",
+    "rebasing": "Idempotent for the fixed mask; Child-Tuning\\(_F\\) is itself a rebasing scheme reaching \\(\\Theta\\)."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "Child-Tuning\\(_D\\) is FISH under another name: the same coordinate subspace selected by an empirical Fisher, isomorphic to FISH whenever the supports agree. Child-Tuning\\(_F\\) leaves the slice: resampling the mask every step makes it a rebasing scheme whose reach is all of \\(\\Theta\\), a regulariser rather than a parameter-efficient object.",
+   "arrows": [
+    {
+     "target": "fish-mask",
+     "rule": "A3",
+     "h": "\\mathrm{id}_{\\mathbb R^M}",
+     "note": "Isomorphism for a common support \\(M\\); Child-Tuning\\(_D\\) uses the empirical Fisher with gold labels and FISH samples \\(y\\sim p_\\theta\\), so the selected masks can differ."
+    },
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The fixed mask is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "Concerns Child-Tuning\\(_F\\) only (the classified D variant has the conditional isomorphism above): fresh Bernoulli masks every step accumulate a dense update, so its reach is not inside any fixed \\(k\\)-plane."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived for Child-Tuning_D: Lin/regular/none/MonxMon/M1/idempotent. Conditional iso to FISH (A3, h=id) and A2 into Diff pruning checked. Change: the fish-mask O1 obstruction contradicted the arrow to the same target; its reason now says it concerns Child-Tuning_F only."
+  },
+  {
+   "id": "lt-sft",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Phase 2 trains on the fixed support \\(\\mu=\\text{top-}K\\,|\\theta^{(1)}-\\theta^{(0)}|\\); the dense phase 1 only computes the mask.",
+    "covariance": "Magnitudes of a dense fine-tuning diff: signed-permutation equivariant, not rotation equivariant.",
+    "merge": "Each SFT is added into \\(\\theta_0\\); the composition \\(S_L\\circ S_T\\) is translation by \\(\\phi_T+\\phi_L\\), since additive methods commute with translations (Prop V.2(a))."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "LT-SFT is a fixed-mask linear method whose mask is read off a dense fine-tuning run (a lottery-ticket support). Because translations commute, language and task SFTs compose by \\(\\oplus\\), the sum of two coordinate subspaces, with interference confined to the overlap of their supports.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The lottery-ticket support is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Sparse updates on a 0.25-8\\% support have rank far above \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: fixed lottery-ticket support in phase 2, Lin/regular/none/MonxMon/M1/idempotent; translation composition (Prop V.2(a)) correct. A2 arrow and O2 obstruction verified. No changes."
+  },
+  {
+   "id": "spt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "Classified by SPT-LoRA; SPT-Adapter puts bottleneck adapters on the sensitive matrices (E, Fun, neutral, M\\(\\infty\\)).",
+    "shape": "Per weight box either a fixed squared-gradient mask (Lin) or LoRA (determinantal cone): the product is a cone with vertex \\(\\theta_0\\).",
+    "base_point": "Apex from the LoRA boxes (deficit \\(r(n-r)\\) each at \\(B=0\\)); the masked boxes are regular.",
+    "gauge": "\\(GL_r\\) on each LoRA box; none on masked boxes.",
+    "covariance": "Sensitivity scores, the per-box switch and the masks are coordinatewise, so the whole method is only Mon\\(\\times\\)Mon-covariant, although each LoRA box alone is \\(GL\\times GL\\).",
+    "rebasing": "LoRA boxes reach full matrices, masked boxes are idempotent: \\(R_\\infty=\\theta_0+\\mathrm{span}\\) of the product cone."
+   },
+   "table_row": "R-selective",
+   "table_col": "Cone",
+   "viii_b_row": null,
+   "categorical_reading": "SPT is a direct sum over weight boxes of FISH-type masks and LoRA cones, the choice per box being made by counting squared-gradient-sensitive entries. It is an \\(\\oplus\\)-word in \\(\\mathsf{Meth}(\\Theta,\\theta_0)\\), so its expressivity is the product of its summands' images.",
+   "arrows": [
+    {
+     "target": "rosa",
+     "rule": "A2",
+     "h": "\\big((B_s,A_s)_{s\\in S},\\,(x_u)_{u\\in U}\\big)\\mapsto\\big((B_s,A_s)_{s\\in S},\\,(0,A_{0,u})_{u\\in U};\\ \\iota(x)\\big)",
+     "note": "RoSA on all of SPT's boxes with SPT's masks as its sparse support: freeze RoSA's LoRA at its base value on the boxes where SPT uses masks."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "On masked boxes the sparse update can have rank above \\(r\\)."
+    },
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "The LoRA boxes give dense low-rank updates outside any fixed coordinate plane."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Jacobian check (one LoRA box 8x12, r=2, plus a 7-entry mask box): d = 43 = r(m+n-r)+k, dim S1 = 23, deficit 20 = r(n-r), so Cone/apex confirmed; GL_r gauge, MonxMon, span confirmed. A2 into RoSA checked (RoSA's sparse part frozen at 0 on the LoRA boxes). No changes."
+  },
+  {
+   "id": "pafi",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Fixed bottom-\\(k\\) \\(|W_0|\\) mask per matrix (data-free, shared by all tasks), plus every normalisation parameter (an LN-tuning summand).",
+    "covariance": "The mask is a \\(\\theta_0\\)-dependent function of \\(|W_0|\\): covariant under signed permutations and homotheties only, a subgroup of Mon\\(\\times\\)Mon.",
+    "merge": "Only existing entries and norm parameters change in place; the LN summand needs no fold."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "PaFi is a fixed coordinate subspace chosen from the base point alone, plus an LN-tuning summand: a \\(\\theta_0\\)-dependent mask with the opposite magnitude rule to LIFT. One mask shared by all tasks puts every PaFi adapter in the same linear space, so task-arithmetic combinations of them stay inside PaFi.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The bottom-\\(k\\) support (and LN coordinates) is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lift",
+     "test": "O1",
+     "reason": "Bottom-\\(|W_0|\\) and top-\\(|\\mathrm{SVD}_r(W_0)|\\) supports are generically different (and nearly disjoint, though not exactly), and LIFT never trains PaFi's normalisation parameters, so PaFi's plane is not inside LIFT's reach."
+    },
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "A data-free magnitude support and a Fisher support are generically different planes."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Lin/regular/none/MonxMon/M1/idempotent (LN summand edits parameters in place). Change: lift obstruction reason corrected; the two supports are different but not generically disjoint (47 of 1310 entries overlap on a 512x512 Gaussian W0), and LIFT never trains LN parameters. O1 still holds."
+  },
+  {
+   "id": "smt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Union of \\(l\\times l\\) tiles (\\(l=256\\)) selected after a short gradient warm-up and then fixed: a coordinate subspace of dimension \\(m_Wl^2\\).",
+    "covariance": "Contiguous \\(256\\times256\\) tiles impose a block partition the network does not have; a neuron permutation scatters a tile (\\(\\Pi_{\\rm blocks}\\), as for MoRA and GraLoRA).",
+    "rebasing": "Fixed tiles: cycles gain nothing."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "SMT is a block mask: the coordinate subspace of a few full tiles, GraLoRA's block partition without the low-rank factor. Each selected tile is full rank, which is why it does not plateau in rank as LoRA does.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The tile support is one fixed coordinate set, a stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A selected tile has rank up to \\(l=256>r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: fixed l x l tiles, Lin/regular/none/Pi (a neuron permutation scatters a tile)/M1/idempotent. A2 arrow and O2 obstruction verified. No changes."
+  },
+  {
+   "id": "spiel",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "apex",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "kind": "\\(\\theta'=\\theta+\\mathrm{scatter}(\\eta,\\phi)\\) with a discrete index set \\(\\eta\\) and real deltas \\(\\phi\\): a reparametrisation whose \\(Q\\) is a disjoint union of coordinate planes.",
+    "shape": "Dropped deltas leave the support (the weight reverts to \\(\\theta_0\\) there), so the stored diff is \\(d_\\phi\\)-sparse per tensor: a union of coordinate planes as for Diff pruning, with a per-tensor instead of a global budget.",
+    "base_point": "\\(\\phi=0\\) at \\(\\theta_0\\), the vertex shared by all strata (apex in the sense used for Diff pruning).",
+    "rebasing": "Drop-and-grow moves between strata without merging, so it is not a schedule; merge-and-restart with fresh supports reaches \\(\\Theta\\)."
+   },
+   "table_row": "R-selective",
+   "table_col": "Cone",
+   "viii_b_row": "Diff pruning",
+   "categorical_reading": "SpIEL is a learned-support object like Diff pruning, but it searches the strata of the union of \\(k\\)-planes by drop-and-grow instead of a relaxed L0 gate. It is not a rebasing scheme, because dropped deltas are discarded rather than merged.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "(\\eta,\\phi)\\mapsto\\big(\\alpha_0,\\ \\mathrm{scatter}(\\eta,\\phi)\\big)",
+     "note": "Componentwise on each support \\(\\eta\\): every per-tensor stratum is a stratum of the global \\(k\\)-sparse union with \\(k=\\sum d_\\phi\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lt-sft",
+     "test": "O1",
+     "reason": "SpIEL's union of strata is not contained in LT-SFT's single fixed plane."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "A \\(d_\\phi\\)-sparse update can have rank above \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: dropped deltas revert to theta0, so the image is a union of d_phi-sparse planes as for Diff pruning (R, Cone, apex in the same sense, none, MonxMon, M1, span). A2 arrow (componentwise freezing on each support, pointed) and both obstructions verified. No changes."
+  },
+  {
+   "id": "gps",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Exactly \\(K\\) entries per row (output neuron), chosen by \\(|\\nabla\\mathcal L_{SCL}|\\) before training and then fixed.",
+    "covariance": "A row-regular support is preserved by row and column permutations; selection by gradient magnitude is signed-permutation equivariant, not rotation equivariant."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "GPS is a fixed mask with a row-regular support of \\(K\\) incoming connections per neuron. Row regularity constrains which stratum of the \\(k\\)-sparse union is chosen, not the shape of the object.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The row-balanced support is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "For a dataset-aggregated (generically high-rank) gradient the row-wise top-\\(K\\) columns vary across rows and the masked update has rank up to \\(\\min(m,n)>r\\). (For a rank-one gradient every row would select the same \\(K\\) columns and the rank would be at most \\(K\\).)"
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Lin/regular/none/MonxMon/M1/idempotent. Change: lora O2 reason qualified; numerically a rank-one gradient makes every row pick the same K columns (rank <= K), so the full-rank claim needs a dataset-aggregated gradient."
+  },
+  {
+   "id": "s2ft",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=VU_S^\\top\\) with \\(U_S\\) a frozen one-hot selector of \\(s\\) heads/channels: the matrices supported on \\(s\\) whole columns (input side of \\(W_O\\), \\(W_{\\rm down}\\)).",
+    "gauge": "\\(V\\mapsto VU_S^\\top\\) is injective.",
+    "covariance": "\\(GL\\) on the dense (output) side, monomial on the selected side (hidden-unit permutations and scalings carry the selector): \\(GL\\times\\)Mon in (output)\\(\\times\\)(input) order, the one-sided key MonxGL.",
+    "rebasing": "Fixed selector: idempotent. Co-permuting coupled matrices to make the channels contiguous is a function-preserving base change (a hidden-unit permutation, Def V.1(a)): it changes the memory layout, not the object."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "LoRA-FA (v1/v2)",
+   "categorical_reading": "S\\(^2\\)FT is LoRA-FA whose frozen factor is a coordinate selector, \\(\\Delta W=VU_S^\\top\\): the structured-sparse and the low-rank readings are one linear object. Its dense-compute trick is a base change by a hidden-unit permutation, a symmetry of \\(f\\), so it costs nothing in expressivity.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "V\\mapsto s^{-1}V\\quad(A_0:=U_S^\\top)",
+     "note": "Isomorphism S\\(^2\\)FT \\(\\cong\\) LoRA-FA\\((A_0=U_S^\\top)\\) of rank \\(|S|\\); \\(s\\) is LoRA-FA's scale."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "V\\mapsto(s^{-1}V,\\ U_S^\\top)",
+     "note": "LoRA pointed at \\((0,U_S^\\top)\\), the same stratum as the default pointing \\((0,A_0)\\) (Thm II.2)."
+    },
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The \\(s\\) selected columns form one fixed coordinate set."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "Entrywise Fisher supports generically do not contain whole columns, and whole columns are not entrywise-selected."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: Delta W = V U_S^T injective (d = m s, Jacobian check), Lin/regular/none, GL (output) x Mon (input) = key MonxGL, M1, idempotent. LoRA-FA iso, A2 into LoRA at (0,U_S^T) and A2 into Diff pruning checked; FISH O1 verified. No changes."
+  },
+  {
+   "id": "sift",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Gradient hooks apply a frozen coordinate projection \\(P_S\\); with \\(S\\) fixed this is the forward linear method by Prop IV.2.",
+    "shape": "Support = top-\\(x\\%\\) of \\(|g_1|\\) from the first batch(es), then fixed."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "SIFT is a fixed coordinate mask chosen by the magnitudes of the first gradient, implemented as a backward projection with a frozen coordinate compression. By the degree-one collapse it is the same object as training \\(W_0+P_S(\\Delta W)\\) directly.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The first-gradient support is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "sam-sparse",
+     "test": "O1",
+     "reason": "Top \\(|g_1|\\) on one batch and top \\((\\sum_{\\rm burn\\text{-}in}g)^2\\) rank coordinates differently, so the two fixed planes differ."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Sparse updates can have rank above \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: frozen coordinate projection, Lin by Prop IV.2 (no decoupled decay), regular/none/MonxMon/M1/idempotent. Arrow and both obstructions verified. No changes."
+  },
+  {
+   "id": "hift",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "The forward map is the identity; at step \\(t\\) compression and anchor are the coordinate projection onto layer group \\(G_{\\pi(t\\bmod k)}\\), changed every step in a fixed cycle.",
+    "shape": "Per step the linear space of the active group's weights; one cycle visits every group.",
+    "covariance": "Each active box is fully trainable, so every stage image is \\(GL\\times GL\\)-covariant box by box (as for surgical FT and BitFit); the layer grouping partitions the set of boxes, not the coordinates of any box, and no neuron permutation or residual rotation breaks it. LISA and BAdam carry the same value after consolidation; VIII.B still lists LISA under \\(\\Pi\\) (blocks).",
+    "merge": "Writes the full weight directly.",
+    "rebasing": "A rebasing scheme with period 1 and a cyclic shape; \\(R=\\Theta\\) after one cycle. Each group's optimizer state is offloaded and resumed, so no state is reused across different frames (unlike GaLore)."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "LISA",
+   "categorical_reading": "HiFT is block-coordinate descent over layer groups: a backward lens whose anchor is a coordinate projection rotated every step, the resampled-every-step coordinate-block cell of Exposé IV. Since each group keeps its own optimizer state, the schedule is full fine-tuning in a cyclic order and reaches \\(\\Theta\\) after one cycle.",
+   "arrows": [
+    {
+     "target": "surgical-fine-tuning",
+     "rule": "A3",
+     "h": "\\mathrm{id}_{\\Theta_{G_j}}",
+     "note": "Per stage: stage \\(j\\) of HiFT is the forward linear method of surgical FT on the block \\(G_j\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "A HiFT stage makes full-rank updates of every matrix in the active group; a GaLore period has rank \\(\\le r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/regular/none/na/schedule. Covariance kept GLxGL by the decision procedure (box-wise fully trainable stages). Change: covariance note rewritten to state the disagreement with LISA/BAdam (Pi) explicitly instead of pointing to a non-existent issues list. Per-stage A3 arrow to surgical FT and O2 obstruction verified. Consolidation (2026-10-01): covariance note updated: LISA and BAdam harmonised to GLxGL."
+  },
+  {
+   "id": "surgical-fine-tuning",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "One contiguous block of layers fully trainable: the coordinate subspace \\(\\Theta_{B_j}\\).",
+    "covariance": "Every selected box is fully trainable (Full FT on that box), so the image is \\(GL\\times GL\\)-covariant box by box.",
+    "rebasing": "Fixed block. Auto-RGN instead trains all tensors with per-tensor learning rates \\(\\propto\\) RGN: Full FT's image with a block-scalar metric \\(\\Lambda\\), not a different object."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": null,
+   "categorical_reading": "Surgical FT is a fixed coordinate block of whole layers: Full FT on the chosen block and frozen elsewhere, the shift type deciding which block. Auto-RGN keeps Full FT's image and changes only the metric \\(\\Lambda\\) through per-tensor learning rates (Exposé III).",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The block's coordinates form one fixed support; inside the \\(k\\)-sparse union only when \\(|\\Theta_{B_j}|\\le k\\)."
+    },
+    {
+     "target": "hift",
+     "rule": "A5",
+     "h": "q\\mapsto(\\text{stage } j: q;\\ \\text{other stages}: 0)",
+     "note": "When \\(B_j\\) is a HiFT group, the one-stage scheme embeds as stage \\(j\\) of HiFT's cycle, the other stages padded with their base value."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Full-rank updates on every matrix of the block exceed rank \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived R/Lin/regular/none/GLxGL/M1/idempotent (Full FT on one block, like BitFit). A2 into Diff pruning (conditional on budget) and A5 one-stage embedding into HiFT checked. No changes."
+  },
+  {
+   "id": "masking",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "defect",
+    "gauge": "torus",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\rho(m)=W_0\\odot\\mathbb 1[m\\ge\\tau]\\): the orbit of \\(\\theta_0\\) under the Boolean monoid \\(\\{0,1\\}^{m\\times n}\\) acting by Hadamard product, a finite set (\\(d=0\\)) that keeps the zeros of \\(W_0\\). The straight-through surrogate treats it as the Hadamard torus closure \\(W_0\\odot S\\) (Lin).",
+    "base_point": "Scores are initialised so that about 5\\% of weights start masked: \\(e=-(\\mathbf 1-M_0)\\odot W_0\\ne0\\) by design.",
+    "gauge": "\\(\\rho\\) depends only on the sign pattern of \\(m-\\tau\\); the generic fibre is an open orthant cell, exactly an orbit of the positive torus \\(\\mathbb R_{>0}^{mn}\\) acting by \\(m\\mapsto\\tau+c\\odot(m-\\tau)\\) (fibre dim \\(mn\\)). The scores move only through the STE surrogate.",
+    "covariance": "Hadamard masking commutes with monomial changes of basis (diagonals commute, permutations permute the mask), not with rotations.",
+    "merge": "\\(W_0\\odot M\\) is an ordinary matrix of the original shape.",
+    "rebasing": "\\((W_0\\odot M_1)\\odot M_2=W_0\\odot(M_1M_2)\\): the Boolean monoid is idempotent, \\(S^K=S\\)."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "viii_b_row": null,
+   "categorical_reading": "Masking is a monoid-orbit method: the Boolean monoid acts on \\(\\theta_0\\) by Hadamard product, so the image is the finite vertex set of the box between \\(0\\) and \\(W_0\\), which keeps \\(W_0\\)'s zeros and can only create new ones. Its real-valued scores are pure torus gauge of the exact \\(\\rho\\), and the 5\\% masked start makes it an object with a pointing defect.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "piggyback",
+     "test": "O3",
+     "reason": "Same unpointed object \\(M\\mapsto W_0\\odot M\\), but Masking is pointed at \\(W_0\\odot M_0\\ne\\theta_0\\) and Piggyback at \\(\\theta_0\\): no pointed arrow either way."
+    },
+    {
+     "target": "diff-pruning",
+     "test": "O3",
+     "reason": "Pointing defect: \\(\\rho(q_0)=W_0\\odot M_0\\ne\\theta_0\\), although every image point with at most \\(k\\) zeroed entries lies in Diff pruning's union."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: Boolean Hadamard monoid orbit (finite image, d=0), defect from the 5% masked start, positive-torus gauge on the orthant cells (fibre dim mn), exact MonxMon, M1, idempotent. Both O3 obstructions verified (no pointed arrow when rho(q0) != theta0). No changes."
+  },
+  {
+   "id": "piggyback",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "torus",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Orbit of \\(\\theta_0\\) under the Boolean Hadamard monoid \\(\\{0,1\\}^{m\\times n}\\); a finite image (\\(d=0\\)).",
+    "base_point": "\\(m^r_0=10^{-2}>\\tau=5\\cdot10^{-3}\\): the mask starts all ones, \\(\\rho(q_0)=\\theta_0\\); with \\(d=0\\), \\(\\dim S_1=0=d\\), regular trivially.",
+    "gauge": "Real-valued mask weights matter only through \\(\\mathbb 1[m^r\\ge\\tau]\\): positive torus acting about the threshold, fibre dim \\(mn\\); trained by the STE surrogate.",
+    "covariance": "Hadamard structure in the standard basis on both sides.",
+    "rebasing": "The Boolean monoid is idempotent: cycles only zero more entries."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "viii_b_row": null,
+   "categorical_reading": "Piggyback is the orbit of \\(\\theta_0\\) under the Boolean Hadamard monoid, pointed at its identity \\(\\mathbf 1\\): the earliest selective method is an action method, not an additive one. Its update \\(-(\\mathbf 1-M)\\odot W_0\\) is a sparse diff forced to equal \\(-W_0\\) on its support, which is the precise sense in which it is dual to Diff pruning.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A3",
+     "h": "M\\mapsto\\big(\\alpha_0,\\ -(\\mathbf 1-M)\\odot W_0\\big)",
+     "note": "\\(Q\\) read as the discrete set of binary masks; defined on masks zeroing at most \\(k\\) entries (all masks for the unbudgeted relaxation), pointed since \\(h(\\mathbf 1)=(\\alpha_0,0)\\)."
+    },
+    {
+     "target": "hira",
+     "rule": "A3",
+     "h": "M\\mapsto(M-\\mathbf 1,\\ I_n)",
+     "note": "HiRA \\(W_0\\odot(\\mathbf 1+BA)\\) with inner rank \\(r=n\\), pointed at \\((0,I_n)\\) (for \\(r=n\\) every \\(B_0=0\\), full-rank-\\(A_0\\) pointing is isomorphic to this one); both keep the zeros of \\(W_0\\). For \\(r<\\min(m,n)\\) and \\(W_0\\) without zeros there is no arrow (O1): \\(W_0\\odot M\\in\\mathrm{Im}\\,\\mathrm{HiRA}_r\\) needs \\(\\operatorname{rank}(M-\\mathbf 1)\\le r\\), which a generic binary mask violates."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "masking",
+     "test": "O3",
+     "reason": "Same unpointed object, different pointings (\\(\\mathbf 1\\) versus a 5\\%-masked \\(M_0\\))."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "\\(-(\\mathbf 1-M)\\odot W_0\\) can have rank up to \\(\\min(m,n)>r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Orb/regular (d=0, S1=0)/torus/MonxMon/M1/idempotent. Arrows checked numerically: rho_DP(alpha0, -(1-M).W0) = W0.M and rho_HiRA(M-1, I_n) = W0.M exactly, both pointed. Change: the HiRA arrow note called the r<min(m,n) failure O2; it is an image obstruction (O1), since rank(M-1) is not a cut-rank of Delta W."
+  },
+  {
+   "id": "sam-sparse",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\theta_0+M\\Delta\\theta\\) with \\(M\\) a fixed diagonal 0/1 matrix: the minimiser of the second-order surrogate under \\(H\\preceq|\\lambda_{\\max}|I\\), i.e. the top-\\(\\lfloor mp\\rfloor\\) squared accumulated burn-in gradient.",
+    "covariance": "Coordinatewise score in the standard basis: signed-permutation equivariant."
+   },
+   "table_row": "R-selective",
+   "table_col": "Lin",
+   "viii_b_row": "SHiRA / FISH / Trainable Tokens",
+   "categorical_reading": "SAM picks one stratum of the \\(k\\)-sparse union by a second-order criterion and trains that fixed coordinate subspace. Its claim that every PEFT method is \\(\\theta_0+M\\Delta\\theta\\) holds for linear methods up to a transport \\(T\\) (Prop II.13), but not for cones such as LoRA, whose image is a union of planes rather than one plane.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_M x)",
+     "note": "The SAM support is one stratum of the learned-support cone."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "fish-mask",
+     "test": "O1",
+     "reason": "SAM ranks by \\((\\sum_t g_t)^2\\) and FISH by \\(\\sum_n g_n^2\\): different supports, so different planes."
+    },
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Sparse updates can have rank above \\(r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Lin/regular/none/MonxMon/M1/idempotent. Arrow and both obstructions verified; the remark that the theta0+M Delta theta claim fails for cones is correct. No changes."
+  },
+  {
+   "id": "lift",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "The forward map is the identity; the masked update \\(W_{t+1}=W_t-\\eta M_t\\odot\\hat g_t\\) writes into \\(W\\), and \\(M_t\\) (top-\\(k\\) entries of \\(\\mathrm{SVD}_r(W_t)\\)) is recomputed from the current weight every interval: a coordinate-mask lens re-pointed from the merged weight.",
+    "shape": "Per interval the coordinate subspace of the current mask; the accumulated \\(\\Delta W\\) lies on the union of the masks visited.",
+    "covariance": "\\(\\mathrm{SVD}_r\\) is \\(CO\\times CO\\)-equivariant and top-\\(k\\) magnitude only signed-permutation equivariant; the composite rule keeps their intersection (signed permutations times homotheties), inside Mon\\(\\times\\)Mon.",
+    "merge": "No adapter; writes \\(W\\).",
+    "rebasing": "Masks recomputed from the merged weight gain (Thm V.3 cor. 2): a schedule whose reach grows with the union of masks."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "LISA",
+   "categorical_reading": "LIFT is a LISA-type rebasing scheme in the coordinate frame: each interval trains a fixed mask, and the next mask is read from the principal part of the merged weight, so its anchor depends on \\(\\theta\\) across intervals. The spectral filter changes which coordinates are chosen, not the coordinate geometry of the image.",
+   "arrows": [
+    {
+     "target": "diff-pruning",
+     "rule": "A2",
+     "h": "x\\mapsto(\\alpha_0,\\ \\iota_{M_0}x)",
+     "note": "First interval only (mask \\(M_0\\) from \\(\\mathrm{SVD}_r(W_0)\\)); later intervals are the same kind of object re-based at \\(W_t\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "pafi",
+     "test": "O1",
+     "reason": "Top entries of \\(\\mathrm{SVD}_r(W_0)\\) and bottom entries of \\(|W_0|\\) are generically different supports (nearly, not exactly, disjoint), so LIFT's first-interval plane is not inside PaFi's plane."
+    },
+    {
+     "target": "spiel",
+     "test": "O2",
+     "reason": "Conditional: once LIFT's masks change across intervals, its accumulated \\(\\Delta W\\) is supported on the union of the masks visited; when that union exceeds SpIEL's per-tensor budget \\(d_\\phi\\), \\(d(\\mathrm{LIFT})>d(\\mathrm{SpIEL})\\). A single LIFT interval with \\(k\\le d_\\phi\\) is a stratum of SpIEL's union, so the obstruction is to the schedule, not to one stage."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/regular/none/MonxMon (nearest key)/na/schedule. A2 first-interval arrow checked. Changes: pafi O1 reason (supports different, not disjoint); spiel O2 reason made explicitly conditional (holds for the schedule once the union of masks exceeds d_phi, not for one interval)."
+  },
+  {
+   "id": "qa-lora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=sBAP\\) with \\(P=I_{n/g}\\otimes\\mathbf 1_g^\\top\\) the group-sum pooling: LoRA\\(_r\\) on the pooled space composed with \\(Y\\mapsto YP\\), image \\(\\kappa\\theta_0+\\{YP:\\operatorname{rk}Y\\le r\\}\\), \\(d=r(m+n/g-r)\\).",
+    "base_point": "\\(q_0=(0,A_0)\\): \\(\\rho(q_0)=\\kappa\\theta_0\\), defect \\(e=\\kappa\\theta_0-\\theta_0\\) as for QLoRA (apex relative to \\(\\kappa\\theta_0\\)).",
+    "gauge": "\\(GL_r\\): \\((Bg^{-1},gA)\\).",
+    "covariance": "Group-wise INT-\\(k\\) grid plus pooling over contiguous input groups of size \\(g\\): an imposed partition on the input side (a neuron permutation across groups breaks it); monomial on the output side.",
+    "merge": "The exception of Prop V.2(d): a group-constant update is absorbed into the zero-points, \\(\\beta'=\\beta-s\\,\\mathrm{expand}_g(BA)\\oslash\\alpha\\), so the codes stay INT-\\(k\\) (the zero-points become real-valued). HF PEFT supports QA-LoRA on GPTQ layers but does not implement this merge.",
+    "rebasing": "Merge-and-restart moves only zero-points: \\(R_\\infty=\\kappa\\theta_0+\\mathbb R^{m\\times n/g}P\\), the group-constant subspace, not \\(\\Theta\\)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "viii_b_row": "QLoRA",
+   "categorical_reading": "QA-LoRA is QLoRA precomposed with group pooling: LoRA on the quotient of the input space by the quantisation groups, so its image is the determinantal cone inside the group-constant subspace. That subspace is exactly the zero-point direction of the quantiser, which is why this is the one adapter whose exact merge stays in the quantised type.",
+   "arrows": [
+    {
+     "target": "qlora",
+     "rule": "A3",
+     "h": "(B,A)\\mapsto(\\tfrac{s}{s^\\prime}B,\\ AP)",
+     "note": "\\(s^\\prime\\) is QLoRA's scale. Into QLoRA's construction (LoRA\\(_r\\) over \\(\\kappa\\theta_0\\)) pointed at \\((0,A_0P)\\): a \\(\\mathrm T_A\\) pointing whose row space lies in the group-constant subspace, hence not isomorphic to QLoRA's random-\\(A_0\\) pointing (Thm II.2(a)). Needs the same quantised base (GPTQ INT-\\(k\\)); NF4-QLoRA has a different base point."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "peqa",
+     "test": "O1",
+     "reason": "PEQA's update \\(\\mathrm{diag}(\\Delta s)\\overline W_0\\) is a row rescaling with the codes' zero pattern, QA-LoRA's is group-constant: generically the images meet only at \\(\\kappa\\theta_0\\)."
+    },
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "Pointed at \\(\\kappa\\theta_0\\ne\\theta_0\\); \\(\\theta_0\\) is generically not in its image."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Jacobian check (m=8, n=12, g=3, r=2): d = 20 = r(m+n/g-r), dim S1 = 16 = mr at (0,A0); zero-point merge identity verified to 4e-15, so M1 (Prop V.2(d) exception) and span to the group-constant subspace are right. Change: the qlora arrow note now names the target pointing (0, A0 P), which is not QLoRA's default random-A0 pointing."
+  },
+  {
+   "id": "qlora",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "As VIII.B: LoRA's cone translated to \\(\\kappa\\theta_0\\) (Prop V.2(a)).",
+    "base_point": "\\(e=\\kappa\\theta_0-\\theta_0\\), generically full rank, so \\(\\theta_0\\notin\\mathrm{Im}\\) unless \\(\\operatorname{rank}e\\le r\\).",
+    "covariance": "VIII.B 'Mon (grid)'. Strictly smaller: blockwise absmax NF4 (contiguous blocks of 64 along a row) is equivariant on the input side only under block-preserving permutations and block-constant positive scalings, and NF4's asymmetric code book breaks sign flips; output-row permutations and positive row scalings are exact. Kept as MonxMon, the nearest key, as for LoftQ.",
+    "merge": "Exact merge leaves the NF4 grid; dequantise-add-requantise is lossy.",
+    "rebasing": "\\(\\to\\Theta\\) (span of the cone)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "viii_b_row": "QLoRA",
+   "categorical_reading": "QLoRA needs no new structure: it is the LoRA cone translated to the quantised base \\(\\kappa\\theta_0\\), an object with pointing defect \\(e\\). Since \\(-e\\) is generically full rank, \\(\\theta_0\\notin\\mathrm{Im}\\,\\)QLoRA, and its exact merge leaves the NF4 grid (Mq).",
+   "arrows": [
+    {
+     "target": "ir-qlora",
+     "rule": "A2",
+     "h": "(B,A)\\mapsto(\\tfrac{s}{\\alpha}B,\\ A,\\ 0,\\ 0)",
+     "note": "\\(s\\) is QLoRA's scale, \\(\\alpha\\) IR-QLoRA's. Freeze the elastic scalars \\(\\beta_1,\\beta_2\\) at their base value 0; needs a common quantised base (ICQ's calibrated shift \\(\\tau^*\\) moves IR-QLoRA's base)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O3",
+     "reason": "\\(\\rho(q_0)=\\kappa\\theta_0\\ne\\theta_0\\), and \\(\\theta_0\\notin\\mathrm{Im}\\,\\)QLoRA unless \\(\\operatorname{rank}e\\le r\\) (Prop V.2(a)): no pointed arrow either way."
+    },
+    {
+     "target": "loftq",
+     "test": "O3",
+     "reason": "With LoftQ's default single iteration both are LoRA\\(_r\\) over the same \\(\\kappa\\theta_0\\), but QLoRA is pointed at the apex (\\(B=0\\)) and LoftQ at the smooth point \\(-\\mathrm{SVD}_r(e)\\): same image, different strata."
+    },
+    {
+     "target": "qa-lora",
+     "test": "O1",
+     "reason": "A generic rank-\\(r\\) update is not constant on quantisation groups."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Cone/defect/GL/MonxMon/Mq/span, matching VIII.B. A2 into IR-QLoRA (beta frozen at 0, common base) and the three obstructions verified (LoftQ T=1 has the same apex kappa theta0 but a smooth pointing). Change: covariance note rewritten without the dangling 'see issues' (block-preserving input side, NF4 asymmetry)."
+  },
+  {
+   "id": "lq-lora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(Q+BA\\) with \\((Q,B_0A_0)\\) from alternating \\(\\mathrm{SVD}_r\\)/Quantize from \\(Q^{(0)}=0\\): a PiSSA split first, then the residual is quantised (the split-then-quantise order of Prop V.2(b)), iterated. \\(B_0A_0\\) has rank \\(r\\), so the apex \\(Q\\) is not \\(\\theta_0\\) and \\(\\rho(q_0)\\) is a smooth point (as LoftQ).",
+    "base_point": "Pointed up to the attained residual \\(\\|W_0-Q-B_0A_0\\|\\): an approximate section (Prop V.2(c)).",
+    "covariance": "Quantisation grid with a per-matrix ILP-chosen configuration; the Fisher-weighted variant adds a data frame."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "viii_b_row": "LoftQ",
+   "categorical_reading": "LQ-LoRA is LoftQ's object with the other starting order: split first (\\(Q^{(0)}=0\\) gives PiSSA's top-\\(r\\) factor) and quantise the residual, iterated. It is a Type II translated cone over a quantised apex, pointed up to an attained residual, and with the identity quantiser and one iteration it is exactly PiSSA.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "qlora",
+     "test": "O3",
+     "reason": "Type II smooth point over \\(Q\\) versus QLoRA's apex at \\(\\kappa\\theta_0\\), with different apexes as well."
+    },
+    {
+     "target": "pissa",
+     "test": "O1",
+     "reason": "For \\(\\kappa\\ne\\mathrm{id}\\) the apex \\(Q=\\kappa(W_{\\rm res})\\) differs from PiSSA's \\(W_{\\rm res}\\) by a generically full-rank error, so the translated cones are not nested."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: split-then-quantise Type II over a quantised apex, Cone*/defect (attained residual)/GL/MonxMon/Mq/span, as LoftQ. Both obstructions verified. No changes."
+  },
+  {
+   "id": "ir-qlora",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(\\Delta W=\\alpha(B+\\beta_2E)(A+\\beta_1P)\\), rank \\(\\le r\\): the image is \\(\\kappa_{\\tau^*}\\theta_0+\\mathcal M_{\\le r}\\), LoRA's cone over the ICQ-calibrated base; the elastic shortcuts do not enlarge it.",
+    "base_point": "\\(B=0\\), \\(\\beta_1=\\beta_2=0\\) (official code): \\(\\rho(q_0)=\\kappa_{\\tau^*}\\theta_0\\), defect \\(e_{\\tau^*}\\).",
+    "gauge": "\\(GL_r\\) plus two translations: \\((B,A,\\beta_1,\\beta_2)\\mapsto(B+\\beta_2E,A+\\beta_1P)\\) is a linear change of coordinates, so \\(\\beta_1,\\beta_2\\) are absorbed into \\(A,B\\) (generic fibre dim \\(r^2+2\\)).",
+    "covariance": "Image covariance is the quantiser's (grid); \\(E\\) and \\(P\\) impose contiguous groupings only on the cometric, not on the image."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone",
+   "viii_b_row": "QLoRA",
+   "categorical_reading": "IR-QLoRA is QLoRA over an entropy-calibrated base: ICQ moves the base point to \\(\\kappa_{\\tau^*}\\theta_0\\), and IEC is a pure reparametrisation \\((B+\\beta_2E,\\,A+\\beta_1P)\\) of LoRA's factors that leaves the image unchanged. What IEC changes is the cometric \\(K=D\\rho\\,\\Lambda\\,D\\rho^\\top\\), i.e. the dynamics, not the expressivity.",
+   "arrows": [
+    {
+     "target": "qlora",
+     "rule": "A3",
+     "h": "(B,A,\\beta_1,\\beta_2)\\mapsto(\\tfrac{\\alpha}{s}(B+\\beta_2E),\\ A+\\beta_1P)",
+     "note": "\\(s\\) is QLoRA's scale; pointed (\\(h(q_0)=(0,A_0)\\)); needs the same quantised base, since IR-QLoRA's base differs from NF4 by \\(\\tau^*\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "qa-lora",
+     "test": "O1",
+     "reason": "IR-QLoRA's update is a general rank-\\(r\\) matrix; QA-LoRA's is group-constant."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Jacobian check (m=8, n=12, r=2): d = 36 = r(m+n-r), generic fibre 6 = r^2+2, confirming that IEC leaves the image unchanged. A3 arrow into QLoRA pointed at (0,A0) checked; QA-LoRA O1 verified. No changes."
+  },
+  {
+   "id": "l4q",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "nonlinear",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "For fixed integer codes \\(\\rho=s\\odot\\tilde w+b\\) is affine in \\((s,b)\\); at a generic \\(q_0\\) small changes of \\((B,A)\\) flip no code, so the germ at \\(\\kappa\\theta_0\\) is the per-group scale-and-shift family on frozen codes (SSF-like, \\(d=2\\cdot\\#\\)groups). Globally the image is the union, over code patterns reachable from \\(W_0+\\mathcal M_{\\le r}\\), of such linear families.",
+    "base_point": "\\(B=0\\) and the L4Q-init symmetric quantiser: \\(\\rho(q_0)=\\kappa\\theta_0\\ne\\theta_0\\).",
+    "gauge": "\\(\\partial\\rho/\\partial(B,A)=0\\) almost everywhere: \\((B,A)\\) move inside open code cells without changing \\(\\rho\\), a generic fibre of dim \\(r(m+n)\\) that is not a group orbit. \\(B,A\\) are moved only by the STE surrogate, a non-gradient update for the exact \\(\\rho\\).",
+    "covariance": "Per-group scales and offsets over contiguous groups of size \\(g\\): an imposed partition.",
+    "merge": "Quantise-after-update order: the deployed \\(W_q=Q_{s,b}(W_0+\\alpha BA)\\) is on the grid by construction, exact and type-preserving (the commuting order of Prop V.2(d)).",
+    "rebasing": "Merging and restarting re-quantises \\(W_0+\\alpha BA\\); accumulated rank-\\(r\\) code changes reach every code pattern, the quantised analogue of \\(\\to\\Theta\\)."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "viii_b_row": null,
+   "categorical_reading": "L4Q postcomposes LoRA with a trainable quantiser, \\(\\rho=\\kappa_{s,b}\\circ\\mathrm{LoRA}\\). For the exact map the LoRA factors are fibre directions, because codes are locally constant, and the smooth germ is only the quantiser's scale-and-shift action on frozen codes; LoRA acts through discrete code flips and the STE surrogate. This is the fine-tune-then-quantise order, which is why its merge stays exactly in the quantised type.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "qlora",
+     "test": "O1",
+     "reason": "L4Q's image lies in grid families \\(s\\odot\\tilde w+b\\), QLoRA's \\(\\kappa\\theta_0+\\mathcal M_{\\le r}\\) is off the grid: no inclusion either way."
+    },
+    {
+     "target": "peqa",
+     "test": "O1",
+     "reason": "PEQA's image is the per-row scale family on its frozen codes, \\(\\{\\mathrm{diag}(s)\\overline W_0\\}\\) (dim \\(d_{out}\\)); L4Q's is a union over code patterns of per-group scale-and-shift families. L4Q's germ is larger (per-group scales and shifts), and large PEQA rescalings would flip L4Q's recomputed codes, so neither image contains the other; the base points also differ (RTN/OPTQ versus the L4Q-init symmetric quantiser)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Jacobian check of the exact map on 8x12 with groups of 4: rank 0 in (B,A), rank 48 = 2 x #groups in (s,b), confirming the Lin germ, the non-group gauge of dim r(m+n) and Pi. Change: peqa O1 reason corrected (the germs do not agree: L4Q's is larger, PEQA rescalings would flip L4Q's codes, bases differ)."
+  },
+  {
+   "id": "peqa",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "\\(\\hat W=\\mathrm{diag}(s_0+\\Delta s)\\overline W_0\\): linear in \\(\\Delta s\\), the closure of the output-side torus orbit of \\(\\kappa\\theta_0\\) ((IA)\\(^3\\)-type at \\(\\kappa\\theta_0\\)); group-wise, one scale per row and input group.",
+    "base_point": "Starts at the RTN/OPTQ model \\(\\kappa\\theta_0\\): defect \\(e\\).",
+    "covariance": "Output side: row permutations and scalings are absorbed by \\(s_0\\) (Mon); input side: per-row rounding commutes with permutations only. The group-wise variant imposes a partition (\\(\\Pi\\)).",
+    "merge": "The trained parameters are the quantiser's own scales: same integer codes with new scales, so the merge stays in the quantised box.",
+    "rebasing": "A diagonal torus closure is a monoid: idempotent."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "viii_b_row": "(IA)$^3$ / SSF / RED",
+   "categorical_reading": "PEQA is (IA)\\(^3\\)'s output-side torus acting on the quantised base \\(\\kappa\\theta_0\\) instead of \\(\\theta_0\\): a linear object, regular relative to \\(\\kappa\\theta_0\\), whose parameters are the quantiser's own scales, so merging never leaves the quantised type. It is the multiplicative twin of QA-LoRA, which moves the zero-points instead.",
+   "arrows": [
+    {
+     "target": "efficientqat",
+     "rule": "A3",
+     "h": "\\Delta s\\mapsto\\Delta s\\otimes\\mathbf 1_{n/g}^\\top",
+     "note": "In increment coordinates (\\(s=s_0+\\Delta s\\) on both sides): broadcast each channel scale to the groups of its row. Valid over common frozen codes and zero-points and row-constant initial step sizes \\(s_0\\otimes\\mathbf 1_{n/g}^\\top\\) (EfficientQAT's E2E-QP is group-wise PEQA over the Block-AP base, whose step sizes are generally not row-constant)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "ia3",
+     "test": "O1",
+     "reason": "(IA)\\(^3\\) scales only \\(k\\), \\(v\\) (output) and \\(W_{\\rm down}\\) (input) at \\(\\theta_0\\); PEQA rescales every linear layer's output rows at \\(\\kappa\\theta_0\\) (different boxes, and O3 by the base point)."
+    },
+    {
+     "target": "qa-lora",
+     "test": "O1",
+     "reason": "Row rescalings of the codes versus group-constant shifts: generically non-nested images."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived Lin/defect/none/MonxMon (Mon on output rows, permutations only on the input side)/M1/idempotent. Change: efficientqat arrow note adds that it needs row-constant initial step sizes and uses increment coordinates (verified numerically under that condition). Obstructions verified."
+  },
+  {
+   "id": "apiq",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Cone*",
+    "base_point": "defect",
+    "gauge": "GL",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "span"
+   },
+   "coord_notes": {
+    "shape": "\\(Q+BA\\) as LoftQ, with \\((Q,A,B)\\) and the clipping \\((\\gamma,\\beta)\\) fitted to activations layer by layer (or block by block) given already-quantised inputs \\(X^q\\); \\(B_0A_0\\) has rank \\(r\\): a translated cone over a quantised apex.",
+    "base_point": "Pointed up to an attained activation residual \\(\\|W_0X-(Q+B_0A_0)X^q\\|\\), not a weight residual.",
+    "covariance": "Quantisation grid; the calibration data add a data frame on the input side (the objective is invariant under \\((W_0h^{-1},hX)\\) before rounding)."
+   },
+   "table_row": "R-additive",
+   "table_col": "Cone*",
+   "viii_b_row": "LoftQ",
+   "categorical_reading": "ApiQ builds the same Type II object as LoftQ, a rank-\\(r\\) translated cone over a quantised apex, but chooses the section by matching activations sequentially. Its defect is therefore measured through the realisation \\(\\Phi_f\\) on calibration data rather than in \\(\\Theta\\).",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "loftq",
+     "test": "O1",
+     "reason": "Activation-fitted and weight-fitted quantised apexes \\(Q\\) differ by a generically full-rank matrix, so the translated cones are not nested."
+    },
+    {
+     "target": "qlora",
+     "test": "O3",
+     "reason": "Smooth Type II pointing over \\(Q\\) versus QLoRA's apex at \\(\\kappa\\theta_0\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: LoftQ's Type II shape with an activation-fitted section, Cone*/defect/GL/MonxMon/Mq/span. Both obstructions verified. No changes."
+  },
+  {
+   "id": "efficientqat",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "R",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "Pi",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "Two stages: Block-AP trains all weights and quantiser parameters block-wise against reconstruction (a data-driven base change \\(\\kappa_{\\rm BAP}\\), not a PEFT object); E2E-QP trains only group-wise step sizes on frozen codes. Classified by E2E-QP.",
+    "shape": "\\(\\hat W=s\\odot(\\overline W-z)\\), linear in the step sizes \\(s\\).",
+    "base_point": "Pointed at \\(\\kappa_{\\rm BAP}\\theta_0\\ne\\theta_0\\).",
+    "covariance": "Group-wise step sizes over contiguous groups: an imposed partition.",
+    "merge": "The step sizes are the quantiser's own parameters: the output stays a standard group-wise quantised model.",
+    "rebasing": "Scale families on fixed codes are closed under composition."
+   },
+   "table_row": "R-action",
+   "table_col": "Lin",
+   "viii_b_row": "(IA)$^3$ / SSF / RED",
+   "categorical_reading": "EfficientQAT is a base change followed by PEQA: Block-AP constructs a calibrated quantised base \\(\\kappa_{\\rm BAP}\\theta_0\\) by block-wise full training, and E2E-QP is the group-wise scale torus acting on its frozen codes. Only the second stage is an object of the slice; the first chooses where it is pointed.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "peqa",
+     "test": "O2",
+     "reason": "Group-wise scales have \\(d=d_{out}d_{in}/g>d_{out}\\), so E2E-QP does not factor through per-channel PEQA."
+    },
+    {
+     "target": "qlora",
+     "test": "O1",
+     "reason": "On-grid scale families versus QLoRA's off-grid cone."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived for E2E-QP: linear in group-wise step sizes, Lin/defect/none/Pi/M1/idempotent. O2 to per-channel PEQA (d_out d_in/g > d_out) and O1 to QLoRA verified. No changes."
+  },
+  {
+   "id": "loqt",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "Mq",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "kind": "Per interval an adapter \\(W_Q+sP_QB\\) (one-sided, frozen gradient-SVD projector on the smaller side); at \\(T_i=\\tau+\\psi^i\\) it merges into the NF4 weight, re-quantises, recomputes \\(P\\) and re-initialises \\(B\\): a merge-and-restart schedule like ReLoRA.",
+    "shape": "Per stage the linear method \\(\\{W_Q+P_QX\\}\\).",
+    "base_point": "\\(B_{\\rm init}\\approx P^+(W-Q)\\), refined, compensates the part of the quantisation error inside \\(\\mathrm{span}\\,P\\): defect = attained residual. Exact pointing only for LoQT-nq with \\(B_0=0\\).",
+    "gauge": "\\(B\\mapsto P_QB\\) is injective.",
+    "covariance": "The gradient-SVD frame (\\(CO\\times CO\\) for GaLore) is broken by NF4 quantisation of both \\(W\\) and \\(P\\): coordinate grid. LoQT-nq is \\(CO\\times CO\\) (gradient).",
+    "merge": "Dequantise-add-requantise at each \\(T_i\\): type-preserving but lossy; the re-initialised \\(B\\) absorbs part of the new error.",
+    "rebasing": "A schedule with exponentially growing intervals; reach \\(\\to\\Theta\\)."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "GaLore",
+   "categorical_reading": "LoQT realises GaLore's projected step as a forward one-sided adapter (Prop IV.2) and re-bases it ReLoRA-style into a quantised weight. Unlike GaLore it resets \\(B\\) at each re-basing, so it shares GaLore's per-stage image but not its trajectory.",
+   "arrows": [
+    {
+     "target": "galore",
+     "rule": "A3",
+     "h": "B\\mapsto sB",
+     "note": "Per stage, LoQT-nq with \\(B_0=0\\) and the same \\(P_k\\): both are the linear method \\(W_k+P_kX\\); dynamics differ (reset versus carried-over state)."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "B\\mapsto(P_k,\\ \\tfrac{s}{s^\\prime}B)",
+     "note": "Per stage (LoQT-nq): freezing LoRA's left factor at \\(P_k\\), into LoRA pointed at \\((P_k,0)\\) (FB\\((P_k)\\hookrightarrow\\) LoRA); \\(s^\\prime\\) is LoRA's scale."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "qlora",
+     "test": "O3",
+     "reason": "LoQT's \\(B_{\\rm init}\\) compensates quantisation error, so \\(\\rho(q_0)\\ne\\kappa\\theta_0\\) (O3). Moreover the refinement re-quantises \\(W_Q=q_{\\rm NF4}(W-PB)\\ne q_{\\rm NF4}(W)\\), generically by a high-rank difference, so the first-stage image \\(W_Q+P_QX\\) is not even inside QLoRA's \\(\\kappa\\theta_0+\\mathcal M_{\\le r}\\) (O1); only without refinement steps is it contained, with the pointings still disagreeing."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/defect/none/MonxMon/Mq/schedule (ReLoRA-type scheme with dequantise-add-requantise merges). Per-stage LoQT-nq arrows to GaLore and LoRA (T_B pointing (P_k,0)) checked. Change: qlora obstruction reason corrected; with the B_init refinement W_Q = q(W-PB) differs from q(W) by a high-rank matrix (rank 27 in a 32x48 uniform-grid test), so the first stage is not inside QLoRA's image."
+  },
+  {
+   "id": "galore",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "shape": "As VIII.B: per period the linear method \\(\\{W_k+P_kX\\}\\) with \\(P_k\\) the gradient's top-\\(r\\) singular vectors.",
+    "covariance": "VIII.B: \\(CO\\times CO\\) (gradient frame).",
+    "merge": "n/a: writes \\(W\\) directly.",
+    "rebasing": "axes.json lists GaLore under 'schedule'; its reach is \\(\\Theta\\) (VIII.B '\\(\\to\\Theta\\)')."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "GaLore",
+   "categorical_reading": "GaLore is a backward lens with compression \\(P_t^\\top\\) and anchor \\(P_t\\); by the degree-one collapse it is one-sided LoRA \\(W_k+P_kC\\) re-based every period, with \\(C\\)'s optimizer state carried over untransported. As a set over its possible sequences of projectors, its reach is \\(\\Theta\\), because the linear shape moves, not because any single period is high rank.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "C\\mapsto s^{-1}C\\quad(A_0:=P_k^\\top)",
+     "note": "Per period, right-projection case (\\(d_{out}>d_{in}\\); here \\(P_k^\\top\\in\\mathbb R^{r\\times d_{in}}\\) denotes the transposed top-\\(r\\) right singular vectors): GaLore's period \\(W_k+CP_k^\\top\\) is LoRA-FA\\((P_k^\\top)\\); \\(s\\) is LoRA-FA's scale."
+    },
+    {
+     "target": "lora",
+     "rule": "A2",
+     "h": "C\\mapsto(P_k,\\ s^{-1}C)",
+     "note": "Left-projection case (\\(d_{out}\\le d_{in}\\)): per period FB\\((P_k)\\hookrightarrow\\) LoRA pointed at \\((P_k,0)\\); trajectories agree under Prop IV.2 (Adam, no weight decay, state carried on both sides)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "lora",
+     "test": "O2",
+     "reason": "Against a single \\(\\mathrm{LoRA}_r\\) over \\(\\theta_0\\): after \\(K\\ge2\\) periods the reach has rank up to \\(\\min(Kr,m,n)>r\\). (The arrow above is per period.)"
+    },
+    {
+     "target": "flora-opt",
+     "test": "O1",
+     "reason": "Per period, a gradient-SVD frame \\(P_k\\) versus a random Gaussian frame \\(A_t\\): the period images are generically not nested."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/regular/none/OxO/na/schedule, matching VIII.B. Arrows checked (LoRA-FA per period, FB(P_k) into LoRA). Change: projection-side inequalities corrected in both arrow notes (left for d_out <= d_in, right for d_out > d_in), with the right-frame notation spelled out. Consolidation (2026-10-01): obstruction -/-> lora: instance qualifier added. Sync with the refereed paper (2026-10-03): the reach Theta is qualified as a set over possible projector sequences."
+  },
+  {
+   "id": "galore-2",
+   "entry_type": "software",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "covariance": "Randomised SVD gives an approximate top-\\(r\\) frame: \\(CO\\times CO\\) in law.",
+    "rebasing": "GaLore's schedule (reach \\(\\Theta\\)); FSDP fusion and 8-bit states change cost, not the object."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "GaLore",
+   "categorical_reading": "GaLore 2 is GaLore as software (randomised-SVD projector, FSDP-fused per-layer updates, 8-bit states). The object is unchanged: each period is the linear method \\(W_k+P_kX\\) with an approximately spectral frame.",
+   "arrows": [
+    {
+     "target": "galore",
+     "rule": "A3",
+     "h": "\\mathrm{id}",
+     "note": "Per period, isomorphic objects for a common \\(P_k\\); the randomised SVD only perturbs the frame."
+    }
+   ],
+   "obstructions": [],
+   "verified": true,
+   "check_notes": "Re-derived as GaLore with a randomized-SVD frame (CO x CO in law: the Gaussian test matrix is rotation-invariant). entry_type software is sensible. Per-period iso arrow checked. No changes."
+  },
+  {
+   "id": "q-galore",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "defect",
+    "gauge": "none",
+    "covariance": "MonxMon",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "shape": "Per period GaLore's \\(\\{W_k+P_kX\\}\\), but weights are stochastically rounded to INT8 every step, so iterates live on the INT8 lattice and each step leaves \\(\\mathrm{span}\\,P_k\\) by a rounding error that vanishes in expectation.",
+    "base_point": "Starts from the INT8 copy \\(\\kappa_8\\theta_0\\): defect.",
+    "covariance": "The INT4 projector and the INT8 weight grid break the gradient-SVD frame's orthogonal covariance: coordinate grid.",
+    "merge": "Writes INT8 weights directly.",
+    "rebasing": "A schedule with lazy layer-adaptive refresh (interval doubled when consecutive projectors align)."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "GaLore",
+   "categorical_reading": "Q-GaLore is GaLore after base change to a quantised type: the moving linear shape is unchanged in expectation, but unbiased stochastic rounding pushes the iterates onto the INT8 lattice. Its lazy refresh changes the schedule, not the object.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O1",
+     "reason": "Per period, stochastically rounded INT8 steps leave \\(\\mathrm{span}\\,P_k\\) coordinatewise, so they are not in GaLore's period image (they agree only in law); O3 also holds, by the INT8 base point."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/defect (INT8 start)/none/MonxMon/na/schedule. GaLore O1 obstruction verified. No changes."
+  },
+  {
+   "id": "flora-opt",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "frame",
+    "merge": "na",
+    "rebasing": "schedule"
+   },
+   "coord_notes": {
+    "shape": "As VIII.B: per period the linear method \\(\\{W_k+XA_t\\}\\) with \\(A_t\\sim\\mathcal N(0,1/r)\\) regenerated from a seed.",
+    "covariance": "VIII.B 'fr': covariance in law through the Gaussian \\(A_t\\).",
+    "rebasing": "axes.json 'schedule'; reach \\(\\Theta\\). Momentum transfer \\(MA_{t-1}A_t^\\top\\) at resampling is an approximate (Johnson-Lindenstrauss) transport of optimizer state, unlike GaLore's untransported carry-over. Parameter-scaled Adafactor breaks the degree-one collapse (Prop IV.2) unless scale_parameter=False."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": "Flora",
+   "categorical_reading": "Flora is the random-projection row of the cotangent table: per period LoRA-FA\\((A_t)\\) with a fresh Gaussian \\(A_t\\), re-based, reaching \\(\\Theta\\). Its momentum transfer \\(A_{t-1}A_t^\\top\\) is an approximate transport of optimizer state between frames, the ingredient GaLore lacks.",
+   "arrows": [
+    {
+     "target": "lora-fa",
+     "rule": "A3",
+     "h": "C\\mapsto s^{-1}C\\quad(A_0:=A_t)",
+     "note": "Per period: Flora's period is LoRA-FA\\((A_t)\\) pointed at \\(C=0\\)."
+    },
+    {
+     "target": "relora",
+     "rule": "A2",
+     "h": "C\\mapsto(s^{-1}C,\\ A_t)",
+     "note": "Per stage: freezing ReLoRA's \\(A\\) at its restart value; same stratum \\((0,A)\\) as ReLoRA's restart pointing when \\(A_k=A_t\\)."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O1",
+     "reason": "Per period, a random Gaussian frame \\(A_t\\) versus a gradient-SVD frame \\(P_k\\): the period images are generically not nested."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived B/Lin/regular/none/frame/na/schedule, matching VIII.B. LoRA-FA(A_t) per-period arrow and A2 into a ReLoRA stage (A frozen at A_t) checked. No changes."
+  },
+  {
+   "id": "fira",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The forward map is the identity; the update \\(P\\psi(R)+(G-PR)\\,\\mathrm{diag}(\\phi)\\) is a non-linear preconditioner of the full gradient with low-rank Adam state.",
+    "shape": "The residual term is full rank, so one step can move in any direction: the per-period image is all of \\(\\Theta\\) (Lin \\(=\\Theta\\), as Full FT).",
+    "covariance": "Image-level \\(GL\\times GL\\) (the image is \\(\\Theta\\)); the update rule itself is only \\(CO(m)\\times\\)Mon\\((n)\\)-equivariant (gradient-SVD frame, column-wise norm ratios).",
+    "merge": "n/a: writes \\(W\\).",
+    "rebasing": "\\(R_1=\\Theta\\), so cycles gain nothing; refreshing \\(P\\) only moves the optimizer frame."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": null,
+   "categorical_reading": "Fira is not a low-rank object of the slice: its forward object is Full FT, and the low-rank structure lives only in the optimizer state, reused to rescale the out-of-subspace residual. In the framework it is Full FT with a different cometric, and \\(\\phi\\equiv0\\) collapses it to GaLore's rank-\\(r\\) periods.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "A Fira step is full rank; a GaLore period has rank \\(\\le r\\)."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: per-step image Theta (full-rank residual term), B/Lin/regular/none/GLxGL/na/idempotent, consistent with Adam-mini and APOLLO. GaLore O2 verified. No changes."
+  },
+  {
+   "id": "apollo",
+   "entry_type": "method",
+   "core": false,
+   "coords": {
+    "kind": "B",
+    "shape": "Lin",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "GLxGL",
+    "merge": "na",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "kind": "The forward map is the identity; the update \\(G\\,\\mathrm{diag}(s)\\) rescales the raw gradient channel-wise, with \\(s\\) estimated from Adam run in a random \\(r\\)-dimensional sketch (tensor-wise for APOLLO-Mini).",
+    "shape": "The raw gradient is unconstrained, so the per-step image is all of \\(\\Theta\\).",
+    "covariance": "Image-level \\(GL\\times GL\\); the update rule is \\(O(m)\\) in law (Gaussian sketch) times Mon\\((n)\\) (channel-wise scaling).",
+    "merge": "n/a: writes \\(W\\).",
+    "rebasing": "\\(R_1=\\Theta\\): idempotent; resampling the sketch only changes the scale estimates."
+   },
+   "table_row": "B",
+   "table_col": "Lin",
+   "viii_b_row": null,
+   "categorical_reading": "APOLLO is Full FT with a structured learning rate: the anchor is the identity up to a diagonal channel scaling, and the random sketch only estimates that scaling. As an object it is the terminal Full FT; unlike GaLore and Flora nothing confines its update to a moving subspace.",
+   "arrows": [],
+   "obstructions": [
+    {
+     "target": "flora-opt",
+     "test": "O2",
+     "reason": "APOLLO's update \\(G\\,\\mathrm{diag}(s)\\) is full rank; a Flora period has rank \\(\\le r\\)."
+    },
+    {
+     "target": "galore",
+     "test": "O2",
+     "reason": "Full-rank steps versus rank-\\(\\le r\\) periods."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Re-derived: raw gradient times a channel diagonal, per-step image Theta, B/Lin/regular/none/GLxGL/na/idempotent. Both O2 obstructions verified. No changes."
+  }
+ ]
+}

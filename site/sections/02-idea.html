@@ -1,0 +1,222 @@
+<section class="expose" id="idea" data-toc="0–I" data-toc-title="The pointed slice">
+  <header class="expose-head"><span class="label">Exposé 0–I</span><h2>A method is an arrow</h2><p class="summary">We model a weight-space PEFT method as a pointed map into the pretrained weights. The frozen model and full fine-tuning sit at the two ends, and sums and products of such maps already give methods in use.</p></header>
+  <blockquote class="epigraph"><p>Look at the arrow, and at the point where it lands. The objects will then explain themselves.</p><footer>after Grothendieck</footer></blockquote>
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>A weight-space PEFT method is a pointed smooth map \(\rho:(Q,q_0)\to(\Theta,\theta_0)\) sending the initialisation to the pretrained weights. \(N\) simulates \(M\) when a pointed smooth \(h\) satisfies \(\rho_N\circ h=\rho_M\).</li>
+    <li>The frozen model is initial and full fine-tuning terminal, with the merge as the arrow into it. Every weight-space method that starts at \(\theta_0\) sits between them.</li>
+    <li>Parameter count is a poor measure. LoRA with \(r=16\) on a \(4096\times4096\) matrix has 131,072 parameters and a 130,816-dimensional image, yet from zero initialisation its first steps use only 65,536 directions.</li>
+    <li>Adding updates gives a <a href="#app-b-monoidal" class="gloss">symmetric monoidal structure</a> in which RoSA, GraLoRA and concatenated LoRAs are sums. The product of the two one-sided LoRAs with frozen frames is LoRA-XS.</li>
+  </ul></div>
+  <div class="prose">
+
+    <h3 id="idea-thesis">The thesis</h3>
+
+    <p>Fine-tuning papers usually compare methods by their number of trainable parameters. That number does not say what a method can reach, how it trains, or what merging does. Those are properties of a map.</p>
+
+    <p>A pretrained checkpoint \(\theta_0\) is a point in weight space \(\Theta\), and fine-tuning moves it. A parameter-efficient method chooses where the point may move, through a pointed map</p>
+    \[\rho:(Q,q_0)\longrightarrow(\Theta,\theta_0)\]
+    <p>from a small space of trainable parameters into weight space, which sends the initialisation \(q_0\) to the checkpoint. <a href="https://arxiv.org/abs/2106.09685">LoRA</a> is the map \((B,A)\mapsto W_0+sBA\) on each adapted matrix. Orthogonal fine-tuning (<a href="https://arxiv.org/abs/2306.07280">OFT</a>) is \(Q\mapsto W_0\,C(Q)\), where \(C\) is the <a href="#app-d-cayley" class="gloss">Cayley map</a> of a skew matrix. Full fine-tuning is the identity of \(\Theta\), and the frozen model is the inclusion of the single point \(\theta_0\). Figure 1 shows where each catalogued method sits relative to these two.</p>
+
+    <figure class="figure wide" id="fig-interval">
+      <div data-figure="interval" aria-label="The interval of weight-space methods: for a chosen method, the triangle from the frozen model through the method to full fine-tuning, with its budget and coordinates, and the recorded simulation arrows and obstructions."></div>
+      <figcaption><span class="fig-n">Figure 1</span>The interval of weight-space methods. Pick a method \(M\) to see the triangle Frozen \(\to M\to\) Full FT. The first arrow exists when \(M\) starts at \(\theta_0\), and a pointing defect leaves the triangle commuting only up to that defect. The second arrow is \(\rho_M\), the merge. Beside it are the budget \(\lvert Q_M\rvert\) on one \(4096\times4096\) layer at \(r=16\), a sketch of the image germ, and the seven coordinates of \(M\). Below, pick a recorded simulation into or out of \(M\), with its rule and \(h\), or an obstruction with its failed test, to draw it over \(\Theta\). Adapters and prefixes fall outside the interval because they extend the network (<a href="#thm-VI-1">Def VI.1</a>).</figcaption>
+    </figure>
+
+    <p>Following Grothendieck, we study a morphism over a base, here the pretrained point. Three invariants of \(\rho\) do most of the work, with one further layer for architectures.</p>
+    <aside class="note"><span class="label">Credit</span>The first unification of adapters, prefix tuning and LoRA is <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>, who treat each as a modification of a hidden state. Ours works on the weight side, where adapters and prefixes return as extensions (<a href="#thm-VI-1">Def VI.1</a>).</aside>
+
+    <div class="table-wrap"><table>
+      <thead><tr><th>Invariant of \(\rho\)</th><th>Question it answers</th><th>What is computed</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Image germ at \(\theta_0\)</td><td>What can the method express?</td><td>Its shape (linear space, cone, group orbit or torus saturation), its first-order image \(S_1\), whether \(\theta_0\) is a smooth point or an apex, cut-rank and dimension.</td><td><a href="#thm-II-1">Exposé II</a></td></tr>
+        <tr><td>Fibres, with a metric</td><td>How does it train?</td><td>Gauge orbits, and the cometric \(K=D\rho\,\Lambda\,D\rho^\top\) from the optimizer's rates \(\Lambda\). Under gradient flow with per-block rates, the compact half of LoRA's gauge acts by isometries and the non-compact half gives conserved charges.</td><td><a href="#thm-III-1">Exposé III</a>; the lens in <a href="#thm-IV-1">Exposé IV</a></td></tr>
+        <tr><td><a href="#app-a-base-change" class="gloss">Base change</a></td><td>What happens when \(\theta_0\) moves?</td><td>Splitting initialisations, quantisation, restarts and merging.</td><td><a href="#thm-V-1">Exposé V</a></td></tr>
+        <tr><td>Extensions</td><td>Where does the network enter?</td><td>Adapters and prompts extend the network \(f\). Merging is then a <a href="#app-a-lift" class="gloss">lifting problem</a> decided by a local rewriting calculus.</td><td><a href="#thm-VI-1">Exposé VI</a></td></tr>
+      </tbody>
+    </table></div>
+    <aside class="note"><span class="label">Credit</span>The second row rests on work on factorised and linear networks, on balancedness (<a href="https://arxiv.org/abs/1806.00900">Du, Hu and Lee, 2018</a>; <a href="https://arxiv.org/abs/1802.06509">Arora et al., 2018</a>), symmetry and conservation (<a href="https://arxiv.org/abs/2012.04728">Kunin et al., 2020</a>; <a href="https://arxiv.org/abs/2210.17216">Zhao et al., 2023</a>) and imbalance at initialisation (Tarmoun et al. and Min et al., both ICML 2021).</aside>
+
+    <p>Each result in the <a href="#checks">list of checkable results</a> carries the scope of its proof. For example, <a href="https://arxiv.org/abs/2402.12354">LoRA+</a> with ratio \(\lambda\) follows exactly the trajectory of plain LoRA with \(\alpha\) multiplied by \(\lambda\), for zero-init \(B\) under Adam with \(\varepsilon=0\), no weight decay or gradient clipping, one learning-rate schedule for both groups and the same data order and dropout masks, in exact arithmetic (<a href="#thm-III-10">Thm III.10</a>, <a href="#thm-III-11">Cor III.11</a>).</p>
+    <aside class="note"><span class="label">Credit</span>The LoRA and Adam case is due to <a href="https://thinkingmachines.ai/blog/lora/">Schulman et al., 2025</a>, for the method of <a href="https://arxiv.org/abs/2402.12354">Hayou et al., 2024</a>. New here are the general torus for multihomogeneous methods and the SGD law.</aside>
+
+    <h3 id="idea-where">Where the category theory works</h3>
+
+    <p>Categorical language is cheap, so we name the seven places where it does real work.</p>
+
+    <ol>
+      <li>The pointed slice gives the interval [frozen, full FT] and makes “simulation” precise (<a href="#thm-I-2">Def I.2</a>, <a href="#thm-I-4">Obs I.4</a>).</li>
+      <li>Isomorphism invariants finer than the image, \(S_1\) and the singular locus, classify LoRA's full-rank initialisations as a set (<a href="#thm-I-6">Obs I.6</a>, <a href="#thm-II-2">Thm II.2</a>).</li>
+      <li>A categorical product produces LoRA-XS. Intersections of images, which are not products, organise others such as HRA (<a href="#thm-I-8">Prop I.8</a>, <a href="#thm-II-7">Thm II.7</a>).</li>
+      <li>Base change along maps that change the function, such as quantisers, creates pointing defects (<a href="#thm-V-2">Prop V.2</a>).</li>
+      <li>The lens 2-functor \(\mathbf{Para}(\mathsf R)\) separates tangent-side from cotangent-side methods. Its degree-one collapse shows that GaLore under Adam, without weight decay or global gradient clipping, is period by period one-sided LoRA on a moving base with its optimizer state carried over (<a href="#thm-IV-2">Prop IV.2</a>, after <a href="https://arxiv.org/abs/2502.13811">Torroba-Hennigen et al., 2025</a>).</li>
+      <li><a href="#app-a-natural" class="gloss">Naturality</a>. Gradient flow is natural exactly where cometrics agree, which for LoRA's linear gauge with block-scalar rates means along \(O(r)\) where \(A\) has full row rank and \(r\lt n\). A rule combining LoRA factors is well defined exactly when it is constant on the fibres of \((B,A)\mapsto BA\) (<a href="#thm-III-3">Thm III.3</a>, <a href="#thm-V-4">Prop V.4</a>).</li>
+      <li>Symmetric monoidal structure bounds rank by a min-cut of a tensor-network presentation (<a href="#thm-II-10">Thm II.10</a>).</li>
+    </ol>
+
+    <p>The rest is real algebraic geometry, invariant theory, Lie generation and gradient-flow ODEs, and we say so where it happens.</p>
+    <details class="aside"><summary>More: constructions we leave out</summary>
+      <p>Some constructions are true here and do no work, so we leave them out. They include coends for the rank filtration, a saturation monad, sheaf language for locality, the Grothendieck construction \(\int\mathsf{Meth}\to\mathbf{PNet}\), and coKleisli 2-cells for mixtures.</p>
+    </details>
+
+    <h3 id="idea-methods">Pretrained models and methods</h3>
+
+    <p>A pretrained network is a function with a parameter slot and a chosen value in it. Its natural home is the <a href="#app-b-para" class="gloss">bicategory</a> of parametrised maps.</p>
+
+    <div class="env definition" id="thm-I-1"><span class="env-head">Definition I.1 <span class="env-name">(Para; pretrained model)</span>.</span> <span class="env-body">For a cartesian category \(\mathcal C\), the bicategory \(\mathbf{Para}(\mathcal C)\) has as 1-cells \(X\to Y\) the pairs \((P,\,f:P\times X\to Y)\), and as 2-cells \((P,f)\Rightarrow(Q,g)\) the maps \(r:Q\to P\) with \(g=f\circ(r\times X)\). A <strong>pretrained model</strong> is a pointed 1-cell \(F=(\Theta,\theta_0,f)\) of \(\mathbf{Para}(\mathbf{Diff})\). Its <strong>realisation</strong> is \(\Phi_f:\Theta\to C^\infty(X,Y)\), \(\theta\mapsto f(\theta,-)\). Fine-tuning is a path \(\theta(t)\) with \(\theta(0)=\theta_0\).</span></div>
+    <aside class="note"><span class="label">Credit</span>\(\mathbf{Para}\) and the lens reading of backpropagation are due to <a href="https://arxiv.org/abs/1711.10455">Fong, Spivak and Tuyéras, 2017</a> and <a href="https://arxiv.org/abs/2103.01931">Cruttwell, Gavranović, Ghani, Wilson and Zanasi, 2021</a>. See also <a href="https://arxiv.org/abs/2402.15332">Gavranović et al., 2024</a> for a broader programme.</aside>
+
+    <div class="env definition" id="thm-I-2"><span class="env-head">Definition I.2 <span class="env-name">(methods and simulations)</span>.</span> <span class="env-body">A weight-space <strong>PEFT method</strong> at \(\theta_0\) is a pointed smooth map \(M=(Q,q_0,\rho)\), \(\rho:Q\to\Theta\), with \(\rho(q_0)=\theta_0\). Usually \(\dim Q\ll\dim\Theta\), and \(\theta_0\) (or a splitting of it) is frozen inside \(\rho\). These form the pointed slice
+      \[\mathsf{Meth}(\Theta,\theta_0):=\mathbf{Diff}_*/(\Theta,\theta_0).\]</span>
+      <ul>
+        <li>A <strong>morphism</strong> \(h:M\to N\) is a pointed smooth map with \(\rho_N\circ h=\rho_M\). Read it as “\(N\) simulates \(M\)”. Then \(N\) reproduces every weight that \(M\) reaches, together with its parameter path. A <em>weak</em> morphism drops the condition \(h(q_0)=q_0'\).</li>
+        <li>The <strong>budget</strong> is \(\lvert M\rvert=\dim Q\).</li>
+        <li>\(M\) is <strong>additive</strong> if \(\rho=\theta_0+\delta\) with \(\delta(q_0)=0\) and \(\delta\) independent of \(\theta_0\).</li>
+        <li>\(M\) is of <strong>action type</strong> if \(\rho(q)=\gamma(q)\cdot\theta_0\) for a map \(\gamma\) into a group acting on \(\Theta\).</li>
+      </ul>
+    </div>
+
+    <details class="aside"><summary>More: four objects and one arrow</summary>
+      <p>On one \(m\times n\) box, LoRA (<a href="https://arxiv.org/abs/2106.09685">Hu et al., 2021</a>) is \(\rho(B,A)=W_0+sBA\) on \(Q=\mathbb R^{m\times r}\times\mathbb R^{r\times n}\), pointed at \((0,A_0)\). It is additive, with budget \(r(m+n)\). OFT (<a href="https://arxiv.org/abs/2306.07280">Qiu et al., 2023</a>) with the exact Cayley map is \(\rho(Q)=W_0\,C(Q)\) for skew \(Q\) (block-diagonal in OFT), pointed at \(Q=0\). It is of action type, with \(\gamma=C\) landing in \(SO(n)\) on the input side. The frozen model is \((\mathrm{pt},*,\theta_0)\), and full fine-tuning is \((\Theta,\theta_0,\mathrm{id})\).</p>
+      <p>For an arrow, take LoRA-FA (<a href="https://arxiv.org/abs/2308.03303">Zhang et al., 2023</a>), \(B\mapsto W_0+sBA_0\) with \(A_0\) frozen. The pointed map \(h(B)=(B,A_0)\) satisfies \(\rho_{\rm LoRA}\circ h=\rho_{\rm FA}\), so LoRA pointed at \((0,A_0)\) simulates LoRA-FA.</p>
+    </details>
+    <aside class="note"><span class="label">Credit</span>Random-subspace training, \(\rho(z)=\theta_0+Pz\) with fixed random \(P\), is how <a href="https://arxiv.org/abs/1804.08838">Li et al., 2018</a> measured intrinsic dimension and how <a href="https://arxiv.org/abs/2012.13255">Aghajanyan et al., 2020</a> fine-tuned language models in small subspaces. Here it is a linear object with \(d(M)=\lvert M\rvert\) when \(P\) has full column rank.</aside>
+
+    <h3 id="idea-para">What Para adds</h3>
+
+    <div class="env observation" id="thm-I-3"><span class="env-head">Remark I.3 <span class="env-name">(orientation, and what Para adds)</span>.</span> <span class="env-body">Each \(\rho\) is a 2-cell \(F\Rightarrow F^\rho:=(Q,f\circ(\rho\times X))\) <em>out of</em> \(F\). A simulation \(h:M\to N\) is a 2-cell \(F^{\rho_N}\Rightarrow F^{\rho_M}\), since \(\rho_N\circ h=\rho_M\). Hence \(\mathsf{Meth}(\Theta,\theta_0)\) is the <strong><a href="#app-a-coslice" class="gloss">opposite of the pointed coslice</a> of reparametrisation 2-cells under \(F\)</strong>. The slice over \(F\) is a different category, and its objects are extensions (Exposé VI).</span>
+      <p>\(\mathsf{Meth}\) depends only on \((\Theta,\theta_0)\) and not on \(f\). So for weight-space methods, \(\mathbf{Para}\) is bookkeeping. The network enters in exactly three places, and we use \(\mathbf{Para}\) only there:</p>
+      <ul>
+        <li>extensions and mergeability (<a href="#thm-VI-1">Def VI.1</a>, <a href="#thm-VI-3">Thm VI.3</a>);</li>
+        <li>the realisation \(\Phi_f\), through functional images and descent (<a href="#thm-II-15">Obs II.15</a>);</li>
+        <li>the backpropagation lens (<a href="#thm-IV-1">Def IV.1</a>, <a href="#thm-IV-2">Prop IV.2</a>).</li>
+      </ul>
+    </div>
+    <aside class="note"><span class="label">Credit</span>Calling \(\mathbf{Para}\) bookkeeping concerns this slice only. In the three places listed we use the framework of <a href="https://arxiv.org/abs/1711.10455">Fong, Spivak and Tuyéras</a> and <a href="https://arxiv.org/abs/2103.01931">Cruttwell et al.</a> directly, including their lens 2-functor in Exposé IV.</aside>
+    <details class="aside"><summary>More: why the next exposés work in weight space</summary>
+      <p>Reach in \(\Theta\) is a property of the image, and the cometric \(K=D\rho\,\Lambda\,D\rho^\top\) that shapes training is built from \(\rho\) and the optimizer's rates. The network enters training through the gradient it hands to the method, and enters expressivity through \(\Phi_f\) once we ask about functions instead of weights. So Exposés II and III work in \(\Theta\) and flag the places where \(f\) matters.</p>
+    </details>
+
+    <h3 id="idea-interval">Frozen and full fine-tuning</h3>
+
+    <div class="env observation" id="thm-I-4"><span class="env-head">Observation I.4 <span class="env-name">(universal properties)</span>.</span> <span class="env-body">In \(\mathsf{Meth}(\Theta,\theta_0)\):</span>
+      <p>(a) the frozen model \((\mathrm{pt},*,\theta_0)\) is initial, and full fine-tuning \((\Theta,\theta_0,\mathrm{id})\) is terminal. The unique morphism \(M\to\) Full FT is \(\rho_M\) itself.</p>
+      <p>(b) If the <a href="#app-a-pullback" class="gloss">fibre product</a> \(Q_M\times_\Theta Q_N\) exists in \(\mathbf{Diff}\), it is the product \(M\times N\). It exists, for instance, when the set-level fibre product is an embedded submanifold of \(Q_M\times Q_N\), as for a <a href="#app-c-transversality" class="gloss">clean intersection</a> or for affine \(\rho\)'s as in <a href="#thm-I-8">Prop I.8(a)</a>. Transversality \(\rho_M\pitchfork\rho_N\) cannot be the reason when \(\lvert M\rvert+\lvert N\rvert\lt\dim\Theta\), since at \((q_0,q_0')\) it would force \(\lvert M\rvert+\lvert N\rvert\ge\dim\Theta\). When the product exists in \(\mathsf{Meth}\), its underlying set is the set-level fibre product, so \(\mathrm{Im}(M\times N)=\mathrm{Im}\,M\cap\mathrm{Im}\,N\). The product can fail to exist. On \(\Theta=\mathbb R\) (\(1\times1\) matrices), \(\mathrm{LoRA}_1\times\text{Frozen}\) would have the cross \(\{BA=0\}\subset\mathbb R^2\) as underlying set. No manifold structure on the cross has the universal property, because both axes would have to lift smoothly through the point over the origin, which forces rank \(2\) there.</p>
+      <p>(c) \(\mathrm{Im}\) is a <a href="#app-a-functor" class="gloss">functor</a> to the <a href="#app-a-poset" class="gloss">poset</a> of subsets of \(\Theta\) containing \(\theta_0\). Conversely, \(\mathrm{Im}\,M\subseteq\mathrm{Im}\,N\) yields a morphism of the set-level slice \(\mathbf{Set}_*/(\Theta,\theta_0)\), though not necessarily a smooth one. Take \(\rho_M(t)=t\) and \(\rho_N(u)=u^3\) on \(\mathbb R\), pointed at \(0\). The images agree, yet no smooth \(h:\mathbb R\to\mathbb R\) satisfies \(\rho_N\circ h=\mathrm{id}\), that is, \(h(t)^3=t\).</p>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>(a) The only pointed map \(\mathrm{pt}\to Q\) is \(*\mapsto q_0\), and it lies over \(\Theta\) because \(\rho(q_0)=\theta_0\). A morphism into the terminal object must satisfy \(\mathrm{id}\circ h=\rho_M\).</p>
+      <p>(b) Products in a pointed slice are pullbacks in \(\mathbf{Diff}_*\). The forgetful functor \(\mathbf{Diff}_*\to\mathbf{Diff}\) creates limits, since \(\mathbf{Diff}_*\) is the coslice \(\mathrm{pt}/\mathbf{Diff}\), and the induced map out of a pointed test object is pointed because its components are. Smooth maps landing in an embedded submanifold are smooth into it, which gives the sufficient condition. Transversality at \((q_0,q_0')\) means \(d\rho_M(T_{q_0})+d\rho_N(T_{q_0'})=T_{\theta_0}\Theta\), and the left side has dimension at most \(\lvert M\rvert+\lvert N\rvert\). A point \(\theta\in\mathrm{Im}\,M\cap\mathrm{Im}\,N\) has preimages \(q,q'\), and \((q,q')\) lies in the fibre product. Testing a product in \(\mathsf{Meth}\) against pointed two-point \(0\)-manifolds shows that its points are exactly the pairs \((q,q')\) over a common \(\theta\).</p>
+      <p>For \(\mathrm{LoRA}_1\times\text{Frozen}\), suppose a product \(P\) exists, with canonical map \(\iota:P\to\mathbb R^2\), and let \(p^*\) be its unique point over the origin \((0,0)\). The forgetful functor \(\mathbf{Diff}_*\to\mathbf{Diff}\) is a <a href="#app-a-adjunction" class="gloss">right adjoint</a> (its left adjoint adds a disjoint base point), so \(P\) is also the pullback in \(\mathbf{Diff}\), and unpointed smooth curves into the cross lift to \(P\). The axis curves \(t\mapsto(t,0)\) and \(t\mapsto(0,t)\) lift to curves through \(p^*\), so \(d\iota_{p^*}\) hits \((1,0)\) and \((0,1)\) and has rank \(2\). Then \(\iota\) is a <a href="#app-c-immersion" class="gloss">submersion</a> near \(p^*\), and its image contains an open subset of \(\mathbb R^2\), which the cross does not. The argument covers every pointing of \(\mathrm{LoRA}_1\), including the standard one \((0,a_0)\) with \(a_0\ne0\), whose base point is a smooth point of the cross.</p>
+      <p>(c) Functoriality is \(\rho_N\circ h=\rho_M\). For the converse, choose (by the axiom of choice) for each \(\theta\in\mathrm{Im}\,M\) a preimage \(s(\theta)\) under \(\rho_N\) with \(s(\theta_0)=q_0'\), and put \(h=s\circ\rho_M\). In the example the only candidate is the cube root, which is not differentiable at \(0\).<span class="qed">∎</span></p>
+    </details>
+
+    <p class="explains">Every weight-space method that starts at \(\theta_0\) lies in [frozen, full FT]. Adapters, prefixes and ReFT are extensions outside \(\mathsf{Meth}\) (Exposé VI). Merging into full-precision weights is the canonical morphism to the terminal object, so in exact arithmetic it is definitional; quantised bases and combinations of adapters raise real questions (<a href="#thm-V-2">Prop V.2</a>, <a href="#thm-V-4">Prop V.4</a>). The product, when it exists, is the universal method simulated by both factors, with image \(\mathrm{Im}\,M\cap\mathrm{Im}\,N\). <a href="#thm-I-8">Prop I.8(a)</a> computes one, LoRA-XS, while <a href="#thm-I-8">Prop I.8(b)</a> and <a href="#thm-II-7">Thm II.7</a> compute intersections of images only.</p>
+    <details class="aside"><summary>More: defaults that do not start at the checkpoint</summary>
+      <p>Some defaults move the weights before training starts. Hugging Face PEFT's default FourierFT draws its spectrum from a standard normal, and VB-LoRA's default vector bank and logits are random too. LoRA with <code>init_lora_weights=False</code>, LoRA-XS with its small random \(R\), and every method on a quantised base also start away from \(\theta_0\). Each lives over its own starting weight or carries a pointing defect, which Exposé V measures.</p>
+    </details>
+    <details class="aside"><summary>More: lifting obstructions beyond first order</summary>
+      <p>The gap between \(\mathbf{Set}\) and \(\mathbf{Diff}\) in (c) is a smooth lifting obstruction. <a href="#thm-I-6">Obs I.6</a> below detects its first-order instances. In the cube-root example, \(S_1(M)=\mathbb R\not\subseteq S_1(N)=0\). Higher-order obstructions need finer invariants. The maps \(\rho_M(t)=t^3\) and \(\rho_N(u)=u^5\) have equal images and \(S_1=0\) on both sides, yet the only lift, \(t^{3/5}\), is not \(C^1\).</p>
+    </details>
+
+    <h3 id="idea-invariants">Invariants of a method</h3>
+
+    <p>The budget \(\lvert M\rvert\) counts parameters. Two other numbers say more, the dimension of what a method reaches and of what it reaches to first order at the start, which is what the first gradient steps use. For LoRA with \(r=16\) on a \(4096\times4096\) matrix they are \(130{,}816\) and, from zero initialisation, \(65{,}536\), against a budget of \(131{,}072\) (<a href="#thm-II-2">Thm II.2</a>, <a href="#thm-II-12">Prop II.12</a>).</p>
+
+    <div class="env definition" id="thm-I-5"><span class="env-head">Definition I.5 <span class="env-name">(invariants of an object)</span>.</span> <span class="env-body">For \(M=(Q,q_0,\rho)\):</span>
+      <ul>
+        <li>the image \(\mathrm{Im}\,M=\rho(Q)\);</li>
+        <li>the <strong>expressive dimension</strong> \(d(M)=\dim\mathrm{Im}\,M=\max_q\operatorname{rank}d\rho_q\);</li>
+        <li>the <strong>gauge waste</strong> \(g(M)=\lvert M\rvert-d(M)\);</li>
+        <li>the <strong>first-order image</strong> \(S_1(M)=d\rho_{q_0}(T_{q_0}Q)\), and the <strong>first-order deficit</strong> \(d(M)-\dim S_1(M)\);</li>
+        <li>the <strong>gauge group</strong> \(\{\varphi\in\mathrm{Diff}(Q):\rho\circ\varphi=\rho\}\), which is unpointed, since a gauge transformation moves \(q_0\) inside its fibre. In practice we exhibit a <a href="#app-d-lie-groups" class="gloss">Lie group</a> acting on \(Q\) that preserves \(\rho\) and is locally transitive on generic fibres, and call it the <strong>generic gauge</strong>.</li>
+      </ul>
+      <p>The base point \(\theta_0\) is <strong>regular</strong> for \(M\) if the deficit is \(0\), and an <strong>apex</strong> if the deficit is positive. The <strong>vertex</strong> is the subset-level notion, the cone point of an image germ. A cone germ that is a \(C^1\) manifold at its vertex equals its <a href="#app-c-tangent" class="gloss">tangent space</a> there, so it is linear. Hence the vertex of a non-linear cone is a singular point.</p>
+    </div>
+    <details class="aside"><summary>More: cones in this site, and the word “gauge”</summary>
+      <p>Apex and vertex differ in general. At a crossing of two smooth branches the image is singular, yet the deficit can be \(0\). In every case below with a positive deficit, the image germ is (diffeomorphic to) a cone with vertex \(\theta_0\). The exception is DoRA, which inherits LoRA's deficit through its torus factor.</p>
+      <p>“Gauge” here means the symmetry group of a parametrisation, as in the definition above. There is no connection, and away from the full-rank stratum the fibres jump. The word borrows the physicist's picture of redundant coordinates that leave every observation unchanged. Only the group and its action enter the theorems.</p>
+    </details>
+
+    <p>If \(N\) simulates \(M\), whatever \(M\) can do at its first step, \(N\) can do too.</p>
+
+    <div class="env observation" id="thm-I-6"><span class="env-head">Observation I.6 <span class="env-name">(\(S_1\) is functorial)</span>.</span> <span class="env-body">If \(M\to N\) is a (pointed) morphism, then \(S_1(M)\subseteq S_1(N)\). In particular, isomorphic methods have equal \(S_1\) and equal first-order deficit. Monotonicity holds only along pointed morphisms. Along a weak morphism, such as a gauge map moving \(q_0\) inside its fibre, \(S_1\) can change.</span></div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>Apply the chain rule \(d\rho_N\circ dh=d\rho_M\) at \(q_0\), using \(h(q_0)=q_0'\). If \(h\) is an isomorphism, \(dh_q\) is invertible for every \(q\), so \(\operatorname{rank}d\rho_M(q)=\operatorname{rank}d\rho_N(h(q))\). Hence \(d(M)=d(N)\) (equivalently \(\mathrm{Im}\,M=\mathrm{Im}\,N\)), and since \(dh_{q_0}\) is surjective, \(S_1(M)=S_1(N)\). So the deficits agree.<span class="qed">∎</span></p>
+    </details>
+
+    <p class="explains">\(S_1\) is what linearised (lazy, NTK) dynamics can use at initialisation, since the lazy kernel \(J_f\,d\rho\,\Lambda\,d\rho^\top J_f^\top\) has range \(J_f(S_1)\). The kernel also depends on \(\Lambda\) and the network Jacobian \(J_f\), and for random-\(A_0\) zero-init LoRA it is close to full fine-tuning's, so a large first-order deficit need not cost much on data. \(S_1\) separates initialisations the image cannot, namely zero-init \(\mathrm T_A\) against \(\mathrm T_B\), and the choice of \(\mathrm{row}\,A_0\) (<a href="#thm-II-2">Thm II.2</a>).</p>
+    <aside class="note"><span class="label">Credit</span>The kernel view of language-model fine-tuning, and the closeness of LoRA's kernel to full fine-tuning's, are due to <a href="https://arxiv.org/abs/2210.05643">Malladi et al., 2023</a>. <a href="https://arxiv.org/abs/2406.08447">Hayou et al., 2024</a> compared the zero initialisations \(B_0=0\) and \(A_0=0\) as training procedures; here they are already different objects.</aside>
+
+    <h3 id="idea-sums">Sums</h3>
+
+    <p>Weight space is a vector space, so running two methods side by side and adding their updates gives a method again.</p>
+
+    <div class="env observation" id="thm-I-7"><span class="env-head">Observation I.7 <span class="env-name">(additive monoidal structure)</span>.</span> <span class="env-body">\(\Theta\) is a vector space, so every object of \(\mathsf{Meth}(\Theta,\theta_0)\) can be written \(\rho=\theta_0+\delta\) with \(\delta(q_0)=0\). Put
+      \[M\oplus N:=\big(Q_M\times Q_N,\ (q_0,q_0'),\ \theta_0+\delta_M+\delta_N\big).\]
+      This is a symmetric monoidal structure with the frozen model as unit, and its image is the <a href="#app-b-sums" class="gloss">Minkowski sum</a> \(\theta_0+(\mathrm{Im}\,\delta_M+\mathrm{Im}\,\delta_N)\). It differs from the categorical product, whose image, when the product exists, is \(\cap\) (<a href="#thm-I-4">Obs I.4(b)</a>).</span>
+      <p>Write \(\mathrm{LoRA}_k\) for LoRA with frozen residual \(\theta_0\); for split pointings the sum below has residual \(\theta_0-P-P'\). Concatenation \(h(B_1,A_1,B_2,A_2)=([B_1\ B_2],[A_1;A_2])\) is an isomorphism \(\mathrm{LoRA}_r\oplus\mathrm{LoRA}_s\cong\mathrm{LoRA}_{r+s}\) of unpointed objects, and a pointed isomorphism onto \(\mathrm{LoRA}_{r+s}\) pointed at \(([B_0\ B_0'],[A_0;A_0'])\). For \(\mathrm T_A\) pointings (\(B_0=0\), \(\operatorname{rank}A_0=r\)), this target pointing has rank \(r+s\) iff \(\mathrm{row}\,A_0\cap\mathrm{row}\,A_0'=0\). It lies in the stratum \(\mathrm T_A\) of <a href="#thm-II-2">Thm II.2</a> when moreover \(r+s\lt\min(m,n)\).</p>
+      <p>Standard pointings do not add up. If \(F(r)\) and \(F(2r)\) are standard \(\mathrm T_A\) (or \(\mathrm T_B\)) pointings, which needs \(2r\lt\min(m,n)\), then \(F(r)\oplus F(r)\not\cong F(2r)\) as pointed objects. So when \(F(1)\) and \(F(2)\) are standard, \(r\mapsto F(r)\) is <strong>not</strong> <a href="#app-b-strong" class="gloss">strong monoidal</a> into pointed objects. It is strong monoidal on unpointed objects, and on pointed objects for the origin pointing \((B_0,A_0)=(0,0)\), where \(S_1=0\), and for the stacked pointings \(F(r)=F(1)^{\oplus r}\).</p>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>\([B_1\ B_2][A_1;A_2]=B_1A_1+B_2A_2\), and \(h\) is a linear bijection. The coherence isomorphisms of \(\oplus\) are those of the cartesian structure on \(\mathbf{Diff}_*\), and they lie over \(\Theta\) because \(+\) is associative and commutative. The pointing claim is \(\dim(U+V)=r+s-\dim(U\cap V)\) for \(U=\mathrm{row}\,A_0\) and \(V=\mathrm{row}\,A_0'\).</p>
+      <p>For the failure of strong monoidality, recall that any pointed isomorphism preserves \(S_1\) (<a href="#thm-I-6">Obs I.6</a>). If \(F(r)\) is a standard \(\mathrm T_A\) pointing and \(F(r)\oplus F(r)\cong F(2r)\), then \(S_1(F(r)\oplus F(r))=\{XA_0+X'A_0\}\) has dimension \(mr\), while a standard \(F(2r)\) has \(\dim S_1=2mr\). A standard \(F(2r)\) needs \(2r\lt\min(m,n)\) (<a href="#thm-II-2">Thm II.2</a>). The degenerate cases are direct.<span class="qed">∎</span></p>
+      <p>[Num: \(\dim S_1=28\) for a standard \(\mathrm{LoRA}_4\) at \(m=7\), against \(14\) for \(\mathrm{LoRA}_2\oplus\mathrm{LoRA}_2\) with the same \(A_0\).]</p>
+    </details>
+
+    <p class="explains">RoSA (LoRA \(\oplus\) a fixed-mask sparse method), GraLoRA (\(\oplus\) of \(k^2\) block-embedded LoRAs) and ReLoRA, read as \(\mathrm{LoRA}^{\oplus K}\) unrolled in time apart from its full-rank warm start, are \(\oplus\)-words with Minkowski-sum images. A sum of \(k\) rank-\(r\) LoRAs with residual \(\theta_0\) is isomorphic in \(\mathsf{Meth}\) to one LoRA of rank \(kr\). Under \(\alpha/r\) scaling the isomorphism rescales the \(A\) blocks, so at equal \(\alpha\) and learning rate the two train differently. Hugging Face PEFT's <code>cat</code> merge is this rescaled concatenation applied to trained adapters, exact for unit weights and plain \(\alpha/r\) sources.</p>
+    <details class="aside"><summary>More: what is and is not a sum, and the cat merge</summary>
+      <p>LoRA-soup CAT freezes the trained modules and learns layer-wise weights, so it is a \(\oplus\) of \(k\) frozen line methods \(\alpha_i\mapsto\alpha_iB_iA_i\). Its per-layer image is a span of dimension at most \(k\), much smaller than \(\mathrm{LoRA}_{kr}\). UniPELT and MAM are <strong>not</strong> \(\oplus\)-words in \(\mathsf{Meth}(\Theta,\theta_0)\). Their adapter and prefix parts live on extensions (Exposé VI), and UniPELT's gates depend on the input.</p>
+      <p>The obstruction in the observation is the reuse of one pointing, since stacking the same \(A_0\) twice gives a rank-deficient frame. For \(r\ne s\), standard pointings satisfy \(F(r)\oplus F(s)\cong F(r+s)\) exactly when the row space of the rank-\((r+s)\) frame is the direct sum of the other two. Concatenation is strictly associative, so discrete \((\mathbb N,+)\) suffices for a plain strong monoidal functor on unpointed objects. <em>Symmetric</em> strong monoidality needs the permutation groupoid, since swapping and then concatenating permutes the blocks.</p>
+      <p>“Additive” in Def I.2 (\(\delta\) independent of \(\theta_0\)) is a condition on <em>families</em> \(\theta_0\mapsto M(\theta_0)\). It matters for base change (Exposé V) and plays no role in \(\oplus\).</p>
+      <p>With scales \(s_r=\alpha/r\) (or \(\alpha/\sqrt r\) for rsLoRA) and any target scale \(s_*\), the rescaled concatenation \(([B_1\ B_2],[c_1A_1;c_2A_2])\) with \(c_i=s_{r_i}/s_*\), where \(r_1=r\) and \(r_2=s\), is an isomorphism over \(\Theta\). It preserves row spaces, so the pointing criterion is unchanged. Hugging Face PEFT's <code>add_weighted_adapter(..., combination_type="cat")</code> takes \(s_*=1\). It multiplies each \(A\) block by \(w_is_{r_i}\), leaves the \(B\) blocks alone, and sets the merged <code>lora_alpha</code> to \(r+s\), so the merged scale is \(1\). In PEFT releases up to v0.21.1 the merged adapter also inherits <code>use_rslora</code> from the first source. For rsLoRA sources its scale is then \((r+s)/\sqrt{r+s}=\sqrt{r+s}\), and the merged update is \(\sqrt{r+s}\) times too large. The main branch now sets <code>use_rslora=False</code> on the merged adapter.</p>
+    </details>
+    <aside class="note"><span class="label">Credit</span><a href="https://arxiv.org/abs/2401.04679">RoSA, Nikdan et al., 2024</a>; <a href="https://arxiv.org/abs/2505.20355">GraLoRA, Jung et al., 2025</a>; <a href="https://arxiv.org/abs/2307.05695">ReLoRA, Lialin et al., 2023</a>; <a href="https://arxiv.org/abs/2410.13025">LoRA Soups, Prabhakar et al., 2024</a>; <a href="https://arxiv.org/abs/2110.07577">UniPELT, Mao et al., 2021</a>; MAM is from the unified view of <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>. The rescaled concatenation follows the Hugging Face PEFT source.</aside>
+
+    <h3 id="idea-products">Products</h3>
+
+    <p>Freeze \(A\) at \(A_0\) and train \(B\), or freeze \(B\) at \(B_0\) and train \(A\). The product of these two one-sided methods is LoRA-XS.</p>
+
+    <div class="env proposition" id="thm-I-8"><span class="env-head">Proposition I.8 <span class="env-name">(a product that produces a named method; an image-level meet)</span>.</span> <span class="env-body">(a) Let \(A_0\in\mathbb R^{r\times n}\) have full row rank and \(B_0\in\mathbb R^{m\times r}\) full column rank. Define the one-sided methods
+      \[\mathrm{FA}(A_0):B\mapsto W_0+BA_0,\qquad\mathrm{FB}(B_0):A\mapsto W_0+B_0A,\]
+      both pointed at \(0\). Then
+      \[\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)\;\cong\;\big(\mathbb R^{r\times r},\ 0,\ R\mapsto W_0+B_0RA_0\big).\]
+      The product supplies this sandwich for <em>any</em> frames. Assume \(\operatorname{rank}W_0\ge r\) (\(\sigma_r\gt0\)) and take the SVD frames \(B_0=U_r\), \(A_0=\Sigma_rV_r^\top\). The result is <strong>LoRA-XS pointed at \(R=0\)</strong>.</span>
+      <p class="env-body">(b) Let \(W_0\) have full row rank (so \(m\le n\)), and let \(\mathrm{LoRA}_r\) carry its standard pointing (\(B_0=0\), image \(W_0+\mathcal M_{\le r}\)). The image-level meet of \(\mathrm{LoRA}_r\) with the output-scaling method \(\ell\mapsto\mathrm{diag}(\ell)W_0\) is \(\{\mathrm{diag}(\ell)W_0:\#\{i:\ell_i\neq1\}\le r\}\), that is, “rescale at most \(r\) output neurons”.</p>
+      <p>The LoRA-XS paper writes \(xW+xARB\) in row-vector convention with \(A=U_r\Sigma_r\) and \(B=V_r^\top\), so the isomorphism is \(R\mapsto\alpha R^\top\), and its initialisation \(R\sim\mathcal N(0,\sigma^2)\) with \(\sigma=10^{-5}\) is a negligible pointing defect. The output scaling in (b) is the key/value part of (IA)<sup>3</sup>. On the FFN, (IA)<sup>3</sup> scales the <em>input</em> of \(W_{\rm down}\), \(W\mapsto W\mathrm{diag}(\ell)\), and the mirror statement needs full column rank, or holds generically for \(r\lt d\).</p>
+    </div>
+    <details class="proof"><summary>(expand)</summary>
+      <p>(a) A point of the fibre product is a pair \((B,A)\) with \(BA_0=B_0A=:D\). Then \(\mathrm{row}\,D\subseteq\mathrm{row}\,A_0\) and \(\mathrm{col}\,D\subseteq\mathrm{col}\,B_0\), so \(D=B_0RA_0\) for a unique \(R\). Since \(A_0\) has full row rank, \(BA_0=B_0RA_0\) forces \(B=B_0R\), and likewise \(A=RA_0\). So the fibre product is the \(r^2\)-dimensional linear subspace \(\{(B_0R,RA_0)\}\), and \(R\mapsto(B_0R,RA_0)\) is a smooth bijection onto it with smooth inverse \((B,A)\mapsto B_0^+B\). Any pair of maps \((h_1,h_2):T\to Q_{\rm FA}\times Q_{\rm FB}\) that agree over \(\Theta\) factors through it via \(t\mapsto B_0^+h_1(t)\), so this is the product in \(\mathbf{Diff}\). If \(\operatorname{rank}W_0\lt r\), then \(\Sigma_rV_r^\top\) is rank-deficient and the LoRA-XS instance breaks.</p>
+      <p>(b) \(\mathrm{diag}(\ell)W_0-W_0=\mathrm{diag}(\ell-\mathbf 1)W_0\), and its rank is \(\#\{i:\ell_i\ne1\}\) because the rows of \(W_0\) are independent.<span class="qed">∎</span></p>
+      <p>[Num: the fibre product of (a) has dimension \(4=r^2\) at \((m,n,r)=(6,8,2)\).]</p>
+    </details>
+
+    <p class="explains">LoRA-XS is the largest method that factors through <em>both</em> frozen frames. At a split initialisation it is the overlap the split double-counts (<a href="#thm-II-3">Prop II.3</a>), and it is LoRA-XS proper at a PiSSA initialisation, whose frames span the top-\(r\) singular subspaces of \(W_0\). The meet in (b) is only set-level. For \(n\ge2\) no product exists in \(\mathbf{Diff}\): its fibre product is singular at the origin \((b,a,\ell)=(0,0,\mathbf 1)\), where its branches cross, by the rank argument for the cross in <a href="#thm-I-4">Obs I.4(b)</a>. (For \(m=n=1\) the fibre product is a graph, and the product exists.) With a fixed support, the meet is (IA)<sup>3</sup> masked to \(r\) neurons.</p>
+    <details class="aside"><summary>More: the shape of the meet in (b)</summary>
+      <p>The meet is the union of the \(\binom mr\) coordinate \(r\)-planes “rescale at most \(r\) output neurons”. For \(r=1\) the fibre product contains the sheets \(\{b=0\}\) and \(\{a=0\}\), which cross at the origin. The standard base point, with \(b=0\) and \(a_0\ne0\), lies on a smooth sheet, so the singularity sits away from it.</p>
+    </details>
+    <aside class="note"><span class="label">Credit</span><a href="https://arxiv.org/abs/2405.17604">LoRA-XS, Bałazy et al., 2024</a>; <a href="https://arxiv.org/abs/2205.05638">(IA)<sup>3</sup>, Liu et al., 2022</a>; <a href="https://arxiv.org/abs/2404.02948">PiSSA, Meng et al., 2024</a>. For sparse rescaling of activations, compare <a href="https://arxiv.org/abs/2410.04962">Stoehr et al., 2024</a>.</aside>
+
+    <h3 id="idea-dictionary">The dictionary so far</h3>
+
+    <p>The theorems begin when we look closely at one image near one point, which is where <a href="#image">Exposé II</a> starts. The full dictionary is the <a href="#rosetta">Rosetta stone</a>.</p>
+    <details class="aside"><summary>More: the dictionary for this exposé</summary>
+      <div class="table-wrap"><table>
+        <thead><tr><th>In PEFT</th><th>In the pointed slice</th><th>Statement</th></tr></thead>
+        <tbody>
+          <tr><td>pretrained checkpoint</td><td>base point \(\theta_0\) of a pointed 1-cell \((\Theta,\theta_0,f)\)</td><td><a href="#thm-I-1">Def I.1</a></td></tr>
+          <tr><td>a weight-space PEFT method</td><td>an object \(\rho:(Q,q_0)\to(\Theta,\theta_0)\) of \(\mathsf{Meth}(\Theta,\theta_0)\)</td><td><a href="#thm-I-2">Def I.2</a></td></tr>
+          <tr><td>“\(N\) can do whatever \(M\) can”</td><td>a morphism \(h:M\to N\), \(\rho_N\circ h=\rho_M\); at the level of sets, image inclusion</td><td><a href="#thm-I-2">Def I.2</a>, <a href="#thm-I-4">Obs I.4(c)</a></td></tr>
+          <tr><td>frozen model, full fine-tuning</td><td>initial and terminal objects</td><td><a href="#thm-I-4">Obs I.4(a)</a></td></tr>
+          <tr><td>merging into full-precision weights</td><td>the canonical morphism \(\rho_M\) to the terminal object</td><td><a href="#thm-I-4">Obs I.4(a)</a></td></tr>
+          <tr><td>effective number of parameters</td><td>expressive dimension \(d(M)\); the rest is gauge waste</td><td><a href="#thm-I-5">Def I.5</a></td></tr>
+          <tr><td>what the first steps can use</td><td>first-order image \(S_1\), a functorial invariant</td><td><a href="#thm-I-6">Obs I.6</a></td></tr>
+          <tr><td>RoSA, GraLoRA, ReLoRA stages</td><td>\(\oplus\)-words, with a Minkowski sum as image</td><td><a href="#thm-I-7">Obs I.7</a></td></tr>
+          <tr><td>HF <code>cat</code> merge</td><td>the concatenation isomorphism evaluated at trained points</td><td><a href="#thm-I-7">Obs I.7</a></td></tr>
+          <tr><td>LoRA-XS</td><td>the product \(\mathrm{FA}(A_0)\times\mathrm{FB}(B_0)\)</td><td><a href="#thm-I-8">Prop I.8</a></td></tr>
+          <tr><td>adapters, prefixes, ReFT</td><td>extensions of the network, outside \(\mathsf{Meth}\)</td><td><a href="#thm-VI-1">Def VI.1</a></td></tr>
+        </tbody>
+      </table></div>
+    </details>
+
+  </div>
+</section>

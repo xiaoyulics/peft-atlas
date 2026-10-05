@@ -1,0 +1,35 @@
+{
+ "hash": "1ff575da763a4b94",
+ "seconds": 16.12,
+ "pauses": [
+  [
+   0.0,
+   0.271
+  ],
+  [
+   2.205,
+   2.722
+  ],
+  [
+   7.731,
+   8.032
+  ],
+  [
+   9.451,
+   9.972
+  ],
+  [
+   10.277,
+   10.603
+  ],
+  [
+   12.911,
+   13.481
+  ],
+  [
+   15.827,
+   16.12
+  ]
+ ],
+ "text": "Start with the pretrained model. All of its weights together are a single point in an enormous space. Call it theta-zero. <short pause> Fine-tuning moves that point. Full fine-tuning can move it anywhere."
+}

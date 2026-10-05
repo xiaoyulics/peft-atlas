@@ -1,0 +1,35 @@
+{
+ "hash": "ef4d1c6ffa5dd72c",
+ "seconds": 21.64,
+ "pauses": [
+  [
+   0.0,
+   0.297
+  ],
+  [
+   3.239,
+   3.855
+  ],
+  [
+   8.712,
+   8.986
+  ],
+  [
+   15.295,
+   15.862
+  ],
+  [
+   16.998,
+   17.339
+  ],
+  [
+   20.138,
+   20.519
+  ],
+  [
+   21.362,
+   21.64
+  ]
+ ],
+ "text": "Images also expose disguises. DoRA, which splits each weight into a magnitude and a direction, reaches exactly the same weights as LoRA followed by one gain per output neuron. Beyond those gains, anything DoRA adds, it adds in training, not in reach."
+}

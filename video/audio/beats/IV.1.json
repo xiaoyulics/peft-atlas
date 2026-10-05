@@ -1,0 +1,63 @@
+{
+ "hash": "0064953f81b60033",
+ "seconds": 50.24,
+ "pauses": [
+  [
+   0.0,
+   0.301
+  ],
+  [
+   2.713,
+   3.112
+  ],
+  [
+   6.476,
+   6.906
+  ],
+  [
+   11.602,
+   12.297
+  ],
+  [
+   12.735,
+   13.205
+  ],
+  [
+   15.833,
+   16.333
+  ],
+  [
+   18.821,
+   19.283
+  ],
+  [
+   25.273,
+   25.929
+  ],
+  [
+   30.642,
+   30.95
+  ],
+  [
+   33.494,
+   33.805
+  ],
+  [
+   38.724,
+   39.138
+  ],
+  [
+   40.787,
+   41.24
+  ],
+  [
+   45.305,
+   45.746
+  ],
+  [
+   49.889,
+   50.24
+  ]
+ ],
+ "text": "Some methods add no adapter at all: they train the weights directly, but compress the gradient. GaLore projects each gradient onto a small subspace and runs Adam there. <short pause> Backpropagation has the shape of a lens: a forward map paired with a backward one. Through that lens, a linear adapter and a compressed gradient are two views of the same thing. <short pause> So the third nut: without weight decay or gradient clipping, GaLore is exactly one-sided LoRA, with GaLore's projector as the frozen factor, merged and restarted every period, its optimizer state carried over. Torroba-Hennigen and colleagues proved this for GaLore in 2025. The lens gives it a short proof by induction, for every linear adapter."
+}

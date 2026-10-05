@@ -1,0 +1,51 @@
+{
+ "hash": "8bd832beaaec7e2a",
+ "seconds": 30.08,
+ "pauses": [
+  [
+   4.31,
+   4.599
+  ],
+  [
+   7.006,
+   7.788
+  ],
+  [
+   8.957,
+   9.214
+  ],
+  [
+   10.325,
+   10.927
+  ],
+  [
+   12.189,
+   12.559
+  ],
+  [
+   16.89,
+   17.194
+  ],
+  [
+   17.195,
+   17.934
+  ],
+  [
+   20.978,
+   22.108
+  ],
+  [
+   24.384,
+   24.827
+  ],
+  [
+   26.954,
+   27.696
+  ],
+  [
+   29.704,
+   30.08
+  ]
+ ],
+ "text": "So instead of asking how many parameters a method has, we can ask three questions about its map. What is its image: where can it go? What are its fibres: which parameter settings give the same weights, and how does training move through them? And what happens when the base point itself moves? <short pause> Its image is what it can say. Its fibres are how it learns. Base change is how it travels."
+}

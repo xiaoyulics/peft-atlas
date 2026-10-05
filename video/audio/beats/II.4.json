@@ -1,0 +1,75 @@
+{
+ "hash": "184f47c7b8befa8e",
+ "seconds": 59.04,
+ "pauses": [
+  [
+   0.0,
+   0.258
+  ],
+  [
+   0.726,
+   1.013
+  ],
+  [
+   1.811,
+   2.185
+  ],
+  [
+   6.436,
+   6.807
+  ],
+  [
+   9.596,
+   9.927
+  ],
+  [
+   12.563,
+   12.828
+  ],
+  [
+   13.05,
+   13.514
+  ],
+  [
+   19.142,
+   19.63
+  ],
+  [
+   19.833,
+   20.43
+  ],
+  [
+   28.759,
+   29.277
+  ],
+  [
+   29.511,
+   29.961
+  ],
+  [
+   35.34,
+   35.765
+  ],
+  [
+   36.051,
+   36.532
+  ],
+  [
+   43.878,
+   44.555
+  ],
+  [
+   46.735,
+   47.003
+  ],
+  [
+   51.81,
+   52.235
+  ],
+  [
+   58.651,
+   59.04
+  ]
+ ],
+ "text": "Now the first nut. Split initialisations start with a nonzero adapter, and subtract that piece from the frozen weights, so the model still begins at theta-zero. In the picture, that's sliding the whole cone until it passes through theta-zero again. <short pause> Slide it every possible way, and together the copies cover theta-zero plus all differences of two points on the cone. The difference of two matrices of rank at most r has rank at most two r. <short pause> So no exact initialisation, zero or split, lets LoRA reach an update of rank above two r. Practitioners already knew this ceiling: converting a split adapter back into plain LoRA takes rank two r. The picture adds that two r is really needed, and that the same few lines work for any additive method."
+}

@@ -1,0 +1,79 @@
+{
+ "family": "addendum",
+ "family_title": "Addenda after launch",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "loft-orthogonal",
+   "name": "LOFT",
+   "full_name": "Low-Rank Orthogonal Fine-Tuning via Task-Aware Support Selection",
+   "paper_title": "LOFT: Low-Rank Orthogonal Fine-Tuning via Task-Aware Support Selection",
+   "authors": "Zhao et al.",
+   "year": 2026,
+   "venue": "arXiv",
+   "arxiv": "2605.11872",
+   "url": "https://arxiv.org/abs/2605.11872",
+   "code_url": "https://github.com/Kris-camp/loft",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W = W_0\\,S(P_r,T_r),\\quad S(P_r,T_r)=I_{d_{in}}+P_r^{\\top}(T_r-I_r)P_r,\\quad P_r\\in\\mathbb{R}^{r\\times d_{in}},\\ P_rP_r^{\\top}=I_r\\ \\text{(support, frozen)},\\quad T_r=Q(E)\\in SO(r),\\ E\\in\\mathrm{Skew}(r)\\ \\text{(trained, }E_0=0;\\ \\text{paper: Cayley; released code: 5-term Cayley--Neumann)};\\quad \\text{supports: } P_r=V_r^{\\top}\\ \\text{(principal)},\\ \\text{top right singular subspace of } G=\\nabla_W L(W_0)\\ \\text{(GradSVD)},\\ \\text{top invariant subspace of } \\operatorname{skew}(W_0^{\\top}G)\\ \\text{(SkewGrad)}",
+   "trainable_params": "\\tfrac{r(r-1)}{2}",
+   "locus": "any linear layer; acts on the input side (right multiplication of \\(W_0\\))",
+   "modification_kind": "multiplicative-weight",
+   "structure": "Right action of \\(SO(V)\\), the rotations of the chosen \\(r\\)-dimensional input subspace \\(V=\\operatorname{row}P_r\\) that fix \\(V^{\\perp}\\) pointwise (exactly orthogonal only with an exact \\(Q\\); the code's Cayley–Neumann default is approximate). The induced additive update \\(\\Delta W=W_0P_r^{\\top}(T_r-I_r)P_r\\) has rank at most \\(r\\). The paper's multi-factor primitive \\(W_0\\prod_{\\ell}S(P^{(\\ell)}_{r_\\ell},T^{(\\ell)}_{r_\\ell})\\), with general transforms and, for HRA, learnable width-one supports, recovers full and block OFT, GOFT, BOFT and HRA, and PSOFT up to its two scaling vectors.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(W_0S(P_r,T_r)\\) is again a weight matrix, equal to \\(W_0+W_0P_r^{\\top}(T_r-I_r)P_r\\).",
+   "identity_at_init": "\\(E=0\\) gives \\(T_r=I_r\\) and \\(S=I\\), so the model is unchanged. The support \\(P_r\\) is computed once before training: from the SVD of \\(W_0\\) (principal), or from the gradient \\(G\\) of the downstream loss at \\(W_0\\) estimated on a small calibration set (GradSVD, SkewGrad), then frozen.",
+   "key_idea": "Separate where an orthogonal update acts (the support \\(P_r\\)) from how it acts (the in-subspace transform \\(T_r\\)), and choose the support from the task: the first-order training signal of a right-subspace rotation is \\(P_r\\operatorname{skew}(W_0^{\\top}G)P_r^{\\top}\\), whose norm is largest when \\(P_r\\) spans the top invariant subspace of \\(\\operatorname{skew}(W_0^{\\top}G)\\).",
+   "results_note": "With SkewGrad support at \\(r=46\\), the GLUE average on DeBERTaV3-base is 88.73 against 88.04 for PSOFT, and the VTAB-1K average on ViT-B/16 is 73.8 against 73.4, with 0.07M trainable parameters; principal-support LOFT matches PSOFT (88.06).",
+   "relations": [
+    {
+     "target": "psoft",
+     "type": "special-case-of",
+     "note": "Principal-support LOFT is PSOFT with both scaling vectors frozen at 1, when both use the same exactly orthogonal transform."
+    },
+    {
+     "target": "hra",
+     "type": "competes-with",
+     "note": "HRA is an instance of the paper's multi-factor primitive with learnable width-one supports, not of fixed-support LOFT; LOFT's image is one leaf of HRA's image."
+    },
+    {
+     "target": "oft",
+     "type": "competes-with",
+     "note": "Block OFT is an instance of the paper's multi-factor primitive with coordinate-block supports; single-factor LOFT maps into full-block exact-Cayley OFT."
+    },
+    {
+     "target": "goft",
+     "type": "competes-with",
+     "note": "GOFT is a depth-L composition of width-2 coordinate-pair supports in the paper's multi-factor primitive."
+    },
+    {
+     "target": "boft",
+     "type": "competes-with",
+     "note": "BOFT is a multi-stage composition of butterfly-block supports in the paper's multi-factor primitive."
+    },
+    {
+     "target": "lora-ga",
+     "type": "competes-with",
+     "note": "Both choose a starting frame from the gradient at W_0: LoRA-GA for an additive low-rank update, LOFT (GradSVD, SkewGrad) for an orthogonal support."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.11872",
+    "https://export.arxiv.org/api/query?id_list=2605.11872",
+    "/Users/z5236444/Downloads/2605.11872v1.pdf (pages 1-11)",
+    "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "Added 2026-10-02 after a reader reported it missing. Title, authors and date checked against the arXiv API; formula, supports, parameter count and results read from the paper (Sections 2-3, Tables 1-4, Appendix C.1). Two independent referees checked the entry and the site text the same day. The released code (github.com/Kris-camp/loft) defaults to a 5-term Cayley–Neumann transform with R^T R = (I - X^6)^2, which is not exactly orthogonal; per the referee's inspection the gradient-based supports are not in the code release. Not in the Hugging Face PEFT tuners list at the pinned commit.",
+   "corrections": [
+    "Relation types corrected after review (PSOFT: special-case-of; HRA, OFT, GOFT, BOFT: competes-with; GaLore relation dropped).",
+    "T_r in SO(r) with the Cayley/Cayley–Neumann distinction stated."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "Methods added after the main sweep.",
+ "verification_summary": "1 method added and checked against arXiv and the paper."
+}

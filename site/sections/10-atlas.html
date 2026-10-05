@@ -1,0 +1,322 @@
+<section class="expose" id="atlas" data-toc="VII–VIII" data-toc-title="The atlas">
+  <style>
+    #atlas .ex-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); margin: 1.4rem 0 2.2rem; clear: both; }
+    #atlas .table-wrap.wide { clear: both; }
+    @media (min-width: 1100px) {
+      #atlas .ex-grid, #atlas .table-wrap.wide { width: calc(var(--text-w) + var(--gap) + var(--margin-w)); max-width: calc(100vw - 32px); }
+    }
+    #atlas .ex-card { --k: var(--c-hybrid); align-content: start; gap: 0.5rem; background: var(--paper-2); border: 1px solid var(--rule); border-top: 3px solid var(--k); border-radius: var(--radius); padding: 0.8rem 0.95rem 0.75rem; }
+    #atlas .ex-card .ex-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.15rem 0.7rem; }
+    #atlas .ex-card h4 { font-family: var(--f-display); font-size: 1.32rem; font-weight: var(--w-head); margin: 0; letter-spacing: 0; }
+    #atlas .ex-card h4 a { color: var(--ink); text-decoration: none; }
+    #atlas .ex-card h4 a:hover { color: var(--tide); text-decoration: underline; }
+    #atlas .ex-card .ex-src { font-family: var(--f-ui); font-size: var(--fs-xs); letter-spacing: 0.01em; color: var(--ink-2); }
+    #atlas .ex-card .formula { padding: 0; margin: 0 0 0.1rem; }
+    #atlas .ex-card .formula mjx-container[display="true"] { margin: 0.3em 0; }
+    #atlas .ex-card dl { display: block; margin: 0; }
+    #atlas .ex-card dt { display: inline; margin-right: 0.4em; padding: 0; font-family: var(--f-ui); font-weight: 500; font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+    #atlas .ex-card dd { display: inline; margin: 0; }
+    #atlas .ex-card dd::after { content: ""; display: block; height: 0.42rem; }
+    #atlas .ex-card .ex-refs { margin: 0; padding-top: 0.45rem; border-top: 1px solid var(--rule); font-family: var(--f-ui); font-size: var(--fs-xs); line-height: 1.6; color: var(--ink-2); }
+    #atlas .ex-card .ex-refs a { white-space: nowrap; }
+    #atlas td mjx-container svg, #atlas th mjx-container svg { max-width: none; }
+    #atlas .table-wrap td:first-child, #atlas .nw { white-space: nowrap; }
+  </style>
+
+  <header class="expose-head">
+    <span class="label">Exposé VII–VIII</span>
+    <h2>The atlas</h2>
+    <p class="summary">Fourteen methods read through the three invariants, seven coordinates that place every catalogued method in a periodic table, and five rules that draw the arrows between methods.</p>
+  </header>
+
+  <blockquote class="epigraph"><p>Do not attack the hard nut with a hammer. Let the sea rise around it until it opens of its own accord.</p><footer>after Grothendieck</footer></blockquote>
+
+  <div class="tldr"><span class="label">In one minute</span><ul>
+    <li>Each of fourteen methods gets a card saying what it reaches, how training moves it, what a moved base point does and how it merges, every line linked to its result.</li>
+    <li>Seven coordinates read off the formula place all 382 catalogued methods in a periodic table. Some cells are empty by theorem; for instance, no linear method starts at an apex.</li>
+    <li>\(N\) simulates \(M\) when a pointed smooth map \(h\) gives \(\rho_N\circ h=\rho_M\). Five rules produce every arrow (403 are recorded, each with its \(h\)), and three tests rule arrows out; PiSSA and LoRA, for instance, have no arrow either way.</li>
+    <li>Parameters are not reach. At 131,072 parameters on a \(4096\times4096\) matrix, LoRA\(_{16}\) reaches 130,816 directions and LoHa\(_{8,8}\) at most 122,753.</li>
+  </ul></div>
+
+  <div class="prose">
+
+    <aside class="note"><span class="label">Credit</span>Balancedness: <a href="https://arxiv.org/abs/1806.00900">Du, Hu and Lee, 2018</a> and <a href="https://arxiv.org/abs/1802.06509">Arora et al., 2018</a>. Conserved charges: <a href="https://arxiv.org/abs/2210.17216">Zhao et al., 2023</a>. The balanced slice: Kempf and Ness (1979). The crossover is the closed form of Tarmoun et al. and Min et al. (ICML 2021). Zero-\(B\) versus zero-\(A\) starts: <a href="https://arxiv.org/abs/2406.08447">Hayou et al., 2024</a>. Scaled GD: <a href="https://arxiv.org/abs/2005.08898">Tong, Ma and Chi</a>; <a href="https://arxiv.org/abs/2402.02347">Zhang and Pilanci, 2024</a>.</aside>
+    <p>A method is a pointed map \(\rho:(Q,q_0)\to(\Theta,\theta_0)\). Its image germ says what it can express, its fibres and the optimizer’s metric how it moves, base change what a moved \(\theta_0\) does, and extensions cover adapters and prompts. Exposé VII applies this toolkit to fourteen methods; Exposé VIII turns the answers into coordinates and arrows, mapped in Figure 14.</p>
+
+    <figure class="figure wide" id="fig-periodic" style="clear:both">
+      <div data-figure="periodic" aria-label="The periodic table of parameter-efficient fine-tuning. Catalogued methods arranged by kind in rows and by the shape of the image germ in columns, coloured by modification kind, with filters for base point, gauge, covariance, merge type and rebasing closure."></div>
+      <figcaption><span class="fig-n">Figure 14</span>The periodic table. Rows are kinds (reparametrisations split by how they couple to \(W_0\)), columns the shape of the image germ, colours the modification kind. Switch between the 142 core methods and all 382, search, and filter by the other five coordinates of <a href="#atlas-axes">VIII.A</a>. Hover or focus a method for its coordinates, formula and budget; select it for its arrows, with maps \(h\), and obstructions. Presets show apex starts that merge into their box (LoRA, DoRA, VeRA, LoHa, HiRA, HRA and more) and regular starts with idempotent rebasing, all linear or orbits.</figcaption>
+    </figure>
+
+    <h3 id="atlas-examples">VII. Fourteen methods through the three invariants</h3>
+
+    <aside class="note"><span class="label">Credit</span>GaLore as one-sided LoRA with carried state: <a href="https://arxiv.org/abs/2502.13811">Torroba-Hennigen et al., 2025</a>. Prefixes as gated adapters: <a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a>; rigid content ratios and the prompt-to-prefix map: <a href="https://arxiv.org/abs/2310.19698">Petrov, Torr and Bibi, 2024</a>. The (IA)\(^3\) merge into \(W_{\rm down}\): <a href="https://arxiv.org/abs/2205.05638">Liu et al., 2022</a>; scale migration through SwiGLU: <a href="https://arxiv.org/abs/2306.00978">AWQ</a>. LoKr’s transport: <a href="https://link.springer.com/chapter/10.1007/978-94-015-8196-7_17">Van Loan and Pitsianis, 1993</a>. The \(2r\) bound underlies the PiSSA-to-LoRA conversion of <a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a>.</aside>
+    <p>Each card gives \((Q,q_0,\rho)\) for \(y=Wx\), \(W\in\mathbb R^{m\times n}\), then the image germ (<a href="#image">Exposé II</a>), fibre and metric (<a href="#fibres">III</a>), base change (<a href="#base">V</a>) and merge (<a href="#merge">VI</a>). The top rule’s colour is the modification kind, and the last line links each claim to its result.</p>
+
+    <div class="ex-grid">
+
+      <article class="method-card ex-card" style="--k: var(--c-additive)" aria-labelledby="ex-lora">
+        <div class="ex-top"><h4 id="ex-lora"><a href="#m-lora">LoRA</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2106.09685">Hu et al., 2021</a></span></div>
+        <div class="formula">\[\rho(B,A)=W_0+sBA,\qquad q_0=(0,A_0)\]</div>
+        <dl>
+          <dt>Image</dt><dd>The cone \(W_0+\mathcal M_{\le r}\), of dimension \(r(m+n-r)\) for \(r\lt\min(m,n)\). With \(\operatorname{rank}A_0=r\), \(\theta_0\) is an apex with deficit \(r(n-r)\).</dd>
+          <dt>Fibre</dt><dd>Gauge \(GL_r\). Gradient flow with per-block rates conserves \(\Phi=B^\top B/\eta_B-AA^\top/\eta_A\), and for isotropic \(\Phi\) is solved in closed form, one-sided well below a scale \(\sigma^*\), balanced well above. On the full-rank locus, with channel-uniform hyperparameters, SGD keeps \(O(r)\) of the gauge, Adam the signed permutations, undamped scaled GD all of it.</dd>
+          <dt>Base</dt><dd>\(K\) cycles reach \(W_0+\mathcal M_{\le\min(Kr,m,n)}\). Full-rank pointings form three strata, as a set <span class="nw">\(\mathrm{Gr}(r,n)\sqcup\mathrm{Gr}(r,m)\sqcup\mathcal M_r\).</span></dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-2">Thm II.2</a> · <a href="#thm-III-5">Thm III.5</a> · <a href="#thm-III-9">Thm III.9</a> · <a href="#thm-III-12">Thm III.12</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-hybrid)" aria-labelledby="ex-dora">
+        <div class="ex-top"><h4 id="ex-dora"><a href="#m-dora">DoRA</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2402.09353">Liu et al., 2024</a></span></div>
+        <div class="formula">\[\rho(\mu,B,A)=\mathrm{diag}(\mu)\,N(W_0+sBA)\]</div>
+        <dl>
+          <dt>Image</dt><dd>\(N\) normalises rows. For \(W_0\) without zero rows and \(r\le\min(m,n)\) the image is \(\mathrm{Diag}_m\cdot(W_0+\mathcal M_{\le r})\), exactly LoRA plus a free output scale, of dimension \(\min(mn,\,r(m+n-r)+m)\) for generic \(W_0\) [Num]. Its updates can exceed rank \(r\).</dd>
+          <dt>Fibre</dt><dd>The gauge contains \(GL_r\), and gradient flow through the detached norm conserves \(\Phi\). Any gap to LoRA plus a scale, from the same start, comes from training dynamics.</dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-8">Prop II.8</a> · <a href="#thm-II-12">Prop II.12</a> · <a href="#thm-III-5">Thm III.5</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-multiplicative)" aria-labelledby="ex-oft">
+        <div class="ex-top"><h4 id="ex-oft"><a href="#m-oft">OFT</a> / <a href="#m-boft">BOFT</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2306.07280">Qiu et al., 2023</a>; <a href="https://arxiv.org/abs/2311.06243">Liu et al., 2023</a></span></div>
+        <div class="formula">\[W_0R^\top\ \ \text{(OFT)},\qquad \mathrm{diag}(s)\,W_0R^\top\ \ \text{(BOFT)}\]</div>
+        <dl>
+          <dt>Image</dt><dd>\(R\) is block Cayley (OFT) or a butterfly product (BOFT). With exact Cayley maps the image is an orbit in the level set of \(K_{\rm out}=WW^\top\), and block OFT fixes \(n/b\) partial Grams too. BOFT keeps \(\lvert\cos\rvert\) between neurons if all \(s_i\ne0\), and the cosines if they share a sign. HF’s default Cayley–Neumann OFT is only approximately orthogonal. Regular base point (BOFT: disjoint factor planes).</dd>
+          <dt>Base</dt><dd>Exact block OFT on a fixed partition is idempotent up to closure; iterated BOFT with \(m'\) factors reaches \(\mathrm{diag}\cdot W_0\cdot P\big(\prod SO(b\,2^{m'-1})\big)P^\top\) for a fixed permutation \(P\), and, for injective \(W_0\), \(\mathrm{diag}\cdot W_0\cdot SO(n)\) only at full depth. Re-merging HF’s default with small generators can only shrink singular values.</dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-5">Thm II.5</a> · <a href="#thm-II-6">Cor II.6</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-multiplicative)" aria-labelledby="ex-ia3">
+        <div class="ex-top"><h4 id="ex-ia3"><a href="#m-ia3">(IA)\(^3\)</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2205.05638">Liu et al., 2022</a></span></div>
+        <div class="formula">\[\mathrm{diag}(\ell)\,W_0\ \ (W_K,W_V),\qquad W_0\,\mathrm{diag}(\ell)\ \ (W_{\rm down})\]</div>
+        <dl>
+          <dt>Image</dt><dd>Linear, the closure of a torus orbit, inside \(\mathrm{HiRA}_1\). Zeros of \(W_0\) stay zero, and row lines (column lines on \(W_{\rm down}\)) stay fixed while all \(\ell_i\ne0\). Covariance \(\mathrm{Mon}\times GL\), or \(GL\times\mathrm{Mon}\) on \(W_{\rm down}\).</dd>
+          <dt>Base</dt><dd>Idempotent.</dd>
+          <dt>Merge</dt><dd>Fuses into \(W_K\), \(W_V\), \(W_{\rm down}\) always; into \(W_{\rm up}\) under SwiGLU, under ReLU for \(\ell\ge0\), and under GELU only for entries \(0\) or \(1\).</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-5">Thm II.5</a> · <a href="#thm-II-9">Prop II.9</a> · <a href="#thm-VI-3">Thm VI.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-additive)" aria-labelledby="ex-vera">
+        <div class="ex-top"><h4 id="ex-vera"><a href="#m-vera">VeRA</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2310.11454">Kopiczko et al., 2023</a></span></div>
+        <div class="formula">\[\rho(b,d)=W_0+\Lambda_bB\Lambda_dA,\qquad b_0=0\]</div>
+        <dl>
+          <dt>Image</dt><dd>\(B\), \(A\) frozen and random. A <a href="#app-c-segre" class="gloss">toric cone</a> of dimension \(m+r-1\) [Num] with apex at \(\theta_0\). At \(b_0=0\) only \(b\) gets a gradient.</dd>
+          <dt>Fibre</dt><dd>Gauge \(\mathbb R^\times\), \((cb,d/c)\). Gradient flow conserves \(\lVert b\rVert^2/\eta_b-\lVert d\rVert^2/\eta_d\).</dd>
+          <dt>Base</dt><dd>If \(B\) has no zero entry, rebasing reaches exactly LoRA-FA\((A)\), the target of its arrow \(h(b,d)=\Lambda_bB\Lambda_d\).</dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-4">Lemma II.4</a> · <a href="#thm-II-12">Prop II.12</a> · <a href="#thm-III-5">Thm III.5</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-additive)" aria-labelledby="ex-loha">
+        <div class="ex-top"><h4 id="ex-loha"><a href="#m-loha">LoHa</a> / <a href="#m-lokr">LoKr</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2108.06098">Hyeon-Woo et al., 2021</a>; <a href="https://arxiv.org/abs/2309.14859">Yeh et al., 2023</a></span></div>
+        <div class="formula">\[(B_1A_1)\odot(B_2A_2)\ \ \text{(LoHa)},\qquad C\otimes BA\ \ \text{(LoKr)}\]</div>
+        <dl>
+          <dt>Image</dt><dd>LoHa\(_{r,r}\): rank up to \(\min(r^2,m,n)\), dimension at most \(2r(m+n)-2r^2-(m+n-1)\) (equal numerically below \(mn\)), gauge \(GL_r^2\) times a torus, apex at a zero factor. For \(r\le2\) it lies inside LoRA\(_{2r}\), at equal cost.</dd>
+          <dt>Image</dt><dd>LoKr is a constrained LoRA\(_1\) after the Van Loan–Pitsianis rearrangement. For \(C\in\mathbb R^{m_1\times n_1}\) and inner rank \(r'\le\min(m_2,n_2)\) its maximum rank is \(\min(m_1,n_1)r'\). It lies inside zero-init LoRA\(_r\) iff \(r\ge\min(m_1,n_1)r'\), and is otherwise incomparable with it when \(\min(m_1,m_2)\min(n_1,n_2)\gt1\).</dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-11">Thm II.11</a> · <a href="#thm-II-12">Prop II.12</a> · <a href="#thm-II-13">Prop II.13</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-additive)" aria-labelledby="ex-fourierft">
+        <div class="ex-top"><h4 id="ex-fourierft"><a href="#m-fourierft">FourierFT</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2405.03003">Gao et al., 2024</a></span></div>
+        <div class="formula">\[W_0+\alpha\,\mathrm{Re}\,F^{-1}(c),\qquad c\ \text{on }n_f\text{ fixed frequencies}\]</div>
+        <dl>
+          <dt>Image</dt><dd>A coordinate mask in the real cosine frame, inside the point-symmetric subspace. Started at \(\theta_0\) it is linear and regular, with a gauge dimension per sampled conjugate pair; HF’s default random spectrum starts elsewhere. Its covariance \(\Pi_{\rm cyc}\) excludes most neuron permutations, so permuting hidden units can change what it reaches.</dd>
+          <dt>Base</dt><dd>Idempotent with fixed indices.</dd>
+          <dt>Merge</dt><dd>M1.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-12">Prop II.12</a> · <a href="#thm-II-13">Prop II.13</a> · <a href="#thm-II-15">Obs II.15</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-selective)" aria-labelledby="ex-bitfit">
+        <div class="ex-top"><h4 id="ex-bitfit"><a href="#m-bitfit">BitFit</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2106.10199">Ben Zaken et al., 2021</a></span></div>
+        <div class="formula">\[b\mapsto b_0+\beta\ \text{on every bias},\qquad W=W_0\]</div>
+        <dl>
+          <dt>Image</dt><dd>A translation of the bias block; linear and regular.</dd>
+          <dt>Base</dt><dd>Idempotent.</dd>
+          <dt>Merge</dt><dd>Nothing to merge. Llama and Mistral have no biases, so it trains nothing there (<a href="#fig-calculator">Figure 17</a>).</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-12">Prop II.12</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-architectural)" aria-labelledby="ex-adapter">
+        <div class="ex-top"><h4 id="ex-adapter"><a href="#m-houlsby-adapter">Adapters</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/1902.00751">Houlsby et al., 2019</a></span></div>
+        <div class="formula">\[x\mapsto x+U\sigma(Dx),\qquad D\in\mathbb R^{r\times d},\ U\in\mathbb R^{d\times r}\]</div>
+        <dl>
+          <dt>Image</dt><dd>Function level, neutral at \(U=0\); Houlsby et al. start near it.</dd>
+          <dt>Fibre</dt><dd>Only hidden-unit permutations under Houlsby’s GELU; a ReLU would add positive rescalings. At \(U=0\) only \(U\) moves to first order.</dd>
+          <dt>Merge</dt><dd>Not box-locally mergeable for non-linear \(\sigma\). With \(\sigma=\mathrm{id}\), an adapter parallel to one linear layer is LoRA.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-4">Lemma II.4</a> · <a href="#thm-VI-2">Lemma VI.2</a> · <a href="#thm-VI-3">Thm VI.3</a> · <a href="#thm-VI-4">Prop VI.4</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-augmentation)" aria-labelledby="ex-prefix">
+        <div class="ex-top"><h4 id="ex-prefix"><a href="#m-prefix-tuning">Prefix</a> / <a href="#m-prompt-tuning">prompt tuning</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2101.00190">Li and Liang, 2021</a>; <a href="https://arxiv.org/abs/2104.08691">Lester et al., 2021</a></span></div>
+        <div class="formula">\[\mathrm{Attn}_q(P\uplus C)=(1-\lambda_q)\,\mathrm{Attn}_q(C)+\lambda_q\,\mathrm{Attn}_q(P)\]</div>
+        <dl>
+          <dt>Image</dt><dd>Unpointed extensions on the sequence wire, since on a head with \(W_oW_v\ne0\) no prefix is neutral. A prefix is an input-gated parallel adapter on attention, rescaling its layer’s content attention weights but keeping their ratios.</dd>
+          <dt>Arrows</dt><dd>In causal decoders with content positions offset by the prompt length (as in HF PEFT), every soft prompt is a deep prefix. LLaMA-Adapter’s zero-initialised gate adds a neutral point.</dd>
+          <dt>Merge</dt><dd>Not box-mergeable, since on a softmax head with \(W_o\ne0\) and \(W_q\ne0\) a generic prefix makes the head non-affine, even on one token.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-VI-5">Thm VI.5</a> · <a href="#thm-VI-1">Def VI.1</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-additive)" aria-labelledby="ex-pissa">
+        <div class="ex-top"><h4 id="ex-pissa"><a href="#m-pissa">PiSSA</a> / <a href="#m-loftq">LoftQ</a> / <a href="#m-qlora">QLoRA</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2404.02948">Meng et al., 2024</a>; <a href="https://arxiv.org/abs/2310.08659">Li et al., 2023</a>; <a href="https://arxiv.org/abs/2305.14314">Dettmers et al., 2023</a></span></div>
+        <div class="formula">\[W_{\rm res}+BA,\ \ B_0A_0=[W_0]_r\ \ \text{(PiSSA)}\]\[\kappa\theta_0+sBA,\ \ B_0=0\ \ \text{(QLoRA)}\]</div>
+        <dl>
+          <dt>Image</dt><dd>PiSSA is a split start, the cone with vertex \(W_0-[W_0]_r\) and \(\theta_0\) a smooth point. Its image and LoRA’s are incomparable, no exact pointing of LoRA\(_r\) passes rank \(2r\), and \(\Phi_0=0\) at equal rates.</dd>
+          <dt>Base</dt><dd>QLoRA is LoRA pointed at \(\kappa\theta_0\), with generically full-rank defect \(e=\kappa\theta_0-\theta_0\). QPiSSA splits, then quantises; one-step LoftQ quantises, then fits \(e\), leaving \(e-[e]_r\) only when \(\alpha/r=1\), as HF ignores the scale.</dd>
+          <dt>Merge</dt><dd>Exact merges of generic adapters leave the quantised type; type-preserving ones are lossy (Mq), QA-LoRA excepted.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-II-1">Thm II.1</a> · <a href="#thm-II-2">Thm II.2</a> · <a href="#thm-III-6">Cor III.6</a> · <a href="#thm-V-2">Prop V.2</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-optimizer)" aria-labelledby="ex-relora">
+        <div class="ex-top"><h4 id="ex-relora"><a href="#m-relora">ReLoRA</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2307.05695">Lialin et al., 2023</a></span></div>
+        <div class="formula">\[\theta_{k+1}=\theta_k+sB_kA_k,\quad\text{fresh }(B_k,A_k)\text{ each stage}\]</div>
+        <dl>
+          <dt>Base</dt><dd>Rebased LoRA. After \(K\) stages it reaches exactly \(W_0+\mathcal M_{\le\min(Kr,m,n)}\), so all of \(\Theta\) at \(K^*=\lceil\min(m,n)/r\rceil\). It is \(\mathrm{LoRA}_r^{\oplus K}\) unrolled in time.</dd>
+          <dt>Fibre</dt><dd>Per stage, an apex with gauge \(GL_r\).</dd>
+          <dt>Merge</dt><dd>Each stage merges (M1).</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-I-7">Obs I.7</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-optimizer)" aria-labelledby="ex-galore">
+        <div class="ex-top"><h4 id="ex-galore"><a href="#m-galore">GaLore</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2403.03507">Zhao et al., 2024</a></span></div>
+        <div class="formula">\[W_{t+1}=W_t-\eta\,P_t\,\mathrm{opt}\big(P_t^\top G_t\big)\]</div>
+        <dl>
+          <dt>Fibre</dt><dd>A backward lens with compression \(P_t^\top\) and anchor \(P_t\), refreshed from a gradient SVD every \(T\) steps. Under Adam without weight decay or full-gradient clipping, each period is exactly one-sided LoRA \(W_k+P_kC\), with optimizer state carried over, not reset or transported.</dd>
+          <dt>Base</dt><dd>The anchor is fixed within a period, so integrability is trivial; as a set over its possible sequences of projectors, the moving shape reaches all of \(\Theta\).</dd>
+          <dt>Merge</dt><dd>Not applicable, since it writes \(W\) itself.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-IV-1">Def IV.1</a> · <a href="#thm-IV-2">Prop IV.2</a> · <a href="#thm-IV-3">Prop IV.3</a> · <a href="#thm-V-3">Thm V.3</a></p>
+      </article>
+
+      <article class="method-card ex-card" style="--k: var(--c-composition)" aria-labelledby="ex-merging">
+        <div class="ex-top"><h4 id="ex-merging"><a href="#m-task-arithmetic">Merging</a></h4><span class="ex-src"><a href="https://arxiv.org/abs/2212.04089">Ilharco et al., 2022</a>; <a href="https://arxiv.org/abs/2307.13269">Huang et al., 2023</a></span></div>
+        <div class="formula">\[\theta_0+\textstyle\sum_i\lambda_i\tau_i\ \ \text{(task arithmetic)}\]\[\big(\textstyle\sum_iw_iB_i\big)\big(\textstyle\sum_jw_jA_j\big)\ \ \text{(LoraHub)}\]</div>
+        <dl>
+          <dt>Fibre</dt><dd>Task arithmetic is \(GL(\Theta)\)-natural; <a href="#m-ties-merging">TIES</a> (global trimming, sign election by total mass) is natural under homotheties times signed permutations, <a href="#m-dare">DARE</a> under the torus and, in law, permutations; neither under rotations.</dd>
+          <dt>Fibre</dt><dd>Factor-wise rules (LoraHub, HF’s <code>linear</code>) depend on each adapter’s gauge unless the adapters share a factor, such as a frozen \(A\).</dd>
+          <dt>Merge</dt><dd>Merging into a full-precision base is the canonical arrow to full fine-tuning.</dd>
+        </dl>
+        <p class="ex-refs"><a href="#thm-I-4">Obs I.4</a> · <a href="#thm-V-4">Prop V.4</a></p>
+      </article>
+
+    </div>
+
+    <h3 id="atlas-axes">VIII.A Seven axes, each read off the formula</h3>
+
+    <aside class="note"><span class="label">Credit</span><a href="https://arxiv.org/abs/2110.04366">He et al., 2022</a> gave adapters four design axes (functional form, insertion form, modified representation, composition function), and <a href="https://arxiv.org/abs/2301.01821">Chen et al., 2023</a> searched a similar design space. The seven axes extend the idea to weight-space, backward and post-hoc methods, each tied to a result.</aside>
+    <div class="env definition"><span class="env-head">Definition <span class="env-name">(coordinates of a method)</span>.</span> <span class="env-body">The coordinates of a method \(M=(Q,q_0,\rho)\) are its answers to the card questions on the seven axes below, each read off \(\rho\), \(q_0\) and the box \(\rho\) acts on, with no training.</span></div>
+
+    <div class="table-wrap wide"><table>
+      <thead><tr><th>Axis</th><th>Question</th><th>Values</th><th>LoRA</th><th>(IA)\(^3\)</th><th>Prefix tuning</th></tr></thead>
+      <tbody>
+        <tr><td>1 · Kind</td><td>Where does it act?</td><td>R reparametrisation · E pointed extension · E° unpointed extension · B backward lens or schedule · P post-hoc operation · F\(_T\) family over tasks, inputs or tenants</td><td>R</td><td>R</td><td>E°</td></tr>
+        <tr><td>2 · Shape</td><td>What is the image germ?</td><td>Lin (\(\rho\) affine) · Cone (multihomogeneous; Cone* when a split moves the vertex off \(\theta_0\)) · Orb (group orbit) · Sat (group acting on a cone) · Meet (orbit \(\cap\) cone) · Fun (function level)</td><td>Cone, \(d=r(m+n-r)\)</td><td>Lin, a torus-orbit closure</td><td>Fun</td></tr>
+        <tr><td>3 · Base point</td><td>Is \(\rho(q_0)=\theta_0\)? Is \(\dim S_1=d(M)\)?</td><td>regular · apex (deficit \(\gt0\)) · neutral · defect · unpointed</td><td>apex, deficit \(r(n-r)\)</td><td>regular</td><td>unpointed</td></tr>
+        <tr><td>4 · Gauge</td><td>Which reparametrisations fix \(\rho\)?</td><td>none · scalar · torus · \(GL\) · \(GL\times\)torus · non-linear</td><td>\(GL_r\)</td><td>none</td><td>non-linear (Li–Liang’s MLP)</td></tr>
+        <tr><td>5 · Covariance</td><td>For which \((g,h)\) is \(\mathrm{Im}\,M(gW_0h^{-1})=g\,\mathrm{Im}\,M(W_0)\,h^{-1}\)?</td><td>\(GL\times GL\) · \(CO\times CO\) · \(GL\times CO\) · \(\mathrm{Mon}\times GL\) · \(\mathrm{Mon}\times\mathrm{Mon}\) · \(\Pi_X\) (imposed structure) · frame (in law)</td><td>\(GL\times GL\)</td><td>\(\mathrm{Mon}\times GL\); \(GL\times\mathrm{Mon}\) on \(W_{\rm down}\)</td><td>\(GL\times GL\), function level</td></tr>
+        <tr><td>6 · Merge</td><td>Does the update fuse into its box, or by R1–R7 into a neighbour?</td><td>M1 (own box) · M1→ (a neighbour) · Mq (leaves the quantised type) · M∞ (no box-local merge) · n/a</td><td>M1</td><td>M1→</td><td>M∞</td></tr>
+        <tr><td>7 · Rebasing</td><td>What does merge-and-restart reach?</td><td>idempotent · →span · →group · schedule</td><td>→span, all of \(\Theta\) at \(K=\lceil\min(m,n)/r\rceil\)</td><td>idempotent</td><td>–</td></tr>
+      </tbody>
+    </table></div>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p>Each axis has a procedure that uses only \(\rho\), \(q_0\) and the box.</p>
+      <ul>
+        <li><em>Kind.</em> Check whether the trained model is \(f(\rho(q),-)\) with the original architecture (R), whether new boxes are inserted and some parameter value makes them the identity (E) or none does (E°), whether only the gradient path or the schedule changes (B), whether the inputs are trained checkpoints (P), and whether the adapter depends on a task, an input or a tenant (F\(_T\)). See <a href="#thm-I-2">Def I.2</a>, <a href="#thm-IV-1">Def IV.1</a> and <a href="#thm-VI-1">Def VI.1</a>.</li>
+        <li><em>Shape.</em> Read the degree of \(\rho-\theta_0\) in \(q\). An affine map gives Lin and a multihomogeneous non-linear one gives Cone. A group acting on \(\theta_0\) gives Orb, a torus acting on another method’s image gives Sat (<a href="#thm-II-8">Prop II.8</a>), and an intersection gives Meet (<a href="#thm-II-7">Thm II.7</a>).</li>
+        <li><em>Base point.</em> Evaluate \(\rho(q_0)\) and compute \(S_1=d\rho_{q_0}(T_{q_0}Q)\), then compare \(\dim S_1\) with the generic rank \(d(M)\) (<a href="#thm-I-5">Def I.5</a>). For LoRA this is <a href="#thm-II-2">Thm II.2(b)</a>.</li>
+        <li><em>Gauge.</em> Insert \(gg^{-1}\) on each internal wire between trainable boxes and slide diagonals through copy spiders, then confirm \(\lvert M\rvert-d(M)\) by a Jacobian rank at a random point (<a href="#thm-II-12">Prop II.12(a)</a>).</li>
+        <li><em>Covariance.</em> Test the identity of <a href="#thm-II-14">Def II.14</a> on generators of \(GL_m\times GL_n\), in distribution when frames are random or come from data.</li>
+        <li><em>Merge.</em> Run the rewrite rules R1–R7 of <a href="#thm-VI-3">Thm VI.3</a> with their side conditions, adding the type condition of <a href="#thm-V-2">Prop V.2(d)</a> for a quantised base. The rules are sufficient conditions. They certify M1 and M1→, and M∞ records a box-local obstruction. Whether a whole network admits some other merge is left open.</li>
+        <li><em>Rebasing.</em> Apply <a href="#thm-V-3">Thm V.3(a)</a> to additive shapes and Thm V.3(b) and (c) to actions.</li>
+      </ul>
+      <span class="qed">∎</span>
+    </details>
+
+    <p class="explains">Methods with different shapes or base-point types are never isomorphic, however alike their formulas (<a href="#thm-I-4">Obs I.4(c)</a>, <a href="#thm-I-6">Obs I.6</a>).</p>
+
+    <h3 id="atlas-table">VIII.B The periodic table</h3>
+
+    <aside class="note"><span class="label">Credit</span>The colour key refines the additive, selective, reparametrisation-based and hybrid classes of <a href="https://arxiv.org/abs/2303.15647">Lialin et al., 2023</a>; the survey of <a href="https://arxiv.org/abs/2403.14608">Han et al., 2024</a> uses a similar split.</aside>
+    <p><a href="#fig-periodic">Figure 14</a> splits reparametrisations by how they touch \(W_0\), additively, by a group action, by a Hadamard product or by selecting coordinates. Some of its cells are empty by theorem. An affine \(\rho\) has the same differential everywhere, so no linear method is an apex, and in the catalogue none is. Corollary 2 of <a href="#thm-V-3">Thm V.3</a> ties idempotent rebasing to shapes that are fixed subspaces, subgroups or submonoids, and of the catalogue’s 92 idempotent methods, 84 are linear shapes and 7 are orbits. The other, <a href="#m-wasi">WASI</a>, trains on the rank-\(K\) variety \(\mathcal M_{\le K}\) itself, a set that does not move with the base.</p>
+
+    <h3 id="atlas-arrows">VIII.C When one method simulates another</h3>
+
+    <p>“Generalises” and “is a special case of” get one reading here. \(N\) simulates \(M\) when a pointed smooth map \(h:Q_M\to Q_N\) satisfies \(\rho_N\circ h=\rho_M\) (<a href="#thm-I-2">Def I.2</a>), so \(N\) reaches every weight \(M\) reaches. Five rules produce every arrow in the atlas; three tests rule arrows out.</p>
+
+    <div class="table-wrap wide"><table>
+      <thead><tr><th>Rule</th><th>Statement</th><th>The map \(h\), or the test</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>A1 · interval</td><td>Frozen \(\to M\to\) Full FT for every weight-space \(M\).</td><td>\(h=\mathrm{const}_{q_0}\); \(h=\rho_M\)</td><td>Merging is the arrow to Full FT.</td></tr>
+        <tr><td>A2 · freezing</td><td>Freezing coordinates at base values gives a sub-object.</td><td>\(h(q')=(q',q_0'')\)</td><td>LoRA-FA\((A_0)\hookrightarrow\) LoRA pointed at \((0,A_0)\); MiCA \(\hookrightarrow\) LoRA pointed at \((B_0,0)\).</td></tr>
+        <tr><td>A3 · factorisation</td><td>\(\rho_M=\rho_N\circ h\) for an explicit pointed map \(h\), usually polynomial.</td><td>VeRA \(\to\) LoRA-FA\((A)\): \(h(b,d)=\Lambda_bB\Lambda_d\). LoHa\(_{r_1,r_2}\to\) LoRA\(_{r_1r_2}\): face-splitting products. (IA)\(^3\to\mathrm{HiRA}_1\) pointed at \((0,\mathbf 1^\top)\): \(h(\ell)=(\ell-\mathbf 1,\mathbf 1^\top)\).</td><td>Isomorphisms: rsLoRA \(\cong\) LoRA by \(h=(\sqrt r\,B,A)\); MiSS (balance mode) \(\cong\) LoRA-FA\((\mathbf 1^\top\otimes I_r)\); a linear adapter parallel to one layer \(\cong\) LoRA.</td></tr>
+        <tr><td>A4 · products</td><td>A product comes with its two projections.</td><td>\(R\mapsto B_0R\), \(R\mapsto RA_0\)</td><td>LoRA-XS \(\to\) FA\((A_0)\), FB\((B_0)\). HRA’s image lies in OFT\(_{SO}\)’s and LoRA\(_r\)’s, an image-level inclusion only.</td></tr>
+        <tr><td>A5 · sums</td><td>\(M\to M\oplus N\), and \(K\) stages embed in \(K+1\).</td><td>\(q\mapsto(q,q_0^N)\)</td><td>LoRA\(_r\oplus\)LoRA\(_s\cong\) LoRA\(_{r+s}\) (unpointed); ReLoRA\(^K\to\) ReLoRA\(^{K+1}\).</td></tr>
+        <tr><td>T · transport</td><td>\(T_*\) for \(T\in GL(\Theta)\) is an automorphism of the slice, giving one object in two frames.</td><td>no arrow; record the frame \(T\)</td><td>Sums of Kronecker products are \(\mathcal R^{-1}_*\mathrm{LoRA}\); HiRA is \((D_{W_0})_*\mathrm{LoRA}\) at \(\theta_0\) when \(W_0\) has no zero entry.</td></tr>
+        <tr><td>O1 · image</td><td>No arrow if \(\mathrm{Im}\,M\not\subseteq\mathrm{Im}\,N\), as when \(N\) keeps an invariant \(M\) breaks.</td><td>compare images</td><td>LoRA \(\not\to\) exact-Cayley OFT, which keeps \(K_{\rm out}\).</td></tr>
+        <tr><td>O2 · size</td><td>No arrow if \(d(M)\gt d(N)\) or \(\rho_{\max}(M)\gt\rho_{\max}(N)\).</td><td>compare dimension and maximum rank</td><td>LoRA\(_r\not\to\) LoRA-FA, since \(r(m+n-r)\gt mr\).</td></tr>
+        <tr><td>O3 · first order</td><td>No arrow if \(S_1(M)\not\subseteq S_1(N)\), or if \(M\) and \(N\) lie in different strata of Thm II.2.</td><td>compare \(S_1\) and strata</td><td>\(\mathrm T_A\)- \(\not\to\) \(\mathrm T_B\)-pointed LoRA; PiSSA and LoRA, either way; LoRA \(\not\to\) AdaLoRA, though on one matrix their images agree.</td></tr>
+      </tbody>
+    </table></div>
+
+    <details class="proof"><summary>(expand)</summary>
+      <p><em>The rules produce arrows.</em> In each case \(h\) is smooth and pointed, and \(\rho_N\circ h=\rho_M\) is checked by multiplying out. A1 is <a href="#thm-I-4">Obs I.4(a)</a>, since \(\rho_M\circ\mathrm{const}_{q_0}=\theta_0\) and \(\mathrm{id}\circ\rho_M=\rho_M\). A2 holds because freezing \(q''\) at \(q_0''\) leaves the rest of the formula unchanged. For A3, take VeRA, where \(W_0+\Lambda_bB\Lambda_dA=W_0+(\Lambda_bB\Lambda_d)A\) and \(h\) sends \(b_0=0\) to LoRA-FA’s base point \(0\). A4 is the universal property of the fibre product (<a href="#thm-I-4">Obs I.4(b)</a>, <a href="#thm-I-8">Prop I.8(a)</a>); for a meet such as HRA only the inclusion of images holds (<a href="#thm-II-7">Thm II.7</a>). A5 is the identity below, from <a href="#thm-I-7">Obs I.7</a>.</p>
+      \[\rho_{M\oplus N}(q,q_0^N)=\theta_0+\delta_M(q)+\delta_N(q_0^N)=\rho_M(q).\]
+      <p><em>The tests rule arrows out.</em> An arrow gives \(\mathrm{Im}\,M=\rho_N(h(Q_M))\subseteq\mathrm{Im}\,N\), which is O1. Images are <a href="#app-c-semialgebraic" class="gloss">semialgebraic</a>, or definable when softmax enters, so dimension is monotone under inclusion; and every update in \(\mathrm{Im}\,M-\theta_0\) also lies in \(\mathrm{Im}\,N-\theta_0\), so its rank is bounded by \(\rho_{\max}(N)\). Together these give O2. The chain rule at \(q_0\) gives \(S_1(M)\subseteq S_1(N)\) (<a href="#thm-I-6">Obs I.6</a>), the first half of O3. For the strata, the images of \(\mathrm T\)-type and \(\mathrm S\)-type objects are incomparable (<a href="#thm-II-2">Thm II.2(d)</a>). Inside the \(\mathrm T\) strata, \(S_1(\mathrm T_A)=\{XA_0\}\) contains matrices whose column space leaves \(\mathrm{col}\,B_0'\), so it does not lie in \(S_1(\mathrm T_B)=\{B_0'Y\}\), and symmetrically.</p>
+      <p><em>Transport.</em> \(T_*\) is an automorphism of the slice with inverse \((T^{-1})_*\) (<a href="#thm-II-13">Prop II.13</a>). It identifies \(M\) and \(T_*M\) as one object in two frames and does not by itself give an arrow between them.</p>
+      <span class="qed">∎</span>
+    </details>
+
+    <details class="aside"><summary>More: which published relations survive</summary>
+      <p>Some become exact. VeRA is LoRA-FA\((A)\) with a constrained factor, and rsLoRA and a linear parallel adapter are LoRA. Others are weaker than they sound. HRA’s arrow to LoRA\(_r\) lands on a degenerate pointing (\(B_0A_0=0\)) outside the strata of Thm II.2, and LoRA is a special case of AdaLoRA only unpointed, their first-order images having dimensions \(mr\) and \(r\) (<a href="#thm-II-4">Lemma II.4</a>).</p>
+    </details>
+
+    <figure class="figure wide" id="fig-graph" style="clear:both">
+      <div data-figure="graph" aria-label="The category of methods as a layered Hasse diagram. Nodes are the core methods coloured by modification kind; an arrow from M to N records that N simulates M, labelled with its rule and the map h that proves it."></div>
+      <figcaption><span class="fig-n">Figure 15</span>The category, drawn as a <a href="#app-a-poset" class="gloss">Hasse diagram</a> of the 142 core methods from Frozen (bottom) to Full FT (top). An arrow \(M\to N\) means \(N\) simulates \(M\) by rule A2–A5; hover it for its map \(h\). Hover a method to light what it simulates and what simulates it; click to pin it, see which tests (O1–O3) rule out other arrows, and open it in the catalogue. Mutually simulating families share a rung (⇄), and toggles keep only weight-space methods or covering arrows.</figcaption>
+    </figure>
+
+    <h3 id="atlas-time">The literature in time</h3>
+
+    <p>Figure 16 dates each method by its first arXiv submission. Landmarks come in rough order, with bottleneck adapters in 2019, prefixes and LoRA’s cone in 2021, the torus of (IA)\(^3\) in 2022, base change with QLoRA in 2023, and GaLore’s moving frame in 2024, the year of 113 of the 382 methods.</p>
+
+    <figure class="figure wide" id="fig-timeline" style="clear:both">
+      <div data-figure="timeline" aria-label="Timeline of the catalogued PEFT methods by month of first arXiv submission, one dot per method, coloured by modification kind and ringed when the method ships in Hugging Face PEFT."></div>
+      <figcaption><span class="fig-n">Figure 16</span>The literature in time. One dot per method at the month of its first arXiv submission (mid-year without one), ringed if it ships in Hugging Face PEFT. Hover or focus a dot for its paper and relations, drawn as arcs; click to open it in the catalogue. Click a kind to hide it, double-click to isolate it, or keep HF PEFT methods only.</figcaption>
+    </figure>
+
+    <h3 id="atlas-budget">What a budget buys</h3>
+
+    <p>Proposition II.12 separates the budget \(\lvert M\rvert\), what a method trains, from the expressive dimension \(d(M)\), the directions it can move the weights in. The gap is gauge waste (<a href="#thm-I-5">Def I.5</a>), per matrix \(r^2\) for LoRA, one for VeRA (numerically), zero for injective linear methods, at least \(2r^2+m+n-1\) for LoHa\(_{r,r}\) (<a href="#thm-II-12">Prop II.12</a>). At 131,072 parameters on a \(4096\times4096\) matrix, LoRA\(_{16}\) reaches 130,816 directions at rank up to 16, LoHa\(_{8,8}\) at most 122,753 at rank up to 64. Rankings at matched budget and at matched \(d(M)\) can differ (<a href="#pred-10">Prediction X.10</a>).</p>
+
+    <figure class="figure wide" id="fig-calculator" style="clear:both">
+      <div data-figure="calculator" aria-label="Budget calculator. For a chosen base model and set of adapted matrices, bars compare the parameters each PEFT method trains with the number of independent weight-space directions it can reach."></div>
+      <figcaption><span class="fig-n">Figure 17</span>The budget calculator. Pick a base model (Llama-3-8B, Llama-2-7B, Mistral-7B, Qwen2.5-7B or Qwen2.5-0.5B, shapes from <code>config.json</code>) and the matrices to adapt, then set each method’s knob. The pale bar counts trained parameters \(\lvert M\rvert\), the solid bar reachable directions \(d(M)\); the pale tail is the gauge waste. LoHa’s \(d(M)\) is an upper bound. OFT and BOFT have no closed form, and prompts, prefixes and adapters act on extensions, so they show none. Counts follow HF PEFT’s source or the paper; click a method for formulas and sources.</figcaption>
+    </figure>
+
+    <h3 id="atlas-catalogue">The catalogue</h3>
+
+    <aside class="note"><span class="label">Credit</span>Earlier maps made this one possible: the surveys of <a href="https://arxiv.org/abs/2303.15647">Lialin et al., 2023</a>, <a href="https://arxiv.org/abs/2312.12148">Xu et al., 2023</a>, <a href="https://arxiv.org/abs/2403.14608">Han et al., 2024</a> and <a href="https://arxiv.org/abs/2407.11046">Mao et al., 2024</a>, the delta-tuning study of <a href="https://www.nature.com/articles/s42256-023-00626-4">Ding et al., 2023</a>, and the libraries <a href="https://arxiv.org/abs/2007.07779">AdapterHub</a>, <a href="https://arxiv.org/abs/2311.11077">Adapters</a> and <a href="https://github.com/huggingface/peft">Hugging Face PEFT</a>, whose source settled many details.</aside>
+    <p>Everything above rests on a catalogue of 382 methods and 138 papers, checked against arXiv and, for library claims, Hugging Face PEFT as of 30 September 2026; 82 methods ship in that library. Each method entry gives formula, budget, locus, kind, merge verdict, initialisation, relations, sources, coordinates and a categorical reading, most with arrows and obstructions. Every entry has BibTeX and an address such as <a href="#m-lora">#m-lora</a>.</p>
+
+    <figure class="figure wide" id="catalog" style="clear:both">
+      <div data-figure="catalog" aria-label="The catalogue: a searchable, filterable explorer of 382 PEFT methods and 138 papers, with formulas, coordinates, arrows, obstructions and BibTeX for every entry."></div>
+      <figcaption><span class="fig-n">Figure 18</span>The catalogue. Search methods or papers by name, author, idea or structure, and filter methods by kind, Hugging Face PEFT support, mergeability, year, core status and any of the seven coordinates; every count follows the filters. A method card shows the formula, budget, merge reasons, initialisation, relations, coordinates, arrows and obstructions. Copy one BibTeX entry or the filtered list. Selecting an entry puts its address in the URL.</figcaption>
+    </figure>
+
+    <p>The atlas is meant to grow. A new method enters by answering the seven questions and exhibiting its arrows, each with its map \(h\); a disputed comparison is settled by an explicit \(h\) or one of the three tests.</p>
+
+  </div>
+</section>

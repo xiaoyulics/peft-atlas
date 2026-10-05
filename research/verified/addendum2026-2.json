@@ -1,0 +1,397 @@
+{
+ "family": "addendum2026-2",
+ "family_title": "2026 sweep batch 2",
+ "observed_at": "2026-10-02",
+ "methods": [
+  {
+   "id": "flexlora-entropy",
+   "name": "FlexLoRA",
+   "full_name": "FlexLoRA: Entropy-Guided Flexible Low-Rank Adaptation",
+   "paper_title": "FlexLoRA: Entropy-Guided Flexible Low-Rank Adaptation",
+   "authors": "Liu et al.",
+   "year": 2026,
+   "venue": "ICLR 2026",
+   "arxiv": "2601.22905",
+   "url": "https://arxiv.org/abs/2601.22905",
+   "code_url": "https://github.com/Chongjie-Si/Subspace-Tuning",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+s\\,P_\\ell\\Lambda_\\ell Q_\\ell\\,x,\\ \\ s=\\alpha/r_{init}\\ \\text{(released code)},\\quad P_\\ell\\in\\mathbb{R}^{d_{out}\\times r_\\ell},\\ \\Lambda_\\ell=\\mathrm{diag}(\\lambda_1,\\dots,\\lambda_{r_\\ell}),\\ Q_\\ell\\in\\mathbb{R}^{r_\\ell\\times d_{in}};\\quad \\mathcal{L}=\\mathcal{L}_{task}+\\gamma\\textstyle\\sum_\\ell\\big(\\|P_\\ell^{\\top}P_\\ell-I\\|_F^2+\\|Q_\\ell Q_\\ell^{\\top}-I\\|_F^2\\big);\\quad I(\\Lambda_\\ell)=-\\frac{1}{\\log r_\\ell}\\sum_{i=1}^{r_\\ell}s_i\\log(s_i+\\epsilon),\\ \\ s_i=\\frac{\\lambda_i^2}{\\sum_j\\lambda_j^2};\\quad \\text{every }\\Delta_T\\text{ steps: the }b(t)\\text{ lowest-}I\\text{ matrices with }r_\\ell>1\\text{ drop their smallest-}\\lambda\\text{ triplet; the }b(t)\\text{ highest-}I\\text{ matrices append }(p,\\lambda{=}0,q),\\ p,q\\sim\\mathcal{N};\\ \\ b(t)=\\mathrm{round}\\big(b_0(1-\\tfrac{t-t_{warmup}}{T-t_{final}})^3\\big);\\quad W_0\\ \\text{frozen};\\ P_\\ell,\\Lambda_\\ell,Q_\\ell\\ \\text{trained}",
+   "trainable_params": "r_\\ell(d_{in}+d_{out}+1)\\ \\text{per adapted matrix, with } r_\\ell \\text{ changing during training. Each reallocation removes one triplet from each of } b(t) \\text{ matrices and adds one to each of } b(t) \\text{ others, so } \\textstyle\\sum_\\ell r_\\ell \\text{ stays at the initial budget; the parameter count itself can drift when the adapted matrices differ in } d_{in}+d_{out}",
+   "locus": "DeBERTaV3-base for GLUE (the paper's rank-allocation figure shows query, key, value, attention-output, intermediate and output dense matrices), the Q, K, V, Up and Down projections of LLaMA3-8B for commonsense reasoning, and ViT-B/16 (ImageNet-22K) for VTAB-1K, whose target modules the paper does not list",
+   "modification_kind": "additive-weight",
+   "structure": "An SVD-form additive update \\(\\Delta W_\\ell=P_\\ell\\Lambda_\\ell Q_\\ell\\) of rank \\(r_\\ell\\). It uses the AdaLoRA parameterization, with a soft orthogonality penalty on \\(P_\\ell\\) and \\(Q_\\ell\\), and it moves rank between matrices during training. Allocation uses one score per matrix, the Shannon entropy of the normalized spectral energies \\(s_i=\\lambda_i^2/\\sum_j\\lambda_j^2\\) divided by \\(\\log r_\\ell\\), which lies in \\([0,1]\\). Low entropy means the energy sits in a few directions, so the matrix can give up rank. High entropy means the energy is spread out, so the matrix should gain rank. Pruning removes the triplet with the smallest \\(\\lambda\\) from each of the \\(b(t)\\) lowest-entropy matrices. Expansion appends a Gaussian pair \\((p,q)\\) with \\(\\lambda=0\\) to each of the \\(b(t)\\) highest-entropy matrices, so insertion leaves the function unchanged. \\(b(t)\\) follows a cubic decay schedule between a warm-up and a final freeze phase. The released code differs from the paper in three details: its schedule is \\(b_0(1-p^3)\\) rather than \\(b_0(1-p)^3\\), with \\(p\\) the elapsed fraction of the allocation phase; pruning removes the triplet with the smallest signed \\(\\lambda\\) rather than the smallest magnitude; and the orthogonality penalty uses the unsquared Frobenius norm, averaged over factors.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(P_\\ell\\Lambda_\\ell Q_\\ell\\) is a dense \\(d_{out}\\times d_{in}\\) matrix that folds into \\(W_0\\). Ranks change only during training.",
+   "identity_at_init": "Exact. \\(\\Lambda=0\\) at initialization: in the released flexlora.py the singular-value vector is zero-initialized and \\(P,Q\\sim\\mathcal{N}(0,0.02^2)\\), so \\(\\Delta W=0\\). Every expanded direction also starts at \\(\\lambda=0\\) (the paper's zero-impact initialization), so growing a rank does not change the current output.",
+   "key_idea": "FlexLoRA replaces per-direction sensitivity scores with a matrix-level score, the normalized entropy of each matrix's learned singular values \\(\\Lambda_\\ell\\). Under a fixed global budget it moves rank from low-entropy to high-entropy matrices, and new directions enter with \\(\\lambda=0\\) so that expansion is function-preserving.",
+   "results_note": "With DeBERTaV3-base FlexLoRA averages 89.1 on GLUE against 88.1 for AdaLoRA at the same 1.9M parameters; with LLaMA3-8B on eight commonsense tasks it scores 85.2 at rank 8 (AdaLoRA 85.1) and 85.5 at rank 32.",
+   "relations": [
+    {
+     "target": "adalora",
+     "type": "builds-on",
+     "note": "Same \\(P\\Lambda Q\\) parameterization, orthogonality penalty and \\(\\Lambda=0\\) initialization. FlexLoRA replaces AdaLoRA's per-triplet sensitivity scores with a matrix-level spectral-entropy score and adds rank expansion. AdaLoRA is its main baseline."
+    },
+    {
+     "target": "elalora",
+     "type": "competes-with",
+     "note": "Not compared in the paper. Both prune and expand ranks during training. ElaLoRA scores individual directions by gradient-based importance, while FlexLoRA scores whole matrices by spectral entropy."
+    },
+    {
+     "target": "increlora",
+     "type": "competes-with",
+     "note": "Not compared in the paper. IncreLoRA only grows rank. FlexLoRA moves rank in both directions and keeps the total fixed."
+    },
+    {
+     "target": "dylora",
+     "type": "competes-with",
+     "note": "DyLoRA (\\(r=8\\), 0.9M parameters) is a dynamic-rank baseline in FlexLoRA's GLUE table."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "Fixed-rank baseline at the same parameter budget."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2601.22905",
+    "https://arxiv.org/html/2601.22905",
+    "https://iclr.cc/virtual/2026/poster/10006948",
+    "https://openreview.net/forum?id=tqnkbdYWWm",
+    "https://github.com/Chongjie-Si/Subspace-Tuning/blob/main/loralib/loralib/flexlora.py",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2601.22905 v1 (30 Jan 2026) by Muqing Liu, Chongjie Si and Yuheng Jia, with the arXiv comment '2026 ICLR'. The iclr.cc accepted-paper JSON lists it as Accept (Poster), event 10006948, OpenReview tqnkbdYWWm. The formula was checked against Sec. 3.1-3.3, Eqs. 1-4 and Algorithm 1, and the results against Tables 1-2 (GLUE 89.1 vs 88.1 for AdaLoRA at 1.9M; LLaMA3-8B 85.2 at rank 8 and 85.5 at rank 32). DyLoRA is confirmed as a GLUE baseline. ElaLoRA and IncreLoRA are not cited. Code checked in Chongjie-Si/Subspace-Tuning, loralib/loralib/flexlora.py: \\(\\Lambda\\) starts at zero, \\(P,Q\\sim\\mathcal{N}(0,0.02^2)\\), new directions get standard-normal vectors with \\(\\lambda=0\\), and the scale \\(\\alpha/r\\) uses the initial rank. The code's departures from the paper are listed in the structure field. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "formula_latex: scale written out as \\(s=\\alpha/r_{init}\\), as in the released code.",
+    "trainable_params: the budget claim now covers only the total rank; the parameter count can drift across matrices of different shapes.",
+    "locus: modules given per backbone as the paper states them; the VTAB target modules are not listed.",
+    "structure: added three differences between the code and the paper (schedule shape, signed-minimum pruning, unsquared penalty).",
+    "relations: the ElaLoRA and IncreLoRA notes now say neither is compared in the paper; math in the notes is wrapped."
+   ]
+  },
+  {
+   "id": "fouriermoe",
+   "name": "FourierMoE",
+   "full_name": "Fourier Mixture-of-Experts Adaptation",
+   "paper_title": "FourierMoE: Fourier Mixture-of-Experts Adaptation of Large Language Models",
+   "authors": "Jiang et al.",
+   "year": 2026,
+   "venue": "NeurIPS 2026",
+   "arxiv": "2604.01762",
+   "url": "https://arxiv.org/abs/2604.01762",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=W_0x+\\eta\\sum_{i\\in\\mathcal{S}(x)}g_i(x)\\,\\Delta W_i\\,x,\\quad g(x)=\\mathrm{softmax}\\big(\\mathcal{G}_\\Phi(x)\\big),\\ \\ \\mathcal{S}(x)=\\mathrm{TopK}_k\\,g(x);\\quad \\Delta W_i=\\mathcal{F}^{-1}(E_i)=\\frac{1}{d_{out}d_{in}}\\sum_{u,v}E_i(u,v)\\,f_ug_v^{\\top},\\ \\ (f_u)_q=e^{j2\\pi uq/d_{out}},\\ (g_v)_y=e^{j2\\pi vy/d_{in}};\\quad E_i(u,v)=c_{i,uv}\\in\\mathbb{C}\\ \\text{for }(u,v)\\in\\Omega_i,\\ \\ E_i(\\langle-u\\rangle,\\langle-v\\rangle)=\\overline{c_{i,uv}},\\ \\ 0\\ \\text{elsewhere};\\quad \\mathcal{L}=\\mathcal{L}_{task}+\\lambda\\,Z\\sum_{i=1}^{Z}f_iP_i;\\quad W_0\\ \\text{frozen};\\ \\{c_{i,uv}\\}\\ \\text{and router }\\Phi\\ \\text{trained};\\ \\Omega_i\\ (|\\Omega_i|=n)\\ \\text{fixed, sampled from a Gaussian band-pass around centre frequency }\\mathcal{D}_{c,i}",
+   "trainable_params": "\\mathcal{O}(Zn+Z\\,d_{in})\\ \\text{per adapted matrix (App. G, Eq. 15). Read literally (}n\\text{ complex coefficients, i.e. }2n\\text{ reals, per expert, plus one }Z\\times d_{in}\\text{ router per adapted matrix), this is }Z(2n+d_{in})\\text{. For the LLaMA-2 7B setting (}Z=8,\\ n=8192\\text{, six projections, 32 layers) that is about 33M parameters (0.49\\%), far above the reported 0.06\\%, so the paper's actual accounting is unresolved}",
+   "locus": "The Q, K, V, Up, Down and Gate projections (plus O for math) of LLaMA-2 7B, Gemma 7B, LLaMA-3 8B and Qwen2.5-14B; Q and V only for RoBERTa-large (GLUE) and CLIP ViT-B/32 (image classification). \\(Z=8\\) experts throughout, with top-4 routing for commonsense reasoning and top-2 elsewhere",
+   "modification_kind": "composition-or-routing",
+   "structure": "A token-routed mixture of \\(Z\\) dense spectral experts. Each expert update \\(\\Delta W_i\\) is the inverse 2-D DFT of a sparse, Hermitian-symmetric spectrum supported on a fixed set \\(\\Omega_i\\) of \\(n\\) frequencies. \\(\\Omega_i\\) is drawn from a Gaussian band-pass around a per-expert centre frequency, so each expert is band-limited. \\(\\Delta W_i\\) is therefore a real sum of 2-D sinusoids \\(2|c|\\cos(2\\pi(uq/d_{out}+vy/d_{in})+\\angle c)\\), and each conjugate pair contributes rank at most 2. The router keeps the top \\(k\\) experts per token and mixes their spatial updates linearly, so the applied update \\(\\sum_{i\\in\\mathcal{S}(x)}g_i(x)\\Delta W_i\\) depends on the input, with rank at most the number of non-zero spectral entries of the selected experts (App. H), which with conjugate partners counted is at most \\(2kn\\). Unlike FourierFT, the coefficients are complex, so the experts learn phase as well as amplitude. Catalogue observation, not from the paper: \\(\\mathrm{Re}\\,\\mathcal{F}^{-1}(F)=\\mathcal{F}^{-1}\\big(\\tfrac12(F+\\bar F^{\\sharp})\\big)\\) with \\(\\bar F^{\\sharp}(u,v)=\\overline{F(\\langle-u\\rangle,\\langle-v\\rangle)}\\) for every \\(F\\). Taking the real part of an unsymmetrized complex spectrum therefore reaches the same set of updates, and the substantive change from FourierFT is the learned phase rather than the symmetry constraint.",
+   "mergeable": "no",
+   "mergeable_reason": "The gate values \\(g_i(x)\\) and the active set \\(\\mathcal{S}(x)\\) change from token to token. Each \\(\\Delta W_i\\) can be computed once per forward pass and cached, but no single static matrix reproduces the layer unless the routing is frozen.",
+   "identity_at_init": "Not specified. The paper's algorithm only says that the complex coefficients are initialized and that the router starts random. \\(\\Delta W=0\\) at the start would require zero coefficients (the FourierFT paper draws its coefficients from \\(\\mathcal{N}(0,1)\\)), and no code is public.",
+   "key_idea": "FourierMoE moves MoE-LoRA into the frequency domain. Each expert owns a band of 2-D Fourier frequencies with learnable complex coefficients (amplitude and phase), and a token-level top-\\(k\\) router decides which bands, and therefore how much rank, each token's weight update receives.",
+   "results_note": "In the multi-task commonsense setting on LLaMA-2 7B FourierMoE averages 83.95 against 82.73 for GOAT, the strongest mixture-of-PEFT baseline, using 0.06% trainable parameters; on seven GLUE tasks with RoBERTa-large it averages 91.40 against 86.73 for FourierFT.",
+   "relations": [
+    {
+     "target": "fourierft",
+     "type": "builds-on",
+     "note": "Each expert is a FourierFT-style IDFT of a sparse spectrum. FourierMoE adds complex coefficients with conjugate symmetry, band-limited per-expert supports and token routing; FourierFT is a baseline."
+    },
+    {
+     "target": "mov",
+     "type": "combines",
+     "note": "Uses MoLoRA-style token-level top-\\(k\\) routing with a load-balancing loss, with spectral experts in place of LoRA experts. MoLoRA is a baseline."
+    },
+    {
+     "target": "goat",
+     "type": "competes-with",
+     "note": "GOAT is the strongest mixture-of-PEFT baseline. FourierMoE reports +1.22 points on LLaMA-2 7B commonsense with about 16x fewer trainable parameters (0.06% vs 0.96%)."
+    },
+    {
+     "target": "hydralora",
+     "type": "competes-with",
+     "note": "Mixture-of-PEFT baseline in the multi-task commonsense and math experiments."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2604.01762",
+    "https://arxiv.org/html/2604.01762",
+    "https://neurips.cc/virtual/2026/poster/151989",
+    "https://openreview.net/forum?id=WJwzyoFMtf",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2604.01762 v1 (2 Apr 2026) by Juyong Jiang, Fan Wang, Hong Qi, Sunghun Kim and Jing Tang; the first two authors contributed equally and are listed in random order. The neurips.cc accepted-paper JSON lists it as Accept (poster), event 151989, OpenReview WJwzyoFMtf. The formula was checked against Eqs. 1-4 and 12-14 and Algorithm 1 (App. A), the hyperparameters against Tables 12-15, the parameter count against App. G, and the rank statements against App. H. The results were checked against Tables 1 and 4 and Sec. 4.2. Neither the arXiv page nor a web search turned up public code. The parameter count implied by the stated hyperparameters does not reproduce the reported percentages (see trainable_params). The catalogue observation was re-derived: for any \\(F\\), \\(\\mathrm{Re}\\,\\mathcal{F}^{-1}(F)\\) is the IDFT of the Hermitian part of \\(F\\). On a fixed support, closed under reflection, the constrained and Re-truncated parameterizations therefore reach the same real updates. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "trainable_params: the derived \\(Z(2n+d_{in})\\) count, previously given as the answer, is replaced by the paper's \\(\\mathcal{O}(Zn+Z\\,d_{in})\\), with a note that the literal reading is about 8x the reported 0.06% on LLaMA-2 7B.",
+    "locus: Q and V only for RoBERTa-large and CLIP; top-\\(k\\) given per setting.",
+    "structure: the rank bound now counts conjugate partners (at most \\(2kn\\)).",
+    "relations: the mov note wraps \\(k\\); the goat note gives both parameter percentages."
+   ]
+  },
+  {
+   "id": "smoa",
+   "name": "SMoA",
+   "full_name": "Spectrum Modulation Adapter",
+   "paper_title": "SMoA: Spectrum Modulation Adapter for Parameter-Efficient Fine-Tuning",
+   "authors": "Liu et al.",
+   "year": 2026,
+   "venue": "NeurIPS 2026",
+   "arxiv": "2605.21147",
+   "url": "https://arxiv.org/abs/2605.21147",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "\\widetilde W_0=P_{out}W_0P_{in}^{\\top},\\quad M_k=\\widetilde W_0[\\mathcal{O}_k,\\mathcal{I}_k]\\in\\mathbb{R}^{\\frac{d_{out}}{K}\\times\\frac{d_{in}}{K}};\\quad \\Delta W=P_{out}^{\\top}\\,\\mathrm{blkdiag}\\big((B_1A_1)\\odot M_1,\\dots,(B_KA_K)\\odot M_K\\big)\\,P_{in},\\quad B_k\\in\\mathbb{R}^{\\frac{d_{out}}{K}\\times\\rho},\\ A_k\\in\\mathbb{R}^{\\rho\\times\\frac{d_{in}}{K}},\\ \\rho=\\tfrac{r}{K};\\quad h=(W_0+\\Delta W)x;\\quad W_0\\ \\text{frozen};\\ \\text{permutations }P_{out},P_{in}\\ \\text{(fixed once from the SVD of }W_0\\text{) and anchors }M_k\\ \\text{frozen};\\ \\{A_k,B_k\\}_{k=1}^{K}\\ \\text{trained}",
+   "trainable_params": "\\tfrac{r}{K}(d_{in}+d_{out})\\ \\text{per adapted matrix, i.e. }1/K\\text{ of rank-}r\\text{ LoRA}",
+   "locus": "Query, key, value and projection layers (the paper's wording, App. D) of Llama-2-7B and Llama-3-8B; \\(K=2\\) by default, with reference ranks \\(r\\in\\{16,32\\}\\)",
+   "modification_kind": "multiplicative-weight",
+   "structure": "A block-diagonal HiRA in permuted coordinates. Write \\(\\tilde B=\\mathrm{blkdiag}(B_1,\\dots,B_K)\\in\\mathbb{R}^{d_{out}\\times r}\\) and \\(\\tilde A=\\mathrm{blkdiag}(A_1,\\dots,A_K)\\in\\mathbb{R}^{r\\times d_{in}}\\). Because \\(\\mathrm{blkdiag}(B_kA_k)\\odot\\widetilde W_0=\\mathrm{blkdiag}((B_kA_k)\\odot M_k)\\), the update equals \\(\\Delta W=(P_{out}^{\\top}\\tilde B\\tilde AP_{in})\\odot W_0\\) (catalogue rewriting). This is a Hadamard modulation of the frozen weight by a rank-\\(r\\) matrix whose factors are block-sparse in a coordinate order fixed once from the SVD of \\(W_0\\). The paper does not spell out the rule beyond grouping coordinates with similar spectral roles. Off-diagonal blocks of \\(\\widetilde W_0\\) are never modulated. Proposition 1 bounds the rank by \\(\\sum_k\\min(s_k,\\rho\\,\\mathrm{rank}\\,M_k)\\) with \\(s_k=\\min(d_{out},d_{in})/K\\), against \\(r\\) for LoRA. With \\(K=1\\) the permutations are absorbed into the factors and SMoA is exactly HiRA. Without the Hadamard factor it becomes block-diagonal mini-LoRAs (MELoRA's shape) in permuted coordinates. A second catalogue observation follows. \\(\\tilde B\\tilde A\\) has rank at most \\(r\\), so at budget \\(r\\) SMoA's update set lies inside rank-\\(r\\) HiRA's set \\(\\{W_0\\odot(BA)\\}\\), reached with \\(1/K\\) of HiRA's parameters. The rank-ceiling gain of Proposition 1 is over LoRA, not over HiRA.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(\\Delta W\\) is a dense matrix once it is scattered back with \\(P_{out}^{\\top}\\) and \\(P_{in}\\). It is added to \\(W_0\\) after training, so inference has no extra branch.",
+   "identity_at_init": "Not stated. The paper follows HiRA's training setup; if one factor of each block is zero-initialized as in HiRA, \\(\\Delta W=0\\) at the start. The SVD-based reordering does not change the layer.",
+   "key_idea": "Pretrained weights carry information in their long spectral tails, so one global low-rank branch under-covers them. SMoA reorders \\(W_0\\) by its spectral structure, cuts it into \\(K\\) aligned diagonal blocks, and attaches a rank-\\(r/K\\) HiRA-style (Hadamard-modulated) branch to each block. This raises the rank ceiling while using \\(1/K\\) of LoRA's parameters.",
+   "results_note": "With \\(r=32\\) and \\(K=2\\) (half of rank-32 LoRA's parameters) SMoA averages 81.85% on eight commonsense tasks with Llama-2-7B (HiRA at \\(r=32\\): 81.42%) and 87.39% with Llama-3-8B (HiRA: 86.73%), and reaches 72.33% on GSM8K with Llama-3-8B against 65.89% for LoRA.",
+   "relations": [
+    {
+     "target": "hira",
+     "type": "generalizes",
+     "note": "With \\(K=1\\) the permutations are absorbed into the factors and the update is exactly HiRA's \\(W_0\\odot(BA)\\). For \\(K>1\\) at the same \\(r\\), SMoA's update set is a subset of HiRA's. HiRA is the strongest baseline."
+    },
+    {
+     "target": "melora",
+     "type": "combines",
+     "note": "Takes MELoRA's block-diagonal direct sum of small branches, in spectrum-permuted coordinates, and modulates each block entrywise by the matching diagonal block of \\(W_0\\). MELoRA is a baseline."
+    },
+    {
+     "target": "mora",
+     "type": "competes-with",
+     "note": "Another high-rank-at-low-budget design (square matrix with fixed compression); a baseline."
+    },
+    {
+     "target": "lora",
+     "type": "competes-with",
+     "note": "The rank ceiling exceeds \\(r\\) at \\(r(d_{in}+d_{out})/K\\) parameters."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2605.21147",
+    "https://arxiv.org/html/2605.21147",
+    "https://neurips.cc/virtual/2026/poster/153896",
+    "https://openreview.net/forum?id=HtLt3XukFH",
+    "https://neurips.cc/static/virtual/data/neurips-2026-orals-posters.json"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2605.21147 v1 (20 May 2026). First author Yongkang Liu; 10 authors, ending with Hinrich Schütze. The neurips.cc accepted-paper JSON lists it as Accept (poster), event 153896, OpenReview HtLt3XukFH. The formula was checked against Eqs. 1-5, Proposition 1 and Apps. D-E. The results were checked against the text of Secs. 4.1 and 4.3, because the tables are images in the HTML. The Hadamard rewriting was re-derived: \\(\\mathrm{blkdiag}(B_kA_k)=\\tilde B\\tilde A\\), and permutations applied on both sides commute with the Hadamard product, so \\(\\Delta W=(P_{out}^{\\top}\\tilde B\\tilde AP_{in})\\odot W_0\\). No public code was found. The paper does not state the initialization; it follows HiRA's setup. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "structure and the hira relation: added that at fixed \\(r\\) SMoA's update set is a subset of rank-\\(r\\) HiRA's, so its rank-ceiling advantage is over LoRA only.",
+    "locus: target layers quoted in the paper's wording, with the reference ranks added.",
+    "results_note and relation notes: math fragments wrapped."
+   ]
+  },
+  {
+   "id": "bayesian-lora-sgp",
+   "name": "Bayesian-LoRA",
+   "full_name": "Bayesian-LoRA (sparse-GP inducing-variable posterior over both LoRA factors)",
+   "paper_title": "Bayesian-LoRA: Probabilistic Low-Rank Adaptation of Large Language Models",
+   "authors": "Lin et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2601.21003",
+   "url": "https://arxiv.org/abs/2601.21003",
+   "code_url": "https://github.com/moulelin/Bayesian-LoRA",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=\\big(W_0+\\tfrac{\\alpha}{r}BA\\big)x,\\quad A\\mid U^A\\sim\\mathcal{N}\\big(T_r^AU^AT_c^A,\\ \\lambda^2\\Sigma_A\\big),\\ \\ B\\mid U^B\\sim\\mathcal{N}\\big(T_r^BU^BT_c^B,\\ \\lambda^2\\Sigma_B\\big);\\quad T_r=Z_r^{\\top}K_r^{-1},\\ T_c=K_c^{-1}Z_c,\\ K_r=Z_rZ_r^{\\top}+D_r^2,\\ K_c=Z_cZ_c^{\\top}+D_c^2;\\quad U=T_\\phi(U_0),\\ U_0\\sim\\mathcal{N}(\\mathbf{m},\\mathrm{diag}\\,\\boldsymbol{\\sigma}^2)\\ \\text{(masked autoregressive flow)},\\ \\ p(U)=\\mathcal{N}(\\mathbf{0},K_c\\otimes K_r);\\quad \\max\\ \\mathbb{E}_{q}\\big[\\log p(\\mathcal{D}\\mid W)\\big]-\\mathrm{KL}\\big(q_\\phi(U)\\,\\|\\,p(U)\\big)-\\tfrac{D}{2}\\big(\\lambda^2-1-2\\log\\lambda\\big);\\quad W_0\\ \\text{frozen};\\ Z_r,Z_c,D_r,D_c,\\mathbf{m},\\boldsymbol{\\sigma},\\phi,\\lambda\\ \\text{trained (per factor and layer)}",
+   "trainable_params": "\\approx c\\,d_{in}+r\\,d_{out}+r_L(r+c)+O(rc)\\ \\text{per adapted matrix, with an } r\\times c \\text{ inducing matrix per factor and LoRA rank } r_L\\text{. The inducing locations } Z_c^A\\in\\mathbb{R}^{c\\times d_{in}} \\text{ and } Z_r^B\\in\\mathbb{R}^{r\\times d_{out}} \\text{ dominate; the variational means and standard deviations, diagonal noise, flow and } \\lambda \\text{ add } O(rc) \\text{ (derived from Eqs. 6, 13 and 14 and the released code). Paper total: 4.9M, against 4.48M for LoRA on Q, K and the LM head of Llama-2-7B with } r=c=9\\text{; 4.48M is LoRA at rank 8, the rank used in the released configs}",
+   "locus": "Q, K and LM-head weights of Llama-2-7B for commonsense reasoning (inducing size \\(r=c=9\\)); also Qwen2.5-14B-Instruct and Qwen3-30B-A3B-Instruct-2507 for MATH (App. Table 22)",
+   "modification_kind": "additive-weight",
+   "structure": "A stochastic rank-\\(r\\) additive update. Both LoRA factors are random matrices generated from small \\(r\\times c\\) inducing matrices through a Kronecker-structured sparse-GP conditional: a bilinear projection \\(T_rUT_c\\) plus Gaussian noise of scale \\(\\lambda\\). The posterior over each inducing matrix is a diagonal Gaussian pushed through a masked autoregressive flow. The ELBO's KL over \\(U\\) is estimated from base samples (Prop. 4.1), and its conditional-KL term is in closed form. Every sample has rank at most \\(r\\), and the posterior mean \\(\\tfrac{\\alpha}{r}\\bar B\\bar A\\) has exactly LoRA's shape. A point-mass \\(q(U)\\) with \\(\\lambda\\to0\\) recovers a deterministic LoRA update in the reparameterization \\(A=T_r^AU^AT_c^A\\), \\(B=T_r^BU^BT_c^B\\) (Corollary 4.2).",
+   "mergeable": "conditional",
+   "mergeable_reason": "In deterministic mode the posterior mean \\(W_0+\\tfrac{\\alpha}{r}\\bar B\\bar A\\) is merged with no added latency. Calibrated predictions need \\(N\\) Monte Carlo samples of \\((A,B)\\) at test time. Latency is \\(1.52\\times\\) LoRA's with \\(N=2\\) and \\(2.79\\times\\) with \\(N=4\\), the setting used in the accuracy and calibration tables.",
+   "identity_at_init": "Not exact, and the paper does not state it. The released training script first applies PEFT LoRA, then replaces both LoRA factor layers on each key layer with InducingLinear modules. Their inducing means are drawn from \\(\\mathcal{N}(0,1)\\) and their inducing locations are random, so both sampled factors are non-zero at step 0 and \\(\\tfrac{\\alpha}{r}BA\\neq0\\). The update is small because the prior scale is divided by the square root of the fan-in. The repository also has an InducingAdapter wrapper whose learnable output scale starts at 0, but the training script never uses it.",
+   "key_idea": "The Kronecker-factored sparse-GP conditional mean \\(T_rUT_c\\) has the same bilinear shape as LoRA's \\(BA\\). Bayesian-LoRA puts a flow-enriched variational posterior on small inducing matrices that generate both LoRA factors, giving end-to-end calibrated Bayesian LoRA with plain LoRA as the zero-uncertainty limit.",
+   "results_note": "On six commonsense benchmarks with Llama-2-7B Bayesian-LoRA has the best accuracy on five and cuts ECE by 84% relative to MAP LoRA on WinoGrande-S, at 1.23x LoRA's training time and 0.42M extra parameters.",
+   "relations": [
+    {
+     "target": "lora",
+     "type": "generalizes",
+     "note": "LoRA is the point-mass, \\(\\lambda\\to0\\) limit (Corollary 4.2), up to the bilinear reparameterization of the factors through inducing variables."
+    },
+    {
+     "target": "laplace-lora",
+     "type": "competes-with",
+     "note": "Laplace-LoRA fits a posterior after training, while Bayesian-LoRA learns a variational posterior end to end. The Laplace variants (LA, LLLA) are baselines."
+    },
+    {
+     "target": "blob",
+     "type": "competes-with",
+     "note": "BLoB puts a mean-field Gaussian on \\(A\\) only. Bayesian-LoRA makes both factors stochastic through sparse-GP inducing variables with a flow posterior. BLoB is a baseline."
+    },
+    {
+     "target": "monteclora",
+     "type": "competes-with",
+     "note": "Also learns a distribution over LoRA parameters during training (a Gaussian mixture on \\(A\\)); not compared in the paper."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2601.21003",
+    "https://arxiv.org/html/2601.21003",
+    "https://icml.cc/virtual/2026/poster/60552",
+    "https://openreview.net/forum?id=z3rQmLk4Io",
+    "https://github.com/moulelin/Bayesian-LoRA",
+    "https://github.com/moulelin/Bayesian-LoRA/blob/HEAD/bnn/bayesianize.py",
+    "https://github.com/moulelin/Bayesian-LoRA/blob/HEAD/bnn/nn/mixins/variational/inducing_simple3.py",
+    "https://github.com/moulelin/Bayesian-LoRA/blob/HEAD/configs/inducing/inducing8.yaml",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json"
+   ],
+   "confidence": "medium",
+   "verified": true,
+   "verification_notes": "arXiv 2601.21003 v1 (28 Jan 2026; v4 27 Sep 2026) by Moule Lin, Shuhao Guan, Andrea Patane, David Gregg and Goetz Botterweck, with the arXiv comment 'accepted by ICML 2026'. The icml.cc accepted-paper JSON lists it as Accept (regular), event 60552, OpenReview z3rQmLk4Io. The formula was checked against Eqs. 3-17, Proposition 4.1, Corollary 4.2 and Algorithm 1 of v4. The locus was checked against Sec. 5 and Table 10, and the costs against Table 4 (4.9M vs 4.48M parameters, \\(1.229\\times\\) training time, \\(1.516\\times\\) latency at \\(N=2\\)). Code was read at HEAD (9d5eaa6a, 2026-05-11, after the 'camera-ready for ICML2026' commit). The training script wraps each PEFT LoRA factor of the key layers in an InducingLinear module; the configs use LoRA rank 8, \\(\\alpha=8\\) and 9 x 9 inducing matrices. The earlier identity-at-init claim came from an unused wrapper and was wrong. The paper says \\(r=c=9\\) matches the LoRA rank, but its 4.48M MAP count is exactly rank 8 on Q, K and the LM head (4,483,072). The derived Bayesian-LoRA count is about 5.0M before the small terms, slightly above the reported 4.9M. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "identity_at_init: corrected. The zero-initialized output scale belongs to an InducingAdapter wrapper that the training script never calls. The real path replaces the LoRA factors with randomly initialized inducing layers, so \\(\\Delta W\\neq0\\) at step 0.",
+    "trainable_params: the count is now given for a general inducing size and LoRA rank \\(r_L\\), and the paper's rank-9 versus rank-8 inconsistency is noted.",
+    "mergeable_reason: the accuracy and calibration tables use \\(N=4\\) samples (\\(2.79\\times\\) latency), not \\(N=2\\).",
+    "locus: full Qwen3 model name and a pointer to the MATH configuration table.",
+    "relations: math fragments in the notes wrapped."
+   ]
+  },
+  {
+   "id": "florg",
+   "name": "FLoRG",
+   "full_name": "Federated Low-rank Gram-matrix aggregation",
+   "paper_title": "FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment",
+   "authors": "Meng et al.",
+   "year": 2026,
+   "venue": "ICLR 2026",
+   "arxiv": "2602.17095",
+   "url": "https://arxiv.org/abs/2602.17095",
+   "code_url": "",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "W^{t}=W_0+L\\,(A^{t})^{\\top}A^{t}R,\\quad L\\in\\mathbb{R}^{d_{out}\\times k},\\ R\\in\\mathbb{R}^{k\\times d_{in}}\\ \\text{fixed semi-orthogonal},\\ A^{t}\\in\\mathbb{R}^{r\\times k},\\ k=\\min(d_{in},d_{out});\\quad \\text{client } n:\\ A_n^{t+\\frac12}=A^{t}-\\eta\\,A^{t}\\big(H_n^{t}+H_n^{t\\top}\\big),\\ \\ H_n^{t}=L^{\\top}\\nabla_WF_n(W^{t})R^{\\top};\\quad \\text{server: } Q^{t+1}=\\tfrac1N\\sum_n(A_n^{t+\\frac12})^{\\top}A_n^{t+\\frac12}=(P^{t+1})^{\\top}\\Lambda^{t+1}P^{t+1},\\ \\ \\tilde A^{t+1}=(\\Lambda^{t+1})^{1/2}P^{t+1},\\ \\ A^{t+1}=S^{\\star}\\tilde A^{t+1},\\ \\ S^{\\star}=UV^{\\top}\\ \\text{where } A^{t}(\\tilde A^{t+1})^{\\top}=U\\Sigma V^{\\top};\\quad W_0,L,R\\ \\text{frozen};\\ A\\ \\text{trained};\\quad \\text{experiments use a LoRA scaling factor of 16 and AdamW (App. A.6)}",
+   "trainable_params": "r\\,k=r\\min(d_{in},d_{out})\\ \\text{per adapted matrix (a single factor); per round each client uploads } A_n \\text{ and downloads } A^{t}\\text{, } rk \\text{ numbers each way}",
+   "locus": "LoRA-adapted weight matrices of OPT-125M, RoBERTa-large and Llama-3.2-3B (the paper does not list the modules); \\(r=4\\), \\(N=20\\) clients",
+   "modification_kind": "additive-weight",
+   "structure": "A rank-\\(\\le r\\) additive update confined to the cone \\(\\{LQR:\\ Q\\succeq0,\\ \\mathrm{rank}\\,Q\\le r\\}\\): a PSD Gram core \\(Q=A^{\\top}A\\) between two fixed semi-orthogonal frames (the paper says only that they are initialized with orthogonal columns). The core is invariant under the gauge \\(A\\mapsto OA\\), \\(O\\in O(r)\\), and is linear to average, so the server aggregates \\(Q\\) exactly (no \\(B_iA_j\\) cross terms) from one factor per client. Re-factoring the aggregate is ambiguous up to that gauge, and \\(\\mathrm{rank}\\,Q^{t+1}\\le\\min(k,Nr)\\) can exceed \\(r\\). Orthogonal Procrustes picks the rank-\\(r\\) factor closest to the previous round's \\(A^{t}\\), which removes the drift term from the convergence bound. Two catalogue observations, not from the paper: because \\(Q\\succeq0\\), \\(-\\Delta W\\) is never reachable for \\(\\Delta W\\neq0\\); and when \\(\\mathrm{rank}\\,Q^{t+1}>r\\), the \\(r\\times r'\\) map \\(S^{\\star}\\) projects the aggregate, so the broadcast update is no longer exactly the client average. The paper's constraint \\((S^{t})^{\\top}S^{t}=I_{r'}\\) cannot hold when \\(r'>r\\); in that case the solution \\(S^{\\star}=UV^{\\top}\\) has orthonormal rows.",
+   "mergeable": "yes",
+   "mergeable_reason": "\\(L(A^{t})^{\\top}A^{t}R\\) is a dense \\(d_{out}\\times d_{in}\\) matrix that is added to \\(W_0\\).",
+   "identity_at_init": "Not exact. \\(W^{1}=W_0+L(A^{1})^{\\top}A^{1}R\\), and \\(A^{1}=0\\) cannot be used because \\(\\nabla_AF=A(H+H^{\\top})\\) vanishes there. The paper does not specify how \\(A^{1}\\) is initialized; \\(L\\) and \\(R\\) get semi-orthogonal initialization, which beats Kaiming and SVD initialization in its ablation.",
+   "key_idea": "FLoRG trains a single factor \\(A\\) of a symmetric update \\(LA^{\\top}AR\\) and aggregates its Gram matrix \\(A^{\\top}A\\), which is gauge-invariant. Federated averaging becomes exact and uplink traffic halves. The server then re-factors the average and fixes the \\(O(r)\\) gauge by Procrustes alignment to the previous round.",
+   "results_note": "With 20 clients, Dirichlet non-IID GLUE splits and rank 4 FLoRG beats FedIT, FeDeRA, FFA-LoRA, FedSA-LoRA and FedEx-LoRA in most cases, and it transmits up to 2041x fewer parameters than FedEx-LoRA to reach a target QNLI accuracy.",
+   "relations": [
+    {
+     "target": "ffa-lora",
+     "type": "competes-with",
+     "note": "Both make aggregation exact with one trained factor. FFA-LoRA freezes \\(A\\) and averages \\(B\\), which is linear. FLoRG averages the Gram matrix of a single trained factor, which is quadratic but gauge-invariant. FFA-LoRA is a baseline."
+    },
+    {
+     "target": "flora-federated",
+     "type": "competes-with",
+     "note": "Cited in FLoRG's related work (stacking-based aggregation) but not a baseline. FLoRA makes aggregation exact by stacking client factors, so its rank grows with the number of clients. FLoRG keeps rank \\(r\\) by re-factoring."
+    },
+    {
+     "target": "lora",
+     "type": "builds-on",
+     "note": "Replaces the two LoRA factors \\(BA\\) with the tied symmetric form \\(LA^{\\top}AR\\)."
+    },
+    {
+     "target": "singlora",
+     "type": "competes-with",
+     "note": "FLoRG cites SingLoRA as reformulating LoRA with a single matrix. SingLoRA's centralized update \\(AA^{\\top}\\) has the same single-factor Gram form. FLoRG places it between fixed frames \\(L,R\\) to handle rectangular weights and exploits its linearity for exact federated averaging. On a square weight with \\(L=R^{\\top}=I\\), FLoRG's update is SingLoRA's without the ramp \\(u(t)\\)."
+    },
+    {
+     "target": "fedit",
+     "type": "competes-with",
+     "note": "FedIT, which averages \\(B\\) and \\(A\\) separately, is the first of FLoRG's five baselines."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2602.17095",
+    "https://arxiv.org/html/2602.17095",
+    "https://iclr.cc/virtual/2026/poster/10007750",
+    "https://openreview.net/forum?id=kntrZOm2AQ",
+    "https://iclr.cc/static/virtual/data/iclr-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2602.17095 v1 (19 Feb 2026; v2 6 Mar 2026) by Chuiyang Meng, Ming Tang and Vincent W. S. Wong. The iclr.cc accepted-paper JSON lists it as Accept (Poster), event 10007750, OpenReview kntrZOm2AQ. The formula was checked against Eqs. 1-12, Theorems 1-2 and Algorithm 1 (App. A.2). The 2041x figure comes from Table 2: on RoBERTa-large with an 85% QNLI target, FedEx-LoRA transmits \\(2.96\\times10^{10}\\) parameters against \\(1.45\\times10^{7}\\) for FLoRG. The PSD-cone and truncation observations were re-derived: with \\(L^{\\top}L=I\\) and \\(RR^{\\top}=I\\), \\(Q=L^{\\top}\\Delta W R^{\\top}\\) is fixed by \\(\\Delta W\\), so \\(-\\Delta W\\) would need \\(-Q\\succeq0\\). The fedrot-lora relation was dropped. FedRot-LoRA itself is real (arXiv 2602.23638, ICML 2026 poster event 66566), but no catalogue entry has that id. No public code was found. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "relations: dropped fedrot-lora because the target is in neither existing_index.json nor this file. Added singlora and fedit, both cited in the paper. The flora-federated note now says it is cited but not a baseline.",
+    "formula_latex: added the scaling factor of 16 and the AdamW optimizer used in the experiments (App. A.6).",
+    "structure: removed 'random' from the frame description, since the paper says only 'orthogonal columns'; noted that constraint (8b) cannot hold when \\(r'>r\\).",
+    "sources: removed the FedRot-LoRA abstract link along with its relation.",
+    "locus: math fragments wrapped."
+   ]
+  },
+  {
+   "id": "loda-cl",
+   "name": "LoDA",
+   "full_name": "Low-rank Decomposition and Adaptation",
+   "paper_title": "Task-Driven Subspace Decomposition for Knowledge Sharing and Isolation in LoRA-based Continual Learning",
+   "authors": "He et al.",
+   "year": 2026,
+   "venue": "ICML 2026",
+   "arxiv": "2603.00191",
+   "url": "https://arxiv.org/abs/2603.00191",
+   "code_url": "https://github.com/HHHLF/LoDA_ICML2026",
+   "hf_peft": false,
+   "hf_peft_config": "",
+   "formula_latex": "h=\\big(W^{t-1}+w_GB_GA_G+B_IA_I\\big)x;\\quad S^{i}=X^{i\\top}X^{i},\\ S^{1:t-1}=\\textstyle\\sum_{i<t}S^{i};\\quad A_G=U_G^{\\top},\\ U_G=\\text{top-}r\\ \\text{eigenvectors of } S^{1:t-1}+S^{t};\\quad A_I=\\mathrm{QR}(U_I^{\\top}),\\ U_I=\\text{top-}r\\ \\text{generalized eigenvectors of } S^{t}u=\\mu\\,S^{1:t-1}u\\ \\ (\\text{via } S^{1:t-1}=LL^{\\top},\\ U_I=L^{-\\top}\\,\\mathrm{top}_r\\,\\mathrm{eig}(L^{-1}S^{t}L^{-\\top}));\\quad A_G,A_I\\ \\text{frozen};\\ B_G,B_I\\ \\text{trained from }0\\text{ with GAO};\\quad \\text{after task } t:\\ W^{t}=W^{t-1}+w_GB_G\\Lambda_GA_G+B_IA_I,\\ \\ \\Lambda_G=\\mathrm{diag}(\\gamma_j),\\ \\ \\gamma_j=\\frac{\\lambda\\,a_jS^{t}a_j^{\\top}}{a_j(\\lambda S^{t}+S^{1:t-1})a_j^{\\top}}\\in[0,1],\\ a_j=A_G^{(j)}",
+   "trainable_params": "2r\\,d_{out}\\ \\text{per adapted matrix per task (}B_G,B_I\\text{), or } r\\,d_{out} \\text{ on task 1, where the isolated branch is disabled. } A_G,A_I \\text{ are designed, not trained, and both branches are merged after each task, so inference adds no parameters}",
+   "locus": "All attention blocks of an ImageNet-21K ViT-B/16 at rank 32; also CLIP and self-supervised ViT backbones",
+   "modification_kind": "additive-weight",
+   "structure": "Each task adds two rank-\\(r\\) additive branches whose down-projections are frozen and designed from second moments of the layer inputs. The shared branch spans the top-\\(r\\) eigenspace of the accumulated old-plus-new statistics, for knowledge sharing. The isolated branch spans the top-\\(r\\) generalized eigenvectors of the pencil \\((S^{t},S^{1:t-1})\\), the directions with the largest ratio of new-task to old-task projection energy, instead of an approximate null space of old tasks. Training only \\(B\\) is gradient descent restricted to \\(\\mathrm{row}(A)\\), with output change scaled by the projection energy \\(\\|Ax\\|^2\\) (Thm 3.1). The up-projections are trained with GAO, a two-subset look-ahead update that favors gradients agreeing across label-disjoint halves of a batch. Before merging, each rank-1 unit of the shared branch is shrunk by a closed-form ridge-type factor \\(\\gamma_j\\in[0,1]\\) that trades new-task fit against drift on old-task features. Both branches are then folded into the backbone.",
+   "mergeable": "yes",
+   "mergeable_reason": "After each task \\(w_GB_G\\Lambda_GA_G+B_IA_I\\) is added to the backbone and the LoRA matrices are discarded, so inference uses a single weight matrix and needs no task identity.",
+   "identity_at_init": "Exact for each task. \\(B_G=B_I=0\\) when a task starts, and on task 1 the isolated branch is disabled, so the layer equals \\(W^{t-1}\\). \\(A_G\\) and \\(A_I\\) are set beforehand from cached layer inputs.",
+   "key_idea": "With a frozen down-projection, LoRA learns only along directions the inputs excite (projection energy \\(\\|Ax\\|^2\\)). LoDA therefore builds one subspace that old and new tasks both excite, for transfer, and one that the new task excites far more than old tasks, for isolation. Null-space designs instead use old-task null spaces, which the new task may barely use.",
+   "results_note": "Without feature replay LoDA beats the strongest baseline, CoSO, by 0.80-1.70 points in final accuracy on its class-incremental benchmarks with a ViT-B/16, and the classifier-aligned LoDA+CA beats the replay-based MACIL by 0.15-5.11 points.",
+   "relations": [
+    {
+     "target": "inflora",
+     "type": "competes-with",
+     "note": "InfLoRA's frozen down-projection spans new-task directions inside the approximate null space of old tasks. LoDA replaces it with a generalized-eigenvector (energy-ratio) subspace, adds a shared branch, and beats InfLoRA in the paper's subspace-isolation comparison (Table 4)."
+    },
+    {
+     "target": "o-lora",
+     "type": "competes-with",
+     "note": "Cited in related work but not a baseline (O-LoRA is a language-model method). O-LoRA uses soft orthogonality between task subspaces; LoDA uses hard subspaces designed from data."
+    },
+    {
+     "target": "sd-lora",
+     "type": "competes-with",
+     "note": "LoRA-based class-incremental baseline."
+    },
+    {
+     "target": "lora-fa",
+     "type": "competes-with",
+     "note": "Not cited by LoDA; the link is structural. On each task the two branches together form one LoRA-FA-style update \\([w_GB_G,\\ B_I][A_G;A_I]\\), whose frozen rank-\\(2r\\) down-projection is designed from data rather than drawn at random."
+    }
+   ],
+   "sources": [
+    "https://arxiv.org/abs/2603.00191",
+    "https://arxiv.org/html/2603.00191",
+    "https://icml.cc/virtual/2026/poster/63718",
+    "https://openreview.net/forum?id=UJJfkcJ7K9",
+    "https://github.com/HHHLF/LoDA_ICML2026",
+    "https://icml.cc/static/virtual/data/icml-2026-orals-posters.json"
+   ],
+   "confidence": "high",
+   "verified": true,
+   "verification_notes": "arXiv 2603.00191 v1 (27 Feb 2026; v4 24 May 2026) by Lingfeng He, De Cheng, Huaijie Wang, Xi Yang, Nannan Wang and Xinbo Gao, with the arXiv comment 'Accepted by ICML 2026'. The icml.cc accepted-paper JSON lists it as Accept (regular), event 63718, OpenReview UJJfkcJ7K9. The formula was checked against Eqs. 3-14, Theorems 3.1-3.3 and Algorithm 1 (App. A); on task 1 the isolated branch is disabled. The setup (ViT-B/16 pretrained on ImageNet-21K, all attention blocks, rank 32, \\(w_G=0.5\\), \\(\\lambda=3\\)) and the results were checked against Sec. 4. The code repository HHHLF/LoDA_ICML2026 exists and was created 2026-05-02. One caveat about the paper itself: the ratio objective in Eq. 6 is maximized by putting every column on the top generalized eigenvector. The orthonormality imposed in the proof of Theorem 3.2 is therefore a design choice, not 'without loss of optimality'. The method uses the top-\\(r\\) generalized eigenspace, as the entry states. Not in HF PEFT: no matching tuner under src/peft/tuners on main (commit 9146289, 2026-10-01) or in the LoRA variants, latest release v0.21.2 (2026-10-01).",
+   "corrections": [
+    "relations: lora-fa changed from builds-on to competes-with, because LoDA does not cite LoRA-FA and the link is only structural. The o-lora note now says it is cited but not a baseline; the inflora note points to Table 4."
+   ]
+  }
+ ],
+ "papers": [],
+ "notes": "Batch 2 of the 2026 sweep: six methods, all kept after adversarial verification. FlexLoRA and FLoRG are ICLR 2026 posters, Bayesian-LoRA and LoDA are ICML 2026 posters (Accept, regular), and FourierMoE and SMoA are NeurIPS 2026 posters. None is in HF PEFT (tuners on main at commit 9146289, 2026-10-01; latest release v0.21.2). ID CHOICES: 'flexlora-entropy' avoids a clash with the 2024 federated FlexLoRA (arXiv 2402.11505). 'bayesian-lora-sgp' avoids a clash with the 2024 Bayesian-LoRA, which uses differentiable Bayesian gates for quantization levels and ranks. 'loda-cl' avoids a clash with earlier, unrelated methods also called LoDA. NAME CLASH: the catalogued 'mosa' is MoSA: Mosaic Shared Adaptation, not a Hadamard method, so SMoA is linked to hira and melora instead. Catalogue-derived structural observations, labeled as such in the entries: (1) SMoA's update is \\((P_{out}^{\\top}\\tilde B\\tilde AP_{in})\\odot W_0\\), which is HiRA with block-sparse factors in an SVD-derived permutation. \\(K=1\\) is exactly HiRA, and at fixed \\(r\\) SMoA's update set lies inside rank-\\(r\\) HiRA's. (2) For FourierMoE, \\(\\mathrm{Re}\\,\\mathcal{F}^{-1}(F)\\) is the IDFT of the Hermitian part of \\(F\\), so the conjugate-symmetry constraint reaches no more updates than Re-truncation does. The real change from FourierFT is complex coefficients, i.e. learned phase. (3) FLoRG's update set is the PSD cone \\(\\{LQR:\\ Q\\succeq0,\\ \\mathrm{rank}\\,Q\\le r\\}\\), which cannot represent \\(-\\Delta W\\). \\(A=0\\) is a stationary point, so FLoRG cannot start at the identity, and when \\(\\mathrm{rank}\\,Q>r\\) the Procrustes map truncates the aggregate. (4) LoDA's isolated subspace is the top-\\(r\\) generalized eigenspace of \\((S^{t},S^{1:t-1})\\). The fedrot-lora relation in the raw batch was dropped because no catalogue entry has that id. UNCERTAINTIES: FourierMoE has no public code, does not say how its coefficients are initialized, and reports parameter percentages that cannot be reproduced from its stated hyperparameters. SMoA describes its permutation rule only qualitatively and inherits its initialization from HiRA without stating it. Bayesian-LoRA's paper and code disagree on the LoRA rank (9 vs 8).",
+ "verification_summary": "Adversarial verification on 2026-10-02 of 6 methods (0 papers): all 6 confirmed and kept, none dropped. Existence, titles, full author lists and first-version dates (all 2026) were read from the arXiv abstract pages. The arXiv export API and Semantic Scholar returned HTTP 429 or 503 for the whole session, so neither was used. Venues were confirmed in the official accepted-paper JSON: iclr.cc for FlexLoRA (10006948) and FLoRG (10007750); icml.cc for Bayesian-LoRA (60552) and LoDA (63718), both 'Accept (regular)'; neurips.cc for FourierMoE (151989) and SMoA (153896), both 'Accept (poster)'. Every OpenReview forum id matches the JSON. Formulas, parameter counts and results were re-read in the arXiv HTML full text. Released code was inspected for FlexLoRA, Bayesian-LoRA and LoDA (the LoDA repository exists); none was found for FourierMoE, SMoA or FLoRG. HF PEFT: none of the six is under src/peft/tuners on main (9146289) or among the LoRA variants. Substantive fixes: (1) Bayesian-LoRA identity_at_init was wrong. The zero-scale wrapper it cited is unused, and the training path starts with random factors, so \\(\\Delta W\\neq0\\). Its paper-versus-code LoRA-rank inconsistency is also recorded. (2) FourierMoE trainable_params: the literal count is about 8x the reported 0.06%, so it is now given as the paper's bound with the discrepancy flagged. (3) SMoA: at fixed \\(r\\) its update set is contained in rank-\\(r\\) HiRA's, so the rank-ceiling claim is relative to LoRA only. (4) FLoRG: the fedrot-lora relation was dropped (unknown id), singlora and fedit relations were added, and the frame initialization and the infeasible constraint (8b) were corrected. (5) LoDA: the lora-fa relation became competes-with, since LoRA-FA is not cited. (6) FlexLoRA: code-versus-paper differences in the b(t) schedule, pruning sign and penalty were recorded, along with a caveat on the parameter budget. Every relation target is now an id in existing_index.json, and every math fragment in prose fields is wrapped in \\( \\)."
+}

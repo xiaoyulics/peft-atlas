@@ -1,0 +1,64 @@
+{
+ "batch": 10,
+ "methods": [
+  {
+   "id": "loft-orthogonal",
+   "entry_type": "method",
+   "core": true,
+   "coords": {
+    "kind": "R",
+    "shape": "Orb",
+    "base_point": "regular",
+    "gauge": "none",
+    "covariance": "OxO",
+    "merge": "M1",
+    "rebasing": "idempotent"
+   },
+   "coord_notes": {
+    "shape": "Read with an exactly orthogonal \\(Q\\) and a frozen support: \\(\\rho(E)=W_0S(P_r,Q(E))\\) lies in the leaf \\(W_0\\cdot SO(V)\\). If \\(\\operatorname{rank}W_0P_r^{\\top}=r\\), \\(W_0\\cdot O(V)=(W_0+W_0P_r^{\\top}\\mathbb R^{r\\times r}P_r)\\cap W_0\\cdot O(n)\\). The released Cayley–Neumann default is not exactly orthogonal and leaves the leaf.",
+    "base_point": "\\(S_1=W_0P_r^{\\top}\\mathfrak{so}(r)P_r\\), of dimension \\(r(r-1)/2=d\\) when \\(\\operatorname{rank}W_0P_r^{\\top}=r\\): regular, unlike HRA's paired initialisation (Thm II.7(b)).",
+    "gauge": "\\(E\\mapsto W_0P_r^{\\top}Q(E)P_r\\) is injective near \\(0\\) when \\(W_0P_r^{\\top}\\) has full column rank.",
+    "covariance": "OxO for the principal and GradSVD supports, whose frames come from SVDs of \\(W_0\\) or \\(G\\). The SkewGrad support is covariant under the larger group \\(GL(m)\\times CO(n)\\), since \\(W_0^{\\top}G\\) is unchanged by an output change of basis. In this catalogue block OFT is GLxCO and GOFT is \\(\\Pi\\).",
+    "rebasing": "With the support frozen across cycles the image is a subgroup orbit and merge-and-restart gains nothing. With finitely many supports revisited, the reach is the orbit of the connected group whose Lie algebra the \\(\\mathfrak{so}(V_k)\\) generate (Thm V.3(b)); numerically SO(n) for generic supports, r >= 2, after ceil(n/r) of them. The principal support does not move when re-selected."
+   },
+   "table_row": "R-action",
+   "table_col": "Orb",
+   "categorical_reading": "LOFT fixes one leaf of the HRA meet: for injective \\(W_0\\), \\((W_0+\\mathcal M_{\\le r})\\cap W_0\\cdot SO(n)\\) is the union over \\(V\\in\\mathrm{Gr}(r,n)\\) of the leaves \\(W_0\\cdot SO(V)\\). HRA moves its leaf while it trains; LOFT freezes it and chooses it, from the principal singular subspace (PSOFT without its tori; for injective \\(W_0\\) and a Cayley map, LoRA-XS meet exact full-block Cayley OFT) or from the gradient at \\(\\theta_0\\). Read with an exactly orthogonal transform, it is an orbit method with a regular base point and no gauge.",
+   "arrows": [
+    {
+     "target": "oft",
+     "rule": "A3",
+     "h": "E\\mapsto Q=-P_r^{\\top}EP_r\\in\\mathfrak{so}(n)",
+     "note": "Into exact full-block Cayley OFT (block size n), with the same Cayley map on both sides. With the catalogue's convention W = W_0 C(Q)^T, h(E) = -P_r^T E P_r; with HF's exact code R = (I-Q)(I+Q)^{-1}, W = W_0 R^T, it is h(E) = +P_r^T E P_r. Uses C(P_r^T E P_r) = I + P_r^T (C(E) - I) P_r."
+    },
+    {
+     "target": "lora-xs",
+     "rule": "A3",
+     "h": "E\\mapsto R=\\Sigma_r\\big(C(E)-I\\big)\\Sigma_r^{-1}",
+     "note": "Principal support, needs sigma_r(W_0) > 0; LoRA-XS pointed at R = 0. Holds for any transform Q, exact or not."
+    },
+    {
+     "target": "psoft",
+     "rule": "A3",
+     "h": "E\\mapsto\\big(R=C(E)^{\\top},\\ \\alpha=\\beta=\\mathbf 1\\big)",
+     "note": "Principal support, same exactly orthogonal transform on both sides; freeze PSOFT's two scaling vectors at 1 (A2 up to E -> -E). With alpha = beta = 1, PSOFT's W_res + B R^T A equals W_0 (I + V_r (R^T - I) V_r^T)."
+    },
+    {
+     "target": "lora",
+     "rule": "A3",
+     "h": "E\\mapsto\\big(B=W_0P_r^{\\top}(C(E)-I_r),\\ A=P_r\\big)",
+     "note": "Into LoRA_r pointed at (B, A) = (0, P_r), a T_A-type pointing with a fixed row-orthonormal A_0."
+    }
+   ],
+   "obstructions": [
+    {
+     "target": "hra",
+     "test": "O3",
+     "reason": "For r >= 4 there is no smooth pointed arrow LOFT_r -> HRA_r at HF's paired initialisation, although Im LOFT(P_r) lies in Im HRA_r (r even): S_1(LOFT) = W_0 so(V) is not contained in S_1(HRA) = W_0 {Omega : P_{U^perp} Omega P_{U^perp} = 0} (Thm II.7(b)), because dim(V cap U^perp) >= r/2 >= 2."
+    }
+   ],
+   "verified": true,
+   "check_notes": "Added 2026-10-02 with the LOFT addendum. Coordinates, arrows and the O3 obstruction were checked by two independent referees (numerically for n = 8, m = 10, r = 2, 4, 6, and against the paper and code) and corrected as they asked."
+  }
+ ]
+}
