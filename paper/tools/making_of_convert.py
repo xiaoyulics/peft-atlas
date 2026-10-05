@@ -43,6 +43,7 @@ CITE_HTML = {    # key -> (label, url) for every key the section cites
     'xgrothendieck2022recoltes': ('Grothendieck 2022', 'https://catalogue.bnf.fr/ark:/12148/cb46976953t'),
     'xmclarty2007rising': ('McLarty 2007', 'https://doi.org/10.1090/hmath/032/14'),
 }
+LINK = re.compile(r'<(https?://[^>\s]+)>')   # <https://...> autolinks: a link on the site, \url in the paper
 def cite_keys(m): return [k.strip().lstrip('@') for k in m.group(1).split(';')]
 def cite_html(m):
     parts = []
@@ -55,6 +56,8 @@ def ih(t):
     t = VARIANT.sub(r'\1', t)
     cites = []
     t = CITE.sub(lambda m: cites.append(cite_html(m)) or '\x00%d\x00' % (len(cites) - 1), t)
+    t = LINK.sub(lambda m: cites.append('<a href="%s">%s</a>' % (m.group(1), html.escape(re.sub(r'^https?://', '', m.group(1)).rstrip('/'))))
+                 or '\x00%d\x00' % (len(cites) - 1), t)
     t = html.escape(t, quote=False)
     t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
     t = re.sub(r'(?<!\*)\*([^*\n]+)\*(?!\*)', r'<em>\1</em>', t)
@@ -92,6 +95,7 @@ def il(t):
     t = VARIANT.sub(r'\2', t)
     cites = []
     t = CITE.sub(lambda m: cites.append('~\\citep{%s}' % ','.join(cite_keys(m))) or '\x00%d\x00' % (len(cites) - 1), t)
+    t = LINK.sub(lambda m: cites.append('\\url{%s}' % m.group(1)) or '\x00%d\x00' % (len(cites) - 1), t)
     t = t.replace('this section', 'this appendix').replace('This section', 'This appendix')
     t = t.replace('\\', '\\textbackslash{}')
     for a, b in (('&', '\\&'), ('%', '\\%'), ('#', '\\#'), ('_', '\\_'), ('$', '\\$')):

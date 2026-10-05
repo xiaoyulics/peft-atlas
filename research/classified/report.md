@@ -72,7 +72,7 @@ Every edit is logged in the method's `check_notes` under "Consolidation (2026-10
 9. **Obstruction contents were not re-derived here.** I checked them only against arrows and coordinates.
 
 Files:
-- /Users/z5236444/Documents/范畴论_PEFT/research/classified/batch-0.json … batch-9.json
-- /Users/z5236444/Documents/范畴论_PEFT/research/classified/edges.json
-- /Users/z5236444/Documents/范畴论_PEFT/site/data/atlas-data.js
-- /Users/z5236444/Documents/范畴论_PEFT/research/classified/report.md (not written)
+- research/classified/batch-0.json … batch-9.json
+- research/classified/edges.json
+- site/data/atlas-data.js
+- research/classified/report.md (not written)

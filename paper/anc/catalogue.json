@@ -2987,7 +2987,7 @@
    "sources": [
     "https://arxiv.org/abs/2605.11872",
     "https://export.arxiv.org/api/query?id_list=2605.11872",
-    "/Users/z5236444/Downloads/2605.11872v1.pdf (pages 1-11)",
+    "https://arxiv.org/pdf/2605.11872v1 (pages 1-11)",
     "https://github.com/huggingface/peft/tree/main/src/peft/tuners"
    ],
    "confidence": "high",

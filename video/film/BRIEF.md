@@ -2,7 +2,7 @@
 
 You are building chapters of a ~17-minute narrated explainer film for the paper *A Categorical Atlas of
 Parameter-Efficient Fine-Tuning*. The narration is finished, in `video/audio/beats/<id>.wav`. Your job is the picture:
-one Manim scene per chapter, timed to that narration. Project root: `/Users/z5236444/Documents/范畴论_PEFT`.
+one Manim scene per chapter, timed to that narration. Paths below are relative to the repository root.
 
 ## Read first
 1. `video/script/SCRIPT.md`: the script. For each of your beats, follow **On screen** and the narration (lines starting
