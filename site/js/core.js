@@ -374,7 +374,7 @@
     var links = Array.prototype.slice.call(document.querySelectorAll('#film [data-t]'));
     function play(t) {
       var f = document.createElement('iframe');
-      f.src = 'https://www.youtube-nocookie.com/embed/' + box.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1' + (t ? '&start=' + Math.floor(t) : '');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + box.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1&cc_load_policy=1&cc_lang_pref=en' + (t ? '&start=' + Math.floor(t) : '');
       f.title = 'The film: A Categorical Atlas of Parameter-Efficient Fine-Tuning';
       f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
       f.setAttribute('allowfullscreen', '');
